@@ -1,3 +1,25 @@
+---
+title: License
+---
+
+# Overview
+
+**VoltAgent** is licensed under the MIT License. It only requires the preservation of copyright and license notices. Licensed works, modifications, and larger works may be distributed under different terms and without source code.
+
+## Permissions
+
+- ✅ Commercial use
+- ✅ Modification
+- ✅ Distribution
+- ✅ Private use
+
+## Limitations
+
+- ❌ Liability
+- ❌ Warranty
+
+# License
+
 MIT License
 
 Copyright (c) 2025 VoltAgent

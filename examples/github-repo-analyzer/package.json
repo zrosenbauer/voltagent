@@ -1,0 +1,24 @@
+{
+  "name": "voltagent-example-github-repo-analyzer",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch --env-file=.env ./src ",
+    "start": "node dist/index.js",
+    "volt": "volt"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^1.0.0",
+    "@octokit/rest": "^21.0.0",
+    "@voltagent/core": "^0.1.2",
+    "@voltagent/vercel-ai": "^0.1.1",
+    "zod": "^3.22.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.4",
+    "@voltagent/cli": "^0.1.1",
+    "tsx": "^4.6.2",
+    "typescript": "^5.3.3"
+  }
+}

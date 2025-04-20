@@ -1,0 +1,229 @@
+import type { ClientCapabilities } from "@modelcontextprotocol/sdk/types.js";
+import type { BaseTool } from "../agent/providers/base/types";
+
+/**
+ * Client information for MCP
+ */
+export interface ClientInfo {
+  /**
+   * Client name
+   */
+  name: string;
+
+  /**
+   * Client version
+   */
+  version: string;
+
+  /**
+   * Allow additional properties for SDK compatibility
+   */
+  [key: string]: unknown;
+}
+
+/**
+ * Transport error from MCP
+ */
+export interface TransportError extends Error {
+  /**
+   * Error code
+   */
+  code?: string;
+
+  /**
+   * Error details
+   */
+  details?: unknown;
+}
+
+/**
+ * Model Control Protocol (MCP) configuration options
+ */
+export type MCPOptions = {
+  /**
+   * Whether MCP is enabled
+   */
+  enabled: boolean;
+
+  /**
+   * MCP API endpoint
+   */
+  endpoint?: string;
+
+  /**
+   * API key for MCP authentication
+   */
+  apiKey?: string;
+
+  /**
+   * Control parameters for MCP
+   */
+  controlParams?: Record<string, unknown>;
+
+  /**
+   * Whether to fall back to the provider if MCP fails
+   */
+  fallbackToProvider?: boolean;
+
+  /**
+   * Timeout in milliseconds for MCP requests
+   * @default 30000
+   */
+  timeout?: number;
+};
+
+/**
+ * Configuration for MCP client
+ */
+export type MCPClientConfig = {
+  /**
+   * Client information
+   */
+  clientInfo: ClientInfo;
+
+  /**
+   * MCP server configuration
+   */
+  server: MCPServerConfig;
+
+  /**
+   * MCP capabilities
+   */
+  capabilities?: ClientCapabilities;
+
+  /**
+   * Timeout in milliseconds for MCP requests
+   * @default 30000
+   */
+  timeout?: number;
+};
+
+/**
+ * MCP server configuration options
+ */
+export type MCPServerConfig = HTTPServerConfig | StdioServerConfig;
+
+/**
+ * HTTP-based MCP server configuration via SSE
+ */
+export type HTTPServerConfig = {
+  /**
+   * Type of server connection
+   */
+  type: "http";
+
+  /**
+   * URL of the MCP server
+   */
+  url: string;
+
+  /**
+   * Request initialization options
+   */
+  requestInit?: RequestInit;
+
+  /**
+   * Event source initialization options
+   */
+  eventSourceInit?: EventSourceInit;
+};
+
+/**
+ * Stdio-based MCP server configuration
+ */
+export type StdioServerConfig = {
+  /**
+   * Type of server connection
+   */
+  type: "stdio";
+
+  /**
+   * Command to run the MCP server
+   */
+  command: string;
+
+  /**
+   * Arguments to pass to the command
+   */
+  args?: string[];
+
+  /**
+   * Environment variables for the MCP server process
+   */
+  env?: Record<string, string>;
+
+  /**
+   * Working directory for the MCP server process
+   */
+  cwd?: string;
+};
+
+/**
+ * Tool call request
+ */
+export type MCPToolCall = {
+  /**
+   * Name of the tool to call
+   */
+  name: string;
+
+  /**
+   * Arguments to pass to the tool
+   */
+  arguments: Record<string, unknown>;
+};
+
+/**
+ * Tool call result
+ */
+export type MCPToolResult = {
+  /**
+   * Result content from the tool
+   */
+  content: unknown;
+};
+
+/**
+ * MCP client events
+ */
+export interface MCPClientEvents {
+  /**
+   * Emitted when the client connects to the server
+   */
+  connect: () => void;
+
+  /**
+   * Emitted when the client disconnects from the server
+   */
+  disconnect: () => void;
+
+  /**
+   * Emitted when an error occurs
+   */
+  error: (error: Error | TransportError) => void;
+
+  /**
+   * Emitted when a tool call completes
+   */
+  toolCall: (name: string, args: Record<string, unknown>, result: unknown) => void;
+}
+
+/**
+ * Map of toolset names to tools
+ */
+export type ToolsetMap = Record<string, ToolsetWithTools>;
+
+/**
+ * A record of tools along with a helper method to convert them to an array.
+ */
+export type ToolsetWithTools = Record<string, AnyToolConfig> & {
+  /**
+   * Converts the toolset to an array of BaseTool objects.
+   */
+  getTools: () => BaseTool[];
+};
+
+/**
+ * Any tool configuration
+ */
+export type AnyToolConfig = Record<string, unknown>;

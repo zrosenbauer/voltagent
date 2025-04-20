@@ -1,0 +1,49 @@
+{
+  "name": "@voltagent/cli",
+  "version": "0.1.1",
+  "description": "CLI tool for VoltAgent applications",
+  "keywords": ["voltagent", "cli", "agent"],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "bin": {
+    "volt": "dist/index.js"
+  },
+  "files": ["dist", "src"],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "eslint src --ext .ts,.tsx",
+    "start": "node dist/index.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "boxen": "^5.1.2",
+    "chalk": "^4.1.2",
+    "commander": "^11.1.0",
+    "conf": "^10.2.0",
+    "figlet": "^1.7.0",
+    "inquirer": "^8.2.6",
+    "npm-check-updates": "^17.1.18",
+    "ora": "^5.4.1",
+    "posthog-node": "^4.11.5",
+    "semver": "^7.5.4",
+    "update-notifier": "^5.1.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/boxen": "^3.0.1",
+    "@types/figlet": "^1.5.8",
+    "@types/inquirer": "^9.0.7",
+    "@types/node": "^18.15.11",
+    "@types/semver": "^7.5.6",
+    "@types/update-notifier": "^6.0.8",
+    "@types/uuid": "^9.0.8",
+    "jest": "^29.5.0",
+    "ts-jest": "^29.1.0",
+    "tsup": "^6.7.0",
+    "typescript": "^5.0.4"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

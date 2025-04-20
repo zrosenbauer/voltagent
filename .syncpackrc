@@ -1,0 +1,10 @@
+{
+    "dependencyTypes": ["prod"],
+    "semverGroups": [
+    {
+      "range": "^",
+      "dependencies": ["**"],
+      "packages": ["@voltagent/*"]
+    }
+  ]
+}

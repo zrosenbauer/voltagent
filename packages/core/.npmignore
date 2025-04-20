@@ -1,0 +1,11 @@
+src/
+node_modules/
+tsconfig.json
+tsup.config.ts
+jest.config.js
+.eslintrc
+coverage/
+**/*.test.ts
+**/*.spec.ts
+**/__tests__/
+**/__mocks__/ 

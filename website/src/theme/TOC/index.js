@@ -1,0 +1,153 @@
+import React, { useEffect, useState } from "react";
+import TOCItems from "@theme/TOCItems";
+import { ShareWidget } from "./ShareWidget";
+import clsx from "clsx";
+import { useLocation } from "@docusaurus/router";
+
+const LINK_CLASS_NAME = "table-of-contents__link toc-highlight";
+
+export default function TOC({ className, toc, ...props }) {
+  const location = useLocation();
+  const isBlogPost = location.pathname.includes("/blog/");
+  const [activeId, setActiveId] = useState("");
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const id = entry.target.id;
+            if (id) {
+              setActiveId(id);
+            }
+          }
+        });
+      },
+      {
+        rootMargin: "-64px 0% -40% 0%",
+        threshold: 0,
+      },
+    );
+
+    const headings = document.querySelectorAll(
+      "h1[id], h2[id], h3[id], h4[id]",
+    );
+    headings.forEach((heading) => observer.observe(heading));
+
+    return () => observer.disconnect();
+  }, [location.pathname]);
+
+  const tocWithActiveState = toc.map((item) => ({
+    ...item,
+    isActive: item.id === activeId,
+    children: item.children?.map((child) => ({
+      ...child,
+      isActive: child.id === activeId,
+    })),
+  }));
+
+  return (
+    <div
+      className={clsx(
+        "toc-wrapper mt-16",
+        "overflow-y-auto",
+        "overflow-x-hidden",
+        "max-h-[calc(100vh-var(--ifm-navbar-height)-2rem)]",
+        "sticky",
+        "top-[calc(var(--ifm-navbar-height)+1rem)]",
+      )}
+    >
+      <div className="mb-3 pb-1 ">
+        <h3 className="text-base font-semibold border-b border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100 mb-1">
+          Table of Contents
+        </h3>
+        <div className="w-24 h-1 bg-main-emerald rounded-full"></div>
+      </div>
+      <style>
+        {`
+                .table-of-contents {
+                    border-left: none !important;
+                    padding-left: 0 !important;
+                    margin-bottom: 1rem !important;
+                }
+
+                .table-of-contents__link {
+                    display: block;
+                    padding: 0.25rem 0;
+                    color: #6B7280 !important;
+                    font-size: 0.875rem;
+                    line-height: 1.25rem;
+                    transition: all 0.2s;
+                    border-radius: 0;
+                    padding-left: 0.25rem;
+                    margin-left: 0;
+                }
+                
+                .table-of-contents__link--active {
+                    color: #00d992 !important;
+                    font-weight: 500;
+                    background: transparent !important;
+                    padding-left: 0.25rem;
+                    border-left: none;
+                    margin-left: 0;
+                    padding-right: 0.25rem;
+                }
+                
+                :root[data-theme='dark'] .table-of-contents__link {
+                    color: #9CA3AF !important;
+                }
+
+                :root[data-theme='dark'] .table-of-contents__link--active {
+                    color: #00d992 !important;
+                    background: transparent !important;
+                }
+
+                .table-of-contents__link:hover:not(.table-of-contents__link--active) {
+                    color: #00d992 !important;
+                    background: transparent !important;
+                    padding-left: 0.25rem;
+                    padding-right: 0.25rem;
+                }
+
+                :root[data-theme='dark'] .table-of-contents__link:hover:not(.table-of-contents__link--active) {
+                    color: #00d992 !important;
+                    background: transparent !important;
+                }
+                
+                /* Add spacing between top-level items */
+                .table-of-contents > li {
+                    margin-bottom: 0.25rem;
+                }
+                
+                /* Nested items styling */
+                .table-of-contents > li > ul {
+                    margin-top: 0.125rem;
+                    margin-bottom: 0.375rem;
+                    padding-left: 0.75rem;
+                }
+                
+                /* Improve nested items appearance */
+                .table-of-contents > li > ul > li {
+                    position: relative;
+                }
+                
+                .table-of-contents > li > ul > li:before {
+                    content: none;
+                }
+                `}
+      </style>
+      <TOCItems
+        {...props}
+        toc={tocWithActiveState}
+        linkClassName={LINK_CLASS_NAME}
+        linkActiveClassName="table-of-contents__link--active"
+        className="table-of-contents"
+      />
+      {isBlogPost && (
+        <div className=" p-4 mt-8">
+          <ShareWidget />
+        </div>
+      )}
+    </div>
+  );
+}

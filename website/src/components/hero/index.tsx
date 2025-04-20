@@ -1,0 +1,231 @@
+import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
+import { useState, useEffect, useRef } from "react";
+import { ChevronRightIcon } from "@heroicons/react/24/outline";
+import { LineShadowText } from "../magicui/line-shadow-text";
+import { AgentsAnimation } from "../agents-animation";
+
+export function Hero() {
+  const {
+    siteConfig: { customFields },
+  } = useDocusaurusContext();
+
+  const [isVisible, setIsVisible] = useState(false);
+  const [commandText, setCommandText] = useState(
+    "npm create voltagent-app@latest",
+  );
+  const [isTyping, setIsTyping] = useState(false);
+  const originalCommand = "npm create voltagent-app@latest";
+  const typingTimerRef = useRef(null);
+
+  const thinkingMessages = [
+    "Memory",
+    "RAG",
+    "Tool",
+    "MCP",
+    "Agent",
+    "Supervisor",
+  ];
+
+  useEffect(() => {
+    setIsVisible(true);
+  }, []);
+
+  const handleGetStarted = () => {
+    window.location.href = `${customFields?.appURL || "#"}/get-started`;
+  };
+
+  const handleCommandClick = async () => {
+    if (isTyping) return;
+
+    setIsTyping(true);
+
+    // Copy to clipboard
+    await navigator.clipboard.writeText(originalCommand);
+
+    // Clear the text character by character
+    for (let i = commandText.length; i >= 0; i--) {
+      await new Promise<void>((resolve) => {
+        typingTimerRef.current = setTimeout(() => {
+          setCommandText(originalCommand.substring(0, i));
+          resolve();
+        }, 20);
+      });
+    }
+
+    // Show AI thinking messages in sequence
+    for (let msgIndex = 0; msgIndex < thinkingMessages.length; msgIndex++) {
+      setCommandText(thinkingMessages[msgIndex]);
+
+      // Wait between each thinking message
+      await new Promise((resolve) => {
+        typingTimerRef.current = setTimeout(resolve, 500);
+      });
+    }
+
+    // Type "Copied!" with a slight delay between characters
+    const copiedText = "Copied to clipboard!";
+    for (let i = 0; i <= copiedText.length; i++) {
+      await new Promise<void>((resolve) => {
+        typingTimerRef.current = setTimeout(() => {
+          setCommandText(copiedText.substring(0, i));
+          resolve();
+        }, 40);
+      });
+    }
+
+    // Add pulse effect class
+    const commandElement = document.querySelector(".command-text");
+    if (commandElement) {
+      commandElement.classList.add("pulse-effect");
+    }
+
+    // Wait for 1.5 seconds
+    await new Promise((resolve) => {
+      typingTimerRef.current = setTimeout(resolve, 1500);
+    });
+
+    // Remove pulse effect
+    if (commandElement) {
+      commandElement.classList.remove("pulse-effect");
+    }
+
+    // Clear "Copied!" character by character
+    for (let i = copiedText.length; i >= 0; i--) {
+      await new Promise<void>((resolve) => {
+        typingTimerRef.current = setTimeout(() => {
+          setCommandText(copiedText.substring(0, i));
+          resolve();
+        }, 20);
+      });
+    }
+
+    // Type the original command again
+    for (let i = 0; i <= originalCommand.length; i++) {
+      await new Promise<void>((resolve) => {
+        typingTimerRef.current = setTimeout(() => {
+          setCommandText(originalCommand.substring(0, i));
+          resolve();
+        }, 30);
+      });
+    }
+
+    setIsTyping(false);
+  };
+
+  // Clean up any pending timers when component unmounts
+  useEffect(() => {
+    return () => {
+      if (typingTimerRef.current) {
+        clearTimeout(typingTimerRef.current);
+      }
+    };
+  }, []);
+
+  return (
+    <div className="relative max-w-7xl xs:px-4 lg:px-8 mx-auto landing-xs:mb-16 landing-md:mb-36">
+      {/* Adding global styles */}
+      <style>
+        {`
+          .command-text.pulse-effect {
+            animation: pulse 0.8s ease-in-out;
+          }
+          
+          @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); color: #00ffaa; }
+            100% { transform: scale(1); }
+          }
+          
+          @keyframes blink {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+          }
+        `}
+      </style>
+
+      <div className="mt-16 md:mt-24" />
+      <div className="grid xs:grid-cols-1 mx-4 lg:mx-0 lg:grid-cols-2 gap-8 items-center">
+        {/* Left Column: Text and Buttons */}
+        <div>
+          {/* Main Heading */}
+          <h2
+            className={`text-2xl text-left mb-2 text-main-emerald font-bold transition-all duration-1000 ${
+              isVisible
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-4"
+            }`}
+          >
+            Open Source
+          </h2>
+
+          <h1
+            className={`text-4xl sm:text-5xl text-neutral-100 md:text-6xl font-bold text-left mb-6 transition-all duration-1000 ${
+              isVisible
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-4"
+            }`}
+          >
+            TypeScript AI Agent
+            <LineShadowText
+              className="text-main-emerald landing-md:mt-4 landing-xs:mt-2 landing-xs:ml-2 landing-md:ml-0 italic"
+              shadowColor={"#00d992"}
+            >
+              Framework
+            </LineShadowText>
+          </h1>
+
+          {/* Subheading */}
+          <p
+            className={`text-base sm:text-lg md:text-xl text-gray-400 text-left mb-12 transition-all duration-1000 delay-300 ${
+              isVisible
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-4"
+            }`}
+          >
+            Escape no-code limits and scratch-built overhead. Build, customize,
+            and orchestrate AI agents with full control, speed, and a great
+            DevEx.
+          </p>
+
+          {/* Get Started button and command */}
+          <div
+            className={`flex flex-col sm:flex-row items-center sm:items-start justify-center sm:justify-start gap-4 mb-12 transition-all duration-1000 delay-500 ${
+              isVisible
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-4"
+            }`}
+          >
+            <button
+              onClick={handleGetStarted}
+              className="w-full sm:w-auto px-4 py-3 font-bold landing-sm:text-lg border-none landing-xs:text-md font-mono backdrop-blur-sm text-main-emerald cursor-pointer bg-emerald-400/10 text-emerald-400 border border-emerald-400/20 rounded-md transition duration-300 flex items-center outline-none  justify-center sm:justify-start gap-2 hover:bg-[#0e2c24]"
+            >
+              <ChevronRightIcon className="landing-xs:w-4 landing-xs:h-4 landing-md:w-6 landing-md:h-6" />
+              Get Started
+            </button>
+
+            <div
+              onClick={handleCommandClick}
+              className="w-full sm:w-auto flex cursor-pointer items-center justify-center border backdrop-blur-sm h-[53px] border-solid border-[#113328] rounded-md px-4 py-3 font-[monospace] text-[13px] hover:bg-[#0e2c24] transition duration-300"
+            >
+              <span className="mr-2 text-main-emerald">$</span>
+              <span className="command-text text-main-emerald min-w-[220px] text-left relative">
+                {commandText}
+                {isTyping &&
+                  !thinkingMessages.includes(commandText) &&
+                  commandText !== "" && (
+                    <span className="animate-pulse">|</span>
+                  )}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Animation */}
+        <div className="landing-xs:pl-0 landing-md:pl-12 h-full items-center">
+          <AgentsAnimation />
+        </div>
+      </div>
+    </div>
+  );
+}
