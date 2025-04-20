@@ -178,7 +178,11 @@ export function CommunitySection({ className }: CommunitySectionProps) {
 
       @keyframes starPulse {
         0%, 100% { opacity: 0; }
-        30%, 70% { opacity: 1; }
+        10% { opacity: 0.1; }
+        30% { opacity: 0.5; }
+        50% { opacity: 1; }
+        70% { opacity: 0.5; }
+        90% { opacity: 0.1; }
       }
 
       @keyframes fadeInOut {
@@ -230,7 +234,13 @@ export function CommunitySection({ className }: CommunitySectionProps) {
                     </span>
                   )}
                 </div>
-                <div className="md:absolute md:top-2 md:right-7 text-main-emerald px-3 py-1 rounded md:opacity-0 opacity-100 md:group-hover:opacity-100 transition-opacity duration-300 text-sm font-medium whitespace-nowrap pointer-events-none md:translate-x-1/4 md:-translate-y-1/4 mt-4 md:mt-0">
+                <div
+                  className={`md:absolute md:top-2 md:right-7 text-main-emerald px-3 py-1 rounded md:opacity-0 ${
+                    link.id === "discord" || link.id === "github"
+                      ? "opacity-0"
+                      : "opacity-100"
+                  } md:group-hover:opacity-100 transition-opacity duration-300 text-sm font-medium whitespace-nowrap pointer-events-none md:translate-x-1/4 md:-translate-y-1/4 mt-4 md:mt-0`}
+                >
                   {link.tooltip}
                 </div>
               </a>
