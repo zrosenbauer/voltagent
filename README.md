@@ -1,6 +1,6 @@
 <div align="center">
 <a href="https://voltagent.dev/">
-<img width="1800" alt="github-banner" src="https://github.com/user-attachments/assets/b6253409-8741-462b-a346-834cd18565a9" />
+<img width="1800" alt="435380213-b6253409-8741-462b-a346-834cd18565a9" src="https://github.com/user-attachments/assets/452a03e7-eeda-4394-9ee7-0ffbcf37245c" />
 </a>
 
 <br/>
@@ -37,7 +37,7 @@ Escape the limitations of no-code builders and the complexity of starting from s
 
 <div align="center">
 <a href="https://voltagent.dev/">
-<img width="841" alt="flow" src="https://github.com/user-attachments/assets/a035487b-e87d-4291-93f7-12c4656eeb43" />
+<img width="896" alt="flow" src="https://github.com/user-attachments/assets/f0627868-6153-4f63-ba7f-bdfcc5dd603d" />
 </a>
 
 </div>
@@ -140,7 +140,7 @@ Your agent is now running! To interact with it:
 4. Start Chatting: On the agent detail page, click the chat icon in the bottom right corner to open the chat window.
 5. Send a Message: Type a message like "Hello" and press Enter.
 
-![VoltAgent Developer Console Demo](https://github.com/user-attachments/assets/65a51ec9-62f1-4dea-a7cc-d0aa5064aec7)
+![VoltAgent Developer Console Demo](https://github.com/user-attachments/assets/0adbec33-1373-4cf4-b67d-825f7baf1cb4)
 
 ## Key Features
 
