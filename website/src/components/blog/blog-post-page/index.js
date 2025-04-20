@@ -117,45 +117,47 @@ export const BlogPostPageView = ({ children }) => {
           )}
         </p>
 
-        <div className="mb-4 text-sm">
-          <div className={clsx("flex flex-col gap-3")}>
+        <div className="mb-6 text-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             {author && (
-              <div className="border border-solid  border-main-emerald  rounded-lg p-3 sm:p-4 bg-white/10 shadow-sm">
-                <div className="flex flex-col gap-2">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-600 dark:text-gray-100 font-semibold text-sm sm:text-base">
-                        Author:{" "}
-                      </span>
-                      <Link
-                        to={`/blog/author/${author.key
-                          .toLowerCase()
-                          .replace(/_/g, "-")}`}
-                        className="text-main-emerald  no-underline text-sm sm:text-base"
-                      >
-                        {author.name}
-                      </Link>
-                    </div>
-                    {author.title && (
-                      <div className="flex items-center gap-2">
-                        <span className="hidden sm:inline text-gray-400">
-                          -
-                        </span>
-                        <span className="text-gray-600 dark:text-gray-100 text-sm sm:text-base">
-                          {author.title}
-                        </span>
-                      </div>
-                    )}
+              <div className="flex items-center mb-2 sm:mb-0">
+                {author.imageURL && (
+                  <Link
+                    to={`/blog/author/${author.key
+                      .toLowerCase()
+                      .replace(/_/g, "-")}`}
+                    className="mr-3"
+                  >
+                    <img
+                      src={author.imageURL}
+                      alt={author.name}
+                      className="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-gray-700"
+                    />
+                  </Link>
+                )}
+                <div>
+                  <div className="flex items-center">
+                    <Link
+                      to={`/blog/author/${author.key
+                        .toLowerCase()
+                        .replace(/_/g, "-")}`}
+                      className="text-main-emerald no-underline font-medium"
+                    >
+                      {author.name}
+                    </Link>
                   </div>
-                  {author.bio && (
-                    <span className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm leading-relaxed">
+                  {author?.title && (
+                    <div className="text-gray-500 dark:text-gray-400 text-xs">
+                      {author.title}
+                      {author?.bio && <span className="mx-1">-</span>}
                       {author.bio}
-                    </span>
+                    </div>
                   )}
                 </div>
               </div>
             )}
-            <div className="flex items-center justify-end gap-2 text-main-emerald">
+
+            <div className="flex items-center gap-2 text-main-emerald text-xs">
               <DateComponent date={date} formattedDate={formattedDate} />
               {typeof readingTime !== "undefined" && (
                 <>
