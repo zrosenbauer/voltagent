@@ -31,7 +31,7 @@ export function Hero() {
   }, []);
 
   const handleGetStarted = () => {
-    window.location.href = `${customFields?.appURL || "#"}/get-started`;
+    window.location.href = "/docs/";
   };
 
   const handleCommandClick = async () => {
