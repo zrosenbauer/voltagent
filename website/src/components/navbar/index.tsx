@@ -130,7 +130,7 @@ export default function Navbar() {
                           .map((stargazer, index) => (
                             <a
                               key={stargazer.login}
-                              href={`https://github.com/${stargazer.login}`}
+                              href={`https://github.com/voltagent/voltagent/stargazers`}
                               target="_blank"
                               rel="noopener noreferrer"
                               title={stargazer.login}

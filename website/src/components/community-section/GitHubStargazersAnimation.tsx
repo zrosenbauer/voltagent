@@ -33,7 +33,7 @@ const MobileGitHubStargazersAnimation = () => {
         return (
           <a
             key={stargazer.login}
-            href={`https://github.com/${stargazer.login}`}
+            href={`https://github.com/voltagent/voltagent/stargazers`}
             target="_blank"
             rel="noopener noreferrer"
             title={stargazer.login} // Tooltip with username
@@ -95,7 +95,7 @@ const DesktopGitHubStargazersAnimation = () => {
         return (
           <a
             key={stargazer.login}
-            href={`https://github.com/${stargazer.login}`}
+            href={`https://github.com/voltagent/voltagent/stargazers`}
             target="_blank"
             rel="noopener noreferrer"
             title={stargazer.login} // Tooltip with username
