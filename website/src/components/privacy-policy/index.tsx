@@ -9,7 +9,11 @@ export function PrivacyPolicy() {
       <div className="mb-6">
         <p className="font-bold">1. Introduction</p>
         <p>
-          Welcome to <strong>VoltAgent</strong>.
+          Welcome to{" "}
+          <strong>
+            <a href="https://voltagent.dev">VoltAgent</a>
+          </strong>
+          .
         </p>
         <p>
           <strong>VoltAgent</strong> (“us”, “we”, or “our”) operates{" "}

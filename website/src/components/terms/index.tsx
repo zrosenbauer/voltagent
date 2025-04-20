@@ -11,7 +11,11 @@ export function TermsAndConditions() {
       <div className="mb-6">
         <p className="font-bold">1. Introduction</p>
         <p>
-          Welcome to <b>VoltAgent</b> (“Company”, “we”, “our”, “us”)!
+          Welcome to{" "}
+          <b>
+            <a href="https://voltagent.dev">VoltAgent</a>
+          </b>{" "}
+          (“Company”, “we”, “our”, “us”)!
         </p>
         <p>
           These Terms of Service (“Terms”, “Terms of Service”) govern your use
