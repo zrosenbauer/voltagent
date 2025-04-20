@@ -80,7 +80,7 @@ const config: Config = {
         },
       };
     },
-    "./plugins/clarity",
+    "./plugins/clarity/index.js",
     [
       "@docusaurus/plugin-client-redirects",
       {
