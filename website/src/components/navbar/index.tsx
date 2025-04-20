@@ -112,40 +112,44 @@ export default function Navbar() {
           >
             <GitHubLogo className="w-6 h-6 " />
 
-            {/* Stargazer Avatars Container */}
-            <div className="absolute left-0 top-1/2 -translate-x-full -translate-y-1/2 flex items-center opacity-0 group-hover:opacity-100 group-hover:hover:translate-x-[-80%] transition-all duration-300 pointer-events-none">
-              {/* Display only if not loading, no error, and stargazers exist */}
-              {!isLoadingStars &&
-                !starsError &&
-                recent_stargazers &&
-                recent_stargazers.length > 0 && (
-                  <>
-                    <span className="text-xs text-emerald-400 cursor-pointer px-2 py-1 rounded whitespace-nowrap mr-1">
-                      Thank you!
-                    </span>
-                    <div className="flex space-x-[-10px]">
-                      {recent_stargazers.slice(0, 5).map((stargazer, index) => (
-                        <a
-                          key={stargazer.login}
-                          href={`https://github.com/${stargazer.login}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          title={stargazer.login}
-                          className="block w-6 h-6 rounded-full overflow-hidden border border-gray-600 hover:scale-110 transition-transform duration-200 pointer-events-auto"
-                          style={{ zIndex: 3 - index }}
-                        >
-                          <img
-                            src={stargazer.avatar_url}
-                            alt={`${stargazer.login} avatar`}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                          />
-                        </a>
-                      ))}
-                    </div>
-                  </>
-                )}
-            </div>
+            {/* Stargazer Avatars Container - Only show on non-mobile */}
+            {!isMobile && (
+              <div className="absolute left-0 top-1/2 -translate-x-full -translate-y-1/2 flex items-center opacity-0 group-hover:opacity-100 group-hover:hover:translate-x-[-80%] transition-all duration-300 pointer-events-none">
+                {/* Display only if not loading, no error, and stargazers exist */}
+                {!isLoadingStars &&
+                  !starsError &&
+                  recent_stargazers &&
+                  recent_stargazers.length > 0 && (
+                    <>
+                      <span className="text-xs text-emerald-400 cursor-pointer px-2 py-1 rounded whitespace-nowrap mr-1">
+                        Thank you!
+                      </span>
+                      <div className="flex space-x-[-10px]">
+                        {recent_stargazers
+                          .slice(0, 5)
+                          .map((stargazer, index) => (
+                            <a
+                              key={stargazer.login}
+                              href={`https://github.com/${stargazer.login}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title={stargazer.login}
+                              className="block w-6 h-6 rounded-full overflow-hidden border border-gray-600 hover:scale-110 transition-transform duration-200 pointer-events-auto"
+                              style={{ zIndex: 3 - index }}
+                            >
+                              <img
+                                src={stargazer.avatar_url}
+                                alt={`${stargazer.login} avatar`}
+                                className="w-full h-full object-cover"
+                                loading="lazy"
+                              />
+                            </a>
+                          ))}
+                      </div>
+                    </>
+                  )}
+              </div>
+            )}
 
             <div className="flex items-center ml-2 font-medium text-sm">
               <span className="">
