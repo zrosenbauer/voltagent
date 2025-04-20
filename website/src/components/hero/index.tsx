@@ -3,12 +3,9 @@ import { useState, useEffect, useRef } from "react";
 import { ChevronRightIcon } from "@heroicons/react/24/outline";
 import { LineShadowText } from "../magicui/line-shadow-text";
 import { AgentsAnimation } from "../agents-animation";
+import { useLocation } from "@docusaurus/router";
 
 export function Hero() {
-  const {
-    siteConfig: { customFields },
-  } = useDocusaurusContext();
-
   const [isVisible, setIsVisible] = useState(false);
   const [commandText, setCommandText] = useState(
     "npm create voltagent-app@latest",
@@ -31,7 +28,7 @@ export function Hero() {
   }, []);
 
   const handleGetStarted = () => {
-    window.location.href = "/docs/";
+    window.location.href = "https://voltagent.dev/docs/";
   };
 
   const handleCommandClick = async () => {
