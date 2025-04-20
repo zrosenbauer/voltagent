@@ -4,6 +4,7 @@ import { ChevronRightIcon } from "@heroicons/react/24/outline";
 import { LineShadowText } from "../magicui/line-shadow-text";
 import { AgentsAnimation } from "../agents-animation";
 import { useLocation } from "@docusaurus/router";
+import Link from "@docusaurus/Link";
 
 export function Hero() {
   const [isVisible, setIsVisible] = useState(false);
@@ -26,10 +27,6 @@ export function Hero() {
   useEffect(() => {
     setIsVisible(true);
   }, []);
-
-  const handleGetStarted = () => {
-    window.location.href = "https://voltagent.dev/docs/";
-  };
 
   const handleCommandClick = async () => {
     if (isTyping) return;
@@ -193,13 +190,13 @@ export function Hero() {
                 : "opacity-0 translate-y-4"
             }`}
           >
-            <button
-              onClick={handleGetStarted}
-              className="w-full sm:w-auto px-4 py-3 font-bold landing-sm:text-lg border-none landing-xs:text-md font-mono backdrop-blur-sm text-main-emerald cursor-pointer bg-emerald-400/10 text-emerald-400 border border-emerald-400/20 rounded-md transition duration-300 flex items-center outline-none  justify-center sm:justify-start gap-2 hover:bg-[#0e2c24]"
+            <Link
+              to="/docs/"
+              className="w-full sm:w-auto px-4 py-3 font-bold landing-sm:text-lg border-none landing-xs:text-md font-mono backdrop-blur-sm text-main-emerald cursor-pointer bg-emerald-400/10 text-emerald-400 border border-emerald-400/20 rounded-md transition duration-300 flex items-center outline-none  justify-center sm:justify-start gap-2 hover:bg-[#0e2c24] no-underline"
             >
               <ChevronRightIcon className="landing-xs:w-4 landing-xs:h-4 landing-md:w-6 landing-md:h-6" />
               Get Started
-            </button>
+            </Link>
 
             <div
               onClick={handleCommandClick}
