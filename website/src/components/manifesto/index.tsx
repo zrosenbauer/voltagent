@@ -53,7 +53,6 @@ export function Manifesto() {
       {/* Main Content */}
       <div className="flex flex-col space-y-4 max-w-4xl">
         <p className="text-[#dcdcdc] leading-relaxed">
-          We didn't start VoltAgent in a big office or with lots of funding.
           We're developers, like you, and we started this project based on our
           own experiences. We've built over 15 open-source projects before this,
           and each one taught us something new. Our biggest project, Refine,
