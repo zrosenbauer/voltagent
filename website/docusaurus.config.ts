@@ -137,9 +137,9 @@ const config: Config = {
       copyright: ` `,
     },
     algolia: {
-      appId: "test",
-      apiKey: "test",
-      indexName: "test",
+      appId: "C1TWP51DBB",
+      apiKey: "80f0ff7c295210b58b46e0623e09654c",
+      indexName: "web",
       contextualSearch: true,
       searchParameters: {
         attributesToHighlight: ["hierarchy.lvl0", "hierarchy"],
