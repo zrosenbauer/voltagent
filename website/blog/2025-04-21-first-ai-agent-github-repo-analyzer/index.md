@@ -5,7 +5,7 @@ slug: building-first-agent-github-analyzer
 image_title: "Building Your First VoltAgent"
 tags: [example]
 image: https://cdn.voltagent.dev/2025-04-21-first-ai-agent-github-repo-analyzer/social.png
-authors: necaticozmen
+authors: necatiozmen
 ---
 
 import Tabs from '@theme/Tabs';
