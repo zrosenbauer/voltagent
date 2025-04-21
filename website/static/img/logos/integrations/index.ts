@@ -2,7 +2,7 @@ export * from "./ahref";
 export * from "./airtable";
 export * from "./anthropic";
 export * from "./asana";
-export * from "./cohore";
+export * from "./cohere";
 export * from "./dropbox";
 export * from "./figma";
 export * from "./gmail";

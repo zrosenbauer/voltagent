@@ -11,7 +11,7 @@ import {
 } from "@heroicons/react/24/outline";
 
 import {
-  CohoreLogo,
+  CohereLogo,
   PineconeLogo,
   PostgresLogo,
   VoyageLogo,
@@ -336,9 +336,9 @@ export function RagExample({ isVisible }: WorkflowCodeExampleProps) {
                         </div>
                       </div>
                       <div className="relative group cursor-pointer">
-                        <CohoreLogo className="w-4 h-4" />
+                        <CohereLogo className="w-4 h-4" />
                         <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 bottom-full mb-2 transform bg-gray-800 text-amber-500 text-xs px-2 py-1 rounded-md whitespace-nowrap shadow-lg border border-gray-700">
-                          Cohore
+                          Cohere
                         </div>
                       </div>
                       <div className="relative group cursor-pointer">
@@ -437,9 +437,9 @@ export function RagExample({ isVisible }: WorkflowCodeExampleProps) {
                         </div>
                       </div>
                       <div className="relative group cursor-pointer">
-                        <CohoreLogo className="w-4 h-4 text-orange-400" />
+                        <CohereLogo className="w-4 h-4 text-orange-400" />
                         <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 bottom-full mb-2 transform bg-gray-800 text-amber-500 text-xs px-2 py-1 rounded-md whitespace-nowrap shadow-lg border border-gray-700">
-                          Cohore
+                          Cohere
                         </div>
                       </div>
                       <div className="relative group cursor-pointer ">

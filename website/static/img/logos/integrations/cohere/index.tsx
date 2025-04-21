@@ -1,6 +1,6 @@
 import React from "react";
 
-export const CohoreLogo = ({ className }: { className?: string }) => (
+export const CohereLogo = ({ className }: { className?: string }) => (
   <svg
     version="1.1"
     id="Layer_1"
