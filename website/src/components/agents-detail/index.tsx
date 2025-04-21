@@ -50,7 +50,7 @@ export function AgentsDetail() {
               {/* Feature 4 - Tools */}
               <div className="relative">
                 <div
-                  className={`landing-xs:p-3 landing-md:p-4 rounded-lg ${
+                  className={`landing-xs:p-3  rounded-lg ${
                     selectedFeature === "tools"
                       ? "border border-solid border-[#00d992]/50 bg-white/10"
                       : "border border-solid border-white/10 hover:border-[#00d992]/50 hover:bg-white/10"
@@ -99,7 +99,7 @@ export function AgentsDetail() {
               {/* Feature 3 - Prompt */}
               <div className="relative">
                 <div
-                  className={`landing-xs:p-3 landing-md:p-4 rounded-lg ${
+                  className={`landing-xs:p-3  rounded-lg ${
                     selectedFeature === "prompt"
                       ? "border border-solid border-[#00d992]/50 bg-white/10"
                       : "border border-solid border-white/10 hover:border-[#00d992]/50 hover:bg-white/10"
