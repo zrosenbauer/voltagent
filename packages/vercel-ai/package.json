@@ -1,12 +1,16 @@
 {
   "name": "@voltagent/vercel-ai",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "VoltAgent Vercel AI - Vercel AI provider integration for VoltAgent",
   "license": "MIT",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
-  "files": ["dist", "src", "dist/*.map"],
+  "files": [
+    "dist",
+    "src",
+    "dist/*.map"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -15,7 +19,7 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "^1.3.6",
-    "@voltagent/core": "^0.1.1",
+    "@voltagent/core": "^0.1.3",
     "ai": "^4.2.11",
     "zod": "^3.22.4"
   },
