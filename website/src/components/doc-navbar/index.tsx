@@ -8,9 +8,16 @@ import { GitHubLogo } from "../../../static/img/logos/github";
 import { BoltIcon } from "@heroicons/react/24/solid";
 import SearchBar from "@theme/SearchBar";
 
+import NavbarMobileSidebarSecondaryMenu from "@theme/Navbar/MobileSidebar/SecondaryMenu";
+import { cn } from "../../utils";
+
 export default function DocNavbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+
+  React.useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location.pathname]);
 
   const isActive = (path: string) => {
     const currentPath = location.pathname.endsWith("/")
@@ -103,24 +110,28 @@ export default function DocNavbar() {
 
       {isMenuOpen && (
         <div className={styles.mobileMenu}>
-          <div className={styles.versionBadgeMobile}>v0.1.0</div>
-          <Link
-            to="/docs/"
-            className={`${styles.mobileNavLink} ${
-              isActive("/docs/") ? styles.active : ""
-            }`}
-            onClick={() => setIsMenuOpen(false)}
-          >
-            Documentation
-          </Link>
-          <Link
-            to="/docs/"
-            className={`${styles.navLink} ${
-              isActive("/docs/") ? styles.active : ""
-            }`}
-          >
-            Changelog
-          </Link>
+          <NavbarMobileSidebarSecondaryMenu />
+          <div className={cn("h-px", "bg-gray-600/50", "w-full")} />
+          <div className={cn("flex", "flex-col", "items-start", "gap-4")}>
+            <div className={styles.versionBadgeMobile}>v0.1.0</div>
+            <Link
+              to="/docs/"
+              className={`${styles.mobileNavLink} ${
+                isActive("/docs/") ? styles.active : ""
+              }`}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Documentation
+            </Link>
+            <Link
+              to="/docs/"
+              className={`${styles.navLink} ${
+                isActive("/docs/") ? styles.active : ""
+              }`}
+            >
+              Changelog
+            </Link>
+          </div>
         </div>
       )}
     </>
