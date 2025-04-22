@@ -16,7 +16,6 @@ const fileManager = {
   },
 
   readFile: async (filePath: string): Promise<string> => {
-    console.log("[file-manager.ts] readFile - filePath:", filePath);
     return fs.readFile(filePath, "utf8");
   },
 
