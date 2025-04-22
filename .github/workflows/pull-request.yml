@@ -46,8 +46,10 @@ jobs:
         with:
           node-version: 20
           cache: "pnpm"
-      - name: Install & Build
+      - name: Install
         run: pnpm install
+      - name: Build
+        run: pnpm build:all
       - name: Publint
         run: pnpm publint:all
       - name: Are The Types Wrong
