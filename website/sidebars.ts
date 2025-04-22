@@ -23,13 +23,22 @@ const sidebars: SidebarsConfig = {
       items: [
         "agents/overview",
         "agents/tools",
-        "agents/memory",
         "agents/retriever",
         "agents/mcp",
         "agents/hooks",
         "agents/providers",
         "agents/subagents",
         "agents/voice",
+      ],
+    },
+    {
+      type: "category",
+      label: "Memory",
+      items: [
+        "agents/memory/overview",
+        "agents/memory/libsql",
+        "agents/memory/supabase",
+        "agents/memory/in-memory",
       ],
     },
     {

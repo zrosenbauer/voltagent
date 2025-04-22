@@ -8,11 +8,7 @@
     "create-voltagent": "dist/index.js",
     "create-voltagent-app": "dist/index.js"
   },
-  "files": [
-    "dist",
-    "src",
-    "templates"
-  ],
+  "files": ["dist", "src", "templates"],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
