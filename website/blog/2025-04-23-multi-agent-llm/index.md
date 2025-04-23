@@ -1,9 +1,9 @@
 ---
-title: "Unlock Complex Tasks: My Guide to Multi-Agent LLM Systems"
-description: "Going beyond single LLMs. In this guide, I explain multi-agent systems, their benefits, and how VoltAgent simplifies building collaborative AI workflows with supervisor and subagents."
+title: Multi-Agent LLM Systems in 2025
+description: Go beyond single LLMs - Easily build multi-agent AI systems with VoltAgent.
 slug: multi-agent-llm
 tags: [multi-agent]
-image: https://cdn.voltagent.dev/blog/multi-agent-llm-systems/social.png # You can update this placeholder URL
+image: https://cdn.voltagent.dev/blog/multi-agent-llm-systems/social.png
 authors: omeraplak
 ---
 
