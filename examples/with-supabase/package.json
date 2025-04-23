@@ -1,17 +1,13 @@
 {
   "name": "voltagent-example-with-supabase",
   "private": true,
-  "keywords": [
-    "voltagent",
-    "ai",
-    "agent"
-  ],
+  "keywords": ["voltagent", "ai", "agent"],
   "license": "MIT",
   "author": "",
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "dev": "tsx watch --env-file=.env ./src -- --trace-warnings",
+    "dev": "tsx watch --env-file=.env ./src",
     "start": "node dist/index.js",
     "volt": "volt"
   },
