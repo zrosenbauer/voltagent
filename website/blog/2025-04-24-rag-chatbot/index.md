@@ -9,6 +9,7 @@ image: https://cdn.voltagent.dev/2025-04-24-rag-chatbot/social.png
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
+import RetrieverMethodHelper from '@site/src/components/blog-widgets/RetrieverMethodHelper';
 
 Chatbots have become incredibly useful, haven't they? From customer support to personal assistants, they handle conversations pretty well. But sometimes, standard chatbots hit a wall – their knowledge is limited to what they were trained on. What if you want your chatbot to answer questions based on specific documents, recent data, or a private knowledge base?
 
@@ -42,6 +43,8 @@ To add RAG capabilities to your agent, you essentially need to:
 2.  **Connect it to an Agent:** VoltAgent offers two main ways to do this, as detailed in the [Retriever documentation](/docs/agents/retriever):
     - **Direct Attachment (`agent.retriever`):** The retriever runs automatically _before every_ LLM call for that agent. Simple, ensures context is always fetched.
     - **As a Tool (`agent.tools`):** The LLM decides _when_ to call the retriever tool based on the conversation. More efficient and flexible, especially if retrieval isn't always needed.
+
+<RetrieverMethodHelper />
 
 For this tutorial, we'll use the **direct attachment** method for simplicity. Our agent will always try to fetch context from its small knowledge base before answering.
 
