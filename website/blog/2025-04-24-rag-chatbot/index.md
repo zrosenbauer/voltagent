@@ -1,6 +1,6 @@
 ---
 title: Building a RAG Chatbot with VoltAgent
-description: Learn how to enhance your chatbot with external knowledge using Retrieval-Augmented Generation (RAG) in VoltAgent.
+description: Build RAG chatbots with VoltAgent to use external knowledge.
 slug: rag-chatbot
 tags: [rag, tutorial]
 authors: necatiozmen
@@ -11,27 +11,41 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import RetrieverMethodHelper from '@site/src/components/blog-widgets/RetrieverMethodHelper';
 
-Chatbots have become incredibly useful, haven't they? From customer support to personal assistants, they handle conversations pretty well. But sometimes, standard chatbots hit a wall – their knowledge is limited to what they were trained on. What if you want your chatbot to answer questions based on specific documents, recent data, or a private knowledge base?
+## Introduction
+
+Chatbots have become incredibly useful, haven't they? From customer support to personal assistants, they handle conversations pretty well. But sometimes, standard chatbots hit a wall – their knowledge is limited to what they were trained on.
+
+What if you want your chatbot to answer questions based on specific documents, recent data, or a private knowledge base?
 
 That's where **Retrieval-Augmented Generation (RAG)** comes in.
 
 ![VoltAgent Console Chat Example](https://cdn.voltagent.dev/2025-04-24-rag-chatbot/rag-chatbot-voltagent-console.gif)
 
+Steps we'll cover:
+
+- [What RAG (Retrieval-Augmented Generation) is and why it's useful.](#what-is-rag-and-why-use-it)
+- [How VoltAgent's Retriever system facilitates RAG.](#voltagents-retriever-system)
+- [Setting up a VoltAgent project.](#setting-up-the-project)
+- [Implementing a custom `BaseRetriever` with a simple knowledge base.](#implementing-the-retriever-and-agent)
+- [Creating a VoltAgent `Agent` that uses the retriever directly.](#implementing-the-retriever-and-agent)
+- [Running and testing the RAG chatbot using the VoltAgent Console.](#running-the-agent)
+
 ## What is RAG, and Why Use It?
 
 At its core, RAG is a technique that helps Large Language Models (LLMs) like the ones powering chatbots become smarter by giving them access to external information _before_ they generate a response.
 
-Think of it like this:
+:::info Think of it like this:
 
-1.  **Retrieval:** When you ask a RAG-enabled chatbot a question, it first _retrieves_ relevant snippets of information from a predefined data source (like documents, databases, or websites).
-2.  **Augmentation:** This retrieved information (the "context") is then _added_ to your original question.
-3.  **Generation:** Finally, the LLM receives the combined prompt (your question + the retrieved context) and _generates_ an answer that's grounded in that specific information.
+- **Retrieval:** When you ask a RAG-enabled chatbot a question, it first _retrieves_ relevant snippets of information from a predefined data source (like documents, databases, or websites).
+- **Augmentation:** This retrieved information (the "context") is then _added_ to your original question.
+- **Generation:** Finally, the LLM receives the combined prompt (your question + the retrieved context) and _generates_ an answer that's grounded in that specific information.
+  :::
 
 The result? Chatbots that can provide more accurate, up-to-date, and contextually relevant answers, going beyond their built-in knowledge. I find this incredibly powerful for building bots that need to know about specific product documentation, internal company policies, or recent news.
 
 ## Introducing VoltAgent
 
-Before we dive into building, let me briefly mention **VoltAgent**. It's a TypeScript framework I've been working with that makes building sophisticated AI agents (like our RAG chatbot) much simpler. It handles a lot of the boilerplate, letting me focus on the core logic of my agents, including how they retrieve and use information.
+Before we dive into building, let me briefly mention [**VoltAgent**](https://github.com/VoltAgent/voltagent). It's a TypeScript framework I've been working with that makes building sophisticated AI agents (like our RAG chatbot) much simpler. It handles a lot of the boilerplate, letting me focus on the core logic of my agents, including how they retrieve and use information.
 
 ## VoltAgent's Retriever System
 
@@ -44,11 +58,13 @@ To add RAG capabilities to your agent, you essentially need to:
     - **Direct Attachment (`agent.retriever`):** The retriever runs automatically _before every_ LLM call for that agent. Simple, ensures context is always fetched.
     - **As a Tool (`agent.tools`):** The LLM decides _when_ to call the retriever tool based on the conversation. More efficient and flexible, especially if retrieval isn't always needed.
 
+<br/>
+
 <RetrieverMethodHelper />
 
 For this tutorial, we'll use the **direct attachment** method for simplicity. Our agent will always try to fetch context from its small knowledge base before answering.
 
-## Let's Build a Simple RAG Chatbot!
+## Let's Build a Simple RAG Chatbot
 
 Okay, theory's great, but let's get hands-on. I'll show you how I built a basic RAG chatbot using VoltAgent that answers questions based on a small, hardcoded set of facts about VoltAgent itself.
 
@@ -73,7 +89,7 @@ The CLI sets up a standard project structure for you:
 ```
 with-rag-chatbot/
 ├── src/
-│   └── index.ts       # Our main agent logic will go here
+│   └── index.ts     # Our main agent logic will go here
 ├── package.json     # Project dependencies
 ├── tsconfig.json    # TypeScript config
 ├── .gitignore       # Git ignore rules
@@ -187,63 +203,63 @@ new VoltAgent({
 
 Before running, you need an API key for your chosen LLM provider (like OpenAI).
 
-**Create `.env` file:** In the root of your `with-rag-chatbot` project folder, create a file named `.env`.
+1.  **Create `.env` file:** In the root of your `with-rag-chatbot` project folder, create a file named `.env`.
 
-**Add API Key:** Add your key like this:
-`bash title=".env"
-    OPENAI_API_KEY=your_openai_api_key_here
-    `
-(Replace `your_openai_api_key_here` with your actual key).
+2.  **Add API Key:** Add your key like this:
+    `bash title=".env"
+OPENAI_API_KEY=your_openai_api_key_here
+`
+    (Replace `your_openai_api_key_here` with your actual key).
 
-**Install Dependencies:** Open your terminal _inside_ the `with-rag-chatbot` directory and run:
-<Tabs>
-<TabItem value="npm" label="npm" default>
+3.  **Install Dependencies:** Open your terminal _inside_ the `with-rag-chatbot` directory and run:
+    <Tabs>
+    <TabItem value="npm" label="npm" default>
 
-    ```bash
-    npm install
-    ```
+        ```bash
+        npm install
+        ```
 
-      </TabItem>
-      <TabItem value="yarn" label="yarn">
+          </TabItem>
+          <TabItem value="yarn" label="yarn">
 
-    ```bash
-    yarn install
-    ```
+        ```bash
+        yarn install
+        ```
 
-      </TabItem>
-      <TabItem value="pnpm" label="pnpm">
+          </TabItem>
+          <TabItem value="pnpm" label="pnpm">
 
-    ```bash
-    pnpm install
-    ```
+        ```bash
+        pnpm install
+        ```
 
-      </TabItem>
-    </Tabs>
+          </TabItem>
+        </Tabs>
 
-**Start the Agent:** Run the development server:
-<Tabs>
-<TabItem value="npm" label="npm" default>
+4.  **Start the Agent:** Run the development server:
+    <Tabs>
+    <TabItem value="npm" label="npm" default>
 
-    ```bash
-    npm run dev
-    ```
+        ```bash
+        npm run dev
+        ```
 
-      </TabItem>
-      <TabItem value="yarn" label="yarn">
+          </TabItem>
+          <TabItem value="yarn" label="yarn">
 
-    ```bash
-    yarn dev
-    ```
+        ```bash
+        yarn dev
+        ```
 
-      </TabItem>
-      <TabItem value="pnpm" label="pnpm">
+          </TabItem>
+          <TabItem value="pnpm" label="pnpm">
 
-    ```bash
-    pnpm dev
-    ```
+        ```bash
+        pnpm dev
+        ```
 
-      </TabItem>
-    </Tabs>
+          </TabItem>
+        </Tabs>
 
 You should see the VoltAgent server startup message, including a link to the Developer Console:
 
@@ -279,5 +295,3 @@ Observe the responses. They should be directly based on the content from the `do
 As you can see, implementing a basic RAG system with VoltAgent is quite straightforward. By creating a custom `BaseRetriever` and attaching it to an `Agent`, I could quickly build a chatbot grounded in specific external knowledge.
 
 This simple example uses hardcoded data, but you could easily adapt the `KnowledgeBaseRetriever` to fetch data from a real database, API, or vector store for much more powerful applications. RAG opens up a lot of possibilities for creating smarter, more knowledgeable AI agents, and I think VoltAgent makes it significantly easier to get started.
-
-Happy building!

@@ -1,6 +1,6 @@
 import type React from "react";
 import { useState } from "react";
-import styles from "./styles.module.css"; // Assuming shared styles or create new ones
+import clsx from "clsx"; // Import clsx for conditional classes
 
 type Recommendation = {
   method: "Direct Attachment" | "Tool" | "Unsure";
@@ -91,48 +91,76 @@ const RetrieverMethodHelper: React.FC = () => {
   };
 
   return (
-    <div className={styles.widgetContainer}>
-      <h4>Help Me Choose: Retriever Method</h4>
+    <div className="border border-solid border-emerald-500 rounded-lg p-5 mb-6 bg-gray-800 shadow-lg">
+      <h4 className="mt-0 mb-6 text-lg font-semibold text-emerald-400 text-center">
+        Help Me Choose: Retriever Method
+      </h4>
 
       {/* Frequency Question */}
-      <div className={styles.questionBlock}>
-        <p className={styles.questionLabel}>
+      <div className="mb-6">
+        <p className="block mb-2 font-medium text-white text-sm">
           How often will your agent need the retrieved information?
         </p>
-        <div className={styles.radioGroup}>
+        <div className="flex flex-col gap-3">
           {frequencyOptions.map((option) => (
-            <label key={option.value} className={styles.radioOption}>
+            <label
+              key={option.value}
+              className={clsx(
+                "flex items-center cursor-pointer p-3 rounded-md border-solid border bg-gray-800 transition-colors duration-200 text-white",
+                "hover:border-emerald-400/50 hover:bg-gray-700", // Hover state
+                frequency === option.value
+                  ? "border-emerald-500 bg-emerald-900/30" // Checked state
+                  : "border-gray-700", // Default state
+              )}
+            >
               <input
                 type="radio"
                 name="frequency"
                 value={option.value}
                 checked={frequency === option.value}
                 onChange={() => handleFrequencyChange(option.value)}
-                className={styles.radioInput}
+                className="mr-3 accent-emerald-500" // Input specific styles
               />
-              <span className={styles.radioLabel}>{option.label}</span>
+              <span className="flex-grow text-sm">
+                {" "}
+                {/* Label text */}
+                {option.label}
+              </span>
             </label>
           ))}
         </div>
       </div>
 
       {/* Agent Decision Question */}
-      <div className={styles.questionBlock}>
-        <p className={styles.questionLabel}>
+      <div className="mb-6">
+        <p className="block mb-2 font-medium text-white text-sm">
           How important is it for the agent (LLM) to *decide* when to retrieve?
         </p>
-        <div className={styles.radioGroup}>
+        <div className="flex flex-col gap-3">
           {agentDecisionOptions.map((option) => (
-            <label key={option.value} className={styles.radioOption}>
+            <label
+              key={option.value}
+              className={clsx(
+                "flex items-center cursor-pointer p-3 rounded-md border-solid border bg-gray-800 transition-colors duration-200 text-white",
+                "hover:border-emerald-400/50 hover:bg-gray-700", // Hover state
+                agentDecision === option.value
+                  ? "border-emerald-500 bg-emerald-900/30" // Checked state
+                  : "border-gray-700", // Default state
+              )}
+            >
               <input
                 type="radio"
                 name="agentDecision"
                 value={option.value}
                 checked={agentDecision === option.value}
                 onChange={() => handleAgentDecisionChange(option.value)}
-                className={styles.radioInput}
+                className="mr-3 accent-emerald-500" // Input specific styles
               />
-              <span className={styles.radioLabel}>{option.label}</span>
+              <span className="flex-grow text-sm">
+                {" "}
+                {/* Label text */}
+                {option.label}
+              </span>
             </label>
           ))}
         </div>
@@ -141,18 +169,43 @@ const RetrieverMethodHelper: React.FC = () => {
       {/* Recommendation Box */}
       {recommendation && (
         <div
-          className={styles.recommendationBox}
-          data-recommendation-type={recommendation.method.toLowerCase()}
+          // Using similar styling as LlmChoiceHelper recommendation box
+          // Added a dynamic border color based on the recommendation type for subtle distinction
+          className={clsx(
+            "mt-6 p-4 rounded-md shadow-sm border",
+            recommendation.method === "Unsure"
+              ? "bg-yellow-900/60 border-yellow-500/50" // Yellow theme for unsure
+              : "bg-emerald-900/60 border-emerald-500/50", // Emerald theme for others
+          )}
         >
-          <h5>Recommendation: {recommendation.method}</h5>
-          <p>{recommendation.reasoning}</p>
+          <h5
+            className={clsx(
+              "mt-0 mb-2 text-base font-medium",
+              recommendation.method === "Unsure"
+                ? "text-yellow-400" // Yellow title for unsure
+                : "text-emerald-400", // Emerald title for others
+            )}
+          >
+            Recommendation: {recommendation.method}
+          </h5>
+          <p
+            className={clsx(
+              "mb-2 text-sm", // Slightly smaller text for reasoning
+              recommendation.method === "Unsure"
+                ? "text-yellow-100" // Lighter yellow text for unsure
+                : "text-emerald-100", // Lighter emerald text for others
+            )}
+          >
+            {recommendation.reasoning}
+          </p>
           {recommendation.method !== "Unsure" && (
-            <p>
+            <p className="text-sm text-emerald-100">
               Learn more in the{" "}
               <a
                 href="/docs/agents/retriever"
                 target="_blank"
                 rel="noopener noreferrer"
+                className="text-emerald-400 hover:underline" // Link styling
               >
                 Retriever Documentation
               </a>
