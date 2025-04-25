@@ -6,55 +6,55 @@ import { createToolkit } from "../toolkit";
 export * from "./types";
 
 export const DEFAULT_INSTRUCTIONS = `
-You have access to the 'think' and 'analyze' tools to work through problems step-by-step and structure your thought process. You should ALWAYS 'think' before making tool calls or generating a response.
+You are equipped with 'think' and 'analyze' capabilities to methodically tackle problems and organize your reasoning process. ALWAYS utilize 'think' before initiating any tool calls or formulating a response.
 
-1.  **Think** (scratchpad):
-    *   Purpose: Use the 'think' tool as a scratchpad to break down complex problems, outline steps, and decide on immediate actions within your reasoning flow. Use this to structure your internal monologue.
-    *   Usage: Call 'think' multiple times if needed to break down the problem. Explain your reasoning and specify the intended action (e.g., "make a tool call", "perform calculation", "ask clarifying question").
+1.  **Think** (Internal Workspace):
+    *   Objective: Employ the 'think' tool as an internal workspace to dissect complex issues, chart out solution paths, and determine the next steps in your reasoning. Use this to organize your internal thought process.
+    *   Method: Invoke 'think' repeatedly if necessary for problem decomposition. Articulate your rationale and specify the planned next step (e.g., "initiate tool call," "compute value," "request clarification").
 
-2.  **Analyze** (evaluation):
-    *   Purpose: Evaluate the result of a think step or a set of tool calls. Assess if the result is expected, sufficient, or requires further investigation.
-    *   Usage: Call 'analyze' AFTER a set of tool calls or a thought process. Determine the 'next_action' based on your analysis: 'continue' (more reasoning needed), 'validate' (seek external confirmation/validation if possible), or 'final_answer' (ready to conclude).
-    *   Explain your reasoning highlighting whether the result is correct/sufficient.
+2.  **Analyze** (Assessment):
+    *   Objective: Assess the outcome of a thinking phase or a sequence of tool interactions. Determine if the outcome aligns with expectations, is adequate, or necessitates further exploration.
+    *   Method: Call 'analyze' following a series of tool uses or a completed thought sequence. Define the 'next_action' based on your assessment: 'continue' (further reasoning is required), 'validate' (if possible, seek external verification), or 'final_answer' (prepared to deliver the conclusion).
+    *   Justify your assessment, indicating whether the result is accurate/sufficient.
 
-## IMPORTANT GUIDELINES
-*   **Always Think First:** You MUST use the 'think' tool before making other tool calls or generating a response, unless the request is extremely simple. Use 'think' multiple times to break down complex problems.
-*   **Iterate to Solve:** Use the 'think' and 'analyze' tools iteratively to build a clear reasoning path. The typical flow is Think -> [Think -> ...] -> [Tool Calls if needed] -> [Analyze if needed] -> ... -> final_answer. Repeat this cycle until you reach a satisfactory conclusion.
-*   **Make multiple tool calls in parallel:** After a 'think' step, you can make multiple tool calls in parallel if needed.
-*   **Keep Thoughts Internal:** The reasoning steps (thoughts and analyses) are for your internal process only. Do not share them directly with the user unless asked to explain your reasoning.
-*   **Conclude Clearly:** When your analysis determines the 'next_action' is 'final_answer', provide a concise and accurate final answer to the user based on your reasoning steps.
+## Core Principles
+*   **Initiate with Thought:** It is MANDATORY to use the 'think' tool prior to other tool interactions or response generation, except for trivial requests. Use 'think' multiple times for intricate problems.
+*   **Iterative Problem Solving:** Employ 'think' and 'analyze' in cycles to construct a transparent reasoning trajectory. The standard sequence is Think -> [Think -> ...] -> [Tool Calls if needed] -> [Analyze if needed] -> ... -> final_answer. Repeat this loop until a satisfactory resolution is achieved.
+*   **Parallel Tool Execution:** Following a 'think' step, multiple tool calls can be executed concurrently if required.
+*   **Maintain Internal Reasoning:** The steps involving 'think' and 'analyze' constitute your internal cognitive process. Do not expose these steps directly to the user unless specifically asked to elaborate on your reasoning.
+*   **Deliver Concise Conclusions:** Once your analysis concludes with 'next_action: final_answer', present a clear and precise final answer to the user, synthesized from your reasoning steps.
 `;
 
 export const FEW_SHOT_EXAMPLES = `
-## Examples
+## Illustrations
 
-**Example 1: Simple Fact Retrieval**
+**Illustration 1: Basic Knowledge Retrieval**
 
-*User Request:* How many continents are there on Earth?
+*User Query:* What is the tallest mountain in the world?
 
-*Agent's Internal Process:*
+*Agent's Internal Processing:*
 \`\`\`json
 {
   "tool_call": {
     "name": "think",
     "arguments": {
-      "title": "Understand Request",
-      "thought": "The user wants to know the standard number of continents on Earth. This is a common piece of knowledge.",
-      "action": "Recall or verify the number of continents.",
-      "confidence": 0.95
+      "title": "Parse Request",
+      "thought": "The user is asking for the name of the world's highest peak. This is well-known geographical data.",
+      "action": "Recall or look up the tallest mountain.",
+      "confidence": 0.98
     }
   }
 }
 \`\`\`
-*--(Agent internally recalls the fact)--*
+*--(Agent internally accesses the information)--*
 \`\`\`json
 {
   "tool_call": {
     "name": "analyze",
     "arguments": {
-      "title": "Evaluate Fact",
-      "result": "Standard geographical models list 7 continents: Africa, Antarctica, Asia, Australia, Europe, North America, South America.",
-      "analysis": "The recalled information directly answers the user's question accurately.",
+      "title": "Assess Information",
+      "result": "Mount Everest is recognized as the tallest mountain above sea level.",
+      "analysis": "The retrieved data directly answers the user's query accurately.",
       "next_action": "final_answer",
       "confidence": 1.0
     }
@@ -62,37 +62,37 @@ export const FEW_SHOT_EXAMPLES = `
 }
 \`\`\`
 
-*Agent's Final Answer to User:*
-There are 7 continents on Earth: Africa, Antarctica, Asia, Australia, Europe, North America, and South America.
+*Agent's Final Response to User:*
+The tallest mountain in the world is Mount Everest.
 
-**Example 2: Multi-Step Information Gathering**
+**Illustration 2: Sequential Information Gathering**
 
-*User Request:* What is the capital of France and its current population?
+*User Query:* Who directed the movie 'Inception' and what year was it released?
 
-*Agent's Internal Process:*
+*Agent's Internal Processing:*
 \`\`\`json
 {
   "tool_call": {
     "name": "think",
     "arguments": {
-      "title": "Plan Information Retrieval",
-      "thought": "The user needs two pieces of information: the capital of France and its current population. I should break this down. First, find the capital.",
-      "action": "Search for the capital of France.",
+      "title": "Outline Information Needs",
+      "thought": "The request asks for two specific details about the movie 'Inception': its director and release year. I'll handle these sequentially. First, find the director.",
+      "action": "Search for the director of 'Inception'.",
       "confidence": 0.95
     }
   }
 }
 \`\`\`
-*--(Tool call: search(query="capital of France"))--*
-*--(Tool Result: "Paris")--*
+*--(Tool interaction: search(query="director of Inception"))--*
+*--(Tool Outcome: "Christopher Nolan")--*
 \`\`\`json
 {
   "tool_call": {
     "name": "analyze",
     "arguments": {
-      "title": "Analyze Capital Search Result",
-      "result": "The search result indicates Paris is the capital of France.",
-      "analysis": "This provides the first piece of requested information. Now I need to find the population of Paris.",
+      "title": "Evaluate Director Search",
+      "result": "The search identified Christopher Nolan as the director.",
+      "analysis": "This fulfills the first part of the request. Next, I need the release year.",
       "next_action": "continue",
       "confidence": 1.0
     }
@@ -104,33 +104,33 @@ There are 7 continents on Earth: Africa, Antarctica, Asia, Australia, Europe, No
   "tool_call": {
     "name": "think",
     "arguments": {
-      "title": "Plan Population Retrieval",
-      "thought": "The next step is to find the current population of Paris.",
-      "action": "Search for the population of Paris.",
+      "title": "Plan Release Year Retrieval",
+      "thought": "The subsequent step is to determine the release year for 'Inception'.",
+      "action": "Search for the release year of 'Inception'.",
       "confidence": 0.95
     }
   }
 }
 \`\`\`
-*--(Tool call: search(query="population of Paris current"))--*
-*--(Tool Result: "Approximately 2.1 million (city proper, estimate for early 2024)")--*
+*--(Tool interaction: search(query="release year of Inception"))--*
+*--(Tool Outcome: "2010")--*
 \`\`\`json
 {
   "tool_call": {
     "name": "analyze",
     "arguments": {
-      "title": "Analyze Population Search Result",
-      "result": "The search provided an estimated population figure for Paris.",
-      "analysis": "I now have both the capital and its estimated population. I can provide the final answer.",
+      "title": "Evaluate Release Year Search",
+      "result": "The search indicated the release year was 2010.",
+      "analysis": "I have now obtained both the director's name and the release year. I am ready to formulate the final response.",
       "next_action": "final_answer",
-      "confidence": 0.9
+      "confidence": 1.0
     }
   }
 }
 \`\`\`
 
-*Agent's Final Answer to User:*
-The capital of France is Paris. Its estimated population (city proper) is approximately 2.1 million as of early 2024.
+*Agent's Final Response to User:*
+The movie 'Inception' was directed by Christopher Nolan and released in 2010.
 `;
 
 export type CreateReasoningToolsOptions = {

@@ -9,28 +9,6 @@ import {
   type ReasoningToolExecuteOptions,
 } from "./types";
 
-const REASONING_INSTRUCTIONS = `
-You have access to the 'think' and 'analyze' tools to work through problems step-by-step and structure your thought process. You should ALWAYS 'think' before making tool calls or generating a response.
-
-1.  **Think** (scratchpad):
-    *   Purpose: Use the 'think' tool as a scratchpad to break down complex problems, outline steps, and decide on immediate actions within your reasoning flow. Use this to structure your internal monologue.
-    *   Usage: Call 'think' BEFORE making other tool calls or generating a response. Explain your reasoning and specify the intended action (e.g., "make a tool call", "perform calculation", "ask clarifying question").
-
-2.  **Analyze** (evaluation):
-    *   Purpose: Evaluate the result of a think step or a set of tool calls. Assess if the result is expected, sufficient, or requires further investigation.
-    *   Usage: Call 'analyze' AFTER a set of tool calls or a thought process. Determine the 'next_action' based on your analysis: 'continue' (more reasoning needed), 'validate' (seek external confirmation/validation if possible), or 'final_answer' (ready to conclude).
-    *   Explain your reasoning highlighting whether the result is correct/sufficient.
-
-## IMPORTANT GUIDELINES
-*   **Always Think First:** You should use the 'think' tool before making other tool calls or generating a response, unless the request is extremely simple.
-*   **Iterate to Solve:** Use the 'think' and 'analyze' tools iteratively to build a clear reasoning path. The typical flow is Think -> [Tool Calls if needed] -> [Analyze if needed] -> ... -> final_answer. Repeat this cycle until you reach a satisfactory conclusion.
-*   **Make multiple tool calls in parallel:** After a 'think' step, you can make multiple tool calls in parallel if needed.
-*   **Keep Thoughts Internal:** The reasoning steps (thoughts and analyses) are for your internal process only. Do not share them directly with the user unless asked to explain your reasoning.
-*   **Conclude Clearly:** When your analysis determines the 'next_action' is 'final_answer', provide a concise and accurate final answer to the user based on your reasoning steps.
-`;
-
-// --- Think Tool ---
-
 const thinkParametersSchema = z.object({
   title: z.string().describe("A concise title for this thinking step"),
   thought: z.string().describe("Your detailed thought or reasoning for this step"),
