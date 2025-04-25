@@ -3,7 +3,7 @@ title: Building a Data-Aware Chatbot with VoltAgent and Peaka
 description: Learn how to integrate Peaka's powerful data access into your VoltAgent AI applications using the Model Context Protocol (MCP). Build data-aware chatbots easily.
 slug: data-aware-chatbot-voltagent-peaka
 tags: [mcp, tutorial]
-image: https://cdn.voltagent.dev/blog/peaka-mcp-voltagent/social.png # Placeholder - Update if needed
+image: https://cdn.voltagent.dev/2025-04-26-peaka-mcp-voltagent/social.png
 authors: omeraplak
 ---
 
