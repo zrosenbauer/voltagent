@@ -2,7 +2,7 @@
 "@voltagent/google-ai": major
 ---
 
-feat(google-ai): Add initial Google AI provider package
+feat(google-ai): Add initial Google AI provider package - #12
 
 Introduces the `@voltagent/google-ai` package to integrate Google's Generative AI capabilities directly into VoltAgent. This allows developers to leverage powerful models like Gemini within their agents.
 

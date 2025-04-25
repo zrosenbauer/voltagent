@@ -102,14 +102,10 @@ const agent = new Agent({
 });
 ```
 
-<details>
-<summary>Using with Vertex AI (Server-Side Only)</summary>
-
 Using the Google AI provider with Vertex AI has specific requirements:
 
-1.  **Server-Side Only:** It will only work in a server-side environment, not directly in the browser.
-2.  **Authentication:** Authentication must be handled using the [`google-auth-library`](https://www.npmjs.com/package/google-auth-library). You'll need to configure it with your service account credentials.
-3.  **SDK Limitations:** Be aware of potential ongoing issues with Vertex AI authentication in the official Google AI SDK ([link](https://github.com/googleapis/js-genai/issues/426), [link-2](https://github.com/googleapis/js-genai/issues/417)).
+1.  **Authentication:** Authentication must be handled using the [`google-auth-library`](https://www.npmjs.com/package/google-auth-library). You'll need to configure it with your service account credentials.
+2.  **SDK Limitations:** Be aware of potential ongoing issues with Vertex AI authentication in the official Google AI SDK ([link](https://github.com/googleapis/js-genai/issues/426), [link-2](https://github.com/googleapis/js-genai/issues/417)).
 
 ```typescript
 import { Agent } from "@voltagent/core";
@@ -140,7 +136,6 @@ const agentVertex = new Agent({
 });
 ```
 
-</details>
 <br/>
 
 **Choose `@voltagent/google-ai` when:** You specifically want to use Google's Gemini models via their dedicated SDK. It also supports Vertex AI configurations but only for server-side usage.
