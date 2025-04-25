@@ -125,7 +125,7 @@ importers:
         specifier: ^0.1.5
         version: link:../../packages/core
       '@voltagent/google-ai':
-        specifier: ^0.0.1
+        specifier: ^0.1.0
         version: link:../../packages/google-ai
       zod:
         specifier: ^3.24.2
