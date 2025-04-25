@@ -1,5 +1,5 @@
 ---
-"@voltagent/core": minor
+"@voltagent/core": patch
 ---
 
 ## Introducing Toolkits for Better Tool Management

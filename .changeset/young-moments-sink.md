@@ -1,5 +1,5 @@
 ---
-"@voltagent/core": minor
+"@voltagent/core": patch
 ---
 
 ## Introducing Reasoning Tools Helper
