@@ -1,5 +1,5 @@
 ---
-"@voltagent/google-ai": major
+"@voltagent/google-ai": minor
 ---
 
 feat(google-ai): Add initial Google AI provider package - #12
