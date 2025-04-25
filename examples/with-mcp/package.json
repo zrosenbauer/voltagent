@@ -1,5 +1,5 @@
 {
-  "name": "@voltagent/example-with-mcp",
+  "name": "voltagent-example-with-mcp",
   "version": "0.1.0",
   "private": true,
   "description": "VoltAgent example demonstrating MCP integration with a filesystem server.",

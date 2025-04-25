@@ -22,7 +22,8 @@ const mcp = new MCPConfiguration({
     description: "An assistant that can query Peaka's sample data.",
     llm: new VercelAIProvider(),
     model: openai("gpt-4o-mini"),
-    tools,
+    tools: [...tools],
+    markdown: true,
   });
 
   new VoltAgent({
