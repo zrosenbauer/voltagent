@@ -118,11 +118,9 @@ export class ToolManager {
     if (existingIndex !== -1) {
       // Replace the existing tool
       this.tools[existingIndex] = baseTool;
-      console.log(`[ToolManager] Replaced standalone tool: ${tool.name}`);
     } else {
       // Add the new tool
       this.tools.push(baseTool);
-      console.log(`[ToolManager] Added standalone tool: ${tool.name}`);
     }
     return true; // Always returns true on success (add or replace)
   }
