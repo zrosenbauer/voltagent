@@ -1,90 +1,53 @@
-# VoltAgent Example: With MCP (Filesystem)
+<div align="center">
+<a href="https://voltagent.dev/">
+<img width="1800" alt="435380213-b6253409-8741-462b-a346-834cd18565a9" src="https://github.com/user-attachments/assets/452a03e7-eeda-4394-9ee7-0ffbcf37245c" />
+</a>
 
-This example demonstrates how to integrate VoltAgent with an MCP (Model Context Protocol) server, specifically the `@modelcontextprotocol/server-filesystem` server, to allow an agent to interact with the local filesystem within a restricted directory.
+<br/>
+<br/>
 
-## Features
+<div align="center">
+    <a href="https://voltagent.dev">Home Page</a> |
+    <a href="https://voltagent.dev/docs/">Documentation</a> |
+    <a href="https://github.com/voltagent/voltagent/tree/main/examples">Examples</a> |
+    <a href="https://s.voltagent.dev/discord">Discord</a> |
+    <a href="https://voltagent.dev/blog/">Blog</a>
+</div>
+</div>
 
-- **MCP Integration:** Shows how to configure `MCPConfiguration` for a `stdio`-based server.
-- **Filesystem Tools:** The agent gains tools like `listFiles`, `readFile`, and `writeFile` provided by the MCP server.
-- **Restricted Access:** The MCP server is configured to only access files within the `./data` directory of this example project for security.
-- **Graceful Shutdown:** Includes proper handling to disconnect the MCP client when the agent process stops.
+<br/>
 
-## Prerequisites
+<div align="center">
+    <strong>VoltAgent is an open source TypeScript framework for building and orchestrating AI agents.</strong><br>
+Escape the limitations of no-code builders and the complexity of starting from scratch.
+    <br />
+    <br />
+</div>
 
-- Node.js (v18 or later recommended)
-- pnpm (or npm/yarn)
-- An OpenAI API key (or setup for another supported LLM provider)
+<div align="center">
+    
+[![npm version](https://img.shields.io/npm/v/@voltagent/core.svg)](https://www.npmjs.com/package/@voltagent/core)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.0-4baaaa.svg)](CODE_OF_CONDUCT.md)
+[![Discord](https://img.shields.io/discord/1361559153780195478.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://s.voltagent.dev/discord)
+[![Twitter Follow](https://img.shields.io/twitter/follow/voltagent_dev?style=social)](https://twitter.com/voltagent_dev)
+    
+</div>
 
-## Setup
+<br/>
 
-1.  **Clone the repository (if you haven't already):**
+<div align="center">
+<a href="https://voltagent.dev/">
+<img width="896" alt="VoltAgent Schema" src="https://github.com/user-attachments/assets/f0627868-6153-4f63-ba7f-bdfcc5dd603d" />
+</a>
 
-    ```bash
-    git clone https://github.com/voltagent/voltagent.git
-    cd voltagent/examples/with-mcp
-    ```
+</div>
 
-2.  **Install dependencies:**
+## VoltAgent: Build AI Agents Fast and Flexibly
 
-    ```bash
-    pnpm install
-    # or npm install / yarn install
-    ```
+VoltAgent is an open-source TypeScript framework for creating and managing AI agents. It provides modular components to build, customize, and scale agents with ease. From connecting to APIs and memory management to supporting multiple LLMs, VoltAgent simplifies the process of creating sophisticated AI systems. It enables fast development, maintains clean code, and offers flexibility to switch between models and tools without vendor lock-in.
 
-3.  **Create Environment File:**
-    Create a `.env` file in the `examples/with-mcp` directory:
-
-    ```env
-    # .env
-    OPENAI_API_KEY=your_openai_api_key_here
-    ```
-
-    Replace `your_openai_api_key_here` with your actual OpenAI API key. Adjust the variable if using a different LLM provider.
-
-4.  **Create Data Directory:**
-    The agent needs a directory to work with. Create it and add a sample file:
-    ```bash
-    mkdir data
-    echo "Hello from test file!" > data/test.txt
-    ```
-    _Note: The `.gitignore` file is configured to ignore this `data` directory._
-
-## Running the Agent
-
-Start the agent in development mode:
+## Try Example
 
 ```bash
-pnpm run dev
-# or npm run dev / yarn dev
+npm create voltagent-app@latest -- --example with-mcp
 ```
-
-You should see logs indicating the MCP connection and tool fetching, followed by the standard VoltAgent startup message:
-
-```
-[MCP Example] Connecting to MCP server and fetching tools...
-[MCP Example] Fetched 3 MCP tool(s) from filesystem server.
-══════════════════════════════════════════════════
-  VOLTAGENT SERVER STARTED SUCCESSFULLY
-══════════════════════════════════════════════════
-  ✓ HTTP Server: http://localhost:3141
-  Developer Console:    https://console.voltagent.dev
-══════════════════════════════════════════════════
-[VoltAgent] All packages are up to date
-```
-
-## Interacting with the Agent
-
-1.  Open the VoltAgent Developer Console: [`https://console.voltagent.dev`](https://console.voltagent.dev)
-2.  Find the agent named `filesystem-agent` (registered under the key `fs`).
-3.  Click on the agent name, then click the chat icon.
-4.  Try sending messages that require filesystem interaction within the `data` directory:
-    - `List files.`
-    - `What is in test.txt?`
-    - `Create a file named log.txt with the content "Agent was here".`
-    - `Read the file log.txt.`
-
-The agent should use the MCP tools to perform these actions.
-
-## Stopping the Agent
-
-Press `Ctrl+C` in the terminal where the agent is running. You should see logs indicating the MCP client is disconnecting gracefully.
