@@ -148,9 +148,9 @@ Implements the [groq-sdk](https://github.com/groq/groq-typescript) as a provider
 import { Agent } from "@voltagent/core";
 import { GroqProvider } from "@voltagent/groq-ai";
 
-// Instantiate the provider, optionally passing the API key to overwrite the default GROQ_API_KEY
+// Instantiate the provider, optionally passing the API key to overwrite the default process.env.GROQ_API_KEY
 const groqProvider = new GroqProvider({
-  //apiKey: process.env.GROQ_API_KEY,
+  apiKey: process.env.GROQ_API_KEY,
 });
 
 const agent = new Agent({

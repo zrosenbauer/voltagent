@@ -1,5 +1,5 @@
 ---
-"@voltagent/groq-ai": major
+"@voltagent/groq-ai": patch
 ---
 
 feat(groq-ai): initial implementation using groq-sdk
