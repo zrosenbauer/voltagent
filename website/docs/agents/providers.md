@@ -140,6 +140,31 @@ const agentVertex = new Agent({
 
 **Choose `@voltagent/google-ai` when:** You specifically want to use Google's Gemini models via their dedicated SDK. It also supports Vertex AI configurations but only for server-side usage.
 
+### `@voltagent/groq-ai` (Groq Provider)
+
+Implements the [groq-sdk](https://github.com/groq/groq-typescript) as a provider to allow inferencing [supported models](https://console.groq.com/docs/models).
+
+```ts
+import { Agent } from "@voltagent/core";
+import { GroqProvider } from "@voltagent/groq-ai";
+
+// Instantiate the provider, optionally passing the API key to overwrite the default GROQ_API_KEY
+const groqProvider = new GroqProvider({
+  //apiKey: process.env.GROQ_API_KEY,
+});
+
+const agent = new Agent({
+  name: "Groq Assistant",
+  description: "A helpful assistant using the groq-ai provider",
+  llm: groqProvider,
+  // Pass the model name as a string recognized by the target API
+  model: "meta-llama/llama-4-scout-17b-16e-instruct", //Example for Ollama
+  //See groq documentation for others
+});
+```
+
+**Choose `@voltagent/groq-ai` when:** You need to connect specifically to Groq API used for fast inferencing of supported models.
+
 ## The `model` Parameter
 
 When creating an `Agent`, the `model` parameter's value is interpreted _by the selected `llm` provider_. Each provider uses its `getModelIdentifier` method to process this value.
