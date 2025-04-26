@@ -17,7 +17,7 @@ Explore the [Docs](https://voltagent.dev/docs/) and join our [Discord community]
 
 # Changelog
 
-## 0.2.0
+## 0.1.7
 
 ### Minor Changes
 
