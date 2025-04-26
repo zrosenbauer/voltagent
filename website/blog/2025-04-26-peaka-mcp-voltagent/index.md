@@ -1,6 +1,6 @@
 ---
 title: Building a Data-Aware Chatbot with VoltAgent and Peaka
-description: Learn how to integrate Peaka's powerful data access into your VoltAgent AI applications using the Model Context Protocol (MCP). Build data-aware chatbots easily.
+description: Learn how to integrate Peaka's powerful data access into your VoltAgent AI applications using the Model Context Protocol (MCP).
 slug: data-aware-chatbot-voltagent-peaka
 tags: [mcp, tutorial]
 image: https://cdn.voltagent.dev/2025-04-26-peaka-mcp-voltagent/social.png
@@ -9,35 +9,42 @@ authors: omeraplak
 
 import GitHubExampleLink from '@site/src/components/blog-widgets/GitHubExampleLink';
 
-Hey everyone! So, I built this kinda neat thing the other day: an AI agent that can actually go and look up data. I got it working by mixing **VoltAgent** and **Peaka** together.
+## Introduction
+
+In this article, I'll demonstrate how we can implemented the Model Context Protocol (MCP) by integrating **VoltAgent** and **Peaka** to create an AI agent with data retrieval capabilities.
 
 ![Peaka MCP VoltAgent](https://cdn.voltagent.dev/2025-04-26-peaka-mcp-voltagent/peaka-demo.gif)
 
-In this post, I'll quickly cover:
-
-- [Wait, What's Peaka?](#wait-whats-peaka)
-- [And VoltAgent?](#and-voltagent)
-- [Making My Agent Talk to Peaka](#making-my-agent-talk-to-peaka)
-  - [1. Starting a New VoltAgent Project](#1-starting-a-new-voltagent-project)
-  - [2. Telling VoltAgent About Peaka (The MCP Bit)](#2-telling-voltagent-about-peaka-the-mcp-bit)
-  - [3. Running It and Asking Stuff](#3-running-it-and-asking-stuff)
-- [Conclusion](#conclusion)
+<GitHubExampleLink
+  repoUrl="https://github.com/VoltAgent/voltagent/tree/main/examples/with-peaka-mcp"
+  npmCommand="npm create voltagent-app@latest -- --example with-peaka-mcp"
+/>
 
 ## Wait, What's Peaka?
 
-Right, before I show you the code stuff, lemme tell you about [Peaka](https://www.peaka.com/). I just found them, but their idea is pretty simple: make it less annoying to work with data. Think of it like a data middleman. You hook up your databases, spreadsheets, whatever, to Peaka. Then you can ask it questions (using fancy SQL code or just regular English), and it pulls the info together from all those places for you.
+Right, before I show you the code stuff, let me tell you about [Peaka](https://www.peaka.com/).
+
+Their idea is pretty simple: make it less annoying to work with data. Think of it like a data middleman. You hook up your databases, spreadsheets, whatever, to Peaka. Then you can ask it questions (using fancy SQL code or just regular English), and it pulls the info together from all those places for you.
 
 Usually, connecting different data sources is a real pain and costs a lot. Peaka feels like a simpler option, especially if you're not a huge company or just don't want to mess with complicated data pipelines. They wanna be the easy button for getting data.
 
 ## And VoltAgent?
 
-Now, about VoltAgent. That's the framework _we_ built! If you haven't checked it out, it's our toolkit for putting together AI applications, especially things like chatbots and assistants. We provide the core engine (`@voltagent/core`) to get you started, and then you can add extra capabilities, like voice interaction (`@voltagent/voice`) or support for different LLMs (OpenAI, Google, etc.). Our goal with it is to handle some of the tricky plumbing, like managing conversation history or connecting to external tools, so you can focus more on what makes your agent unique.
+It's our toolkit for putting together AI powered applications. We provide the core engine (`@voltagent/core`) to get you started, and then you can add extra capabilities, like voice interaction (`@voltagent/voice`) or support for different LLMs (OpenAI, Google, etc.). VoltAgent handles the complex stuff (like history and tool connections) so you can focus on your agent's unique features.
 
-We designed VoltAgent to hit a nice sweet spot. It gives you more helpful structure than trying to build everything from raw AI libraries, but it offers a lot more freedom and customization than the simpler no-code platforms out there. We also built the [VoltAgent Console](https://console.voltagent.dev) a web interface that lets you monitor your agents, see exactly how they're working, and chat with them directly. We find it incredibly useful ourselves for debugging and testing!
+We designed VoltAgent to hit a nice sweet spot. It gives you more helpful structure than trying to build everything from raw AI libraries, but it offers a lot more freedom and customization than the simpler no-code platforms out there.
+
+:::tip
+We also built the [VoltAgent Console](https://console.voltagent.dev) a web interface that lets you monitor your agents, see exactly how they're working, and chat with them directly. We find it incredibly useful ourselves for debugging and testing!
+:::
 
 ## Making My Agent Talk to Peaka
 
-Okay, so my plan was: build a chatbot with VoltAgent that could answer questions by checking data in Peaka. To make these two talk, I used something called **MCP (Model Context Protocol)**. It sounds fancy, but it's basically just a standard way for different programs to give each other tasks. If you wanna know more, I wrote about [what MCP is over here](https://voltagent.dev/blog/what-is-mcp/). For this project, it lets VoltAgent tell Peaka, "Hey, go run this data query!"
+Okay, so my plan was: build a chatbot with VoltAgent that could answer questions by checking data in Peaka.
+
+To make these two talk, I used something called **MCP (Model Context Protocol)**. It sounds fancy, but it's basically just a standard way for different programs to give each other tasks. If you wanna know more, I wrote about [what MCP is over here](https://voltagent.dev/blog/what-is-mcp/).
+
+For this project, it lets VoltAgent tell Peaka, "Hey, go run this data query!"
 
 To follow along, you'll want to sign up for a free Peaka account first over at [https://www.peaka.com/](https://www.peaka.com/). For this example, I'm just using the sample data they provide, which you'll have access to once you sign up.
 
@@ -169,11 +176,6 @@ Here's the cool part of what goes on:
 It looks something like this:
 
 ![Peaka MCP VoltAgent](https://cdn.voltagent.dev/2025-04-26-peaka-mcp-voltagent/peaka-demo.gif)
-
-<GitHubExampleLink
-  repoUrl="https://github.com/VoltAgent/voltagent/tree/main/examples/with-peaka-mcp"
-  npmCommand="npm create voltagent-app@latest -- --example with-peaka-mcp"
-/>
 
 ## Conclusion
 
