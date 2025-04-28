@@ -107,15 +107,15 @@ export default function Navbar() {
               </div>
               <div className="absolute left-0 top-full mt-2 bg-[#0E1618] border border-solid border-gray-800 rounded-md shadow-xl  w-[250px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                 <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center  transition-colors duration-200 rounded-t-md border-solid border-r-0 border-t-0 border-b-0  border-l-2 border-transparent hover:border-emerald-400">
-                  <ServerIcon className="w-5 h-5 mr-4 text-[#00d992]" />
+                  <ServerIcon className="w-5 h-5 mr-3 text-[#00d992]" />
                   <span className="text-sm ">Deployment</span>
                 </div>
                 <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center  transition-colors border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-emerald-400">
-                  <CommandLineIcon className="w-5 h-5 mr-4 text-[#00d992]" />
+                  <CommandLineIcon className="w-5 h-5 mr-3 text-[#00d992]" />
                   <span className="text-sm ">AI App Generator</span>
                 </div>
                 <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center  transition-colors rounded-b-md duration-200 border-solid border-r-0 border-t-0 border-b-0  border-l-2 border-transparent hover:border-emerald-400">
-                  <ShoppingBagIcon className="w-5 h-5 mr-4 mb-1 text-[#00d992]" />
+                  <ShoppingBagIcon className="w-5 h-5 mr-3 mb-1 text-[#00d992]" />
                   <span className="text-sm ">AI Agent Marketplace</span>
                   {/*  <span className="px-2 py-1 text-xs font-semibold text-emerald-400 bg-emerald-400/10 border border-solid border-emerald-400/20 rounded-full">
                     Soon
