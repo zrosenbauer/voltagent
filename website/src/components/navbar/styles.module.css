@@ -55,11 +55,11 @@
 
 .navLink {
   text-decoration: none;
-  color: #dcdcdc;
+  color: #bdbdbd;
   font-size: 14px;
   font-weight: 600;
   transition: color 0.2s;
-  font-family: monospace;
+  font-family: "IBM Plex Mono", monospace;
 }
 
 .navLink:hover {
