@@ -59,7 +59,7 @@ export class MemoryManager {
     } else {
       // Create default memory if not provided or disabled
       this.memory = new LibSQLStorage({
-        url: "file:memory.db",
+        url: "file:.voltagent/memory.db",
         ...options,
       });
     }
