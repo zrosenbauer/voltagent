@@ -56,9 +56,10 @@
 .navLink {
   text-decoration: none;
   color: #dcdcdc;
-  font-size: 16px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 600;
   transition: color 0.2s;
+  font-family: monospace;
 }
 
 .navLink:hover {
