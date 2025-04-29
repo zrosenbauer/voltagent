@@ -152,7 +152,12 @@ const AgentCard = ({ agent, onSelectAgent }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="bg-black/20 border-solid border-[#1e293b]/40 rounded-lg overflow-hidden backdrop-filter backdrop-blur-sm hover:border-[#00d992]/40 hover:bg-black/30 transition-all duration-300 h-full cursor-pointer"
+      className="border-solid border-[#1e293b]/40 rounded-lg overflow-hidden hover:border-[#00d992]/40 transition-all duration-300 h-full cursor-pointer"
+      style={{
+        backdropFilter: "blur(4px)",
+        WebkitBackdropFilter: "blur(4px)",
+        backgroundColor: "rgba(58, 66, 89, 0.3)",
+      }}
       onClick={() => onSelectAgent(agent)}
     >
       <div className="p-4 flex flex-col h-full">
@@ -303,7 +308,14 @@ export const AgentList = ({ onSelectAgent }) => {
           {/* Agent cards grid */}
           <div className="flex-1">
             {filteredAgents.length === 0 ? (
-              <div className="text-center py-10 bg-black/20 border-solid border-[#1e293b]/40 rounded-lg">
+              <div
+                className="text-center py-10 border-solid border-[#1e293b]/40 rounded-lg"
+                style={{
+                  backdropFilter: "blur(4px)",
+                  WebkitBackdropFilter: "blur(4px)",
+                  backgroundColor: "rgba(58, 66, 89, 0.3)",
+                }}
+              >
                 <p className="text-gray-400">
                   No agents found matching your search.
                 </p>
