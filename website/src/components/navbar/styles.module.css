@@ -55,10 +55,11 @@
 
 .navLink {
   text-decoration: none;
-  color: #dcdcdc;
-  font-size: 16px;
-  font-weight: 500;
+  color: #bdbdbd;
+  font-size: 14px;
+  font-weight: 600;
   transition: color 0.2s;
+  font-family: "IBM Plex Mono", monospace;
 }
 
 .navLink:hover {
@@ -182,13 +183,14 @@
   top: 64px;
   left: 0;
   right: 0;
-  background-color: #0a1017;
-  padding: 20px;
+  background-color: #08121b;
+  padding: 32px 24px;
   border-bottom: 1px solid #1a2533;
   flex-direction: column;
-  gap: 16px;
+  gap: 24px;
   align-items: flex-start;
   width: 100%;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .mobileLogo {
@@ -201,9 +203,11 @@
 .mobileNavLink {
   text-decoration: none;
   color: #94a3b8;
-  font-size: 16px;
-  font-weight: 500;
-  padding: 8px 0;
+  color: #bdbdbd;
+  font-size: 14px;
+  font-weight: 600;
+  transition: color 0.2s;
+  font-family: "IBM Plex Mono", monospace;
   width: 100%;
   display: block;
 }
@@ -216,20 +220,28 @@
 .mobileButtons {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-top: 12px;
+  gap: 16px;
+  margin-top: 24px;
+  width: 100%;
 }
 
 .mobileLoginButton {
-  color: #94a3b8;
-  font-size: 15px;
+  color: #eaeaea;
+  font-size: 16px;
   font-weight: 500;
   text-decoration: none;
-  padding: 12px;
-  border-radius: 6px;
+  padding: 14px;
+  border-radius: 8px;
   text-align: center;
-  background-color: rgba(255, 255, 255, 0.05);
-  border: 1px solid #1a2533;
+  background-color: #0e1518;
+  border: 1px solid #1e2a33;
+  transition: all 0.2s ease;
+}
+
+.mobileLoginButton:hover {
+  background-color: #0e1518;
+  border-color: #00d992;
+  color: #00d992;
 }
 
 .mobileSignupButton {
