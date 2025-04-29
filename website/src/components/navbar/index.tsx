@@ -114,13 +114,29 @@ export default function Navbar() {
                   <CommandLineIcon className="w-5 h-5 mr-3 text-[#00d992]" />
                   <span className="text-sm ">AI App Generator</span>
                 </div>
-                <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center  transition-colors rounded-b-md duration-200 border-solid border-r-0 border-t-0 border-b-0  border-l-2 border-transparent hover:border-emerald-400">
-                  <ShoppingBagIcon className="w-5 h-5 mr-3 mb-1 text-[#00d992]" />
-                  <span className="text-sm ">AI Agent Marketplace</span>
-                  {/*  <span className="px-2 py-1 text-xs font-semibold text-emerald-400 bg-emerald-400/10 border border-solid border-emerald-400/20 rounded-full">
-                    Soon
-                  </span> */}
-                </div>
+                <Link to="/marketplace" className="no-underline">
+                  <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-emerald-400 rounded-b-md">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-5 h-5 mr-3 text-[#00d992]"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+                      />
+                    </svg>
+                    <span className="text-sm">Marketplace</span>
+                    <span className="ml-2 px-2 py-0.5 text-xs bg-yellow-100 text-yellow-800 rounded-full">
+                      Soon
+                    </span>
+                  </div>
+                </Link>
               </div>
             </div>
           </div>
@@ -291,10 +307,29 @@ export default function Navbar() {
                 <CommandLineIcon className="w-5 h-5 mr-4 text-[#00d992]" />
                 <span className="text-sm">AI App Generator</span>
               </div>
-              <div className="p-2 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors rounded-b-md duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
-                <ShoppingBagIcon className="w-5 h-5 mr-4 mb-1 text-[#00d992]" />
-                <span className="text-sm">AI Agent Marketplace</span>
-              </div>
+              <Link to="/marketplace" className="no-underline">
+                <div className="p-2 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-emerald-400">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="w-5 h-5 mr-4 text-[#00d992]"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+                    />
+                  </svg>
+                  <span className="text-sm">Marketplace</span>
+                  <span className="ml-2 px-2 py-0.5 text-xs bg-yellow-100 text-yellow-800 rounded-full">
+                    Soon
+                  </span>
+                </div>
+              </Link>
             </div>
           </div>
           <Link
