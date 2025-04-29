@@ -20,7 +20,6 @@ $ node your-app.js
   ══════════════════════════════════════════════════
     ✓ HTTP Server:  http://localhost:3141
     ✓ Swagger UI:   http://localhost:3141/ui
-    ✓ OpenAPI Spec: http://localhost:3141/doc
 
     Developer Console:    https://console.voltagent.dev
   ══════════════════════════════════════════════════
@@ -42,7 +41,7 @@ To make exploring and interacting with the API easier, we provide interactive do
 This is the recommended way to explore the API's capabilities.
 
 :::tip[Discoverability]
-Links to the Swagger UI (`/ui`) and the raw OpenAPI specification (`/doc`) are also conveniently available on the API server's root page (`/`) and printed in the console logs when the server starts.
+Links to the Swagger UI (`/ui`) is also conveniently available on the API server's root page (`/`) and printed in the console logs when the server starts.
 :::
 
 ## OpenAPI Specification

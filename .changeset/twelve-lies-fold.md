@@ -15,6 +15,6 @@ feat: Add OpenAPI (Swagger) Documentation for Core API - #64
 - Added `/ui` endpoint serving the interactive Swagger UI.
 - Improved API discoverability:
   - Added links to Swagger UI and OpenAPI Spec on the root (`/`) endpoint.
-  - Added links to Swagger UI and OpenAPI Spec in the server startup console logs.
+  - Added links to Swagger UI in the server startup console logs.
 - Refactored API schemas and route definitions into `api.routes.ts` for better organization.
 - Standardized generation options (like `userId`, `temperature`, `maxTokens`) in the API schema with descriptions, examples, and sensible defaults.

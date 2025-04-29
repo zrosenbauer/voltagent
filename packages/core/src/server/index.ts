@@ -84,9 +84,6 @@ const printServerStartup = (port: number, message: string) => {
   console.log(
     `${colors.green}  ✓ ${colors.bright}Swagger UI:   ${colors.reset}${colors.white}http://localhost:${port}/ui${colors.reset}`,
   );
-  console.log(
-    `${colors.green}  ✓ ${colors.bright}OpenAPI Spec: ${colors.reset}${colors.white}http://localhost:${port}/doc${colors.reset}`,
-  );
   console.log();
   console.log(
     `${colors.bright}${colors.yellow}  ${colors.bright}Developer Console:    ${colors.reset}${colors.white}https://console.voltagent.dev${colors.reset}`,

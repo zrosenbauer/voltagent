@@ -570,8 +570,6 @@ app.doc("/doc", {
 // Swagger UI endpoint
 app.get("/ui", swaggerUI({ url: "/doc" }));
 
-console.log("API routes registered. OpenAPI spec available at /doc, UI at /ui");
-
 export { app as default };
 
 // Create WebSocket server
