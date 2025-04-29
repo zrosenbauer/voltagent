@@ -77,7 +77,7 @@ export default function Navbar() {
                 >
                   <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 rounded-t-md border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
                     <ComputerDesktopIcon className="w-5 h-5 mr-3 text-[#00d992]" />
-                    <span className="text-sm">Console</span>
+                    <span className="text-sm">Developer Console</span>
                   </div>
                 </Link>
                 <div className="p-3 hover:bg-gray-800/50 text-[#DCDCDC] hover:text-emerald-400 flex items-center justify-between transition-colors border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-emerald-400">
@@ -267,7 +267,7 @@ export default function Navbar() {
               >
                 <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 rounded-t-md border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
                   <ComputerDesktopIcon className="w-5 h-5 mr-2 text-[#00d992]" />
-                  <span className="text-sm">Console</span>
+                  <span className="text-sm">Developer Console</span>
                 </div>
               </Link>
               <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center justify-between transition-colors border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-emerald-400">
@@ -338,7 +338,7 @@ export default function Navbar() {
               to="https://console.voltagent.dev/demo"
               className={styles.mobileLoginButton}
             >
-              Log in Developer Console
+              Log in to Developer Console
             </Link>
             <Link
               to="https://s.voltagent.dev/discord/"
