@@ -46,7 +46,7 @@ const RatingStars = ({ rating }) => {
   return (
     <div className="flex items-center gap-1">
       <BoltSolidIcon className="h-3 w-3 text-[#00d992]" />
-      <span className="text-xs text-gray-400">
+      <span className="text-sm text-gray-400">
         {rating.toFixed(1)}
         <span className="text-gray-500">/5</span>
       </span>
@@ -121,7 +121,7 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
                 backgroundColor: "rgba(58, 66, 89, 0.3)",
               }}
             >
-              <div className="flex items-center mb-2 justify-between ">
+              <div className="flex items-center mb-3 justify-between ">
                 <span className="text-[#00d992] text-2xl font-bold ">
                   {selectedAgent.name}
                 </span>
@@ -151,7 +151,7 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
                       </div>
                     )}
                   </div>
-                  <span className="text-sm text-gray-300">
+                  <span className="text-sm text-[#dcdcdc]">
                     <span className="text-gray-500">By</span>{" "}
                     <span className="font-medium">
                       {selectedAgent.creator.name}
@@ -163,12 +163,12 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
                 </div>
               </div>
 
-              <p className="text-gray-300 mb-6">
+              <p className="text-[#dcdcdc] mb-6">
                 {selectedAgent.longDescription}
               </p>
 
               {/* Try this agent section */}
-              <div className="border-t border-[#1e293b] pt-6">
+              <div className="border-t border-[#1e293b] ">
                 <div className="text-emerald-400 text-md font-semibold mb-4 flex items-center">
                   Try This Agent
                 </div>
@@ -182,10 +182,9 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
                         Run Locally
                       </span>
                     </div>
-                    <code className="flex items-center bg-[#202222] p-4 text-xs sm:text-sm text-gray-200 font-mono whitespace-pre rounded-md overflow-x-auto">
+                    <code className="flex items-center bg-black/20 border-[#1e293b] border-solid  p-4 text-sm sm:text-sm text-emerald-500 font-mono whitespace-pre rounded-md overflow-x-auto">
                       <span>
-                        npm create voltagent-app@latest -- --market
-                        linkedin-analyzer
+                        $ npx voltagent add username/linkedin-user-analyzer
                       </span>
                     </code>
                   </div>
@@ -194,60 +193,36 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
                   <div>
                     <div className="flex items-center mb-2">
                       <ComputerDesktopIcon className="w-3.5 h-3.5 mr-1.5 text-emerald-400" />
-                      <span className="text-sm text-emerald-400">Web UI</span>
+                      <span className="text-sm text-emerald-400">
+                        Run on Web
+                      </span>
                     </div>
-                    <div className="bg-[#202222] p-4 rounded-md">
+                    <div className="bg-black/20 border-[#1e293b]  p-4 rounded-md">
                       <div className="space-y-3">
                         <div className="relative">
                           <input
                             type="text"
                             placeholder="LinkedIn profile URL"
-                            className="w-full bg-[#202222] border border-gray-700 rounded-md px-3 py-2 text-sm text-gray-300 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                            className="w-full bg-black/20 border-[#1e293b]  border outline-none border-gray-700 rounded-md px-3 py-2 text-sm text-[#dcdcdc] focus:outline-none ring-1 ring-emerald-500"
                             readOnly
                           />
-                          <span className="absolute right-3 top-2 text-xs text-gray-500">
-                            Demo only
-                          </span>
                         </div>
-                        <button
-                          type="button"
-                          className="w-full px-3 py-2 bg-emerald-500 text-black font-medium rounded-md text-sm disabled:opacity-50"
-                          disabled
-                        >
-                          Analyze Profile
-                        </button>
-                        <div className="text-center text-xs text-gray-500 mt-2">
-                          This is a preview. Each analysis costs 2 credits.
+                        <div className="flex items-center ">
+                          <button
+                            type="button"
+                            className=" px-2 py-1  bg-emerald-400/10 text-emerald-400 border-solid border-emerald-400/20  font-medium rounded-md text-sm disabled:opacity-100"
+                            disabled
+                          >
+                            Analyze Profile
+                          </button>
+                          <div className="text-center ml-2 text-sm text-gray-500 mt-2">
+                            This is a preview. Each analysis costs 2 credits.
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            {/* Capabilities section */}
-            <div
-              className="border-solid border-[#1e293b]/40 rounded-lg p-6"
-              style={{
-                backdropFilter: "blur(4px)",
-                WebkitBackdropFilter: "blur(4px)",
-                backgroundColor: "rgba(58, 66, 89, 0.3)",
-              }}
-            >
-              <h2 className="text-gray-200 text-lg font-medium mb-4 flex items-center">
-                <CheckCircleIcon className="h-5 w-5 text-[#00d992] mr-2" />
-                Capabilities
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {selectedAgent.capabilities.map((capability) => (
-                  <div key={capability} className="flex items-center">
-                    <div className="mr-3 text-[#00d992]">
-                      <CheckCircleIcon className="h-5 w-5" />
-                    </div>
-                    <span className="text-gray-300">{capability}</span>
-                  </div>
-                ))}
               </div>
             </div>
 
@@ -270,94 +245,69 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
                 {/* <video src={selectedAgent.demoVideoUrl} controls className="w-full h-full"></video> */}
               </div>
             </div>
-
-            {/* Integration guide */}
-            <div
-              className="border-solid border-[#1e293b]/40 rounded-lg p-6"
-              style={{
-                backdropFilter: "blur(4px)",
-                WebkitBackdropFilter: "blur(4px)",
-                backgroundColor: "rgba(58, 66, 89, 0.3)",
-              }}
-            >
-              <h2 className="text-gray-200 text-lg font-medium mb-4 flex items-center">
-                <CodeBracketIcon className="h-5 w-5 text-[#00d992] mr-2" />
-                Integration Guide
-              </h2>
-              <div className="space-y-4">
-                <p className="text-gray-300">
-                  Integrate {selectedAgent.name} into your workflow by following
-                  these steps:
-                </p>
-                <ol className="list-decimal list-inside space-y-2 text-gray-300 ml-2">
-                  <li>
-                    Generate an API key from the VoltAgent dashboard or use your
-                    existing one
-                  </li>
-                  <li>Configure GitHub access permissions for the agent</li>
-                  <li>
-                    Set up webhooks for real-time notifications (optional)
-                  </li>
-                  <li>
-                    Use the provided API endpoints to manage repositories and
-                    PRs
-                  </li>
-                </ol>
-                <div className="mt-4 pt-4 border-t border-[#1e293b]">
-                  <h3 className="text-gray-200 font-medium mb-2">
-                    API Endpoint
-                  </h3>
-                  <div className="bg-[#191a1a] p-3 rounded-md font-mono text-sm text-gray-300">
-                    {selectedAgent.apiEndpoint}
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* Right column - Stats, reviews, etc. */}
           <div className="space-y-6">
             {/* Combined Usage Stats and Pricing card */}
             <div
-              className="border-solid border-[#1e293b]/40 rounded-lg p-6"
+              className="border-solid border-[#1e293b]/40 rounded-lg p-4"
               style={{
                 backdropFilter: "blur(4px)",
                 WebkitBackdropFilter: "blur(4px)",
                 backgroundColor: "rgba(58, 66, 89, 0.3)",
               }}
             >
-              <h2 className="text-gray-200 text-lg font-medium mb-4 flex items-center">
-                <ChartBarIcon className="h-5 w-5 text-[#00d992] mr-2" />
+              <h2 className="text-gray-200 text-base font-medium mb-3 flex items-center">
+                <ChartBarIcon className="h-4 w-4 text-[#00d992] mr-1.5" />
                 Usage Statistics & Pricing
               </h2>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-[#1e293b]">
-                  <span className="text-gray-400">Total usage</span>
-                  <span className="text-gray-300">
-                    {selectedAgent.usageStats}
+              <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-sm">
+                <span className="text-gray-400">Total usage</span>
+                <span className="text-[#dcdcdc] text-right">
+                  {selectedAgent.usageStats}
+                </span>
+
+                <span className="text-gray-400">Last used</span>
+                <span className="text-[#dcdcdc] text-right">
+                  {selectedAgent.lastUsed}
+                </span>
+
+                <span className="text-gray-400">Rating</span>
+                <div className="flex items-center justify-end">
+                  <BoltSolidIcon className="h-3 w-3 text-[#00d992] mr-1" />
+                  <span className="text-[#dcdcdc]">
+                    {selectedAgent.rating}/5
                   </span>
                 </div>
-                <div className="flex items-center justify-between pb-3 border-b border-[#1e293b]">
-                  <span className="text-gray-400">Last used</span>
-                  <span className="text-gray-300">
-                    {selectedAgent.lastUsed}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between pb-3 border-b border-[#1e293b]">
-                  <span className="text-gray-400">Average rating</span>
-                  <div className="flex items-center">
-                    <BoltSolidIcon className="h-4 w-4 text-[#00d992] mr-1" />
-                    <span className="text-gray-300">
-                      {selectedAgent.rating}/5
-                    </span>
+
+                <span className="text-gray-400">Price</span>
+                <span className="text-gray-200 font-medium text-right">
+                  {selectedAgent.price}
+                </span>
+              </div>
+            </div>
+
+            {/* Capabilities section */}
+            <div
+              className="border-solid border-[#1e293b]/40 rounded-lg p-4"
+              style={{
+                backdropFilter: "blur(4px)",
+                WebkitBackdropFilter: "blur(4px)",
+                backgroundColor: "rgba(58, 66, 89, 0.3)",
+              }}
+            >
+              <h2 className="text-gray-200 text-base font-medium mb-2 flex items-center">
+                <CheckCircleIcon className="h-4 w-4 text-[#00d992] mr-1.5" />
+                Capabilities
+              </h2>
+              <div className="grid grid-cols-1 gap-1.5">
+                {selectedAgent.capabilities.map((capability) => (
+                  <div key={capability} className="flex items-center text-sm">
+                    <div className="mr-1.5 text-[#00d992] flex-shrink-0">-</div>
+                    <span className="text-[#dcdcdc]">{capability}</span>
                   </div>
-                </div>
-                <div className="flex justify-between pb-3 border-b border-[#1e293b]">
-                  <span className="text-gray-400">Price</span>
-                  <span className="text-gray-200 font-medium">
-                    {selectedAgent.price}
-                  </span>
-                </div>
+                ))}
               </div>
             </div>
 
@@ -371,7 +321,7 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
               }}
             >
               <div className="mb-4">
-                <h2 className="text-gray-200 text-lg font-medium flex items-center">
+                <h2 className="text-gray-200 text-base font-medium flex items-center">
                   <ChatBubbleLeftRightIcon className="h-5 w-5 text-[#00d992] mr-2" />
                   User Reviews
                 </h2>
@@ -389,19 +339,19 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
                           alt={`${review.user.name}'s avatar`}
                           className="w-6 h-6 rounded-full border-solid border-[#1e293b] mr-2"
                         />
-                        <span className="text-sm font-medium text-gray-300">
+                        <span className="text-sm font-medium text-[#dcdcdc]">
                           {review.user.name}
                         </span>
                       </div>
                       <div className="flex items-center">
                         <BoltSolidIcon className="h-3 w-3 text-[#00d992] mr-1" />
-                        <span className="text-xs text-gray-400">
+                        <span className="text-sm text-gray-400">
                           {review.rating}
                         </span>
                       </div>
                     </div>
                     <p className="text-sm text-gray-400 mb-1">{review.text}</p>
-                    <div className="text-xs text-gray-500">{review.date}</div>
+                    <div className="text-sm text-gray-500">{review.date}</div>
                   </div>
                 ))}
               </div>

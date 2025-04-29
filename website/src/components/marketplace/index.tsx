@@ -99,9 +99,9 @@ export const Marketplace = () => {
             Preview Our Marketplace
           </h3>
           <div className="bg-black/30 p-4 rounded-xl border border-[#1e293b]/40 backdrop-filter backdrop-blur-sm">
-            {/*  <div className="mb-8">
+            <div className="mb-8">
               <AgentList onSelectAgent={handleSelectAgent} />
-            </div> */}
+            </div>
             <div>
               <AgentDetail agent={selectedAgent} />
             </div>
