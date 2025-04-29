@@ -112,7 +112,8 @@ const dummyAgents = [
   },
 ];
 
-// Categories for filter
+/* 
+// Categories for future implementation 
 const categories = [
   "All",
   "Support",
@@ -123,14 +124,9 @@ const categories = [
   "Marketing",
 ];
 
-const priceRanges = [
-  "All",
-  "Free",
-  "Dollar-based",
-  "Credit-based",
-  "Low cost",
-  "Premium",
-];
+// Price ranges for future implementation
+const priceRanges = ["All", "Free", "Dollar-based", "Credit-based", "Low cost", "Premium"];
+*/
 
 // Rating component
 const RatingStars = ({ rating }) => {
@@ -146,7 +142,7 @@ const RatingStars = ({ rating }) => {
 };
 
 // Agent Card Component
-const AgentCard = ({ agent, onSelectAgent }) => {
+const AgentCard = ({ agent, onSelectAgent = () => {} }) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -158,6 +154,7 @@ const AgentCard = ({ agent, onSelectAgent }) => {
         WebkitBackdropFilter: "blur(4px)",
         backgroundColor: "rgba(58, 66, 89, 0.3)",
       }}
+      // @ts-ignore - We're providing a default value
       onClick={() => onSelectAgent(agent)}
     >
       <div className="p-4 flex flex-col h-full">
@@ -237,54 +234,7 @@ const AgentCard = ({ agent, onSelectAgent }) => {
   );
 };
 
-// Checkbox Filter Component
-const FilterCheckbox = ({ label, checked, onChange }) => {
-  const inputId = `filter-${label.toLowerCase().replace(/\s+/g, "-")}`;
-
-  return (
-    <label
-      htmlFor={inputId}
-      className="flex items-center space-x-2 cursor-pointer group"
-    >
-      <input
-        id={inputId}
-        type="checkbox"
-        checked={checked}
-        onChange={onChange}
-        className="sr-only"
-      />
-      <div
-        className={`w-4 h-4 border rounded flex items-center justify-center transition-colors ${
-          checked
-            ? "bg-[#00d992] border-[#00d992]"
-            : "border-gray-600 group-hover:border-gray-400"
-        }`}
-      >
-        {checked && (
-          <svg
-            className="w-3 h-3 text-gray-900"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
-        )}
-      </div>
-      <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">
-        {label}
-      </span>
-    </label>
-  );
-};
-
-export const AgentList = ({ onSelectAgent }) => {
+export const AgentList = () => {
   // Remove filter states, only keep search
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -302,45 +252,43 @@ export const AgentList = ({ onSelectAgent }) => {
   });
 
   return (
-    <div className="py-8">
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-8">
-        <div className="flex flex-col gap-6">
-          {/* Agent cards grid */}
-          <div className="flex-1">
-            {filteredAgents.length === 0 ? (
-              <div
-                className="text-center py-10 border-solid border-[#1e293b]/40 rounded-lg"
-                style={{
-                  backdropFilter: "blur(4px)",
-                  WebkitBackdropFilter: "blur(4px)",
-                  backgroundColor: "rgba(58, 66, 89, 0.3)",
-                }}
+    <div className="py-8 px-3">
+      <div className="flex flex-col gap-6">
+        {/* Agent cards grid */}
+        <div className="flex-1">
+          {filteredAgents.length === 0 ? (
+            <div
+              className="text-center py-10 border-solid border-[#1e293b]/40 rounded-lg"
+              style={{
+                backdropFilter: "blur(4px)",
+                WebkitBackdropFilter: "blur(4px)",
+                backgroundColor: "rgba(58, 66, 89, 0.3)",
+              }}
+            >
+              <p className="text-gray-400">
+                No agents found matching your search.
+              </p>
+              <button
+                onClick={() => setSearchTerm("")}
+                type="button"
+                className="mt-4 px-4 py-2 text-sm text-[#00d992] hover:underline cursor-pointer inline-block"
               >
-                <p className="text-gray-400">
-                  No agents found matching your search.
-                </p>
+                Clear search
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 relative">
+              {filteredAgents.map((agent, index) => (
                 <div
-                  onClick={() => setSearchTerm("")}
-                  onKeyDown={(e) => e.key === "Enter" && setSearchTerm("")}
-                  tabIndex={0}
-                  role="button"
-                  className="mt-4 px-4 py-2 text-sm text-[#00d992] hover:underline cursor-pointer inline-block"
+                  key={agent.id}
+                  style={index >= 3 ? { filter: "blur(3px)" } : {}}
+                  className="relative"
                 >
-                  Clear search
+                  <AgentCard agent={agent} />
                 </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredAgents.map((agent) => (
-                  <AgentCard
-                    key={agent.id}
-                    agent={agent}
-                    onSelectAgent={onSelectAgent}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -3,107 +3,118 @@ import { motion } from "framer-motion";
 import Link from "@docusaurus/Link";
 import AgentList from "./agent-list";
 import AgentDetail from "./agent-detail";
-
-// Sample agent data for the first selection
-const firstAgent = {
-  id: 4,
-  name: "GitHub Manager",
-  rating: 4.8,
-  description: "Manage repositories and track pull requests.",
-  longDescription:
-    "GitHub Manager is a comprehensive solution for developers and teams who need to efficiently manage their GitHub repositories. It provides automated tracking of pull requests, issue monitoring, and repository analytics, all in a single intuitive interface. The agent connects directly to the GitHub API, ensuring real-time updates and accurate data.",
-  price: "$39/month",
-  usageStats: "42,103 code blocks generated",
-  lastUsed: "Just now",
-  category: "Development",
-  tags: ["github", "git", "version control"],
-  creator: {
-    name: "David Miller",
-    avatar: "https://randomuser.me/api/portraits/men/45.jpg",
-    verified: true,
-  },
-  capabilities: [
-    "Automated PR tracking and notifications",
-    "Repository analytics and insights",
-    "Issue management and prioritization",
-    "Code review assistance and suggestions",
-    "Integration with CI/CD pipelines",
-    "Custom workflow automation",
-  ],
-  apiEndpoint: "/api/agents/github-manager",
-  demoVideoUrl: "https://example.com/videos/github-manager-demo.mp4",
-};
+import { BoltIcon, SparklesIcon } from "@heroicons/react/24/solid";
+import {
+  MagnifyingGlassIcon,
+  AdjustmentsHorizontalIcon,
+  TagIcon,
+  CurrencyDollarIcon,
+  ChartBarIcon,
+  FunnelIcon,
+  ArrowPathIcon,
+  BoltIcon as BoltOutlineIcon,
+  PlusCircleIcon,
+} from "@heroicons/react/24/outline";
 
 export const Marketplace = () => {
-  const [selectedAgent, setSelectedAgent] = useState(firstAgent);
-
-  const handleSelectAgent = (agent) => {
-    setSelectedAgent(agent);
-  };
-
   return (
     <section className="relative py-20">
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 md:px-8">
-        {/*      <div className="max-w-3xl mx-auto">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+        <div className="text-center mb-8">
+          <div className="flex items-baseline justify-center">
+            <div className="flex mr-2 items-center border-2 border-solid border-[#00d992] rounded-full p-1">
+              <BoltIcon className="w-6 h-6 text-[#00d992]" />
+            </div>
+            <span className="text-4xl font-bold text-[#00d992]">voltagent</span>
+            <span className="ml-2 text-2xl font-medium text-gray-400">
+              Marketplace
+            </span>
+          </div>
+          <p className="mt-2 text-center text-gray-400 text-sm">
+            Share & Rent your VoltAgent-based AI Agents
+          </p>
+        </div>
+        <div className="max-w-7xl mx-auto mb-2">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             className="text-center mb-10"
           >
-            <h2 className="text-4xl font-bold mb-6 text-gray-300">
-              AI Agent Marketplace
-              <span className="inline-block ml-3 px-3 py-1 text-sm bg-[#f59e0b]/10 text-[#f59e0b] rounded-full border border-[#f59e0b]/30">
-                Coming Soon
-              </span>
-            </h2>
-            <p className="text-xl mb-8 text-gray-400">
-              We're building a community-driven marketplace for AI agents to foster innovation and
-              collaboration.
+            <p className="text-lg  text-gray-400">
+              The VoltAgent Marketplace is on its way, and we need your
+              feedback!
+            </p>
+            <p className="text-lg  text-gray-400">
+              Tell us how we can make it the useful hub for sharing,
+              discovering, and monetizing on VoltAgent-based AI agents.
             </p>
           </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="mb-12 bg-black/20 p-8 rounded-xl border border-[#1e293b]/40 backdrop-filter backdrop-blur-sm"
-          >
-            <h3 className="text-2xl font-bold mb-4 text-[#00d992]">Our Vision</h3>
-            <p className="mb-4 text-gray-300">
-              The VoltAgent Marketplace aims to be a hub where developers can share, discover, and
-              collaborate on specialized AI agents. We believe that a diverse ecosystem of
-              purpose-built agents will accelerate innovation and solve real-world problems more
-              effectively.
-            </p>
-            <p className="mb-4 text-gray-300">
-              By creating a community-driven marketplace, we want to:
-            </p>
-            <ul className="list-disc pl-6 mb-6 space-y-2 text-gray-400">
-              <li>Enable developers to monetize their custom agents</li>
-              <li>Provide users with access to specialized AI solutions</li>
-              <li>Foster collaboration between AI researchers and practitioners</li>
-              <li>Accelerate innovation in practical AI applications</li>
-            </ul>
-          </motion.div>
-        </div> */}
+        </div>
 
         {/* Preview of the Agent Marketplace UI */}
+        <div className="flex justify-center ">
+          <div className="inline-flex items-center rounded-md gap-2 rounded-b-none  px-3 py-3 bg-slate-400/10  border-b-0 border-solid border border-slate-400/20 shadow-md">
+            <PlusCircleIcon
+              className="w-5 h-5 text-emerald-400"
+              aria-hidden="true"
+            />
+            <span className="text-emerald-400 font-medium uppercase text-base tracking-wider mr-2">
+              IDEA
+            </span>
+            <span className="text-gray-200 text-base">
+              Imagine developers building AI agents that has real use cases and
+              listing them on the marketplace.
+            </span>
+          </div>
+        </div>
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="mb-16"
+          className="mb-16  "
         >
-          <h3 className="text-2xl font-bold mb-6 text-[#00d992] text-center">
-            Preview Our Marketplace
-          </h3>
-          <div className="bg-black/30 p-4 rounded-xl border border-[#1e293b]/40 backdrop-filter backdrop-blur-sm">
-            <div className="mb-8">
-              <AgentList onSelectAgent={handleSelectAgent} />
+          {/* First Preview Container - AgentList */}
+          {/* IDEA section */}
+
+          <div className="p-4 mb-24 rounded-md border border-solid border-white/10 backdrop-filter backdrop-blur-sm relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-[#00d992]/10 to-purple-500/10 rounded-md opacity-30 animate-pulse pointer-events-none" />
+            <div className="absolute top-0 left-0 bg-[#00d992] text-black text-xs py-1 px-3 rounded-tl-md font-medium">
+              PREVIEW
             </div>
-            <div>
-              <AgentDetail agent={selectedAgent} />
+
+            <div className="relative">
+              <AgentList />
+            </div>
+          </div>
+
+          {/* Second Preview Container - AgentDetail */}
+          {/* INTEGRATION section */}
+          <div className="flex justify-center  mt-4">
+            <div className="inline-flex items-center rounded-md gap-2 rounded-b-none  px-3 py-3 bg-slate-400/10  border-b-0 border-solid border border-slate-400/20 shadow-md">
+              <PlusCircleIcon
+                className="w-5 h-5 text-emerald-400"
+                aria-hidden="true"
+              />
+              <span className="text-emerald-400 font-medium uppercase text-base tracking-wider mr-2">
+                IDEA
+              </span>
+              <span className="text-gray-200 text-base">
+                Imagine, agents can be integrated to existing code bases with a
+                command or directly run on web.
+              </span>
+            </div>
+          </div>
+
+          <div className="p-4 mb-24 rounded-md border border-solid border-white/10 backdrop-filter backdrop-blur-sm relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-[#00d992]/10 to-purple-500/10 rounded-md opacity-30 animate-pulse pointer-events-none" />
+            <div className="absolute top-0 left-0 bg-[#00d992] text-black text-xs py-1 px-3 rounded-tl-md font-medium">
+              PREVIEW
+            </div>
+
+            <div className="relative">
+              <AgentDetail />
             </div>
           </div>
         </motion.div>

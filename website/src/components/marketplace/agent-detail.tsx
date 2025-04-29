@@ -90,20 +90,8 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
   };
 
   return (
-    <div className="py-8">
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 md:px-8">
-        {/* Back button */}
-        {onBack && (
-          <button
-            type="button"
-            onClick={onBack}
-            className="mb-6 flex items-center text-gray-400 hover:text-[#00d992] transition-colors"
-          >
-            <ArrowLeftIcon className="h-4 w-4 mr-2" />
-            <span>Back to Marketplace</span>
-          </button>
-        )}
-
+    <div className="py-8 ">
+      <div className="mx-auto px-4 ">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -114,7 +102,7 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
           <div className="lg:col-span-2 space-y-6">
             {/* Header section */}
             <div
-              className="border-solid border-[#1e293b]/40 rounded-lg p-6"
+              className="border-solid border-[#1e293b]/40 rounded-md p-6"
               style={{
                 backdropFilter: "blur(4px)",
                 WebkitBackdropFilter: "blur(4px)",
@@ -228,7 +216,7 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
 
             {/* Demo video section */}
             <div
-              className="border-solid border-[#1e293b]/40 rounded-lg p-6"
+              className="border-solid border-[#1e293b]/40 rounded-md p-6"
               style={{
                 backdropFilter: "blur(4px)",
                 WebkitBackdropFilter: "blur(4px)",
@@ -239,7 +227,7 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
                 <FilmIcon className="h-5 w-5 text-[#00d992] mr-2" />
                 Demo Video
               </h2>
-              <div className="relative aspect-video bg-black/40 rounded-lg overflow-hidden flex items-center justify-center">
+              <div className="relative aspect-video bg-black/40 rounded-md overflow-hidden flex items-center justify-center">
                 <div className="text-gray-500">Demo video placeholder</div>
                 {/* In a real implementation, you would embed a video here */}
                 {/* <video src={selectedAgent.demoVideoUrl} controls className="w-full h-full"></video> */}
@@ -251,7 +239,7 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
           <div className="space-y-6">
             {/* Combined Usage Stats and Pricing card */}
             <div
-              className="border-solid border-[#1e293b]/40 rounded-lg p-4"
+              className="border-solid border-[#1e293b]/40 rounded-md p-4"
               style={{
                 backdropFilter: "blur(4px)",
                 WebkitBackdropFilter: "blur(4px)",
@@ -290,7 +278,7 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
 
             {/* Capabilities section */}
             <div
-              className="border-solid border-[#1e293b]/40 rounded-lg p-4"
+              className="border-solid border-[#1e293b]/40 rounded-md p-4"
               style={{
                 backdropFilter: "blur(4px)",
                 WebkitBackdropFilter: "blur(4px)",
@@ -313,7 +301,7 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
 
             {/* Reviews section */}
             <div
-              className="border-solid border-[#1e293b]/40 rounded-lg p-6"
+              className="border-solid border-[#1e293b]/40 rounded-md p-6"
               style={{
                 backdropFilter: "blur(4px)",
                 WebkitBackdropFilter: "blur(4px)",
