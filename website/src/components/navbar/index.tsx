@@ -255,7 +255,9 @@ export default function Navbar() {
                 }
               }}
             >
-              <span>PRODUCTS</span>
+              <span className="font-['IBM_Plex_Mono'] font-semibold">
+                PRODUCTS
+              </span>
               <ChevronDownIcon className="w-5 h-5 ml-1" />
             </button>
             <div id="mobile-products-dropdown" className="hidden  mt-4 mb-2 ">
@@ -277,6 +279,16 @@ export default function Navbar() {
                   Soon
                 </span>
               </div>
+
+              <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center justify-between transition-colors border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-emerald-400 rounded-b-md">
+                <div className="flex items-center">
+                  <ShoppingCartIcon className="w-5 h-5 mr-2 text-[#00d992]" />
+                  <span className="text-sm">Marketplace</span>
+                </div>
+                <span className="ml-2 px-2 py-0.5 text-xs bg-emerald-400/10 text-emerald-400 rounded-full">
+                  Soon
+                </span>
+              </div>
               <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center justify-between transition-colors border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-emerald-400">
                 <div className="flex items-center">
                   <CommandLineIcon className="w-5 h-5 mr-2 text-[#00d992]" />
@@ -286,17 +298,6 @@ export default function Navbar() {
                   Soon
                 </span>
               </div>
-              <Link to="/marketplace" className="no-underline">
-                <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center justify-between transition-colors border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-emerald-400 rounded-b-md">
-                  <div className="flex items-center">
-                    <ShoppingCartIcon className="w-5 h-5 mr-2 text-[#00d992]" />
-                    <span className="text-sm">Marketplace</span>
-                  </div>
-                  <span className="ml-2 px-2 py-0.5 text-xs bg-emerald-400/10 text-emerald-400 rounded-full">
-                    Soon
-                  </span>
-                </div>
-              </Link>
             </div>
           </div>
           <Link
@@ -341,12 +342,12 @@ export default function Navbar() {
             </Link>
             <Link
               to="https://s.voltagent.dev/discord/"
-              className="flex items-center justify-center mt-3 text-[#5865F2] hover:text-[#00d992] gap-2 p-2"
+              className={styles.mobileDiscordButton}
               target="_blank"
               rel="noopener noreferrer"
             >
-              <DiscordLogo className="w-6 h-6" />
-              <span className="text-base font-medium">Join our Discord</span>
+              <DiscordLogo className="w-5 h-5" />
+              <span>Discord Community</span>
             </Link>
           </div>
         </div>
