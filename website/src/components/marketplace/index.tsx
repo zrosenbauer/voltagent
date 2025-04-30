@@ -1,20 +1,10 @@
-import React, { useState } from "react";
+import React from "react";
 import { motion } from "framer-motion";
 import Link from "@docusaurus/Link";
 import AgentList from "./agent-list";
 import AgentDetail from "./agent-detail";
-import { BoltIcon, SparklesIcon } from "@heroicons/react/24/solid";
-import {
-  MagnifyingGlassIcon,
-  AdjustmentsHorizontalIcon,
-  TagIcon,
-  CurrencyDollarIcon,
-  ChartBarIcon,
-  FunnelIcon,
-  ArrowPathIcon,
-  BoltIcon as BoltOutlineIcon,
-  PlusCircleIcon,
-} from "@heroicons/react/24/outline";
+import { BoltIcon, PlusCircleIcon } from "@heroicons/react/24/solid";
+import { PlusCircleIcon as PlusCircleOutlineIcon } from "@heroicons/react/24/outline";
 import { DotPattern } from "../ui/dot-pattern";
 
 export const Marketplace = () => {
@@ -52,7 +42,7 @@ export const Marketplace = () => {
               transition={{ duration: 0.5 }}
               className="text-left md:ml-8"
             >
-              <p className="text-xl font-light text-[#dcdcdc] mb-4">
+              <p className="text-lg font-light text-[#dcdcdc] mb-4">
                 The VoltAgent Community Marketplace is on its way, and we need
                 your feedback.
               </p>
@@ -78,14 +68,14 @@ export const Marketplace = () => {
               backgroundColor: "rgba(58, 66, 89, 0.3)",
             }}
           >
-            <PlusCircleIcon
+            <PlusCircleOutlineIcon
               className="w-5 h-5 text-emerald-400"
               aria-hidden="true"
             />
             <span className="text-emerald-400 font-medium uppercase text-base tracking-wider mr-2">
               IDEA
             </span>
-            <span className="text-gray-200 text-base">
+            <span className="text-[#dcdcdc] text-base">
               <a
                 href="https://www.youtube.com/watch?v=iOs9Osz3UFQ"
                 target="_blank"
@@ -138,7 +128,7 @@ export const Marketplace = () => {
               <span className="text-emerald-400 font-medium uppercase text-base tracking-wider mr-2">
                 IDEA
               </span>
-              <span className="text-gray-200 text-base">
+              <span className="text-[#dcdcdc] text-base">
                 Imagine, agents can be integrated to existing code bases with a
                 command or directly run in UI.
               </span>
