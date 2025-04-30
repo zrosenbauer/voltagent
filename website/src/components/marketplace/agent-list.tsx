@@ -281,7 +281,7 @@ export const AgentList = () => {
               {filteredAgents.map((agent, index) => (
                 <div
                   key={agent.id}
-                  style={index >= 3 ? { filter: "blur(3px)" } : {}}
+                  /* style={index >= 3 ? { filter: "blur(3px)" } : {}} */
                   className="relative"
                 >
                   <AgentCard agent={agent} />

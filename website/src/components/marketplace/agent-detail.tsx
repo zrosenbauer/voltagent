@@ -172,7 +172,7 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
                     </div>
                     <code className="flex items-center bg-black/20 border-[#1e293b] border-solid  p-4 text-sm sm:text-sm text-emerald-500 font-mono whitespace-pre rounded-md overflow-x-auto">
                       <span>
-                        $ npx voltagent add username/linkedin-user-analyzer
+                        $ npx voltagent add davidmiller/linkedin-user-analyzer
                       </span>
                     </code>
                   </div>
@@ -182,7 +182,7 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
                     <div className="flex items-center mb-2">
                       <ComputerDesktopIcon className="w-3.5 h-3.5 mr-1.5 text-emerald-400" />
                       <span className="text-sm text-emerald-400">
-                        Run on Web
+                        Use directly in UI
                       </span>
                     </div>
                     <div className="bg-black/20 border-[#1e293b]  p-4 rounded-md">
@@ -227,10 +227,12 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
                 <FilmIcon className="h-5 w-5 text-[#00d992] mr-2" />
                 Demo Video
               </h2>
-              <div className="relative aspect-video bg-black/40 rounded-md overflow-hidden flex items-center justify-center">
-                <div className="text-gray-500">Demo video placeholder</div>
-                {/* In a real implementation, you would embed a video here */}
-                {/* <video src={selectedAgent.demoVideoUrl} controls className="w-full h-full"></video> */}
+              <div className="relative  bg-black/40 rounded-md overflow-hidden flex items-center justify-center">
+                <img
+                  src="https://cdn.voltagent.dev/readme/demo.gif"
+                  alt="Demo video"
+                  className="w-full h-full"
+                />
               </div>
             </div>
           </div>
