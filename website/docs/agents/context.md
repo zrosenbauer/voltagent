@@ -41,7 +41,6 @@ Another powerful use case for `userContext` is managing stateful resources that 
 3.  **Cleanup (`onEnd` Hook):** An `onEnd` hook retrieves the `Browser` instance from `userContext` using the operation's context and calls `browser.close()` to ensure resources are released when the operation finishes.
 
 ```typescript
-// Simplified Example Structure
 import {
   Agent,
   createHooks,
