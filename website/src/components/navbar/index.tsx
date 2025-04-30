@@ -1,24 +1,22 @@
 import React, { useState } from "react";
 import styles from "./styles.module.css";
 import Link from "@docusaurus/Link";
-import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import { useLocation } from "@docusaurus/router";
 import { DiscordLogo } from "../../../static/img/logos/discord";
 import { GitHubLogo } from "../../../static/img/logos/github";
-import { BoltIcon } from "@heroicons/react/24/solid";
-import { StarIcon } from "@heroicons/react/24/solid";
-import { ChevronDownIcon } from "@heroicons/react/24/solid";
+import { BoltIcon, StarIcon, ChevronDownIcon } from "@heroicons/react/24/solid";
+import {} from "@heroicons/react/24/solid";
 import {
   ShoppingBagIcon,
   ServerIcon,
   CommandLineIcon,
+  ComputerDesktopIcon,
+  ShoppingCartIcon,
 } from "@heroicons/react/24/outline";
 import { useGitHubStars } from "../../contexts/GitHubStarsContext";
 import { useMediaQuery } from "@site/src/hooks/use-media-query";
 
 export default function Navbar() {
-  const { siteConfig } = useDocusaurusContext();
-  const appUrl = (siteConfig.customFields?.appURL as string) || "";
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const isMobile = useMediaQuery("(max-width: 768px)");
 
@@ -67,6 +65,48 @@ export default function Navbar() {
               isMenuOpen ? styles.navLinksOpen : ""
             }`}
           >
+            <div className={`${styles.navLink} group relative`}>
+              <div className="flex items-center cursor-pointer">
+                PRODUCTS
+                <ChevronDownIcon className="w-4 h-4 ml-1 text-inherit group-hover:text-emerald-400" />
+              </div>
+              <div className="absolute left-0 top-full mt-2 bg-[#0E1618] border border-solid border-gray-800 rounded-md shadow-xl  w-[280px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                <Link
+                  to="https://console.voltagent.dev/demo"
+                  className="no-underline"
+                >
+                  <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 rounded-t-md border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
+                    <ComputerDesktopIcon className="w-5 h-5 mr-3 text-[#00d992]" />
+                    <span className="text-sm">Developer Console</span>
+                  </div>
+                </Link>
+                <div className="p-3 hover:bg-gray-800/50 text-[#DCDCDC] hover:text-emerald-400 flex items-center justify-between transition-colors border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-emerald-400">
+                  <div className="flex items-center">
+                    <ShoppingCartIcon className="w-5 h-5 mr-3 text-[#00d992]" />
+                    <span className="text-sm">Marketplace</span>
+                  </div>
+                </div>
+                <div className="p-3 hover:bg-gray-800/50 text-[#DCDCDC] hover:text-emerald-400 flex items-center justify-between transition-colors border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-emerald-400">
+                  <div className="flex items-center">
+                    <ServerIcon className="w-5 h-5 mr-3 text-[#00d992]" />
+                    <span className="text-sm">Deployment</span>
+                  </div>
+                  <span className="ml-2 px-2 py-0.5 text-xs bg-emerald-400/10 text-emerald-400 rounded-full">
+                    Soon
+                  </span>
+                </div>
+
+                <div className="p-3 hover:bg-gray-800/50 text-[#DCDCDC] hover:text-emerald-400 flex items-center justify-between transition-colors rounded-b-md border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-emerald-400">
+                  <div className="flex items-center">
+                    <CommandLineIcon className="w-5 h-5 mr-3 text-[#00d992]" />
+                    <span className="text-sm">Agentic App Builder</span>
+                  </div>
+                  <span className="ml-2 px-2 py-0.5 text-xs bg-emerald-400/10 text-emerald-400 rounded-full">
+                    Soon
+                  </span>
+                </div>
+              </div>
+            </div>
             <Link
               to="/manifesto/"
               className={`${styles.navLink} ${
@@ -84,7 +124,7 @@ export default function Navbar() {
               DOCUMENTATION
             </Link>
             <Link
-              to="https://github.com/voltagent/voltagent/tree/main/examples"
+              to="https://github.com/voltagent/voltagent/tree/main/examples/"
               className={`${styles.navLink} ${
                 isActive("/docs/") ? styles.active : ""
               }`}
@@ -100,50 +140,11 @@ export default function Navbar() {
             >
               BLOG
             </Link>
-            <div className={`${styles.navLink} group relative`}>
-              <div className="flex items-center cursor-pointer">
-                PRODUCTS
-                <ChevronDownIcon className="w-4 h-4 ml-1 text-inherit group-hover:text-emerald-400" />
-              </div>
-              <div className="absolute left-0 top-full mt-2 bg-[#0E1618] border border-solid border-gray-800 rounded-md shadow-xl  w-[250px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center  transition-colors duration-200 rounded-t-md border-solid border-r-0 border-t-0 border-b-0  border-l-2 border-transparent hover:border-emerald-400">
-                  <ServerIcon className="w-5 h-5 mr-3 text-[#00d992]" />
-                  <span className="text-sm ">Deployment</span>
-                </div>
-                <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center  transition-colors border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-emerald-400">
-                  <CommandLineIcon className="w-5 h-5 mr-3 text-[#00d992]" />
-                  <span className="text-sm ">AI App Generator</span>
-                </div>
-                <Link to="/marketplace" className="no-underline">
-                  <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-emerald-400 rounded-b-md">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="w-5 h-5 mr-3 text-[#00d992]"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      aria-hidden="true"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
-                      />
-                    </svg>
-                    <span className="text-sm">Marketplace</span>
-                    <span className="ml-2 px-2 py-0.5 text-xs bg-yellow-100 text-yellow-800 rounded-full">
-                      Soon
-                    </span>
-                  </div>
-                </Link>
-              </div>
-            </div>
           </div>
         </div>
         <div className={styles.navbarRight}>
           <Link
-            to="https://github.com/voltagent/voltagent"
+            to="https://github.com/voltagent/voltagent/"
             target="_blank"
             className={`${styles.navbarButton} group relative no-underline flex hover:border-emerald-400  hover:text-[#00d992] items-center border-solid border-1 border-[#DCDCDC] rounded-3xl p-1 rounded-full text-[#DCDCDC] hover:text-[#00d992]`}
             rel="noopener noreferrer"
@@ -168,7 +169,7 @@ export default function Navbar() {
                           .map((stargazer, index) => (
                             <a
                               key={stargazer.login}
-                              href="https://github.com/voltagent/voltagent/stargazers"
+                              href="https://github.com/voltagent/voltagent/stargazers/"
                               target="_blank"
                               rel="noopener noreferrer"
                               title={stargazer.login}
@@ -202,7 +203,7 @@ export default function Navbar() {
           </Link>
           {!isMobile && (
             <Link
-              to="https://s.voltagent.dev/discord"
+              to="https://s.voltagent.dev/discord/"
               className={`${styles.navbarButton} group relative flex items-center`}
               target="_blank"
               rel="noopener noreferrer"
@@ -239,21 +240,63 @@ export default function Navbar() {
       </div>
       {isMenuOpen && (
         <div className={styles.mobileMenu}>
-          <div className={styles.mobileLogo}>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              className={styles.logoIcon}
-              aria-hidden="true"
+          <div className={styles.mobileNavLink}>
+            <button
+              type="button"
+              className="flex items-center px-0  w-full cursor-pointer bg-transparent border-none text-inherit"
+              onClick={() => {
+                const elem = document.getElementById(
+                  "mobile-products-dropdown",
+                );
+                if (elem) {
+                  elem.classList.toggle("hidden");
+                }
+              }}
             >
-              <path
-                fillRule="evenodd"
-                d="M14.615 1.595a.75.75 0 01.359.852L12.982 9.75h7.268a.75.75 0 01.548 1.262l-10.5 11.25a.75.75 0 01-1.272-.71l1.992-7.302H3.75a.75.75 0 01-.548-1.262l10.5-11.25a.75.75 0 01.913-.143z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <span className={styles.logoText}>VoltAgent</span>
+              <span className="font-['IBM_Plex_Mono'] font-semibold">
+                PRODUCTS
+              </span>
+              <ChevronDownIcon className="w-5 h-5 ml-1" />
+            </button>
+            <div id="mobile-products-dropdown" className="hidden  mt-4 mb-2 ">
+              <Link
+                to="https://console.voltagent.dev/demo"
+                className="no-underline"
+              >
+                <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 rounded-t-md border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
+                  <ComputerDesktopIcon className="w-5 h-5 mr-2 text-[#00d992]" />
+                  <span className="text-sm">Developer Console</span>
+                </div>
+              </Link>
+              <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center justify-between transition-colors border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-emerald-400">
+                <div className="flex items-center">
+                  <ServerIcon className="w-5 h-5 mr-2 text-[#00d992]" />
+                  <span className="text-sm">Deployment</span>
+                </div>
+                <span className="ml-2 px-2 py-0.5 text-xs bg-emerald-400/10 text-emerald-400 rounded-full">
+                  Soon
+                </span>
+              </div>
+
+              <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center justify-between transition-colors border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-emerald-400 rounded-b-md">
+                <div className="flex items-center">
+                  <ShoppingCartIcon className="w-5 h-5 mr-2 text-[#00d992]" />
+                  <span className="text-sm">Marketplace</span>
+                </div>
+                <span className="ml-2 px-2 py-0.5 text-xs bg-emerald-400/10 text-emerald-400 rounded-full">
+                  Soon
+                </span>
+              </div>
+              <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center justify-between transition-colors border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-emerald-400">
+                <div className="flex items-center">
+                  <CommandLineIcon className="w-5 h-5 mr-2 text-[#00d992]" />
+                  <span className="text-sm">Agentic App Builder</span>
+                </div>
+                <span className="ml-2 px-2 py-0.5 text-xs bg-emerald-400/10 text-emerald-400 rounded-full">
+                  Soon
+                </span>
+              </div>
+            </div>
           </div>
           <Link
             to="/manifesto/"
@@ -272,66 +315,14 @@ export default function Navbar() {
             DOCUMENTATION
           </Link>
           <Link
-            to="https://github.com/voltagent/voltagent/tree/main/examples"
+            to="https://github.com/voltagent/voltagent/tree/main/examples/"
             className={`${styles.mobileNavLink} ${
               isActive("/docs/") ? styles.active : ""
             }`}
           >
             EXAMPLES
           </Link>
-          <div className={`${styles.mobileNavLink}`}>
-            <button
-              type="button"
-              className="flex items-center justify-between w-full cursor-pointer bg-transparent border-none text-inherit"
-              onClick={() => {
-                const elem = document.getElementById(
-                  "mobile-products-dropdown",
-                );
-                if (elem) {
-                  elem.classList.toggle("hidden");
-                }
-              }}
-            >
-              <span>PRODUCTS</span>
-              <ChevronDownIcon className="w-4 h-4" />
-            </button>
-            <div
-              id="mobile-products-dropdown"
-              className="hidden pl-4 mt-2 space-y-1"
-            >
-              <div className="p-2 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 rounded-t-md border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
-                <ServerIcon className="w-5 h-5 mr-4 text-[#00d992]" />
-                <span className="text-sm">Deployment</span>
-              </div>
-              <div className="p-2 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-emerald-400">
-                <CommandLineIcon className="w-5 h-5 mr-4 text-[#00d992]" />
-                <span className="text-sm">AI App Generator</span>
-              </div>
-              <Link to="/marketplace" className="no-underline">
-                <div className="p-2 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-emerald-400">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="w-5 h-5 mr-4 text-[#00d992]"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
-                    />
-                  </svg>
-                  <span className="text-sm">Marketplace</span>
-                  <span className="ml-2 px-2 py-0.5 text-xs bg-yellow-100 text-yellow-800 rounded-full">
-                    Soon
-                  </span>
-                </div>
-              </Link>
-            </div>
-          </div>
+
           <Link
             to="/blog/"
             className={`${styles.mobileNavLink} ${
@@ -341,17 +332,20 @@ export default function Navbar() {
             BLOG
           </Link>
           <div className={styles.mobileButtons}>
-            <Link to={`${appUrl}/login`} className={styles.mobileLoginButton}>
-              Log in Developer Console
+            <Link
+              to="https://console.voltagent.dev/demo"
+              className={styles.mobileLoginButton}
+            >
+              Log in to Developer Console
             </Link>
             <Link
-              to="https://s.voltagent.dev/discord"
-              className="flex items-center justify-center mt-3 text-[#5865F2] hover:text-[#00d992]"
+              to="https://s.voltagent.dev/discord/"
+              className={styles.mobileDiscordButton}
               target="_blank"
               rel="noopener noreferrer"
             >
-              <DiscordLogo className="w-6 h-6" />
-              <span className="ml-2 text-sm">Join our Discord</span>
+              <DiscordLogo className="w-5 h-5" />
+              <span>Discord Community</span>
             </Link>
           </div>
         </div>
