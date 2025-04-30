@@ -90,11 +90,14 @@ export default function Navbar() {
                   <div className="flex items-center">
                     <ServerIcon className="w-5 h-5 mr-3 text-[#00d992]" />
                     <span className="text-sm">Deployment</span>
+                    <ServerIcon className="w-5 h-5 mr-3 text-[#00d992]" />
+                    <span className="text-sm">Deployment</span>
                   </div>
                   <span className="ml-2 px-2 py-0.5 text-xs bg-emerald-400/10 text-emerald-400 rounded-full">
                     Soon
                   </span>
                 </div>
+        
 
                 <div className="p-3 hover:bg-gray-800/50 text-[#DCDCDC] hover:text-emerald-400 flex items-center justify-between transition-colors rounded-b-md border-solid border-r-0 border-t-0 border-b-0 duration-200 border-l-2 border-transparent hover:border-emerald-400">
                   <div className="flex items-center">

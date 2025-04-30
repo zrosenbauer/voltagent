@@ -7,7 +7,7 @@ const config: Config = {
   title: "VoltAgent",
   tagline: "Open Source TypeScript AI Agent Framework",
   favicon: "img/favicon.ico",
-  staticDirectories: ["public", "static"],
+  staticDirectories: ["static"],
   customFields: {
     apiURL: process.env.API_URL || "http://localhost:3001",
     appURL: process.env.APP_URL || "http://localhost:3001",
