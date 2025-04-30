@@ -78,46 +78,46 @@ export const Marketplace = () => {
           </div>
         </div>
 
-        {/* Preview of the Agent Marketplace UI */}
-        <div className="flex justify-center ">
-          <div
-            className="flex flex-col landing-md:flex-row items-center rounded-md gap-2 rounded-b-none px-3 py-3 bg-slate-400/10 border-b-0 border-solid border border-slate-400/20 shadow-md"
-            style={{
-              backdropFilter: "blur(4px)",
-              WebkitBackdropFilter: "blur(4px)",
-              backgroundColor: "rgba(58, 66, 89, 0.3)",
-            }}
-          >
-            <div className="flex items-center  ">
-              <PlusCircleOutlineIcon
-                className="w-5 h-5 text-emerald-400"
-                aria-hidden="true"
-              />
-              <span className="text-emerald-400 font-medium uppercase text-sm sm:text-base tracking-wider ml-2 sm:mr-2">
-                IDEA
-              </span>
-            </div>
-            <span className="text-[#dcdcdc] text-sm sm:text-base">
-              <a
-                href="https://www.youtube.com/watch?v=iOs9Osz3UFQ"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-emerald-400 no-underline hover:underline"
-              >
-                Imagine
-              </a>{" "}
-              developers building AI agents that has real use cases and listing
-              them on the marketplace.
-            </span>
-          </div>
-        </div>
-
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
           className="mb-16  "
         >
+          {/* Preview of the Agent Marketplace UI */}
+          <div className="flex justify-center ">
+            <div
+              className="flex flex-col landing-md:flex-row items-center rounded-md gap-2 rounded-b-none px-3 py-3 bg-slate-400/10 border-b-0 border-solid border border-slate-400/20 shadow-md"
+              style={{
+                backdropFilter: "blur(4px)",
+                WebkitBackdropFilter: "blur(4px)",
+                backgroundColor: "rgba(58, 66, 89, 0.3)",
+              }}
+            >
+              <div className="flex items-center  ">
+                <PlusCircleOutlineIcon
+                  className="w-5 h-5 text-emerald-400"
+                  aria-hidden="true"
+                />
+                <span className="text-emerald-400 font-medium uppercase text-sm sm:text-base tracking-wider ml-2 sm:mr-2">
+                  IDEA
+                </span>
+              </div>
+              <span className="text-[#dcdcdc] text-sm sm:text-base">
+                <a
+                  href="https://www.youtube.com/watch?v=iOs9Osz3UFQ"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-emerald-400 no-underline hover:underline"
+                >
+                  Imagine
+                </a>{" "}
+                developers building AI agents that has real use cases and
+                listing them on the marketplace.
+              </span>
+            </div>
+          </div>
+
           {/* First Preview Container - AgentList */}
           {/* IDEA section */}
           <div className="landing-md:p-4 pt-4 landing-md:mb-24 mb-12 rounded-md border border-solid border-white/10 backdrop-filter backdrop-blur-sm relative">
