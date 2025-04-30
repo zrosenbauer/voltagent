@@ -272,41 +272,56 @@ console.log(response.text);
 
 **Why?** To observe and potentially intercept or modify the agent's behavior at various lifecycle stages (start, end, tool calls, etc.) for logging, debugging, or custom logic.
 
-Hooks are triggered at specific points during the execution of `generate*`/`stream*` methods.
+Hooks are triggered at specific points during the execution of `generate*`/`stream*` methods. Each hook receives a single argument object containing relevant information like the agent instance and operation context.
 
 ```ts
-import { Agent, createHooks } from "@voltagent/core";
+import {
+  Agent,
+  createHooks,
+  type OnStartHookArgs,
+  type OnEndHookArgs,
+  type OnToolStartHookArgs,
+  type OnToolEndHookArgs,
+} from "@voltagent/core";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 const hooks = createHooks({
   // Called when any agent interaction starts (generateText, streamText, etc.)
-  onStart: async (agentInstance) => {
-    console.log(`Agent ${agentInstance.name} starting interaction...`);
+  onStart: async ({ agent, context }: OnStartHookArgs) => {
+    console.log(`Agent ${agent.name} starting interaction... Context:`, context);
   },
-  // Called when the interaction successfully finishes
-  onEnd: async (agentInstance, result) => {
-    // Result format depends on the method called (e.g., { text: ..., usage: ... } for generateText)
-    console.log(
-      `Agent ${agentInstance.name} finished. Final output:`,
-      result.text || result.object
-    );
+  // Called when the interaction finishes (successfully or with an error)
+  onEnd: async ({ agent, output, error, context }: OnEndHookArgs) => {
+    if (error) {
+      console.error(`Agent ${agent.name} finished with error:`, error);
+    } else if (output) {
+      // Output format depends on the method called (e.g., { text: ..., usage: ... } for generateText)
+      console.log(
+        `Agent ${agent.name} finished successfully. Final output:`,
+        output.text ?? output.object // Access 'text' or 'object' based on the operation type
+      );
+    }
+    console.log("Finished context:", context);
   },
   // Called before a tool is executed
-  onToolStart: async (agentInstance, toolCall) => {
-    console.log(`Agent ${agentInstance.name} starting tool: ${toolCall.toolName}`);
+  onToolStart: async ({ agent, tool, context }: OnToolStartHookArgs) => {
+    console.log(`Agent ${agent.name} starting tool: ${tool.name}. Context:`, context);
   },
-  // Called after a tool finishes execution
-  onToolEnd: async (agentInstance, toolResult) => {
-    console.log(
-      `Agent ${agentInstance.name} finished tool: ${toolResult.toolName}, Result:`,
-      toolResult.result
-    );
+  // Called after a tool finishes execution (successfully or with an error)
+  onToolEnd: async ({ agent, tool, output, error, context }: OnToolEndHookArgs) => {
+    if (error) {
+      console.error(`Agent ${agent.name} failed tool: ${tool.name}. Error:`, error);
+    } else {
+      console.log(
+        `Agent ${agent.name} finished tool: ${tool.name}. Result:`,
+        output // Tool output is directly available
+      );
+    }
+    console.log("Tool context:", context);
   },
-  // Called if an error occurs during the interaction
-  onError: async (agentInstance, error) => {
-    console.error(`Agent ${agentInstance.name} encountered an error:`, error);
-  },
+  // Note: There is no top-level 'onError' hook. Errors are handled within onEnd and onToolEnd.
+  // The 'onHandoff' hook (not shown here) is called when control is passed between agents (e.g., sub-agents).
 });
 
 const agent = new Agent({

@@ -46,6 +46,7 @@ import {
   Agent,
   createHooks,
   createTool,
+  type OnEndHookArgs,
   type OperationContext,
   type ToolExecutionContext,
 } from "@voltagent/core";
@@ -69,7 +70,7 @@ async function ensurePage(context: OperationContext): Promise<Page> {
 
 // Hook for cleanup
 const hooks = createHooks({
-  onEnd: async (_agent, _result, context: OperationContext) => {
+  onEnd: async ({ context }: OnEndHookArgs) => {
     const browser = context.userContext.get(BROWSER_KEY) as Browser | undefined;
     if (browser) {
       console.log(`[${context.operationId}] Closing browser for context...`);
@@ -124,6 +125,8 @@ import {
   Agent,
   createHooks,
   createTool,
+  type OnStartHookArgs,
+  type OnEndHookArgs,
   type OperationContext,
   type ToolExecutionContext,
 } from "@voltagent/core";
@@ -133,13 +136,13 @@ import { openai } from "@ai-sdk/openai";
 
 // Define hooks that set and retrieve data
 const hooks = createHooks({
-  onStart: (agent: Agent<any>, context: OperationContext) => {
+  onStart: ({ agent, context }: OnStartHookArgs) => {
     // Set a unique request ID for this operation
     const requestId = `req-${Date.now()}`;
     context.userContext.set("requestId", requestId);
     console.log(`[${agent.name}] Operation started. RequestID: ${requestId}`);
   },
-  onEnd: (agent: Agent<any>, result: any, context: OperationContext) => {
+  onEnd: ({ agent, context }: OnEndHookArgs) => {
     // Retrieve the request ID at the end of the operation
     const requestId = context.userContext.get("requestId");
     console.log(`[${agent.name}] Operation finished. RequestID: ${requestId}`);
@@ -179,9 +182,3 @@ await agent.generateText(
 
 // Console output will show logs from onStart, the tool (if called), and onEnd,
 ```
-
-In this example:
-
-1.  The `onStart` hook generates a `requestId` and stores it in `userContext`.
-2.  If the LLM decides to use the `custom_context_logger` tool, the tool's `execute` function accesses the `requestId` from `userContext` via the `options.operationContext` provided to it.
-3.  The `onEnd` hook retrieves the same `requestId` from the context, demonstrating that the data persisted throughout the operation's lifecycle.

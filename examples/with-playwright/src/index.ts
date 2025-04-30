@@ -29,18 +29,6 @@ import {
 } from "./tools";
 import { mistral } from "@ai-sdk/mistral";
 
-// Define the onEnd hook for browser cleanup
-const browserCleanupHook: AgentHooks["onEnd"] = async (
-  _agent: Agent<any>,
-  _outputOrError: any,
-  context: OperationContext,
-  _isError?: boolean,
-) => {
-  console.log(`[${context.operationId}] Operation finished. Cleaning up browser state...`);
-  // Call the reset function from the handler using the operation context
-  await resetBrowserStateInternal(context);
-};
-
 // Create a specialized agent for browsing
 export const browserAgent = new Agent({
   name: "Browser Agent",
@@ -49,7 +37,11 @@ export const browserAgent = new Agent({
   model: mistral("mistral-large-latest"),
 
   hooks: {
-    onEnd: browserCleanupHook,
+    onEnd: async ({ context }) => {
+      console.log(`[${context.operationId}] Operation finished. Cleaning up browser state...`);
+      // Call the reset function from the handler using the operation context
+      await resetBrowserStateInternal(context);
+    },
   },
   tools: [
     // Navigation tools
