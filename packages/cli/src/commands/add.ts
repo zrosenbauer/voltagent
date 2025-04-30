@@ -19,22 +19,11 @@ export const registerAddCommand = (program: Command) => {
         console.log(
           chalk.cyan(
             `Join the discussion on GitHub and become an early user: ${chalk.underline(
-              "https://github.com/voltagent/voltagent/discussions", // Replace with your actual discussions link if different
+              "https://github.com/orgs/voltagent/discussions/74/",
             )}\n`,
           ),
         );
         console.log(chalk.gray("\nWe appreciate your interest!\n"));
-
-        // Optionally track this interaction if desired, even though it's a placeholder
-        // await posthogClient.capture({
-        //   distinctId: "cli_user", // Replace with actual user ID if available
-        //   event: "cli_command_used",
-        //   properties: {
-        //     command: "add",
-        //     status: "coming_soon",
-        //     agentSlug: agentSlug,
-        //   },
-        // });
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         console.error(chalk.red("\nAn unexpected error occurred:"));
