@@ -67,8 +67,8 @@ export const Marketplace = () => {
                     Let us know
                   </span>
                 </button>{" "}
-                how we can make it the useful hub for sharing, discovering, and
-                monetizing on your
+                how we can make it the useful hub for developers to share,
+                discover, and monetize their
                 <span className="text-[#00d992] font-medium ml-1">
                   VoltAgent-based
                 </span>{" "}
