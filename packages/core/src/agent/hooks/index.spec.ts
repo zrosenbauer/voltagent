@@ -2,8 +2,8 @@ import { z } from "zod";
 import { type AgentHooks, createHooks } from ".";
 import { createTool, type AgentTool } from "../../tool";
 import { Agent } from "../index";
-// Import only OperationContext
-import type { OperationContext } from "../types";
+// Import only OperationContext and VoltAgentError
+import type { OperationContext, VoltAgentError } from "../types";
 
 // Removed unused mock types
 
@@ -76,55 +76,90 @@ describe("Agent Hooks Functionality", () => {
 
   describe("onStart", () => {
     it("should call onStart when agent starts generating", async () => {
-      // Create hooks with a spy
       const onStartSpy = jest.fn();
-      agent.hooks = createHooks({
-        onStart: onStartSpy,
-      });
+      agent.hooks = createHooks({ onStart: onStartSpy });
 
-      // Call generateText to trigger the hook
       await agent.generateText("Test input");
 
-      // Verify onStart was called with the agent
-      expect(onStartSpy).toHaveBeenCalledWith(agent, expect.anything());
+      // Verify onStart was called with the correct object structure
+      expect(onStartSpy).toHaveBeenCalledWith({
+        agent: agent,
+        context: expect.objectContaining({ operationId: expect.any(String) }), // Check for context object
+      });
     });
   });
 
   describe("onEnd", () => {
-    it("should call onEnd when agent completes generating", async () => {
-      // Create hooks with a spy
+    it("should call onEnd when agent completes generating successfully", async () => {
       const onEndSpy = jest.fn();
-      agent.hooks = createHooks({
-        onEnd: onEndSpy,
+      agent.hooks = createHooks({ onEnd: onEndSpy });
+
+      const response = await agent.generateText("Test input"); // Assuming success
+
+      // Construct the expected standardized output for the hook
+      const expectedOutput = {
+        text: response.text,
+        usage: response.usage,
+        finishReason: response.finishReason,
+        providerResponse: response,
+        // warnings: response.warnings, // If response includes warnings
+      };
+
+      // Verify onEnd was called with the agent, standardized output, undefined error, and context
+      expect(onEndSpy).toHaveBeenCalledWith({
+        agent: agent,
+        output: expectedOutput,
+        error: undefined,
+        context: expect.objectContaining({ operationId: expect.any(String) }),
+      });
+    });
+
+    // Add a test for the error case (optional but recommended)
+    it("should call onEnd with an error when agent fails", async () => {
+      const onEndSpy = jest.fn();
+      // Mock the LLM to throw an error
+      const errorProvider = {
+        generateText: jest.fn().mockRejectedValue(new Error("LLM Error")),
+        getModelIdentifier: () => "mock-error-model",
+      };
+      const errorAgent = new Agent({
+        name: "ErrorAgent",
+        llm: errorProvider as any,
+        model: "mock-error-model",
+        hooks: createHooks({ onEnd: onEndSpy }),
       });
 
-      // Call generateText to trigger the hook
-      const response = await agent.generateText("Test input");
+      try {
+        await errorAgent.generateText("Test input");
+      } catch (_e) {
+        // Expected error
+      }
 
-      // Verify onEnd was called with the agent and response
-      expect(onEndSpy).toHaveBeenCalledWith(agent, response, expect.anything());
+      // Verify onEnd was called with undefined output and an error object
+      expect(onEndSpy).toHaveBeenCalledWith({
+        agent: errorAgent,
+        output: undefined,
+        error: expect.objectContaining({ message: "LLM Error" }), // Check for VoltAgentError structure
+        context: expect.objectContaining({ operationId: expect.any(String) }),
+      });
     });
   });
 
   describe("onHandoff", () => {
     it("should call onHandoff when agent is handed off to", async () => {
-      // Create hooks with a spy
       const onHandoffSpy = jest.fn();
-      agent.hooks = createHooks({
-        onHandoff: onHandoffSpy,
-      });
+      agent.hooks = createHooks({ onHandoff: onHandoffSpy });
 
-      // Simulate a handoff (by calling the hook directly)
-      await agent.hooks.onHandoff?.(agent, sourceAgent);
+      // Simulate a handoff by calling the hook directly with the object
+      await agent.hooks.onHandoff?.({ agent: agent, source: sourceAgent });
 
-      // Verify onHandoff was called with the agent and source agent
-      expect(onHandoffSpy).toHaveBeenCalledWith(agent, sourceAgent);
+      // Verify onHandoff was called with the correct object
+      expect(onHandoffSpy).toHaveBeenCalledWith({ agent: agent, source: sourceAgent });
     });
   });
 
   describe("onToolStart & onToolEnd", () => {
     it("should call onToolStart and onToolEnd when using tools", async () => {
-      // Create hooks with spies
       const onToolStartSpy = jest.fn();
       const onToolEndSpy = jest.fn();
       agent.hooks = createHooks({
@@ -132,21 +167,66 @@ describe("Agent Hooks Functionality", () => {
         onToolEnd: onToolEndSpy,
       });
 
-      // Add a test tool to the agent
       agent.addItems([tool]);
-
-      // Create a mock context for this test
       const mockContext = createMockContext();
+      const toolResult = "Tool result";
 
-      // Directly execute the hooks to test their functionality
-      // Pass the mock context
-      await agent.hooks.onToolStart?.(agent, tool, mockContext);
-      // Pass the mock context
-      await agent.hooks.onToolEnd?.(agent, tool, "Tool result", mockContext);
+      // Directly execute the hooks with the object argument
+      await agent.hooks.onToolStart?.({ agent: agent, tool: tool, context: mockContext });
+      await agent.hooks.onToolEnd?.({
+        agent: agent,
+        tool: tool,
+        output: toolResult,
+        error: undefined,
+        context: mockContext,
+      });
 
-      // Verify hooks were called with correct arguments, including the context
-      expect(onToolStartSpy).toHaveBeenCalledWith(agent, tool, mockContext);
-      expect(onToolEndSpy).toHaveBeenCalledWith(agent, tool, "Tool result", mockContext);
+      // Verify hooks were called with correct argument objects
+      expect(onToolStartSpy).toHaveBeenCalledWith({
+        agent: agent,
+        tool: tool,
+        context: mockContext,
+      });
+      expect(onToolEndSpy).toHaveBeenCalledWith({
+        agent: agent,
+        tool: tool,
+        output: toolResult,
+        error: undefined,
+        context: mockContext,
+      });
+    });
+
+    // Add a test for tool error case (optional)
+    it("should call onToolEnd with an error when tool fails", async () => {
+      const onToolEndSpy = jest.fn();
+      agent.hooks = createHooks({ onToolEnd: onToolEndSpy });
+      const mockContext = createMockContext();
+      const toolError = new Error("Tool execution failed");
+      const voltagentError = {
+        // Simulate a VoltAgentError for tool failure
+        message: toolError.message,
+        originalError: toolError,
+        stage: "tool_execution",
+        toolError: { toolCallId: "mock-id", toolName: tool.name, toolExecutionError: toolError },
+      } as VoltAgentError;
+
+      // Simulate calling onToolEnd with an error
+      await agent.hooks.onToolEnd?.({
+        agent: agent,
+        tool: tool,
+        output: undefined,
+        error: voltagentError,
+        context: mockContext,
+      });
+
+      // Verify onToolEnd was called with undefined output and the error object
+      expect(onToolEndSpy).toHaveBeenCalledWith({
+        agent: agent,
+        tool: tool,
+        output: undefined,
+        error: voltagentError,
+        context: mockContext,
+      });
     });
   });
 });

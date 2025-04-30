@@ -11,7 +11,7 @@ import type {
   StepWithContent,
   StreamObjectOptions,
   StreamTextOptions,
-  VoltagentError,
+  VoltAgentError,
   ToolErrorInfo,
   StreamObjectFinishResult,
   UsageInfo,
@@ -113,7 +113,7 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
   };
 
   /**
-   * Creates a standardized VoltagentError from a raw Vercel SDK error object.
+   * Creates a standardized VoltAgentError from a raw Vercel SDK error object.
    */
   private _createVoltagentErrorFromSdkError(
     sdkError: any, // The raw error object from the SDK
@@ -123,9 +123,9 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
       | "llm_generate"
       | "object_generate"
       | "tool_execution" = "llm_stream",
-  ): VoltagentError {
+  ): VoltAgentError {
     const originalError = sdkError.error ?? sdkError; // Handle potential nesting
-    let voltagentErr: VoltagentError;
+    let voltagentErr: VoltAgentError;
 
     const potentialToolCallId = (originalError as any)?.toolCallId;
     const potentialToolName = (originalError as any)?.toolName;
@@ -238,7 +238,7 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
         finishReason: result.finishReason,
       };
     } catch (sdkError) {
-      // Create VoltagentError using the helper
+      // Create VoltAgentError using the helper
       const voltagentErr = this._createVoltagentErrorFromSdkError(sdkError, "llm_generate"); // Use appropriate stage
       // Throw the standardized error
       throw voltagentErr;
@@ -401,7 +401,7 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
         finishReason: result.finishReason,
       };
     } catch (sdkError) {
-      // Create VoltagentError using the helper
+      // Create VoltAgentError using the helper
       const voltagentErr = this._createVoltagentErrorFromSdkError(sdkError, "object_generate"); // Use appropriate stage
       // Throw the standardized error
       throw voltagentErr;

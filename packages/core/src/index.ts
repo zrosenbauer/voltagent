@@ -15,7 +15,7 @@ export type {
   ModelToolCall,
   OperationContext,
   ToolExecutionContext,
-  VoltagentError,
+  VoltAgentError,
   StreamTextFinishResult,
   StreamTextOnFinishCallback,
   StreamObjectFinishResult,

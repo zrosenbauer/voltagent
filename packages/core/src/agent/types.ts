@@ -377,7 +377,7 @@ export interface ToolErrorInfo {
  * Providers should wrap their specific errors in this structure before
  * passing them to onError callbacks.
  */
-export interface VoltagentError {
+export interface VoltAgentError {
   /** A clear, human-readable error message. This could be a general message or derived from toolError info. */
   message: string;
 
@@ -399,9 +399,9 @@ export interface VoltagentError {
 
 /**
  * Type for onError callbacks in streaming operations.
- * Providers must pass an error conforming to the VoltagentError structure.
+ * Providers must pass an error conforming to the VoltAgentError structure.
  */
-export type StreamOnErrorCallback = (error: VoltagentError) => Promise<void> | void;
+export type StreamOnErrorCallback = (error: VoltAgentError) => Promise<void> | void;
 
 /**
  * Standardized object structure passed to the onFinish callback
@@ -458,3 +458,48 @@ export interface StreamObjectFinishResult<TObject> {
 export type StreamObjectOnFinishCallback<TObject> = (
   result: StreamObjectFinishResult<TObject>,
 ) => Promise<void> | void;
+
+/**
+ * Standardized success result structure for generateText.
+ */
+export interface StandardizedTextResult {
+  /** The generated text. */
+  text: string;
+  /** Token usage information (if available). */
+  usage?: UsageInfo;
+  /** Original provider response (if needed). */
+  providerResponse?: unknown;
+  /** Finish reason (if available from provider). */
+  finishReason?: string;
+  /** Warnings (if available from provider). */
+  warnings?: unknown[];
+}
+
+/**
+ * Standardized success result structure for generateObject.
+ * @template TObject The expected type of the generated object.
+ */
+export interface StandardizedObjectResult<TObject> {
+  /** The generated object. */
+  object: TObject;
+  /** Token usage information (if available). */
+  usage?: UsageInfo;
+  /** Original provider response (if needed). */
+  providerResponse?: unknown;
+  /** Finish reason (if available from provider). */
+  finishReason?: string;
+  /** Warnings (if available from provider). */
+  warnings?: unknown[];
+}
+
+/**
+ * Unified output type for the onEnd hook, representing the successful result
+ * of any core agent operation. Use 'type guarding' or check specific fields
+ * within the hook implementation to determine the concrete type.
+ * Object types are generalized to 'unknown' here for the union.
+ */
+export type AgentOperationOutput =
+  | StandardizedTextResult
+  | StreamTextFinishResult
+  | StandardizedObjectResult<unknown> // Object type generalized
+  | StreamObjectFinishResult<unknown>; // Object type generalized

@@ -11,11 +11,11 @@ This change introduces a more robust and consistent way errors and successful fi
 
 **Key Improvements:**
 
-- **Standardized Errors (`VoltagentError`):**
+- **Standardized Errors (`VoltAgentError`):**
 
-  - Introduced `VoltagentError`, `ToolErrorInfo`, and `StreamOnErrorCallback` types in `@voltagent/core`.
-  - LLM Providers (e.g., Vercel) now wrap underlying SDK/API errors into a structured `VoltagentError` before passing them to `onError` callbacks or throwing them.
-  - Agent methods (`generateText`, `streamText`, `generateObject`, `streamObject`) now consistently handle `VoltagentError`, enabling richer context (stage, code, tool details) in history events and logs.
+  - Introduced `VoltAgentError`, `ToolErrorInfo`, and `StreamOnErrorCallback` types in `@voltagent/core`.
+  - LLM Providers (e.g., Vercel) now wrap underlying SDK/API errors into a structured `VoltAgentError` before passing them to `onError` callbacks or throwing them.
+  - Agent methods (`generateText`, `streamText`, `generateObject`, `streamObject`) now consistently handle `VoltAgentError`, enabling richer context (stage, code, tool details) in history events and logs.
 
 - **Standardized Stream Finish Results:**
 

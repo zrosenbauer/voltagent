@@ -935,8 +935,8 @@ describe("Agent", () => {
       // Verify onStart was called
       expect(onStartSpy).toHaveBeenCalled();
 
-      // Get the context passed to onStart
-      const operationContext: OperationContext = onStartSpy.mock.calls[0][1];
+      // Get the context passed to onStart from the single argument object
+      const operationContext: OperationContext = onStartSpy.mock.calls[0][0].context;
 
       // Check if userContext exists and is a Map
       expect(operationContext).toHaveProperty("userContext");
@@ -959,8 +959,9 @@ describe("Agent", () => {
       expect(onStartSpy).toHaveBeenCalled();
       expect(onEndSpy).toHaveBeenCalled();
 
-      const startContext: OperationContext = onStartSpy.mock.calls[0][1];
-      const endContext: OperationContext = onEndSpy.mock.calls[0][2]; // onEnd receives (agent, result, context)
+      // Access context from the single argument object (index 0)
+      const startContext: OperationContext = onStartSpy.mock.calls[0][0].context;
+      const endContext: OperationContext = onEndSpy.mock.calls[0][0].context;
 
       expect(startContext).toHaveProperty("userContext");
       expect(startContext.userContext).toBeInstanceOf(Map);
@@ -974,10 +975,12 @@ describe("Agent", () => {
       const testValue = "test data";
       const testKey = "customKey";
 
-      const onStartHook = jest.fn((_agent, context: OperationContext) => {
+      // Update onStartHook to accept a single object argument
+      const onStartHook = jest.fn(({ context }: { context: OperationContext }) => {
         context.userContext.set(testKey, testValue);
       });
-      const onEndHook = jest.fn((_agent, _result, context: OperationContext) => {
+      // Update onEndHook to accept a single object argument
+      const onEndHook = jest.fn(({ context }: { context: OperationContext }) => {
         expect(context.userContext.get(testKey)).toBe(testValue);
       });
 
@@ -985,6 +988,7 @@ describe("Agent", () => {
         name: "Modify Context Agent",
         model: mockModel,
         llm: mockProvider,
+        // Pass the updated hooks
         hooks: createHooks({ onStart: onStartHook, onEnd: onEndHook }),
       });
 
@@ -1009,7 +1013,8 @@ describe("Agent", () => {
       });
 
       // Hook to add data to context before tool execution
-      const onStartHook = jest.fn((_agent, context: OperationContext) => {
+      // Update onStartHook to accept a single object argument
+      const onStartHook = jest.fn(({ context }: { context: OperationContext }) => {
         context.userContext.set(testKey, testValue);
       });
 
@@ -1018,6 +1023,7 @@ describe("Agent", () => {
         model: mockModel,
         llm: mockProvider,
         tools: [mockTool],
+        // Pass the updated hook
         hooks: createHooks({ onStart: onStartHook }),
       });
 
@@ -1059,7 +1065,8 @@ describe("Agent", () => {
       const key2 = "op2Key";
       const value2 = "op2Value";
 
-      const onStartHook = jest.fn((_agent, context: OperationContext) => {
+      // Update onStartHook to accept a single object argument
+      const onStartHook = jest.fn(({ context }: { context: OperationContext }) => {
         if (context.historyEntry.input === "Operation 1") {
           context.userContext.set(key1, value1);
           // Check that op2 data is not present
@@ -1071,7 +1078,8 @@ describe("Agent", () => {
         }
       });
 
-      const onEndHook = jest.fn((_agent, _result, context: OperationContext) => {
+      // Update onEndHook to accept a single object argument
+      const onEndHook = jest.fn(({ context }: { context: OperationContext }) => {
         if (context.historyEntry.input === "Operation 1") {
           expect(context.userContext.get(key1)).toBe(value1);
           expect(context.userContext.has(key2)).toBe(false);
@@ -1085,6 +1093,7 @@ describe("Agent", () => {
         name: "Isolation Test Agent",
         model: mockModel,
         llm: mockProvider,
+        // Pass the updated hooks
         hooks: createHooks({ onStart: onStartHook, onEnd: onEndHook }),
       });
 

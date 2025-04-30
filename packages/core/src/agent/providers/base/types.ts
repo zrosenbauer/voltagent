@@ -352,8 +352,8 @@ export type LLMProvider<TProvider> = {
   // Core methods
   /**
    * Generates a text response based on the provided options.
-   * Implementers should catch underlying SDK/API errors and throw a VoltagentError.
-   * @throws {VoltagentError} If an error occurs during generation.
+   * Implementers should catch underlying SDK/API errors and throw a VoltAgentError.
+   * @throws {VoltAgentError} If an error occurs during generation.
    */
   generateText(
     options: GenerateTextOptions<InferModel<TProvider>>,
@@ -365,8 +365,8 @@ export type LLMProvider<TProvider> = {
 
   /**
    * Generates a structured object response based on the provided options and schema.
-   * Implementers should catch underlying SDK/API errors and throw a VoltagentError.
-   * @throws {VoltagentError} If an error occurs during generation.
+   * Implementers should catch underlying SDK/API errors and throw a VoltAgentError.
+   * @throws {VoltAgentError} If an error occurs during generation.
    */
   generateObject<TSchema extends z.ZodType>(
     options: GenerateObjectOptions<InferModel<TProvider>, TSchema>,
