@@ -16,8 +16,8 @@ export const Marketplace = () => {
     <section className="relative py-20">
       <DotPattern dotColor="#94a3b8" dotSize={1.2} spacing={20} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 mb-8 md:mb-16 items-center">
-          <div className="flex w-fit flex-col items-start  relative">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 landing-sm:gap-8 landing-md:mb-24 mb-12 items-center">
+          <div className="flex  flex-col items-center  relative">
             <div className="flex items-baseline justify-start">
               <div className="flex mr-2 items-center border-2 border-solid border-[#00d992] rounded-full p-1">
                 <BoltIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#00d992]" />
@@ -47,12 +47,28 @@ export const Marketplace = () => {
               className="text-left md:ml-8"
             >
               <p className="text-base sm:text-lg text-[#dcdcdc] mb-4">
-                The VoltAgent Community Marketplace is on its way, and we need
-                your feedback.
+                The VoltAgent Community Marketplace is on its way, and we’d love
+                to hear your ideas.
               </p>
               <p className="text-base sm:text-lg text-gray-400">
-                Tell us how we can make it the useful hub for sharing,
-                discovering, and monetizing on your
+                <button
+                  type="button"
+                  className="text-emerald-400 transition-colors text-base bg-transparent border-none p-0 m-0 inline font-inherit text-inherit cursor-pointer"
+                  onClick={() => {
+                    document
+                      .getElementById("share-ideas-section")
+                      ?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start",
+                      });
+                  }}
+                >
+                  <span className="text-[#00d992] font-bold text-lg">
+                    Let us know
+                  </span>
+                </button>{" "}
+                how we can make it the useful hub for sharing, discovering, and
+                monetizing on your
                 <span className="text-[#00d992] font-medium ml-1">
                   VoltAgent-based
                 </span>{" "}
@@ -104,8 +120,7 @@ export const Marketplace = () => {
         >
           {/* First Preview Container - AgentList */}
           {/* IDEA section */}
-
-          <div className="landing-md:p-4 pt-4 mb-24 rounded-md border border-solid border-white/10 backdrop-filter backdrop-blur-sm relative">
+          <div className="landing-md:p-4 pt-4 landing-md:mb-24 mb-12 rounded-md border border-solid border-white/10 backdrop-filter backdrop-blur-sm relative">
             <div className="absolute inset-0 bg-gradient-to-r from-[#00d992]/10 to-purple-500/10 rounded-md opacity-30 animate-pulse pointer-events-none" />
             <div className="absolute top-0 left-0 bg-[#00d992] text-black text-xs py-1 px-3 rounded-tl-md font-medium">
               PREVIEW
@@ -145,7 +160,7 @@ export const Marketplace = () => {
 
           <div
             id="agent-detail-section"
-            className="landing-md:p-4 px-2 mb-24 rounded-md border border-solid border-white/10 backdrop-filter backdrop-blur-sm relative"
+            className="landing-md:p-4 px-2 landingmb-24 rounded-md border border-solid border-white/10 backdrop-filter backdrop-blur-sm relative"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-[#00d992]/10 to-purple-500/10 rounded-md opacity-30 animate-pulse pointer-events-none" />
             <div className="absolute top-0 left-0 bg-[#00d992] text-black text-xs py-1 px-3 rounded-tl-md font-medium">
@@ -163,6 +178,7 @@ export const Marketplace = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
           className="mb-8"
+          id="share-ideas-section"
         >
           <h3 className="text-xl sm:text-2xl font-bold mb-2 text-[#00d992]">
             How to share your ideas?
@@ -172,7 +188,7 @@ export const Marketplace = () => {
             <div className="flex flex-col items-center justify-center">
               <p className="mb-4 text-base sm:text-lg text-[#dcdcdc]">
                 The best tools are built with input from the developers who use
-                them.id.
+                them.
               </p>
               <p className="mb-4 text-base sm:text-lg text-[#dcdcdc]">
                 We're inviting the VoltAgent community to share feedback on the
@@ -192,10 +208,12 @@ export const Marketplace = () => {
                 rel="noopener noreferrer"
               >
                 <div className="flex items-center justify-center">
-                  <GitHubLogo className="w-6 h-6 mr-2" />
-                  Share your ideas on GitHub Discussion
+                  <GitHubLogo className="w-5 h-5 sm:w-6 sm:h-6 mr-2" />
+                  <span className="text-xs sm:text-base">
+                    Share your ideas on GitHub Discussion
+                  </span>
                   <ArrowTopRightOnSquareIcon
-                    className="w-5 h-5 ml-2 mb-1 "
+                    className="hidden sm:inline-block w-5 h-5 ml-2 mb-1"
                     aria-hidden="true"
                   />
                 </div>

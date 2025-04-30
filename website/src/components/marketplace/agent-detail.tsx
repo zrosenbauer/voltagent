@@ -2,16 +2,10 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowLeftIcon,
-  BoltIcon,
   CheckCircleIcon,
   ChartBarIcon,
-  ArrowPathIcon,
-  CurrencyDollarIcon,
-  CodeBracketIcon,
   FilmIcon,
-  StarIcon,
   ChatBubbleLeftRightIcon,
-  DocumentTextIcon,
   CommandLineIcon,
   ComputerDesktopIcon,
   CheckIcon,
@@ -23,8 +17,6 @@ import michaelAvatar from "../../../static/img/avatars/the-office/michael.png";
 import dwightAvatar from "../../../static/img/avatars/the-office/dwight.png";
 import jimAvatar from "../../../static/img/avatars/the-office/jim.png";
 import pamAvatar from "../../../static/img/avatars/the-office/pam.png";
-import angelaAvatar from "../../../static/img/avatars/the-office/angela.png";
-import kevinAvatar from "../../../static/img/avatars/the-office/kevin.png";
 
 // Sample reviews data
 const sampleReviews = [
@@ -78,7 +70,6 @@ interface AgentDetailProps {
 }
 
 export const AgentDetail = ({ onBack }: AgentDetailProps) => {
-  // For this example, we'll use the LinkedIn User Analyzer agent
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -112,7 +103,6 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
     usageStats: "6500 times used",
     lastUsed: "Just now",
     category: "Professional",
-    tags: ["linkedin", "recruiting", "networking", "analytics"],
     creator: {
       name: "Michael Scott",
       avatar: michaelAvatar,
@@ -126,8 +116,6 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
       "Contact information retrieval",
       "Industry and company analytics",
     ],
-    apiEndpoint: "/api/agents/linkedin-analyzer",
-    demoVideoUrl: "https://example.com/videos/linkedin-analyzer-demo.mp4",
   };
 
   return (
@@ -341,7 +329,7 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
                 <CheckCircleIcon className="h-4 w-4 sm:h-5 sm:w-5 text-[#00d992] mr-1.5" />
                 Capabilities
               </h2>
-              <div className="grid grid-cols-1 gap-1.5  ">
+              <div className="grid grid-cols-1 gap-1.5">
                 {selectedAgent.capabilities.map((capability) => (
                   <div key={capability} className="flex items-center text-sm">
                     <div className="mr-1.5 text-[#00d992] flex-shrink-0">-</div>
