@@ -2,31 +2,52 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { BoltIcon } from "@heroicons/react/24/solid";
 import {
-  MagnifyingGlassIcon,
-  AdjustmentsHorizontalIcon,
-  TagIcon,
   CurrencyDollarIcon,
   ChartBarIcon,
-  FunnelIcon,
   ArrowPathIcon,
   BoltIcon as BoltOutlineIcon,
+  CheckIcon,
 } from "@heroicons/react/24/outline";
+
+// Import avatar images
+import michaelAvatar from "../../../static/img/avatars/the-office/michael.png";
+import dwightAvatar from "../../../static/img/avatars/the-office/dwight.png";
+import jimAvatar from "../../../static/img/avatars/the-office/jim.png";
+import pamAvatar from "../../../static/img/avatars/the-office/pam.png";
+import angelaAvatar from "../../../static/img/avatars/the-office/angela.png";
+import kevinAvatar from "../../../static/img/avatars/the-office/kevin.png";
 
 // Sample agent data
 const dummyAgents = [
+  {
+    id: 7,
+    name: "LinkedIn User Analyzer",
+    rating: 4.8,
+    description: "Analyze LinkedIn profiles and extract professional insights.",
+    price: "2 credits per usage",
+    usageStats: "6500 times used",
+    lastUsed: "Just now",
+    category: "Professional",
+    tags: ["linkedin", "recruiting", "networking", "analytics"],
+    creator: {
+      name: "Michael Scott",
+      avatar: michaelAvatar,
+      verified: true,
+    },
+  },
   {
     id: 1,
     name: "Customer Support Bot",
     rating: 4.5,
     description: "Automate customer inquiries with natural language.",
-    price: "5 credits per conversation",
+    price: "Free",
     usageStats: "28,452 tasks completed",
     lastUsed: "3 days ago",
     category: "Support",
     tags: ["chatbot", "customer service", "automation"],
     creator: {
-      name: "Sarah Johnson",
-      avatar: "https://randomuser.me/api/portraits/women/44.jpg",
+      name: "Dwight Schrute",
+      avatar: dwightAvatar,
       verified: true,
     },
   },
@@ -35,14 +56,14 @@ const dummyAgents = [
     name: "Data Analyzer",
     rating: 5,
     description: "Process complex datasets with advanced analytics.",
-    price: "$49/month",
+    price: "$19/month",
     usageStats: "15,789 analyses run",
     lastUsed: "1 day ago",
     category: "Analytics",
     tags: ["data", "analytics", "visualization"],
     creator: {
-      name: "Alex Chen",
-      avatar: "https://randomuser.me/api/portraits/men/32.jpg",
+      name: "Jim Halpert",
+      avatar: jimAvatar,
       verified: true,
     },
   },
@@ -50,31 +71,16 @@ const dummyAgents = [
     id: 3,
     name: "Content Writer",
     rating: 4.2,
-    description: "Generate high-quality content for your brand.",
+    description:
+      "Generate high-quality content for your brand like blog posts, social media posts, and more.",
     price: "10 credits per article",
     usageStats: "7,892 documents created",
     lastUsed: "5 days ago",
     category: "Content",
     tags: ["writing", "content", "SEO"],
     creator: {
-      name: "Maya Patel",
-      avatar: "https://randomuser.me/api/portraits/women/62.jpg",
-      verified: false,
-    },
-  },
-  {
-    id: 4,
-    name: "GitHub Manager",
-    rating: 4.8,
-    description: "Manage repositories and track pull requests.",
-    price: "$39/month",
-    usageStats: "42,103 code blocks generated",
-    lastUsed: "Just now",
-    category: "Development",
-    tags: ["github", "git", "version control"],
-    creator: {
-      name: "David Miller",
-      avatar: "https://randomuser.me/api/portraits/men/45.jpg",
+      name: "Pam Beesly",
+      avatar: pamAvatar,
       verified: true,
     },
   },
@@ -89,8 +95,8 @@ const dummyAgents = [
     category: "Productivity",
     tags: ["calendar", "scheduling", "reminders"],
     creator: {
-      name: "TechFlow Inc.",
-      avatar: "https://ui-avatars.com/api/?name=TF&background=0D8ABC&color=fff",
+      name: "Angela Martin",
+      avatar: angelaAvatar,
       verified: true,
     },
   },
@@ -98,35 +104,20 @@ const dummyAgents = [
     id: 6,
     name: "Social Media Manager",
     rating: 4.6,
-    description: "Schedule posts across multiple platforms.",
-    price: "2 credits per post",
+    description:
+      "Schedule posts across multiple platforms like X, LinkedIn, and Instagram.",
+    price: "$9/month",
     usageStats: "31,845 posts published",
     lastUsed: "6 hours ago",
     category: "Marketing",
     tags: ["social media", "marketing", "analytics"],
     creator: {
-      name: "Jasmine Torres",
-      avatar: "https://randomuser.me/api/portraits/women/22.jpg",
-      verified: false,
+      name: "Kevin Malone",
+      avatar: kevinAvatar,
+      verified: true,
     },
   },
 ];
-
-/* 
-// Categories for future implementation 
-const categories = [
-  "All",
-  "Support",
-  "Analytics",
-  "Content",
-  "Development",
-  "Productivity",
-  "Marketing",
-];
-
-// Price ranges for future implementation
-const priceRanges = ["All", "Free", "Dollar-based", "Credit-based", "Low cost", "Premium"];
-*/
 
 // Rating component
 const RatingStars = ({ rating }) => {
@@ -142,27 +133,36 @@ const RatingStars = ({ rating }) => {
 };
 
 // Agent Card Component
-const AgentCard = ({ agent, onSelectAgent = () => {} }) => {
+const AgentCard = ({
+  agent,
+  onSelectAgent = () => {},
+  isFirstCard = false,
+  scrollToAgentDetail = null,
+}) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="border-solid border-[#1e293b]/40 rounded-lg overflow-hidden hover:border-[#00d992]/40 transition-all duration-300 h-full cursor-pointer"
+      className={`border-solid ${
+        isFirstCard
+          ? "border-[#00d992]/40 cursor-pointer"
+          : "border-[#1e293b]/40"
+      } rounded-lg overflow-hidden transition-all duration-300 h-full`}
       style={{
         backdropFilter: "blur(4px)",
         WebkitBackdropFilter: "blur(4px)",
         backgroundColor: "rgba(58, 66, 89, 0.3)",
       }}
       // @ts-ignore - We're providing a default value
-      onClick={() => onSelectAgent(agent)}
+      onClick={() => isFirstCard && onSelectAgent(agent)}
     >
       <div className="p-4 flex flex-col h-full">
         {/* Header with category badge */}
-        <div className="flex justify-between items-start mb-3">
-          <h3 className="text-[#00d992] font-bold text-lg truncate">
+        <div className="flex justify-between items-center mb-3">
+          <span className="text-[#00d992] font-bold text-lg truncate">
             {agent.name}
-          </h3>
+          </span>
           <span className="px-2 py-0.5 text-xs rounded-full bg-[#1e293b] text-gray-300">
             {agent.category}
           </span>
@@ -174,24 +174,16 @@ const AgentCard = ({ agent, onSelectAgent = () => {} }) => {
             <img
               src={agent.creator.avatar}
               alt={`${agent.creator.name}'s avatar`}
-              className="w-6 h-6 rounded-full border-solid border-[#1e293b]"
+              className="w-7 h-7 rounded-full border-solid border-[#1e293b]"
             />
             {agent.creator.verified && (
               <div className="absolute -top-1 -right-1 bg-[#00d992] rounded-full w-3 h-3 border-solid border-black flex items-center justify-center">
-                <svg
+                <CheckIcon
                   className="w-2 h-2 text-black"
                   fill="none"
-                  viewBox="0 0 24 24"
                   stroke="currentColor"
                   aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="3"
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
+                />
               </div>
             )}
           </div>
@@ -210,12 +202,29 @@ const AgentCard = ({ agent, onSelectAgent = () => {} }) => {
         {/* Price and Try Now in same row */}
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center">
-            <CurrencyDollarIcon className="h-4 w-4 text-[#00d992] mr-1" />
+            <CurrencyDollarIcon className="h-5 w-5 text-[#00d992] mr-1" />
             <span className="text-gray-300 font-medium">{agent.price}</span>
           </div>
-          <div className="px-3 py-1.5 bg-emerald-400/10 text-emerald-400 border-solid border-emerald-400/20 text-sm rounded transition-colors cursor-pointer text-center">
+          <button
+            className={`px-3 py-1.5 bg-emerald-400/10 text-emerald-400 border-solid border-emerald-400/20 text-sm rounded transition-colors ${
+              isFirstCard ? "cursor-pointer hover:bg-emerald-400/20" : ""
+            }`}
+            onClick={(e) => {
+              if (isFirstCard && scrollToAgentDetail) {
+                e.stopPropagation();
+                scrollToAgentDetail();
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && isFirstCard && scrollToAgentDetail) {
+                scrollToAgentDetail();
+              }
+            }}
+            type="button"
+            disabled={!isFirstCard}
+          >
             Try Now
-          </div>
+          </button>
         </div>
 
         {/* Stats in a more compact layout */}
@@ -235,60 +244,37 @@ const AgentCard = ({ agent, onSelectAgent = () => {} }) => {
 };
 
 export const AgentList = () => {
-  // Remove filter states, only keep search
-  const [searchTerm, setSearchTerm] = useState("");
-
-  // Simplified filtering based only on search term
-  const filteredAgents = dummyAgents.filter((agent) => {
-    // Search term filter
-    if (
-      searchTerm &&
-      !agent.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-      !agent.description.toLowerCase().includes(searchTerm.toLowerCase())
-    ) {
-      return false;
-    }
-    return true;
-  });
-
   return (
     <div className="py-8 px-3">
       <div className="flex flex-col gap-6">
         {/* Agent cards grid */}
         <div className="flex-1">
-          {filteredAgents.length === 0 ? (
-            <div
-              className="text-center py-10 border-solid border-[#1e293b]/40 rounded-lg"
-              style={{
-                backdropFilter: "blur(4px)",
-                WebkitBackdropFilter: "blur(4px)",
-                backgroundColor: "rgba(58, 66, 89, 0.3)",
-              }}
-            >
-              <p className="text-gray-400">
-                No agents found matching your search.
-              </p>
-              <button
-                onClick={() => setSearchTerm("")}
-                type="button"
-                className="mt-4 px-4 py-2 text-sm text-[#00d992] hover:underline cursor-pointer inline-block"
-              >
-                Clear search
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 relative">
-              {filteredAgents.map((agent, index) => (
-                <div
-                  key={agent.id}
-                  /* style={index >= 3 ? { filter: "blur(3px)" } : {}} */
-                  className="relative"
-                >
-                  <AgentCard agent={agent} />
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 relative">
+            {dummyAgents.map((agent, index) => (
+              <div key={agent.id} className="relative">
+                <AgentCard
+                  agent={agent}
+                  isFirstCard={index === 0}
+                  scrollToAgentDetail={
+                    index === 0
+                      ? () => {
+                          // Find the AgentDetail section in index.tsx and scroll to it
+                          const agentDetailElement = document.getElementById(
+                            "agent-detail-section",
+                          );
+                          if (agentDetailElement) {
+                            agentDetailElement.scrollIntoView({
+                              behavior: "smooth",
+                              block: "start",
+                            });
+                          }
+                        }
+                      : null
+                  }
+                />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

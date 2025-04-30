@@ -15,46 +15,69 @@ import {
   BoltIcon as BoltOutlineIcon,
   PlusCircleIcon,
 } from "@heroicons/react/24/outline";
+import { DotPattern } from "../ui/dot-pattern";
 
 export const Marketplace = () => {
   return (
     <section className="relative py-20">
+      <DotPattern dotColor="#94a3b8" dotSize={1.2} spacing={20} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-        <div className="text-center mb-8">
-          <div className="flex items-baseline justify-center">
-            <div className="flex mr-2 items-center border-2 border-solid border-[#00d992] rounded-full p-1">
-              <BoltIcon className="w-6 h-6 text-[#00d992]" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16 items-center">
+          <div className="flex w-fit flex-col items-start  relative">
+            <div className="flex items-baseline justify-start">
+              <div className="flex mr-2 items-center border-2 border-solid border-[#00d992] rounded-full p-1">
+                <BoltIcon className="w-6 h-6 text-[#00d992]" />
+              </div>
+              <span className="text-4xl font-bold text-[#00d992]">
+                voltagent
+              </span>
+              <div className="relative">
+                <span className="ml-2 text-2xl font-medium text-gray-400">
+                  Marketplace
+                </span>
+                <span className="absolute -top-6 -right-16 px-3 py-1 text-xs bg-emerald-400/10 text-emerald-400 rounded-md">
+                  Coming Soon
+                </span>
+              </div>
             </div>
-            <span className="text-4xl font-bold text-[#00d992]">voltagent</span>
-            <span className="ml-2 text-2xl font-medium text-gray-400">
-              Marketplace
-            </span>
+            <p className="mt-2 text-center self-center text-gray-400 text-sm">
+              Share & Rent your VoltAgent-based AI Agents
+            </p>
           </div>
-          <p className="mt-2 text-center text-gray-400 text-sm">
-            Share & Rent your VoltAgent-based AI Agents
-          </p>
-        </div>
-        <div className="max-w-7xl mx-auto mb-2">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-center mb-10"
-          >
-            <p className="text-lg  text-gray-400">
-              The VoltAgent Marketplace is on its way, and we need your
-              feedback!
-            </p>
-            <p className="text-lg  text-gray-400">
-              Tell us how we can make it the useful hub for sharing,
-              discovering, and monetizing on VoltAgent-based AI agents.
-            </p>
-          </motion.div>
+
+          <div className="relative">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="text-left md:ml-8"
+            >
+              <p className="text-xl font-light text-[#dcdcdc] mb-4">
+                The VoltAgent Community Marketplace is on its way, and we need
+                your feedback.
+              </p>
+              <p className="text-lg text-gray-400">
+                Tell us how we can make it the useful hub for sharing,
+                discovering, and monetizing on your
+                <span className="text-[#00d992] font-medium ml-1">
+                  VoltAgent-based
+                </span>{" "}
+                AI agents.
+              </p>
+            </motion.div>
+          </div>
         </div>
 
         {/* Preview of the Agent Marketplace UI */}
         <div className="flex justify-center ">
-          <div className="inline-flex items-center rounded-md gap-2 rounded-b-none  px-3 py-3 bg-slate-400/10  border-b-0 border-solid border border-slate-400/20 shadow-md">
+          <div
+            className="inline-flex items-center rounded-md gap-2 rounded-b-none  px-3 py-3 bg-slate-400/10  border-b-0 border-solid border border-slate-400/20 shadow-md"
+            style={{
+              backdropFilter: "blur(4px)",
+              WebkitBackdropFilter: "blur(4px)",
+              backgroundColor: "rgba(58, 66, 89, 0.3)",
+            }}
+          >
             <PlusCircleIcon
               className="w-5 h-5 text-emerald-400"
               aria-hidden="true"
@@ -63,8 +86,16 @@ export const Marketplace = () => {
               IDEA
             </span>
             <span className="text-gray-200 text-base">
-              Imagine developers building AI agents that has real use cases and
-              listing them on the marketplace.
+              <a
+                href="https://www.youtube.com/watch?v=iOs9Osz3UFQ"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-emerald-400 no-underline hover:underline"
+              >
+                Imagine
+              </a>{" "}
+              developers building AI agents that has real use cases and listing
+              them on the marketplace.
             </span>
           </div>
         </div>
@@ -92,7 +123,14 @@ export const Marketplace = () => {
           {/* Second Preview Container - AgentDetail */}
           {/* INTEGRATION section */}
           <div className="flex justify-center  mt-4">
-            <div className="inline-flex items-center rounded-md gap-2 rounded-b-none  px-3 py-3 bg-slate-400/10  border-b-0 border-solid border border-slate-400/20 shadow-md">
+            <div
+              className="inline-flex items-center rounded-md gap-2 rounded-b-none  px-3 py-3 bg-slate-400/10  border-b-0 border-solid border border-slate-400/20 shadow-md"
+              style={{
+                backdropFilter: "blur(4px)",
+                WebkitBackdropFilter: "blur(4px)",
+                backgroundColor: "rgba(58, 66, 89, 0.3)",
+              }}
+            >
               <PlusCircleIcon
                 className="w-5 h-5 text-emerald-400"
                 aria-hidden="true"
@@ -102,12 +140,15 @@ export const Marketplace = () => {
               </span>
               <span className="text-gray-200 text-base">
                 Imagine, agents can be integrated to existing code bases with a
-                command or directly run on web.
+                command or directly run in UI.
               </span>
             </div>
           </div>
 
-          <div className="p-4 mb-24 rounded-md border border-solid border-white/10 backdrop-filter backdrop-blur-sm relative">
+          <div
+            id="agent-detail-section"
+            className="p-4 mb-24 rounded-md border border-solid border-white/10 backdrop-filter backdrop-blur-sm relative"
+          >
             <div className="absolute inset-0 bg-gradient-to-r from-[#00d992]/10 to-purple-500/10 rounded-md opacity-30 animate-pulse pointer-events-none" />
             <div className="absolute top-0 left-0 bg-[#00d992] text-black text-xs py-1 px-3 rounded-tl-md font-medium">
               PREVIEW

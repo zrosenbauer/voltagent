@@ -14,16 +14,25 @@ import {
   DocumentTextIcon,
   CommandLineIcon,
   ComputerDesktopIcon,
+  CheckIcon,
 } from "@heroicons/react/24/outline";
 import { BoltIcon as BoltSolidIcon } from "@heroicons/react/24/solid";
+
+// Import avatar images
+import michaelAvatar from "../../../static/img/avatars/the-office/michael.png";
+import dwightAvatar from "../../../static/img/avatars/the-office/dwight.png";
+import jimAvatar from "../../../static/img/avatars/the-office/jim.png";
+import pamAvatar from "../../../static/img/avatars/the-office/pam.png";
+import angelaAvatar from "../../../static/img/avatars/the-office/angela.png";
+import kevinAvatar from "../../../static/img/avatars/the-office/kevin.png";
 
 // Sample reviews data
 const sampleReviews = [
   {
     id: 1,
     user: {
-      name: "Jessica Williams",
-      avatar: "https://randomuser.me/api/portraits/women/33.jpg",
+      name: "Jim Halpert",
+      avatar: jimAvatar,
     },
     rating: 4.5,
     date: "2 weeks ago",
@@ -32,12 +41,22 @@ const sampleReviews = [
   {
     id: 2,
     user: {
-      name: "Michael Rodriguez",
-      avatar: "https://randomuser.me/api/portraits/men/54.jpg",
+      name: "Pam Beesly",
+      avatar: pamAvatar,
     },
     rating: 5,
     date: "1 month ago",
-    text: "Perfect for our team's workflow. We've been able to automate pull request tracking and repository management with minimal setup.",
+    text: "Perfect for our team's workflow. We've been able to automate tracking LinkedIn profiles with minimal setup.",
+  },
+  {
+    id: 3,
+    user: {
+      name: "Dwight Schrute",
+      avatar: dwightAvatar,
+    },
+    rating: 5,
+    date: "3 days ago",
+    text: "Superior to all other LinkedIn analyzers. Fact. This agent has increased my sales leads efficiency by 200%. I recommend this to all Dunder Mifflin salespeople.",
   },
 ];
 
@@ -59,7 +78,7 @@ interface AgentDetailProps {
 }
 
 export const AgentDetail = ({ onBack }: AgentDetailProps) => {
-  // For this example, we'll use the GitHub Manager agent
+  // For this example, we'll use the LinkedIn User Analyzer agent
   const selectedAgent = {
     id: 4,
     name: "LinkedIn User Analyzer",
@@ -73,8 +92,8 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
     category: "Professional",
     tags: ["linkedin", "recruiting", "networking", "analytics"],
     creator: {
-      name: "David Miller",
-      avatar: "https://randomuser.me/api/portraits/men/45.jpg",
+      name: "Michael Scott",
+      avatar: michaelAvatar,
       verified: true,
     },
     capabilities: [
@@ -102,7 +121,7 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
           <div className="lg:col-span-2 space-y-6">
             {/* Header section */}
             <div
-              className="border-solid border-[#1e293b]/40 rounded-md p-6"
+              className="border-solid border-[#1e293b]/40 rounded-md p-4"
               style={{
                 backdropFilter: "blur(4px)",
                 WebkitBackdropFilter: "blur(4px)",
@@ -111,6 +130,15 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
             >
               <div className="flex items-center mb-3 justify-between ">
                 <span className="text-[#00d992] text-2xl font-bold ">
+                  {onBack && (
+                    <button
+                      type="button"
+                      onClick={onBack}
+                      className="text-[#00d992] mr-2 hover:text-opacity-80 inline-block"
+                    >
+                      <ArrowLeftIcon className="h-5 w-5" />
+                    </button>
+                  )}
                   {selectedAgent.name}
                 </span>
                 <div className="flex justify-between items-center mt-2">
@@ -122,20 +150,12 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
                     />
                     {selectedAgent.creator.verified && (
                       <div className="absolute -top-1 -right-1 bg-[#00d992] rounded-full w-3 h-3 border-solid border-black flex items-center justify-center">
-                        <svg
+                        <CheckIcon
                           className="w-2 h-2 text-black"
                           fill="none"
-                          viewBox="0 0 24 24"
                           stroke="currentColor"
                           aria-hidden="true"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="3"
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
+                        />
                       </div>
                     )}
                   </div>
@@ -172,7 +192,7 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
                     </div>
                     <code className="flex items-center bg-black/20 border-[#1e293b] border-solid  p-4 text-sm sm:text-sm text-emerald-500 font-mono whitespace-pre rounded-md overflow-x-auto">
                       <span>
-                        $ npx voltagent add davidmiller/linkedin-user-analyzer
+                        $ npx voltagent add michael-scott/linkedin-user-analyzer
                       </span>
                     </code>
                   </div>
@@ -204,7 +224,7 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
                             Analyze Profile
                           </button>
                           <div className="text-center ml-2 text-sm text-gray-500 mt-2">
-                            This is a preview. Each analysis costs 2 credits.
+                            Each analysis costs 2 credits.
                           </div>
                         </div>
                       </div>
@@ -216,17 +236,17 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
 
             {/* Demo video section */}
             <div
-              className="border-solid border-[#1e293b]/40 rounded-md p-6"
+              className="border-solid border-[#1e293b]/40 rounded-md p-4"
               style={{
                 backdropFilter: "blur(4px)",
                 WebkitBackdropFilter: "blur(4px)",
                 backgroundColor: "rgba(58, 66, 89, 0.3)",
               }}
             >
-              <h2 className="text-gray-200 text-lg font-medium mb-4 flex items-center">
+              <span className="text-gray-200 text-base font-medium mb-4 flex items-center">
                 <FilmIcon className="h-5 w-5 text-[#00d992] mr-2" />
-                Demo Video
-              </h2>
+                Observability for the Agent
+              </span>
               <div className="relative  bg-black/40 rounded-md overflow-hidden flex items-center justify-center">
                 <img
                   src="https://cdn.voltagent.dev/readme/demo.gif"
@@ -249,7 +269,7 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
               }}
             >
               <h2 className="text-gray-200 text-base font-medium mb-3 flex items-center">
-                <ChartBarIcon className="h-4 w-4 text-[#00d992] mr-1.5" />
+                <ChartBarIcon className="h-5 w-5 text-[#00d992] mr-1.5" />
                 Usage Statistics & Pricing
               </h2>
               <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-sm">
@@ -288,10 +308,10 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
               }}
             >
               <h2 className="text-gray-200 text-base font-medium mb-2 flex items-center">
-                <CheckCircleIcon className="h-4 w-4 text-[#00d992] mr-1.5" />
+                <CheckCircleIcon className="h-5 w-5 text-[#00d992] mr-1.5" />
                 Capabilities
               </h2>
-              <div className="grid grid-cols-1 gap-1.5">
+              <div className="grid grid-cols-1 gap-1.5  ">
                 {selectedAgent.capabilities.map((capability) => (
                   <div key={capability} className="flex items-center text-sm">
                     <div className="mr-1.5 text-[#00d992] flex-shrink-0">-</div>
@@ -303,7 +323,7 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
 
             {/* Reviews section */}
             <div
-              className="border-solid border-[#1e293b]/40 rounded-md p-6"
+              className="border-solid border-[#1e293b]/40 rounded-md p-4"
               style={{
                 backdropFilter: "blur(4px)",
                 WebkitBackdropFilter: "blur(4px)",
@@ -311,7 +331,7 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
               }}
             >
               <div className="mb-4">
-                <h2 className="text-gray-200 text-base font-medium flex items-center">
+                <h2 className="text-gray-200 text-base font-medium flex items-center ">
                   <ChatBubbleLeftRightIcon className="h-5 w-5 text-[#00d992] mr-2" />
                   User Reviews
                 </h2>
@@ -320,14 +340,14 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
                 {sampleReviews.map((review) => (
                   <div
                     key={review.id}
-                    className="pb-4 border-b border-[#1e293b] last:border-b-0 last:pb-0"
+                    className="p-4 rounded-md ring-1 ring-[#1e293b] "
                   >
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex items-center">
                         <img
                           src={review.user.avatar}
                           alt={`${review.user.name}'s avatar`}
-                          className="w-6 h-6 rounded-full border-solid border-[#1e293b] mr-2"
+                          className="w-7 h-7 rounded-full border-solid border-[#1e293b] mr-2"
                         />
                         <span className="text-sm font-medium text-[#dcdcdc]">
                           {review.user.name}
