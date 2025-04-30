@@ -2,7 +2,7 @@
 "@voltagent/core": patch
 ---
 
-feat: Refactor Agent Hooks Signature to Use Single Argument Object
+feat: Refactor Agent Hooks Signature to Use Single Argument Object - #57
 
 This change refactors the signature for all agent hooks (`onStart`, `onEnd`, `onToolStart`, `onToolEnd`, `onHandoff`) in `@voltagent/core` to improve usability, readability, and extensibility.
 
