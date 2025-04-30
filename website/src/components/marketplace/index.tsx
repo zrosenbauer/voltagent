@@ -202,7 +202,7 @@ export const Marketplace = () => {
                 agents built with VoltAgent on the marketplace.
               </p>
               <Link
-                to="https://github.com/voltagent/voltagent/issues/new?template=marketplace_feedback.md&title=[Marketplace Feedback]"
+                to="https://github.com/orgs/VoltAgent/discussions/74/"
                 className="inline-flex items-center no-underline px-4 py-3 sm:py-4 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 text-base sm:text-lg font-semibold rounded transition-colors cursor-pointer hover:bg-emerald-400/20 w-full justify-center"
                 target="_blank"
                 rel="noopener noreferrer"
