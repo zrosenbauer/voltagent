@@ -4,8 +4,12 @@ import Link from "@docusaurus/Link";
 import AgentList from "./agent-list";
 import AgentDetail from "./agent-detail";
 import { BoltIcon, PlusCircleIcon } from "@heroicons/react/24/solid";
-import { PlusCircleIcon as PlusCircleOutlineIcon } from "@heroicons/react/24/outline";
+import {
+  ArrowTopRightOnSquareIcon,
+  PlusCircleIcon as PlusCircleOutlineIcon,
+} from "@heroicons/react/24/outline";
 import { DotPattern } from "../ui/dot-pattern";
+import { GitHubLogo } from "../../../static/img/logos/github";
 
 export const Marketplace = () => {
   return (
@@ -25,7 +29,7 @@ export const Marketplace = () => {
                 <span className="ml-2 text-2xl font-medium text-gray-400">
                   Marketplace
                 </span>
-                <span className="absolute -top-6 -right-16 px-3 py-1 text-xs bg-emerald-400/10 text-emerald-400 rounded-md">
+                <span className="absolute -top-6 -right-16 px-3 py-1 text-xs bg-emerald-500/20 text-emerald-400 rounded-md font-medium border border-emerald-400/30">
                   Coming Soon
                 </span>
               </div>
@@ -42,7 +46,7 @@ export const Marketplace = () => {
               transition={{ duration: 0.5 }}
               className="text-left md:ml-8"
             >
-              <p className="text-lg font-light text-[#dcdcdc] mb-4">
+              <p className="text-lg text-[#dcdcdc] mb-4">
                 The VoltAgent Community Marketplace is on its way, and we need
                 your feedback.
               </p>
@@ -150,68 +154,51 @@ export const Marketplace = () => {
           </div>
         </motion.div>
 
-        <div className="max-w-3xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="mb-12"
-          >
-            <h3 className="text-2xl font-bold mb-4 text-[#00d992]">
-              Help Shape the Future
-            </h3>
-            <p className="mb-6 text-gray-300">
-              We believe the most powerful tools are built with input from the
-              people who will use them. That's why we're inviting the VoltAgent
-              community to share ideas and feedback on our marketplace before we
-              launch.
-            </p>
-            <div className="flex justify-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="mb-8"
+        >
+          <h3 className="text-2xl font-bold mb-2 text-[#00d992]">
+            How to share your ideas?
+          </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mx-auto">
+            <div className="flex flex-col items-center justify-center">
+              <p className="mb-4 text-lg text-[#dcdcdc]">
+                The best tools are built with input from the developers who use
+                them.id.
+              </p>
+              <p className="mb-4 text-lg text-[#dcdcdc]">
+                We're inviting the VoltAgent community to share feedback on the
+                marketplace as we build it. We're open to all suggestions — what
+                could be improved, what to add, or what to avoid.
+              </p>
+            </div>
+            <div className="flex flex-col items-center ring-1 ring-white/10 rounded-md p-4">
+              <p className="text-lg font-semibold mb-6 text-[#dcdcdc]">
+                Contribute your thoughts and get early access to publish your AI
+                agents built with VoltAgent on the marketplace.
+              </p>
               <Link
                 to="https://github.com/voltagent/voltagent/issues/new?template=marketplace_feedback.md&title=[Marketplace Feedback]"
-                className="inline-flex items-center justify-center rounded-md bg-[#00d992] text-gray-900 font-medium px-6 py-3 text-sm transition-colors hover:bg-[#00d992]/90 shadow-md"
+                className="inline-flex items-center no-underline px-4 py-4 bg-emerald-400/10 text-emerald-400 border-solid border border-emerald-400/20 text-lg font-semibold rounded transition-colors cursor-pointer hover:bg-emerald-400/20 w-full justify-center"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Share Your Ideas on GitHub
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="ml-2 h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                <div className="flex items-center justify-center">
+                  <GitHubLogo className="w-6 h-6 mr-2" />
+                  Share your ideas on GitHub Discussion
+                  <ArrowTopRightOnSquareIcon
+                    className="w-5 h-5 ml-2 mb-1 "
+                    aria-hidden="true"
                   />
-                </svg>
+                </div>
               </Link>
             </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
-            className="bg-black/20 p-8 rounded-xl border-solid border-[#1e293b]/40 backdrop-filter backdrop-blur-sm"
-          >
-            <h3 className="text-2xl font-bold mb-4 text-[#00d992]">
-              Features We're Exploring
-            </h3>
-            <ul className="list-disc pl-6 space-y-3 text-gray-400">
-              <li>Custom agent submission and review process</li>
-              <li>Standardized testing and performance metrics</li>
-              <li>Rating and feedback system</li>
-              <li>Integration with VoltAgent's core platform</li>
-              <li>Monetization options for developers</li>
-              <li>Enterprise solutions and custom deployments</li>
-            </ul>
-          </motion.div>
-        </div>
+          </div>
+        </motion.div>
       </div>
     </section>
   );
