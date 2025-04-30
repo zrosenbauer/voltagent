@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowLeftIcon,
@@ -79,6 +79,28 @@ interface AgentDetailProps {
 
 export const AgentDetail = ({ onBack }: AgentDetailProps) => {
   // For this example, we'll use the LinkedIn User Analyzer agent
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    // Check if we're on mobile initially
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 640); // sm breakpoint is 640px
+    };
+
+    checkIsMobile();
+
+    // Add resize listener
+    window.addEventListener("resize", checkIsMobile);
+
+    // Clean up
+    return () => {
+      window.removeEventListener("resize", checkIsMobile);
+    };
+  }, []);
+
+  // Limit to first 2 reviews on mobile
+  const visibleReviews = isMobile ? sampleReviews.slice(0, 2) : sampleReviews;
+
   const selectedAgent = {
     id: 4,
     name: "LinkedIn User Analyzer",
@@ -110,15 +132,15 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
 
   return (
     <div className="py-8 ">
-      <div className="mx-auto px-4 ">
+      <div className="mx-auto landing-md:px-4 px-0 ">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+          className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6"
         >
           {/* Left column - Main info */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
             {/* Header section */}
             <div
               className="border-solid border-[#1e293b]/40 rounded-md p-4"
@@ -128,25 +150,25 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
                 backgroundColor: "rgba(58, 66, 89, 0.3)",
               }}
             >
-              <div className="flex items-center mb-3 justify-between ">
-                <span className="text-[#00d992] text-2xl font-bold ">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:mb-3 sm:justify-between">
+                <span className="text-[#00d992] text-xl sm:text-2xl font-bold mb-2 sm:mb-0">
                   {onBack && (
                     <button
                       type="button"
                       onClick={onBack}
                       className="text-[#00d992] mr-2 hover:text-opacity-80 inline-block"
                     >
-                      <ArrowLeftIcon className="h-5 w-5" />
+                      <ArrowLeftIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                     </button>
                   )}
                   {selectedAgent.name}
                 </span>
-                <div className="flex justify-between items-center mt-2">
+                <div className="flex items-center">
                   <div className="relative mr-2">
                     <img
                       src={selectedAgent.creator.avatar}
                       alt={`${selectedAgent.creator.name}'s avatar`}
-                      className="w-6 h-6 rounded-full border-solid border-[#1e293b]"
+                      className="w-5 h-5 sm:w-6 sm:h-6 rounded-full border-solid border-[#1e293b]"
                     />
                     {selectedAgent.creator.verified && (
                       <div className="absolute -top-1 -right-1 bg-[#00d992] rounded-full w-3 h-3 border-solid border-black flex items-center justify-center">
@@ -159,7 +181,7 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
                       </div>
                     )}
                   </div>
-                  <span className="text-sm text-[#dcdcdc]">
+                  <span className="text-xs sm:text-sm text-[#dcdcdc]">
                     <span className="text-gray-500">By</span>{" "}
                     <span className="font-medium">
                       {selectedAgent.creator.name}
@@ -171,13 +193,13 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
                 </div>
               </div>
 
-              <p className="text-[#dcdcdc] mb-6">
+              <p className="text-[#dcdcdc] text-sm sm:text-base mb-6 line-clamp-3 sm:line-clamp-none">
                 {selectedAgent.longDescription}
               </p>
 
               {/* Try this agent section */}
               <div className="border-t border-[#1e293b] ">
-                <div className="text-emerald-400 text-md font-semibold mb-4 flex items-center">
+                <div className="text-emerald-400 text-sm sm:text-md font-semibold mb-4 flex items-center">
                   Try This Agent
                 </div>
 
@@ -186,11 +208,11 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
                   <div>
                     <div className="flex items-center mb-2">
                       <CommandLineIcon className="w-3.5 h-3.5 mr-1.5 text-emerald-400" />
-                      <span className="text-sm text-emerald-400">
+                      <span className="text-xs sm:text-sm text-emerald-400">
                         Run Locally
                       </span>
                     </div>
-                    <code className="flex items-center bg-black/20 border-[#1e293b] border-solid  p-4 text-sm sm:text-sm text-emerald-500 font-mono whitespace-pre rounded-md overflow-x-auto">
+                    <code className="flex items-center bg-black/20 border-[#1e293b] border-solid p-3 sm:p-4 text-xs sm:text-sm text-emerald-500 font-mono whitespace-pre rounded-md overflow-x-auto">
                       <span>
                         $ npx voltagent add michael-scott/linkedin-user-analyzer
                       </span>
@@ -201,29 +223,29 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
                   <div>
                     <div className="flex items-center mb-2">
                       <ComputerDesktopIcon className="w-3.5 h-3.5 mr-1.5 text-emerald-400" />
-                      <span className="text-sm text-emerald-400">
+                      <span className="text-xs sm:text-sm text-emerald-400">
                         Use directly in UI
                       </span>
                     </div>
-                    <div className="bg-black/20 border-[#1e293b]  p-4 rounded-md">
+                    <div className="bg-black/20 border-[#1e293b] p-3 sm:p-4 rounded-md">
                       <div className="space-y-3">
                         <div className="relative">
                           <input
                             type="text"
                             placeholder="LinkedIn profile URL"
-                            className="w-full bg-black/20 border-[#1e293b]  border outline-none border-gray-700 rounded-md px-3 py-2 text-sm text-[#dcdcdc] focus:outline-none ring-1 ring-emerald-500"
+                            className="w-full bg-black/20 border-[#1e293b] border outline-none border-gray-700 rounded-md px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-[#dcdcdc] focus:outline-none ring-1 ring-emerald-500"
                             readOnly
                           />
                         </div>
-                        <div className="flex items-center ">
+                        <div className="flex flex-wrap items-center">
                           <button
                             type="button"
-                            className=" px-2 py-1  bg-emerald-400/10 text-emerald-400 border-solid border-emerald-400/20  font-medium rounded-md text-sm disabled:opacity-100"
+                            className="px-2 sm:px-3 py-1 sm:py-1.5 bg-emerald-400/10 text-emerald-400 border-solid border-emerald-400/20 font-medium rounded-md text-xs sm:text-sm disabled:opacity-100"
                             disabled
                           >
                             Analyze Profile
                           </button>
-                          <div className="text-center ml-2 text-sm text-gray-500 mt-2">
+                          <div className="text-center landing-md:ml-2  text-xs sm:text-sm text-gray-500 mt-1 sm:mt-2">
                             Each analysis costs 2 credits.
                           </div>
                         </div>
@@ -268,33 +290,41 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
                 backgroundColor: "rgba(58, 66, 89, 0.3)",
               }}
             >
-              <h2 className="text-gray-200 text-base font-medium mb-3 flex items-center">
-                <ChartBarIcon className="h-5 w-5 text-[#00d992] mr-1.5" />
+              <h2 className="text-gray-200 text-sm sm:text-base font-medium mb-3 flex items-center">
+                <ChartBarIcon className="h-4 w-4 sm:h-5 sm:w-5 text-[#00d992] mr-1.5" />
                 Usage Statistics & Pricing
               </h2>
-              <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-sm">
-                <span className="text-gray-400">Total usage</span>
-                <span className="text-[#dcdcdc] text-right">
-                  {selectedAgent.usageStats}
-                </span>
-
-                <span className="text-gray-400">Last used</span>
-                <span className="text-[#dcdcdc] text-right">
-                  {selectedAgent.lastUsed}
-                </span>
-
-                <span className="text-gray-400">Rating</span>
-                <div className="flex items-center justify-end">
-                  <BoltSolidIcon className="h-3 w-3 text-[#00d992] mr-1" />
-                  <span className="text-[#dcdcdc]">
-                    {selectedAgent.rating}/5
+              <div className="grid grid-cols-1 xs:grid-cols-2 gap-x-2 gap-y-3 text-sm">
+                <div className="flex justify-between xs:block">
+                  <span className="text-gray-400">Total usage</span>
+                  <span className="text-[#dcdcdc] xs:text-right block">
+                    {selectedAgent.usageStats}
                   </span>
                 </div>
 
-                <span className="text-gray-400">Price</span>
-                <span className="text-gray-200 font-medium text-right">
-                  {selectedAgent.price}
-                </span>
+                <div className="flex justify-between xs:block">
+                  <span className="text-gray-400">Last used</span>
+                  <span className="text-[#dcdcdc] xs:text-right block">
+                    {selectedAgent.lastUsed}
+                  </span>
+                </div>
+
+                <div className="flex justify-between xs:block">
+                  <span className="text-gray-400">Rating</span>
+                  <div className="flex items-center xs:justify-end">
+                    <BoltSolidIcon className="h-3 w-3 text-[#00d992] mr-1" />
+                    <span className="text-[#dcdcdc]">
+                      {selectedAgent.rating}/5
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex justify-between xs:block">
+                  <span className="text-gray-400">Price</span>
+                  <span className="text-gray-200 font-medium xs:text-right block">
+                    {selectedAgent.price}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -307,8 +337,8 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
                 backgroundColor: "rgba(58, 66, 89, 0.3)",
               }}
             >
-              <h2 className="text-gray-200 text-base font-medium mb-2 flex items-center">
-                <CheckCircleIcon className="h-5 w-5 text-[#00d992] mr-1.5" />
+              <h2 className="text-gray-200 text-sm sm:text-base font-medium mb-2 flex items-center">
+                <CheckCircleIcon className="h-4 w-4 sm:h-5 sm:w-5 text-[#00d992] mr-1.5" />
                 Capabilities
               </h2>
               <div className="grid grid-cols-1 gap-1.5  ">
@@ -331,37 +361,41 @@ export const AgentDetail = ({ onBack }: AgentDetailProps) => {
               }}
             >
               <div className="mb-4">
-                <h2 className="text-gray-200 text-base font-medium flex items-center ">
-                  <ChatBubbleLeftRightIcon className="h-5 w-5 text-[#00d992] mr-2" />
+                <h2 className="text-gray-200 text-sm sm:text-base font-medium flex items-center ">
+                  <ChatBubbleLeftRightIcon className="h-4 w-4 sm:h-5 sm:w-5 text-[#00d992] mr-2" />
                   User Reviews
                 </h2>
               </div>
               <div className="space-y-4">
-                {sampleReviews.map((review) => (
+                {visibleReviews.map((review) => (
                   <div
                     key={review.id}
-                    className="p-4 rounded-md ring-1 ring-[#1e293b] "
+                    className="p-3 sm:p-4 rounded-md ring-1 ring-[#1e293b] "
                   >
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex items-center">
                         <img
                           src={review.user.avatar}
                           alt={`${review.user.name}'s avatar`}
-                          className="w-7 h-7 rounded-full border-solid border-[#1e293b] mr-2"
+                          className="w-5 h-5 sm:w-7 sm:h-7 rounded-full border-solid border-[#1e293b] mr-1 sm:mr-2"
                         />
-                        <span className="text-sm font-medium text-[#dcdcdc]">
+                        <span className="text-xs sm:text-sm font-medium text-[#dcdcdc]">
                           {review.user.name}
                         </span>
                       </div>
                       <div className="flex items-center">
                         <BoltSolidIcon className="h-3 w-3 text-[#00d992] mr-1" />
-                        <span className="text-sm text-gray-400">
+                        <span className="text-xs sm:text-sm text-gray-400">
                           {review.rating}
                         </span>
                       </div>
                     </div>
-                    <p className="text-sm text-gray-400 mb-1">{review.text}</p>
-                    <div className="text-sm text-gray-500">{review.date}</div>
+                    <p className="text-xs sm:text-sm text-gray-400 mb-1">
+                      {review.text}
+                    </p>
+                    <div className="text-xs sm:text-sm text-gray-500">
+                      {review.date}
+                    </div>
                   </div>
                 ))}
               </div>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { BoltIcon } from "@heroicons/react/24/solid";
 import {
@@ -160,7 +160,7 @@ const AgentCard = ({
       <div className="p-4 flex flex-col h-full">
         {/* Header with category badge */}
         <div className="flex justify-between items-center mb-3">
-          <span className="text-[#00d992] font-bold text-lg truncate">
+          <span className="text-[#00d992] font-bold text-base sm:text-lg truncate">
             {agent.name}
           </span>
           <span className="px-2 py-0.5 text-xs rounded-full bg-[#1e293b] text-gray-300">
@@ -169,7 +169,7 @@ const AgentCard = ({
         </div>
 
         {/* Creator Info and avatar in one row */}
-        <div className="mb-3 flex items-center">
+        <div className="mb-3 flex flex-wrap items-center">
           <div className="relative mr-2">
             <img
               src={agent.creator.avatar}
@@ -187,26 +187,30 @@ const AgentCard = ({
               </div>
             )}
           </div>
-          <span className="text-xs text-gray-300">
+          <span className="text-xs text-gray-300 mr-2">
             <span className="text-gray-500">By</span>{" "}
             <span className="font-medium">{agent.creator.name}</span>
           </span>
-          <div className="flex items-center ml-2">
+          <div className="flex items-center mt-1 xs:mt-0">
             <RatingStars rating={agent.rating} />
           </div>
         </div>
 
         {/* Description - reduced margin */}
-        <p className="text-gray-400 text-sm mb-3">{agent.description}</p>
+        <p className="text-gray-400 text-xs sm:text-sm mb-3">
+          {agent.description}
+        </p>
 
         {/* Price and Try Now in same row */}
-        <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center">
-            <CurrencyDollarIcon className="h-5 w-5 text-[#00d992] mr-1" />
-            <span className="text-gray-300 font-medium">{agent.price}</span>
+        <div className="mb-3 flex flex-wrap items-center justify-between">
+          <div className="flex items-center mb-2 xs:mb-0">
+            <CurrencyDollarIcon className="h-4 w-4 sm:h-5 sm:w-5 text-[#00d992] mr-1" />
+            <span className="text-gray-300 text-xs sm:text-sm font-medium">
+              {agent.price}
+            </span>
           </div>
           <button
-            className={`px-3 py-1.5 bg-emerald-400/10 text-emerald-400 border-solid border-emerald-400/20 text-sm rounded transition-colors ${
+            className={`px-2 sm:px-3 py-1 sm:py-1.5 bg-emerald-400/10 text-emerald-400 border-solid border-emerald-400/20 text-xs sm:text-sm rounded transition-colors ${
               isFirstCard ? "cursor-pointer hover:bg-emerald-400/20" : ""
             }`}
             onClick={(e) => {
@@ -228,8 +232,8 @@ const AgentCard = ({
         </div>
 
         {/* Stats in a more compact layout */}
-        <div className="flex justify-between text-xs text-gray-400">
-          <div className="flex items-center">
+        <div className="flex flex-wrap justify-between text-xs text-gray-400">
+          <div className="flex items-center mb-1 xs:mb-0 mr-4 xs:mr-0">
             <ChartBarIcon className="h-3 w-3 mr-1 text-gray-500" />
             <span>{agent.usageStats}</span>
           </div>
@@ -244,13 +248,35 @@ const AgentCard = ({
 };
 
 export const AgentList = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    // Check if we're on mobile initially
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 640); // sm breakpoint is 640px
+    };
+
+    checkIsMobile();
+
+    // Add resize listener
+    window.addEventListener("resize", checkIsMobile);
+
+    // Clean up
+    return () => {
+      window.removeEventListener("resize", checkIsMobile);
+    };
+  }, []);
+
+  // Limit to first 3 agents on mobile
+  const visibleAgents = isMobile ? dummyAgents.slice(0, 3) : dummyAgents;
+
   return (
     <div className="py-8 px-3">
       <div className="flex flex-col gap-6">
         {/* Agent cards grid */}
         <div className="flex-1">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 relative">
-            {dummyAgents.map((agent, index) => (
+          <div className="grid grid-cols-1 xs:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 relative">
+            {visibleAgents.map((agent, index) => (
               <div key={agent.id} className="relative">
                 <AgentCard
                   agent={agent}
