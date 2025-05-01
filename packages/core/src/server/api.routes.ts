@@ -190,7 +190,13 @@ export const TextRequestSchema = z
     ]),
     options: GenerateOptionsSchema.optional().openapi({
       description: "Optional generation parameters",
-      example: { temperature: 0.7, maxTokens: 100 },
+      example: {
+        userId: "unique-user-id",
+        conversationId: "unique-conversation-id",
+        contextLimit: 10,
+        temperature: 0.7,
+        maxTokens: 100,
+      },
     }),
   })
   .openapi("TextGenerationRequest"); // Add OpenAPI metadata
