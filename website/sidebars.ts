@@ -26,6 +26,7 @@ const sidebars: SidebarsConfig = {
         "agents/retriever",
         "agents/mcp",
         "agents/hooks",
+        "agents/multi-modal",
         "agents/providers",
         "agents/subagents",
         "agents/voice",
@@ -56,6 +57,17 @@ const sidebars: SidebarsConfig = {
       type: "category",
       label: "Utils",
       items: ["utils/create-prompt"],
+    },
+    {
+      type: "category",
+      label: "Providers",
+      items: [
+        "providers/overview",
+        "providers/vercel-ai",
+        "providers/google-ai",
+        "providers/groq-ai",
+        "providers/xsai",
+      ],
     },
     {
       type: "category",

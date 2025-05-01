@@ -456,10 +456,12 @@ console.log(response.text);
 
 VoltAgent achieves this through `LLMProvider` implementations. You configure your `Agent` with a specific provider instance and the desired model compatible with that provider.
 
-Currently, VoltAgent offers built-in support for:
+Currently, VoltAgent offers built-in providers for various services and APIs:
 
-- **`@voltagent/vercel-ai`**: Leverages the powerful Vercel AI SDK [\[1\]](https://sdk.vercel.ai/docs/introduction) to connect to a wide array of popular models (OpenAI, Anthropic, Google, Mistral, Cohere, and many more) with a standardized API.
-- **`@voltagent/xsai`**: Provides a lightweight alternative provider, compatible with OpenAI and OpenAI-compatible APIs, ideal for environments where bundle size is a concern (like browsers or edge functions) [\[2\]](https://xsai.js.org/docs).
+- **`@voltagent/vercel-ai`**: Uses the Vercel AI SDK to connect to a wide range of models (OpenAI, Anthropic, Google, Groq, etc.).
+- **`@voltagent/xsai`**: Connects to any OpenAI-compatible API (OpenAI, Groq, Together AI, local models, etc.).
+- **`@voltagent/google-ai`**: Uses the official Google AI SDK for Gemini and Vertex AI.
+- **`@voltagent/groq-ai`**: Connects specifically to the Groq API for fast inference.
 
 We plan to add more official provider integrations in the future. Furthermore, developers can create their own custom providers by implementing the `LLMProvider` interface to connect VoltAgent to virtually any AI model or service.
 
@@ -505,7 +507,7 @@ const response2 = await xsaiAgent.generateText("Hello XsAI!");
 console.log(response2.text);
 ```
 
-[Learn more about Providers](../providers/overview.md)
+[**Learn more about available Providers and their specific configurations.**](../providers/overview.md)
 
 ### Provider Options
 
