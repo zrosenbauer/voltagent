@@ -150,6 +150,8 @@ See the [Providers](../providers/overview.md) documentation for more general det
 
 ## Developer Console Integration
 
+![VoltAgent Developer Console Multi-modal Demo](https://cdn.voltagent.dev/docs/multi-modal-demo.gif)
+
 The [VoltAgent Developer Console](https://console.voltagent.dev/) provides a user-friendly way to interact with multi-modal agents:
 
 - **Assistant Chat:** The chat interface includes an attachment button (📎).
