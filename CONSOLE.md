@@ -8,6 +8,8 @@
 <br/>
 The VoltAgent Developer Console is a web-based tool designed to help you monitor, debug, and improve your AI agents during development and execution.
 
+<br />
+
 Access the hosted Developer Console at: [https://console.voltagent.dev/](https://console.voltagent.dev/)
 
 [![VoltAgent Console](https://github.com/user-attachments/assets/0adbec33-1373-4cf4-b67d-825f7baf1cb4)](https://console.voltagent.dev/)
