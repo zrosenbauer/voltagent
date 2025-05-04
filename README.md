@@ -140,7 +140,7 @@ Your agent is now running! To interact with it:
 4. Start Chatting: On the agent detail page, click the chat icon in the bottom right corner to open the chat window.
 5. Send a Message: Type a message like "Hello" and press Enter.
 
-![VoltAgent Developer Console Demo](https://github.com/user-attachments/assets/0adbec33-1373-4cf4-b67d-825f7baf1cb4)
+[![VoltAgent Developer Console Demo](https://github.com/user-attachments/assets/0adbec33-1373-4cf4-b67d-825f7baf1cb4)](https://console.voltagent.dev/)
 
 ## Key Features
 
