@@ -33,28 +33,28 @@ The console provides several views and features to enhance observability:
 - **What:** Visualize and debug your AI agent's execution flow in real-time.
 - **Includes:** A visual representation (timeline or graph) of the agent's steps, function calls, and tool usage.
 
-![Agent Execution Flow](https://voltagent.dev/assets/images/flow-detail-2-c4c4ca27d006e4009e839085ade72aa2.png)
+![Real-Time Agent Visualization](https://github.com/user-attachments/assets/736879b9-f2d1-4990-8b57-9038660dc77a)
 
 ### 2. Agent Chat
 
 - **What:** Chat with your AI agents in real-time.
 - **Includes:** Metrics and insights alongside the chat interface.
 
-![Agent Chat](https://voltagent.dev/assets/images/agent-chat-e82e7cc25ac016e34a79acbe3eab03c3.png)
+![AI Agent Chat Playground](https://github.com/user-attachments/assets/d29892bd-b0e2-4352-95f8-f58b79d0f57e)
 
 ### 3. Granular Visibility into Agent Runs
 
 - **What:** View detailed inputs, outputs, and parameters for each agent, memory, and tool call.
 - **Includes:** Ability to inspect messages (prompts, responses), internal logs, and tool details for specific steps.
 
-![Granular Visibility](https://voltagent.dev/assets/images/flow-detail-2-c4c4ca27d006e4009e839085ade72aa2.png)
+![AI Agent Granular Visibility](https://github.com/user-attachments/assets/051f0289-d33a-46ba-9029-f62615276543)
 
 ### 4. Agent List View
 
 - **What:** Displays a list of active or recent agent sessions.
 - **Includes:** Quick overview of agents that have run or are currently running.
 
-![Agent List](https://voltagent.dev/assets/images/agent-list-ae1bd33ed5131e10beb861e07c416613.png)
+![agent-list](https://github.com/user-attachments/assets/bfb3d85f-6584-4271-8f4f-05aaad9dff7a)
 
 ## Getting Started
 
