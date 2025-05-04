@@ -10,7 +10,7 @@ The VoltAgent Developer Console is a web-based tool designed to help you monitor
 
 Access the hosted Developer Console at: [https://console.voltagent.dev/](https://console.voltagent.dev/)
 
-[![VoltAgent Console](https://cdn.voltagent.dev/readme/demo.gif)](https://console.voltagent.dev/)
+[![VoltAgent Console](https://github.com/user-attachments/assets/0adbec33-1373-4cf4-b67d-825f7baf1cb4)](https://console.voltagent.dev/)
 
 You can also try a live interactive demo here: [https://console.voltagent.dev/demo](https://console.voltagent.dev/demo)
 
