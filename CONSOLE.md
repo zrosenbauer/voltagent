@@ -58,25 +58,40 @@ The console provides several views and features to enhance observability:
 
 ## Getting Started
 
-1.  **Run Your VoltAgent Application:** Ensure your VoltAgent application is running locally. When you run the `dev` command (e.g., `npm run dev`), you should see the VoltAgent server startup message in your terminal:
+### Create & Run Your VoltAgent Application
 
-    ```bash
-    ══════════════════════════════════════════════════
-      VOLTAGENT SERVER STARTED SUCCESSFULLY
-    ══════════════════════════════════════════════════
-      ✓ HTTP Server: http://localhost:3141
+- First, create a new project if you haven't already using the quick start command:
+  ```bash
+  npm create voltagent-app@latest my-agent-app
+  cd my-agent-app
+  ```
+  _(The `create-voltagent-app` tool will typically prompt you for necessary API keys and create a `.env` file for you. If you need to add keys manually later, create or edit the `.env` file in your project root, e.g., `OPENAI_API_KEY=your_key`)_
+- Then, run your VoltAgent application locally. When you run the `dev` command (e.g., `npm run dev`), you should see the VoltAgent server startup message in your terminal:
 
-      Developer Console:    https://console.voltagent.dev
-    ══════════════════════════════════════════════════
-    [VoltAgent] All packages are up to date
-    ```
+  ```bash
+  ══════════════════════════════════════════════════
+    VOLTAGENT SERVER STARTED SUCCESSFULLY
+  ══════════════════════════════════════════════════
+    ✓ HTTP Server: http://localhost:3141
 
-2.  **Open the Console:** Click the [`https://console.voltagent.dev`](https://console.voltagent.dev) link shown in your terminal output (or copy-paste it into your browser).
+    Developer Console:    https://console.voltagent.dev
+  ══════════════════════════════════════════════════
+  [VoltAgent] All packages are up to date
+  ```
 
-3.  **Connect to Local Agent:** The console should automatically attempt to connect to `http://localhost:3141`. If your agent is running on a different port, you might need to configure the connection URL in the console's settings (usually via a connection status indicator or settings menu).
+### Open the Console
 
-4.  **Explore:** Once connected, you can:
-    - See your running agent(s) in the **Agent List View**.
-    - Click an agent to view its execution details (steps, function calls, etc.) in the **Agent Detail View**.
-    - Inspect the flow visually in the **Real-Time Agent Visualization**.
-    - Interact with your agent using the **Agent Chat** feature.
+Click the [`https://console.voltagent.dev`](https://console.voltagent.dev) link shown in your terminal output (or copy-paste it into your browser).
+
+### Connect to Local Agent
+
+The console should automatically attempt to connect to `http://localhost:3141`. If your agent is running on a different port, you might need to configure the connection URL in the console's settings (usually via a connection status indicator or settings menu).
+
+### Explore
+
+Once connected, you can:
+
+- See your running agent(s) in the **Agent List View**.
+- Click an agent to view its execution details (steps, function calls, etc.) in the **Agent Detail View**.
+- Inspect the flow visually in the **Real-Time Agent Visualization**.
+- Interact with your agent using the **Agent Chat** feature.
