@@ -1,7 +1,5 @@
 import React from "react";
 
-import AgentList from "../../../static/img/ops/agent-list.png";
-
 const AgentListView = () => {
   return (
     <div
@@ -12,7 +10,7 @@ const AgentListView = () => {
       }}
     >
       <img
-        src={AgentList}
+        src="/img/ops/agent-list.png"
         alt="Agent Sessions List"
         className="w-full h-auto object-cover block max-h-[300px] sm:max-h-[400px] md:max-h-none"
         loading="lazy"

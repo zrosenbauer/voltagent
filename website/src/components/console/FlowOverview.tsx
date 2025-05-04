@@ -1,7 +1,5 @@
 import React from "react";
 
-import flowview from "../../../static/img/ops/flow-1.png";
-
 const FlowOverview = () => {
   return (
     <div
@@ -12,7 +10,7 @@ const FlowOverview = () => {
       }}
     >
       <img
-        src={flowview}
+        src="/img/ops/flow-1.png"
         alt="Connection Manager"
         className="w-full h-auto object-cover block max-h-[300px] sm:max-h-[400px] md:max-h-none"
         loading="lazy"

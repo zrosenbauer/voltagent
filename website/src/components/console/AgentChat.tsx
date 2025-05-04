@@ -1,7 +1,5 @@
 import React from "react";
 
-import agentchat from "../../../static/img/ops/agent-chat.png";
-
 const MessageInspector = () => {
   return (
     <div
@@ -12,7 +10,7 @@ const MessageInspector = () => {
       }}
     >
       <img
-        src={agentchat}
+        src="/img/ops/agent-chat.png"
         alt="Message Inspector"
         className="w-full h-auto object-cover block max-h-[300px] sm:max-h-[400px] md:max-h-none"
         loading="lazy"

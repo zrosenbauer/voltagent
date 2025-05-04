@@ -1,5 +1,4 @@
 import React from "react";
-import AgentDetail from "../../../static/img/ops/flow-detail-2.png";
 
 const AgentDetailView = () => {
   return (
@@ -11,7 +10,7 @@ const AgentDetailView = () => {
       }}
     >
       <img
-        src={AgentDetail}
+        src="/img/ops/flow-detail-2.png"
         alt="Agent Detail"
         className="w-full h-auto object-cover block max-h-[300px] sm:max-h-[400px] md:max-h-none"
         loading="lazy"
