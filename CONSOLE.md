@@ -4,7 +4,7 @@
 <a href="https://voltagent.dev/">
 <img width="1800" alt="435380213-b6253409-8741-462b-a346-834cd18565a9" src="https://github.com/user-attachments/assets/452a03e7-eeda-4394-9ee7-0ffbcf37245c" />
 </a>
-
+</div>
 <br/>
 The VoltAgent Developer Console is a web-based tool designed to help you monitor, debug, and improve your AI agents during development and execution.
 
