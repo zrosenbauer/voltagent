@@ -107,6 +107,18 @@ run();
 
 The provider currently only handles string content within `BaseMessage` objects. Multi-modal inputs (like images) are not processed.
 
+## Tool Calling Support
+
+⚠️ **Not Supported (Yet).**
+
+The `@voltagent/groq-ai` provider does not currently support native tool calling or function calling features directly through VoltAgent's `generateText` or `streamText` methods with tool definitions.
+
+The Groq API itself has some support for tool/function calling, but this is not yet integrated into the VoltAgent provider.
+
+If you need to use tool calling with Groq models, we recommend using the [`@voltagent/vercel-ai`](/docs/providers/vercel-ai) provider. The Vercel AI SDK provides a unified interface for tool calling across various models, including Groq. You can find more details in the [Vercel AI SDK Groq Provider documentation](https://ai-sdk.dev/providers/ai-sdk-providers/groq).
+
+We welcome community contributions to add direct tool calling support to this provider!
+
 ## Model Selection & Options
 
 The specific Groq model ID (e.g., `'llama3-70b-8192'`, `'mixtral-8x7b-32768'`) is set via the `model` property during `Agent` instantiation. Refer to the [Groq Models Documentation](https://console.groq.com/docs/models) for available model IDs.
