@@ -69,9 +69,6 @@ export function endOperationSpan(options: EndOperationSpanOptions): void {
   const { span, status, data } = options;
 
   if (!span || !span.isRecording()) {
-    console.warn(
-      "[VoltAgentCore OTEL] Attempted to end a non-recording or undefined operation span.",
-    );
     return;
   }
 
@@ -176,7 +173,6 @@ export function endToolSpan(options: EndToolSpanOptions): void {
   const { span, resultData } = options;
 
   if (!span || !span.isRecording()) {
-    console.warn("[VoltAgentCore OTEL] Attempted to end a non-recording or undefined tool span.");
     return;
   }
 
