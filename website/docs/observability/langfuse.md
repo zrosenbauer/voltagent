@@ -21,89 +21,56 @@ npm install @voltagent/langfuse-exporter
 
 ## Setup
 
-1.  **Import `VoltAgent` and `LangfuseExporter`:**
-    In your main application file (e.g., `index.ts`), import the required classes.
+## Import `VoltAgent` and `LangfuseExporter`
 
-    ```typescript
-    import { Agent, VoltAgent } from "@voltagent/core";
-    import { LangfuseExporter } from "@voltagent/langfuse-exporter";
-    // ... other imports like your LLM provider and tools
-    ```
+In your main application file (e.g., `index.ts`), import the required classes.
 
-2.  **Configure the Exporter:**
-    Create an instance of `LangfuseExporter`. It's best practice to use environment variables for your Langfuse credentials.
-
-    ```typescript
-    const langfuseExporter = new LangfuseExporter({
-      publicKey: process.env.LANGFUSE_PUBLIC_KEY, // Your Langfuse Public Key
-      secretKey: process.env.LANGFUSE_SECRET_KEY, // Your Langfuse Secret Key
-      baseUrl: process.env.LANGFUSE_BASE_URL, // Optional: Defaults to Langfuse Cloud URL
-      // debug: true, // Optional: Enable detailed logging from the exporter
-    });
-    ```
-
-    Ensure you have set the `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` environment variables.
-
-3.  **Pass Exporter to `VoltAgent`:**
-    When creating your main `VoltAgent` instance, pass the configured `langfuseExporter` to the `telemetryExporter` option.
-
-    ```typescript
-    // Define your agent(s)
-    const myAgent = new Agent({
-      name: "My Assistant",
-      // ... other agent options (llm, model, tools, etc.)
-    });
-
-    // Initialize VoltAgent with the exporter
-    new VoltAgent({
-      agents: {
-        myAgent, // Register your agent(s)
-      },
-      telemetryExporter: langfuseExporter, // Pass the exporter instance
-    });
-    ```
-
-## Example
-
-Here's a minimal complete example:
-
-```typescript title="index.ts"
-import { openai } from "@ai-sdk/openai";
+```typescript
 import { Agent, VoltAgent } from "@voltagent/core";
-import { LangfuseExporter } from "@voltagent/langfuse-exporter";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
-// Assuming you have some tools defined in ./tools
-import { weatherTool, searchTool } from "./tools";
+import { openai } from "@ai-sdk/openai";
 
-// 1. Define your agent
-const agent = new Agent({
-  name: "Helpful Assistant",
-  description: "Answers questions and uses tools.",
+// highlight-next-line
+import { LangfuseExporter } from "@voltagent/langfuse-exporter";
+// ... other imports like your LLM provider and tools
+```
+
+## Configure the Exporter
+
+Create an instance of `LangfuseExporter`. It's best practice to use environment variables for your Langfuse credentials.
+
+```typescript
+const langfuseExporter = new LangfuseExporter({
+  publicKey: process.env.LANGFUSE_PUBLIC_KEY, // Your Langfuse Public Key
+  secretKey: process.env.LANGFUSE_SECRET_KEY, // Your Langfuse Secret Key
+  baseUrl: process.env.LANGFUSE_BASE_URL, // Optional: Defaults to Langfuse Cloud URL
+  // debug: true, // Optional: Enable detailed logging from the exporter
+});
+```
+
+Ensure you have set the `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` environment variables.
+
+## Pass Exporter to `VoltAgent`
+
+When creating your main `VoltAgent` instance, pass the configured `langfuseExporter` to the `telemetryExporter` option.
+
+```typescript
+// Define your agent(s)
+const myAgent = new Agent({
+  name: "My Assistant",
+  description: "A helpful assistant that answers questions without using tools",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
-  tools: [weatherTool, searchTool],
 });
 
-// 2. Configure Langfuse Exporter (using environment variables)
-const langfuseExporter = new LangfuseExporter({
-  publicKey: process.env.LANGFUSE_PUBLIC_KEY,
-  secretKey: process.env.LANGFUSE_SECRET_KEY,
-  baseUrl: process.env.LANGFUSE_BASE_URL,
-});
-
-// 3. Initialize VoltAgent with the exporter
+// Initialize VoltAgent with the exporter
 new VoltAgent({
   agents: {
-    agent,
+    myAgent, // Register your agent(s)
   },
-  telemetryExporter: langfuseExporter,
+  // highlight-next-line
+  telemetryExporter: langfuseExporter, // Pass the exporter instance
 });
-
-// Now, when you interact with 'agent', traces will be sent to Langfuse.
-// Example interaction (if running VoltAgent server):
-// curl -X POST http://localhost:3000/api/agents/Helpful%20Assistant/generate \
-//      -H "Content-Type: application/json" \
-//      -d '{"input": "What is the weather in London?"}'
 ```
 
 ## How it Works

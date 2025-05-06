@@ -25,20 +25,19 @@ Configure the `LangfuseExporter` and pass it to `VoltAgent`:
 
 ```typescript
 import { Agent, VoltAgent } from "@voltagent/core";
+import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { openai } from "@ai-sdk/openai";
+
 import { LangfuseExporter } from "@voltagent/langfuse-exporter";
-// import { YourLLMProvider } from "./your-llm-provider"; // Replace with your provider
-// import { yourModel } from "./your-model"; // Replace with your model
-// import { yourTools } from "./your-tools"; // Replace with your tools
 
 // Ensure LANGFUSE_SECRET_KEY and LANGFUSE_PUBLIC_KEY are set in your environment
 
 // Define your agent(s)
 const agent = new Agent({
-  name: "MyLangfuseAgent",
-  // description: "...",
-  // llm: new YourLLMProvider(),
-  // model: yourModel,
-  // tools: yourTools,
+  name: "my-voltagent-app",
+  description: "A helpful assistant that answers questions without using tools",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o-mini"),
 });
 
 // Configure the Langfuse Exporter
