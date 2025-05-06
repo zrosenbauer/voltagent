@@ -14,9 +14,7 @@ This introduces a new package `@voltagent/langfuse-exporter` that allows you to 
 Install the necessary packages:
 
 ```bash
-npm install @voltagent/core @voltagent/langfuse-exporter
-# or
-yarn add @voltagent/core @voltagent/langfuse-exporter
+npm install @voltagent/langfuse-exporter
 ```
 
 ## Configuration
