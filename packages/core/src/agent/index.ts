@@ -681,6 +681,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     internalEventData.metadata = {
       ...internalEventData.metadata,
       sourceAgentId: this.id,
+      toolName: toolName,
     };
     const eventEmitter = AgentEventEmitter.getInstance();
     const eventUpdater = await eventEmitter.createTrackedEvent({
