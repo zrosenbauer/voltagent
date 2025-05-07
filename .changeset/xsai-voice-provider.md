@@ -1,5 +1,5 @@
 ---
-"@voltagent/voice": minor
+"@voltagent/voice": patch
 ---
 
 feat(xsAI): add xsAI voice provider

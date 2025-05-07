@@ -1,5 +1,5 @@
 ---
-"@voltagent/groq-ai": minor
+"@voltagent/groq-ai": patch
 ---
 
 Added tool handling by manually calling the desired functions for generateText and streamText
