@@ -26,7 +26,7 @@
     "@voltagent/core": "^0.1.10",
     "@voltagent/xsai": "^0.1.4",
     "xsai": "0.2.0-beta.3",
-    "zod": "^3.24.2"
+    "zod": "3.24.2"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",
