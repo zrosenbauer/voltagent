@@ -161,7 +161,8 @@ export class GroqProvider implements LLMProvider<string> {
         role: "assistant" as MessageRole,
         usage: chunk.usage || undefined,
       };
-    } else if (chunk.type === "tool-call" && chunk.toolCallId) {
+    }
+    if (chunk.type === "tool-call" && chunk.toolCallId) {
       return {
         id: chunk.toolCallId,
         type: "tool_call",
@@ -171,7 +172,8 @@ export class GroqProvider implements LLMProvider<string> {
         arguments: chunk.args,
         usage: chunk.usage || undefined,
       };
-    } else if (chunk.type === "tool-result" && chunk.toolCallId) {
+    }
+    if (chunk.type === "tool-result" && chunk.toolCallId) {
       return {
         id: chunk.toolCallId,
         type: "tool_result",
@@ -660,11 +662,13 @@ export class GroqProvider implements LLMProvider<string> {
         stream: true,
       });
       let accumulatedText = "";
-      let usage: {
-        promptTokens: number;
-        completionTokens: number;
-        totalTokens: number;
-      };
+      let usage:
+        | {
+            promptTokens: number;
+            completionTokens: number;
+            totalTokens: number;
+          }
+        | undefined; // Initialize usage as potentially undefined
 
       // Create a readable stream to return to the caller
       const textStream = new ReadableStream({
@@ -683,9 +687,9 @@ export class GroqProvider implements LLMProvider<string> {
 
               if (chunk.x_groq?.usage) {
                 usage = {
-                  promptTokens: chunk.x_groq?.usage.prompt_tokens,
-                  completionTokens: chunk.x_groq?.usage.completion_tokens,
-                  totalTokens: chunk.x_groq?.usage.total_tokens,
+                  promptTokens: chunk.x_groq.usage.prompt_tokens,
+                  completionTokens: chunk.x_groq.usage.completion_tokens,
+                  totalTokens: chunk.x_groq.usage.total_tokens,
                 };
               }
             }
@@ -695,12 +699,24 @@ export class GroqProvider implements LLMProvider<string> {
 
             // Call onFinish with complete result
             if (options.onFinish) {
+              let parsedObject: z.infer<TSchema>;
+              try {
+                parsedObject = options.schema.parse(JSON.parse(accumulatedText || "{}"));
+              } catch (parseError: any) {
+                console.error("Error parsing JSON in streamObject onFinish:", parseError);
+                // Propagate the error or handle as appropriate.
+                // Let the stream's main error handler call options.onError.
+                throw new Error(`Failed to parse streamed JSON: ${parseError.message}`);
+              }
               await options.onFinish({
-                object: accumulatedText,
+                object: parsedObject,
+                usage, // Pass usage here
               });
             }
 
             // Call onStepFinish with complete result if provided
+            // This step represents the final accumulated text, not necessarily a parsed object step.
+            // The type "text" for content: string is appropriate here.
             if (options.onStepFinish) {
               if (accumulatedText) {
                 const textStep = {
@@ -716,7 +732,7 @@ export class GroqProvider implements LLMProvider<string> {
           } catch (error) {
             // Handle errors during streaming
             console.error("Error during Groq stream processing:", error);
-            controller.error(error);
+            controller.error(error); // Make the ReadableStream error out
             if (options.onError) options.onError(error as any);
           }
         },
@@ -724,12 +740,12 @@ export class GroqProvider implements LLMProvider<string> {
 
       // Return provider and text stream
       return {
-        provider: stream,
-        objectStream: textStream,
+        provider: stream, // The raw Groq stream
+        objectStream: textStream, // ReadableStream<string> of JSON chunks
       };
     } catch (error) {
-      // Handle API errors
-      console.error("Groq streaming API error:", error);
+      // Handle API errors (e.g., initial call to create stream failed)
+      console.error("Groq streamObject API error:", error);
       if (options.onError) options.onError(error as any);
       throw error;
     }
