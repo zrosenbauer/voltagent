@@ -15,6 +15,7 @@ import type {
 import type { z } from "zod";
 import type { GroqProviderOptions } from "./types";
 import { Groq } from "groq-sdk";
+import { convertToolsForSDK } from "./utils";
 
 export class GroqProvider implements LLMProvider<string> {
   // @ts-ignore
@@ -116,7 +117,6 @@ export class GroqProvider implements LLMProvider<string> {
           .join(" ") || ""
       );
     };
-
     // Determine role and construct the final message param object based on role
     switch (message.role) {
       case "system":
@@ -161,6 +161,27 @@ export class GroqProvider implements LLMProvider<string> {
         role: "assistant" as MessageRole,
         usage: chunk.usage || undefined,
       };
+    } else if (chunk.type === "tool-call" && chunk.toolCallId) {
+      return {
+        id: chunk.toolCallId,
+        type: "tool_call",
+        content: chunk.toolName,
+        name: chunk.toolName,
+        role: "tool" as MessageRole,
+        arguments: chunk.args,
+        usage: chunk.usage || undefined,
+      };
+    } else if (chunk.type === "tool-result" && chunk.toolCallId) {
+      return {
+        id: chunk.toolCallId,
+        type: "tool_result",
+        content: chunk.toolName,
+        name: chunk.toolName,
+        role: "tool" as MessageRole,
+        arguments: chunk.args,
+        result: chunk.result,
+        usage: chunk.usage || undefined,
+      };
     }
     return null;
   };
@@ -169,7 +190,8 @@ export class GroqProvider implements LLMProvider<string> {
     options: GenerateTextOptions<string>,
   ): Promise<ProviderTextResponse<any>> => {
     try {
-      const groqMessages = options.messages.map(this.toMessage);
+      let groqMessages = options.messages.map(this.toMessage);
+      const groqTools = options.tools ? convertToolsForSDK(options.tools) : undefined;
 
       // Extract common parameters
       const {
@@ -190,6 +212,7 @@ export class GroqProvider implements LLMProvider<string> {
         top_p: topP,
         frequency_penalty: frequencyPenalty,
         presence_penalty: presencePenalty,
+        tools: groqTools,
         stop: stopSequences,
       });
 
@@ -201,6 +224,86 @@ export class GroqProvider implements LLMProvider<string> {
             totalTokens: response.usage.total_tokens,
           }
         : undefined;
+      // Extract tool calls and results from the response
+      const responseMessage = response.choices[0].message;
+      const toolCalls = responseMessage.tool_calls;
+      let toolResults = [];
+
+      if (toolCalls && toolCalls.length > 0 && options && options.tools) {
+        for (const toolCall of toolCalls) {
+          // Handle all tool calls - each as a separate step
+          const step = this.createStepFromChunk({
+            type: "tool-call",
+            toolCallId: toolCall.id,
+            toolName: toolCall.function.name,
+            args: toolCall.function.arguments,
+            usage: usage,
+          });
+          if (step && options.onStepFinish) await options.onStepFinish(step);
+          //Call the function with the arguments
+          const functionName = toolCall.function.name;
+          const functionToCall = options.tools.find(
+            (toolItem) => functionName === toolItem.name,
+          )?.execute;
+          const functionArgs = JSON.parse(toolCall.function.arguments);
+          if (functionToCall === undefined) {
+            throw `Function ${functionName} not found in tools`;
+          }
+          const functionResponse = await functionToCall(functionArgs);
+          if (functionResponse === undefined) {
+            throw `Function ${functionName} returned undefined`;
+          }
+          toolResults.push({ name: functionName, output: functionResponse });
+
+          groqMessages.push({
+            tool_call_id: toolCall.id,
+            role: "tool",
+            content: JSON.stringify(functionResponse),
+          });
+        }
+        // Handle all tool results - each as a separate step
+        if (toolCalls && toolResults && toolResults.length > 0) {
+          for (const toolResult of toolResults) {
+            const step = this.createStepFromChunk({
+              type: "tool-result",
+              toolCallId: toolCalls.find((toolItem) => toolResult.name === toolItem.id)?.id,
+              toolName: toolCalls.find((toolItem) => toolResult.name === toolItem.id)?.function
+                .name,
+              result: toolResult.output,
+              usage: usage,
+            });
+            if (step && options.onStepFinish) await options.onStepFinish(step);
+          }
+        }
+        // Call Groq API
+        const secondResponse = await this.groq.chat.completions.create({
+          model: options.model,
+          messages: groqMessages,
+          temperature,
+          max_tokens: maxTokens,
+          top_p: topP,
+          frequency_penalty: frequencyPenalty,
+          presence_penalty: presencePenalty,
+          stop: stopSequences,
+        });
+        // Extract results from the response
+        const responseMessage = secondResponse.choices[0].message.content;
+
+        // Return standardized response
+        return {
+          provider: secondResponse,
+          text: responseMessage || "",
+          usage,
+          toolCalls: toolCalls?.map((tc) => ({
+            type: "tool-call",
+            toolCallId: tc.id,
+            toolName: tc.function.name,
+            args: tc.function.arguments,
+          })),
+          toolResults: toolResults,
+          finishReason: response.choices[0].finish_reason,
+        };
+      }
 
       // Handle step finish callback
       if (options.onStepFinish) {
@@ -231,7 +334,8 @@ export class GroqProvider implements LLMProvider<string> {
 
   async streamText(options: StreamTextOptions<string>): Promise<ProviderTextStreamResponse<any>> {
     try {
-      const groqMessages = options.messages.map(this.toMessage);
+      let groqMessages = options.messages.map(this.toMessage);
+      const groqTools = options.tools ? convertToolsForSDK(options.tools) : undefined;
       // Extract common parameters
       const {
         temperature = 0.7,
@@ -252,6 +356,7 @@ export class GroqProvider implements LLMProvider<string> {
         frequency_penalty: frequencyPenalty,
         presence_penalty: presencePenalty,
         stop: stopSequences,
+        tools: groqTools,
         // Enable streaming
         stream: true,
       });
@@ -262,7 +367,7 @@ export class GroqProvider implements LLMProvider<string> {
         completionTokens: number;
         totalTokens: number;
       };
-
+      const that = this; // Preserve 'this' context for the stream processing
       // Create a readable stream to return to the caller
       const textStream = new ReadableStream({
         async start(controller) {
@@ -271,7 +376,6 @@ export class GroqProvider implements LLMProvider<string> {
             for await (const chunk of stream) {
               // Extract content from the chunk
               const content = chunk.choices[0]?.delta?.content || "";
-
               // If we have content, add it to accumulated text and emit it
               if (content) {
                 accumulatedText += content;
@@ -295,6 +399,105 @@ export class GroqProvider implements LLMProvider<string> {
                   completionTokens: chunk.x_groq?.usage.completion_tokens,
                   totalTokens: chunk.x_groq?.usage.total_tokens,
                 };
+              }
+
+              const toolCalls = chunk.choices[0]?.delta?.tool_calls || [];
+              let toolResults = [];
+
+              if (toolCalls && toolCalls.length > 0 && options && options.tools) {
+                for (const toolCall of toolCalls) {
+                  // Handle all tool calls - each as a separate step
+                  const step = that.createStepFromChunk({
+                    type: "tool-call",
+                    toolCallId: toolCall.id,
+                    toolName: toolCall.function?.name,
+                    args: toolCall.function?.arguments,
+                    usage: usage,
+                  });
+                  if (step && options.onChunk) await options.onChunk(step);
+                  if (step && options.onStepFinish) await options.onStepFinish(step);
+                  //Call the function with the arguments
+                  const functionName = toolCall.function?.name;
+                  const functionToCall = options.tools.find(
+                    (toolItem) => functionName === toolItem.name,
+                  )?.execute;
+                  const functionArgs = JSON.parse(
+                    toolCall.function?.arguments ? toolCall.function?.arguments : "{}",
+                  );
+                  if (functionToCall === undefined) {
+                    throw `Function ${functionName} not found in tools`;
+                  }
+                  const functionResponse = await functionToCall(functionArgs);
+                  if (functionResponse === undefined) {
+                    throw `Function ${functionName} returned undefined`;
+                  }
+                  toolResults.push({
+                    toolCallId: toolCall.id,
+                    name: functionName,
+                    output: functionResponse,
+                  });
+
+                  groqMessages.push({
+                    tool_call_id: toolCall.id ? toolCall.id : "",
+                    role: "tool",
+                    content: JSON.stringify(functionResponse),
+                  });
+                }
+                // Handle all tool results - each as a separate step
+                if (toolCalls && toolResults && toolResults.length > 0) {
+                  for (const toolResult of toolResults) {
+                    const step = that.createStepFromChunk({
+                      type: "tool-result",
+                      toolCallId: toolResult.toolCallId,
+                      toolName: toolResult.name,
+                      result: toolResult.output,
+                      usage: usage,
+                    });
+                    if (step && options.onChunk) await options.onChunk(step);
+                    if (step && options.onStepFinish) await options.onStepFinish(step);
+                  }
+                }
+                // Call Groq API
+                const secondStream = await that.groq.chat.completions.create({
+                  model: options.model,
+                  messages: groqMessages,
+                  temperature,
+                  max_tokens: maxTokens,
+                  top_p: topP,
+                  frequency_penalty: frequencyPenalty,
+                  presence_penalty: presencePenalty,
+                  stop: stopSequences,
+                  stream: true,
+                });
+
+                for await (const chunk of secondStream) {
+                  // Extract content from the chunk
+                  const content = chunk.choices[0]?.delta?.content || "";
+                  // If we have content, add it to accumulated text and emit it
+                  if (content) {
+                    accumulatedText += content;
+                    controller.enqueue(content);
+
+                    // Call onChunk with text chunk
+                    if (options.onChunk) {
+                      const step = {
+                        id: "",
+                        type: "text" as const,
+                        content,
+                        role: "assistant" as MessageRole,
+                      };
+                      await options.onChunk(step);
+                    }
+                  }
+
+                  if (chunk.x_groq?.usage) {
+                    usage = {
+                      promptTokens: chunk.x_groq?.usage.prompt_tokens,
+                      completionTokens: chunk.x_groq?.usage.completion_tokens,
+                      totalTokens: chunk.x_groq?.usage.total_tokens,
+                    };
+                  }
+                }
               }
             }
 
@@ -325,6 +528,7 @@ export class GroqProvider implements LLMProvider<string> {
             // Handle errors during streaming
             console.error("Error during Groq stream processing:", error);
             controller.error(error);
+
             // TODO: fix this
             if (options.onError) options.onError(error as any);
           }
@@ -339,6 +543,7 @@ export class GroqProvider implements LLMProvider<string> {
     } catch (error) {
       // Handle API errors
       console.error("Groq streaming API error:", error);
+
       // TODO: fix this
       if (options.onError) options.onError(error as any);
       throw error;
@@ -359,7 +564,7 @@ export class GroqProvider implements LLMProvider<string> {
       const systemMessage = {
         role: "system",
         content: `${schemaDescription}\nRespond with ONLY a valid JSON object, nothing else.`,
-      } as any;
+      } as Groq.Chat.ChatCompletionMessageParam;
 
       // Extract common parameters
       const {
@@ -422,10 +627,111 @@ export class GroqProvider implements LLMProvider<string> {
       throw error;
     }
   }
-
+  // Stream object with Groq API (if supported)
   async streamObject<TSchema extends z.ZodType>(
-    _options: StreamObjectOptions<string, TSchema>,
+    options: StreamObjectOptions<string, TSchema>,
   ): Promise<ProviderObjectStreamResponse<any, z.infer<TSchema>>> {
-    throw new Error("streamObject is not implemented for GroqProvider yet.");
+    try {
+      const groqMessages = options.messages.map(this.toMessage);
+      // Add system message instructing to generate JSON following the schema
+      const schemaDescription =
+        options.schema.description ||
+        "Respond with a JSON object according to the specified schema.";
+      const systemMessage = {
+        role: "system",
+        content: `${schemaDescription}\nRespond with ONLY a valid JSON object, nothing else.`,
+      } as Groq.Chat.ChatCompletionMessageParam;
+
+      // Extract common parameters
+      const {
+        temperature = 0.2, // Lower temperature for more deterministic JSON generation
+        maxTokens,
+        topP,
+      } = options.provider || {};
+
+      // Call Groq API with JSON mode
+      const stream = await this.groq.chat.completions.create({
+        model: options.model,
+        messages: [systemMessage, ...groqMessages],
+        temperature,
+        max_tokens: maxTokens,
+        top_p: topP,
+        response_format: { type: "json_object" },
+        stream: true,
+      });
+      let accumulatedText = "";
+      let usage: {
+        promptTokens: number;
+        completionTokens: number;
+        totalTokens: number;
+      };
+
+      // Create a readable stream to return to the caller
+      const textStream = new ReadableStream({
+        async start(controller) {
+          try {
+            // Process each chunk from the Groq stream
+            for await (const chunk of stream) {
+              // Extract content from the chunk
+              const content = chunk.choices[0]?.delta?.content || "";
+
+              // If we have content, add it to accumulated text and emit it
+              if (content) {
+                accumulatedText += content;
+                controller.enqueue(content);
+              }
+
+              if (chunk.x_groq?.usage) {
+                usage = {
+                  promptTokens: chunk.x_groq?.usage.prompt_tokens,
+                  completionTokens: chunk.x_groq?.usage.completion_tokens,
+                  totalTokens: chunk.x_groq?.usage.total_tokens,
+                };
+              }
+            }
+
+            // When stream completes, close the controller
+            controller.close();
+
+            // Call onFinish with complete result
+            if (options.onFinish) {
+              await options.onFinish({
+                object: accumulatedText,
+              });
+            }
+
+            // Call onStepFinish with complete result if provided
+            if (options.onStepFinish) {
+              if (accumulatedText) {
+                const textStep = {
+                  id: "",
+                  type: "text" as const,
+                  content: accumulatedText,
+                  role: "assistant" as MessageRole,
+                  usage,
+                };
+                await options.onStepFinish(textStep);
+              }
+            }
+          } catch (error) {
+            // Handle errors during streaming
+            console.error("Error during Groq stream processing:", error);
+            controller.error(error);
+            if (options.onError) options.onError(error as any);
+          }
+        },
+      });
+
+      // Return provider and text stream
+      return {
+        provider: stream,
+        objectStream: textStream,
+      };
+    } catch (error) {
+      // Handle API errors
+      console.error("Groq streaming API error:", error);
+      if (options.onError) options.onError(error as any);
+      throw error;
+    }
   }
 }
