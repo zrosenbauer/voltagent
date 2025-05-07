@@ -1,5 +1,5 @@
 ---
-"@voltagent/anthropic-ai": major
+"@voltagent/anthropic-ai": patch
 ---
 
 feat(anthropic-ai): Implemented AnthropicProvider class
@@ -10,4 +10,4 @@ MCP tools are also supported in this provider
 
 Basic Implementation is described in Examples/with-anthropic
 
-Resolves #10x
+Resolves #10

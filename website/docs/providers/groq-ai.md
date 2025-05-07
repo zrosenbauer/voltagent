@@ -109,13 +109,15 @@ The provider currently only handles string content within `BaseMessage` objects.
 
 ## Tool Calling Support
 
-🚧 **Coming Soon!**
+✅ **Supported!**
 
-Native tool calling support for the `@voltagent/groq-ai` provider is currently under development and will be available soon via [PR #83](https://github.com/VoltAgent/voltagent/pull/83).
+Native tool calling support for the `@voltagent/groq-ai` provider is now available as of version `0.1.4`. This allows you to define tools (functions) that Groq AI models can invoke as part of their response generation, using VoltAgent's `generateText` or `streamText` methods with tool definitions.
 
-In the meantime, if you need to use tool calling with Groq models, we recommend exploring the [`@voltagent/vercel-ai`](/docs/providers/vercel-ai) provider. The Vercel AI SDK offers a unified interface for tool calling across various models, including Groq. You can find more details in the [Vercel AI SDK Groq Provider documentation](https://ai-sdk.dev/providers/ai-sdk-providers/groq).
+This functionality was made possible by the contributions from [@TheEmi](https://github.com/TheEmi) in [Release v0.1.4](https://github.com/VoltAgent/voltagent/releases/tag/%40voltagent%2Fgroq-ai%400.1.4).
 
-We welcome community contributions to help finalize and test this feature!
+For examples and further details on how to define and use tools with VoltAgent, please refer to the general VoltAgent documentation on [Tool Calling](../tools/overview.md).
+
+Make sure your `@voltagent/groq-ai` package is updated to `0.1.4` or later to use this feature.
 
 ## Model Selection & Options
 
