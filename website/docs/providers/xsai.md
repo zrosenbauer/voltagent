@@ -134,7 +134,6 @@ const messages = [
 const response = await agent.generateText(messages);
 ```
 
-
 ## Model Selection & Options
 
 The `model` property during `Agent` instantiation should be the specific model identifier recognized by the target API endpoint (e.g., `'gpt-4o-mini'` for OpenAI, `'llama3-70b-8192'` for Groq, etc.).
