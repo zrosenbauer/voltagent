@@ -936,7 +936,7 @@ importers:
         specifier: ^0.40.0
         version: 0.40.0
       '@voltagent/core':
-        specifier: 0.1.17
+        specifier: ^0.1.17
         version: link:../core
       zod:
         specifier: ^3.24.2
