@@ -1,5 +1,5 @@
 ---
-"@voltagent/google-ai": minor
+"@voltagent/google-ai": patch
 ---
 
 feat(google-ai): include tool calls and results in generateText response
