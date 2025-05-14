@@ -1,5 +1,11 @@
 ## Package: @voltagent/core
 
+## 0.1.18
+
+### Patch Changes
+
+- [#113](https://github.com/VoltAgent/voltagent/pull/113) [`0a120f4`](https://github.com/VoltAgent/voltagent/commit/0a120f4bf1b71575a4b6c67c94104633c58e1410) Thanks [@nhc](https://github.com/nhc)! - export createTool from toolkit
+
 ## 0.1.17
 
 ### Patch Changes
@@ -643,6 +649,31 @@
 
 ## Package: @voltagent/anthropic-ai
 
+## 0.1.6
+
+### Patch Changes
+
+- [#110](https://github.com/VoltAgent/voltagent/pull/110) [`6180880`](https://github.com/VoltAgent/voltagent/commit/6180880a91ea0bb380dd0595e3c3ed6e5c15bc8e) Thanks [@VenomHare](https://github.com/VenomHare)! - ### Features
+
+  - Added multi-modal support for message handling.
+
+  ### Improvements
+
+  - Improved logic for generating system prompts.
+  - Implemented enhanced error handling within the provider.
+
+  ### Refactoring
+
+  - Moved utility functions to `utils` folder for better code organization.
+
+  ### Documentation
+
+  - Updated and refined documentation for clarity.
+
+  ### Testing
+
+  - Added tests for newly implemented logic.
+
 ## 0.1.4
 
 ### Patch Changes
@@ -784,6 +815,21 @@
 
 ## Package: @voltagent/google-ai
 
+## 0.3.7
+
+### Patch Changes
+
+- [`3fdef67`](https://github.com/VoltAgent/voltagent/commit/3fdef675bfac9d227592805f337396eae15f03ca) Thanks [@omeraplak](https://github.com/omeraplak)! - chore: only the `dist` directory is included in the published npm package.
+
+## 0.3.6
+
+### Patch Changes
+
+- [#109](https://github.com/VoltAgent/voltagent/pull/109) [`5589efd`](https://github.com/VoltAgent/voltagent/commit/5589efd25d16f6bb226f2735ffa457e38fe079ab) Thanks [@luixaviles](https://github.com/luixaviles)! - feat(google-ai): enchance streamText with function call handling
+
+- Updated dependencies [[`0a120f4`](https://github.com/VoltAgent/voltagent/commit/0a120f4bf1b71575a4b6c67c94104633c58e1410)]:
+  - @voltagent/core@0.1.18
+
 ## 0.3.4
 
 ### Patch Changes
@@ -887,6 +933,12 @@
 ---
 
 ## Package: @voltagent/groq-ai
+
+## 0.1.7
+
+### Patch Changes
+
+- [`3fdef67`](https://github.com/VoltAgent/voltagent/commit/3fdef675bfac9d227592805f337396eae15f03ca) Thanks [@omeraplak](https://github.com/omeraplak)! - chore: only the `dist` directory is included in the published npm package.
 
 ## 0.1.5
 
