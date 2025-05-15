@@ -63,6 +63,8 @@ To use the `VoltAgentExporter`, you'll need to:
 1.  **Create a project:** Sign up or log in at [https://console.voltagent.dev/tracing-setup](https://console.voltagent.dev/tracing-setup) to create a new project. This will provide you with a Public Key and a Secret Key.
 2.  **Configure your VoltAgent application:** Add the `VoltAgentExporter` to your `VoltAgent` configuration with your keys.
 
+![VoltAgent Exporter Configuration](https://cdn.voltagent.dev/docs/voltagent-console-team.gif)
+
 Here's an example of how to set up the `VoltAgentExporter` in your TypeScript application:
 
 ```typescript
