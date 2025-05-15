@@ -24,19 +24,6 @@ When you run a VoltAgent application locally with observability enabled, it expo
 
 **Important Note on Data:** The Developer Console at [https://console.voltagent.dev/](https://console.voltagent.dev/) when connected to your `localhost` is for **local debugging only**. It does not store your data remotely.
 
-### Production Observability with `VoltAgentExporter`
-
-While the Developer Console provides an excellent interface for real-time local debugging, it's not designed for persistent storage or monitoring of agents running in production environments.
-
-For production tracing and observability, VoltAgent offers the `VoltAgentExporter`. This component allows you to send your agent's telemetry data (traces, execution details) to the VoltAgent cloud platform (`https://server.voltagent.dev` by default).
-
-To use this:
-
-1. You need to set up a project at [https://console.voltagent.dev/tracing-setup](https://console.voltagent.dev/tracing-setup) to obtain API keys (Public and Secret).
-2. Configure the `VoltAgentExporter` in your agent's setup, as shown in the [Overview](./overview.md#production-tracing-with-voltagentexporter) documentation.
-
-Data sent via the `VoltAgentExporter` is stored securely and can be accessed through your project dashboard on the VoltAgent platform, allowing for long-term analysis, monitoring of deployed agents, and debugging of production issues. This is separate from the local, real-time view offered by connecting the Developer Console to your local agent.
-
 ### Getting Started
 
 1.  Ensure your VoltAgent application has observability enabled and is running locally.
@@ -59,6 +46,58 @@ Data sent via the `VoltAgentExporter` is stored securely and can be accessed thr
 <!-- Placeholder for a GIF demonstrating connecting the console to a local agent -->
 <!-- This GIF should show the Developer Console interface successfully connecting to the localhost:3141 endpoint after the VoltAgent application starts. -->
 <!-- ![Connecting to Local Agent](placeholder-connect.gif) -->
+
+### Production Tracing with VoltAgentExporter
+
+While the Developer Console is excellent for local development and real-time debugging, VoltAgent also provides a way to capture and persist observability data for your agents running in production environments. This is achieved using the `VoltAgentExporter`.
+
+The `VoltAgentExporter` allows you to send telemetry data (traces, logs, metrics related to your agent's execution) to the VoltAgent cloud platform. This enables you to:
+
+- Monitor deployed agents.
+- Analyze behavior over time.
+- Debug issues that occur in production.
+- Store a history of agent interactions.
+
+To use the `VoltAgentExporter`, you'll need to:
+
+1.  **Create a project:** Sign up or log in at [https://console.voltagent.dev/tracing-setup](https://console.voltagent.dev/tracing-setup) to create a new project. This will provide you with a Public Key and a Secret Key.
+2.  **Configure your VoltAgent application:** Add the `VoltAgentExporter` to your `VoltAgent` configuration with your keys.
+
+Here's an example of how to set up the `VoltAgentExporter` in your TypeScript application:
+
+```typescript
+import { Agent, VoltAgent, VoltAgentExporter } from "@voltagent/core";
+import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { openai } from "@ai-sdk/openai";
+
+const agent = new Agent({
+  name: "My Production Agent",
+  instructions: "You are a helpful assistant designed for production.",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o-mini"),
+});
+
+const voltagentPublicKey = process.env.VOLTAGENT_PUBLIC_KEY;
+const voltagentSecretKey = process.env.VOLTAGENT_SECRET_KEY;
+
+new VoltAgent({
+  agents: {
+    mainAgent: agent,
+  },
+  // highlight-start
+  telemetryExporter: new VoltAgentExporter({
+    publicKey: voltagentPublicKey,
+    secretKey: voltagentSecretKey,
+    baseUrl: "https://server.voltagent.dev", // Default URL for the VoltAgent cloud service
+  }),
+  // highlight-end
+});
+
+// Your agent is now configured to send traces to the VoltAgent cloud.
+// You can view them in your project dashboard on console.voltagent.dev.
+```
+
+This setup ensures that your agent's activities are securely transmitted and stored, providing valuable insights for production monitoring and analysis.
 
 ### Exploring the Console Features
 
