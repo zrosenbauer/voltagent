@@ -112,7 +112,7 @@ const config: Config = {
     "./plugins/gurubase/index.js",
   ],
   themeConfig: {
-    image: "img/social.png",
+    image: "img/social2.png",
     colorMode: {
       disableSwitch: true,
       defaultMode: "dark",
