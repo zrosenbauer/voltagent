@@ -349,8 +349,8 @@ export class GoogleGenAIProvider implements LLMProvider<string> {
       seed: providerOptions.seed,
       presencePenalty: providerOptions.presencePenalty,
       frequencyPenalty: providerOptions.frequencyPenalty,
+      thinkingConfig: providerOptions.thinkingConfig,
       ...(providerOptions.extraOptions && providerOptions.extraOptions),
-      ...providerOptions,
     };
 
     // Add tools configuration if tools are provided for the inital model call.
@@ -666,6 +666,7 @@ export class GoogleGenAIProvider implements LLMProvider<string> {
       seed: providerOptions.seed,
       presencePenalty: providerOptions.presencePenalty,
       frequencyPenalty: providerOptions.frequencyPenalty,
+      thinkingConfig: providerOptions.thinkingConfig,
       ...(providerOptions.extraOptions && providerOptions.extraOptions),
     }).reduce((acc, [key, value]) => {
       if (value !== undefined) {
@@ -762,6 +763,7 @@ export class GoogleGenAIProvider implements LLMProvider<string> {
       seed: providerOptions.seed,
       presencePenalty: providerOptions.presencePenalty,
       frequencyPenalty: providerOptions.frequencyPenalty,
+      thinkingConfig: providerOptions.thinkingConfig,
       responseMimeType: "application/json", // Maybe support other mime types via extraOptions?
       ...(providerOptions.extraOptions && providerOptions.extraOptions),
       responseSchema: googleSchema,
