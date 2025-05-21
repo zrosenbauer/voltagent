@@ -350,6 +350,7 @@ export class GoogleGenAIProvider implements LLMProvider<string> {
       presencePenalty: providerOptions.presencePenalty,
       frequencyPenalty: providerOptions.frequencyPenalty,
       ...(providerOptions.extraOptions && providerOptions.extraOptions),
+      ...providerOptions,
     };
 
     // Add tools configuration if tools are provided for the inital model call.
