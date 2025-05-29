@@ -110,6 +110,13 @@ const config: Config = {
         },
       },
     ],
+    [
+      "./plugins/docusaurus-plugin-content-showcase",
+      {
+        id: "showcase",
+        contentPath: "src/components/showcase",
+      },
+    ],
     "./plugins/gurubase/index.js",
     [
       "./plugins/docusaurus-plugin-content-mcp",
@@ -139,6 +146,11 @@ const config: Config = {
         {
           to: "/docs",
           label: "Documentation",
+          position: "left",
+        },
+        {
+          to: "/showcase",
+          label: "Showcase",
           position: "left",
         },
         {
