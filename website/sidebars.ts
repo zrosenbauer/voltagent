@@ -39,6 +39,7 @@ const sidebars: SidebarsConfig = {
       items: [
         "agents/memory/overview",
         "agents/memory/libsql",
+        "agents/memory/postgres",
         "agents/memory/supabase",
         "agents/memory/in-memory",
       ],
