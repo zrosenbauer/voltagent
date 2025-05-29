@@ -22,7 +22,7 @@
     "test": "jest --passWithNoTests"
   },
   "dependencies": {
-    "@voltagent/core": "^0.1.21",
+    "@voltagent/core": "^0.1.22",
     "pg": "^8.16.0"
   },
   "devDependencies": {

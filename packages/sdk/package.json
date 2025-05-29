@@ -13,14 +13,16 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "jest --passWithNoTests"
   },
   "dependencies": {
-    "@voltagent/core": "^0.1.21"
+    "@voltagent/core": "^0.1.22"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",

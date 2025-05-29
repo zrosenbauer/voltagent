@@ -20,7 +20,7 @@
     "changeset": "changeset",
     "clean": "lerna run clean && lerna clean --yes && rimraf node_modules",
     "coffee": "pnpm nuke && pnpm i && pnpm build:all",
-    "dev": "lerna run dev --parallel --ignore voltagent-example-*",
+    "dev": "lerna run dev --ignore voltagent-example-*",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "lint": "biome check .",
     "lint:ci": "biome ci .",
