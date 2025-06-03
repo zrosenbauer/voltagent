@@ -365,7 +365,6 @@ async function complexHierarchyExample() {
       metadata: {
         role: "academic-analyzer",
         specialization: "paper-analysis",
-        parentAgent: dataCollector.id,
         modelParameters: {
           model: "gpt-4",
         },
@@ -493,7 +492,6 @@ async function complexHierarchyExample() {
       metadata: {
         role: "quality-checker",
         specialization: "translation-qa",
-        parentAgent: translator.id,
         modelParameters: {
           model: "gpt-4",
         },

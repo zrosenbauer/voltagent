@@ -413,7 +413,7 @@ const verifier = await policyChecker.addAgent({
 
 ![Agent with subagents-subagents](https://cdn.voltagent.dev/docs/sdk-doc-demo-screenshots/with-subagents-subagents.png)
 
-### Step 8: Complete the Agent and Trace
+### Complete the Agent and Trace
 
 Finally, complete your main agent and trace:
 
