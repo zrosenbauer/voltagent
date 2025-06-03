@@ -116,8 +116,8 @@ export function Manifesto() {
           own experiences. We've built over 15 open-source projects before this,
           and each one taught us something new. Our biggest project, Refine,
           showed us how powerful working with a community can be. During our
-          time building Refine—one of us as co-founder and CTO, the other as
-          Growth Lead—we saw amazing things happen when the community came
+          time building Refine - one of us as co-founder and CTO, the other as
+          Growth Lead - we saw amazing things happen when the community came
           together. That experience changed us, and we're incredibly thankful to
           everyone in the Refine community.
         </p>
