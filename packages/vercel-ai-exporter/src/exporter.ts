@@ -127,7 +127,7 @@ export class VoltAgentExporter implements SpanExporter {
     this.sdk = new VoltAgentObservabilitySDK({
       publicKey: options.publicKey ?? "",
       secretKey: options.secretKey ?? "",
-      baseUrl: options.baseUrl ?? "https://api.voltagent.com",
+      baseUrl: options.baseUrl ?? "https://api.voltagent.dev",
       autoFlush: options.autoFlush ?? true,
       flushInterval: options.flushInterval ?? 5000,
     });

@@ -34,7 +34,7 @@ describe("VoltAgentExporter", () => {
     exporter = new VoltAgentExporter({
       publicKey: "test-public-key",
       secretKey: "test-secret-key",
-      baseUrl: "https://test-api.voltagent.com",
+      baseUrl: "https://test-api.voltagent.dev",
       debug: true,
     });
   });
