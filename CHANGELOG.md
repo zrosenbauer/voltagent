@@ -1,5 +1,35 @@
 ## Package: @voltagent/core
 
+## 0.1.26
+
+### Patch Changes
+
+- [#181](https://github.com/VoltAgent/voltagent/pull/181) [`1b4a9fd`](https://github.com/VoltAgent/voltagent/commit/1b4a9fd78b84d9b758120380cb80a940c2354020) Thanks [@omeraplak](https://github.com/omeraplak)! - Implement comprehensive error handling for streaming endpoints - #170
+
+  - **Backend**: Added error handling to `streamRoute` and `streamObjectRoute` with onError callbacks, safe stream operations, and multiple error layers (setup, iteration, stream errors)
+  - **Documentation**: Added detailed error handling guide with examples for fetch-based SSE streaming
+
+  Fixes issue where streaming errors weren't being communicated to frontend users, leaving them without feedback when API calls failed during streaming operations.
+
+## 0.1.25
+
+### Patch Changes
+
+- [`13d25b4`](https://github.com/VoltAgent/voltagent/commit/13d25b4033c3a4b41d501e954e2893b50553d8d4) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: update zod-from-json-schema dependency version to resolve MCP tools compatibility issues
+
+## 0.1.24
+
+### Patch Changes
+
+- [#176](https://github.com/VoltAgent/voltagent/pull/176) [`790d070`](https://github.com/VoltAgent/voltagent/commit/790d070e26a41a6467927471933399020ceec275) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: removed `@n8n/json-schema-to-zod` dependency - #177
+
+- [#176](https://github.com/VoltAgent/voltagent/pull/176) [`790d070`](https://github.com/VoltAgent/voltagent/commit/790d070e26a41a6467927471933399020ceec275) Thanks [@omeraplak](https://github.com/omeraplak)! - The `error` column has been deprecated and replaced with `statusMessage` column for better consistency and clearer messaging. The old `error` column is still supported for backward compatibility but will be removed in a future major version.
+
+  Changes:
+
+  - Deprecated `error` column (still functional)
+  - Improved error handling and status reporting
+
 ## 0.1.23
 
 ### Patch Changes
@@ -1421,7 +1451,64 @@
 
 ---
 
+## Package: @voltagent/postgres
+
+## 0.1.1
+
+### Patch Changes
+
+- [#176](https://github.com/VoltAgent/voltagent/pull/176) [`790d070`](https://github.com/VoltAgent/voltagent/commit/790d070e26a41a6467927471933399020ceec275) Thanks [@omeraplak](https://github.com/omeraplak)! - The `error` column has been deprecated and replaced with `statusMessage` column for better consistency and clearer messaging. The old `error` column is still supported for backward compatibility but will be removed in a future major version.
+
+  Changes:
+
+  - Deprecated `error` column (still functional)
+  - Improved error handling and status reporting
+
+- Updated dependencies [[`790d070`](https://github.com/VoltAgent/voltagent/commit/790d070e26a41a6467927471933399020ceec275), [`790d070`](https://github.com/VoltAgent/voltagent/commit/790d070e26a41a6467927471933399020ceec275)]:
+  - @voltagent/core@0.1.24
+
+---
+
 ## Package: @voltagent/sdk
+
+## 0.1.4
+
+### Patch Changes
+
+- [#176](https://github.com/VoltAgent/voltagent/pull/176) [`790d070`](https://github.com/VoltAgent/voltagent/commit/790d070e26a41a6467927471933399020ceec275) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: initial release of VoltAgent Observability SDK
+
+  A TypeScript SDK for monitoring AI agents and conversations with automatic event batching and structured tracing.
+
+  **Basic Usage:**
+
+  ```typescript
+  const sdk = new VoltAgentObservabilitySDK({
+    baseUrl: "https://api.voltagent.dev",
+    publicKey: "your-public-key",
+    secretKey: "your-secret-key",
+    autoFlush: true,
+    flushInterval: 3000,
+  });
+
+  const trace = await sdk.trace({
+    name: "Customer Support Query",
+    agentId: "support-agent-v1",
+    input: { query: "How to reset password?" },
+    userId: "user-123",
+    conversationId: "conv-456",
+  });
+
+  const agent = await trace.addAgent({
+    name: "Support Agent",
+    model: "gpt-4",
+    input: { query: "User needs password reset help" },
+  });
+  ```
+
+  Supports nested agent workflows, custom metadata, and automatic performance metrics collection.
+
+- Updated dependencies [[`790d070`](https://github.com/VoltAgent/voltagent/commit/790d070e26a41a6467927471933399020ceec275), [`790d070`](https://github.com/VoltAgent/voltagent/commit/790d070e26a41a6467927471933399020ceec275)]:
+  - @voltagent/core@0.1.24
 
 ## 0.1.3
 
@@ -1450,6 +1537,20 @@
 ---
 
 ## Package: @voltagent/supabase
+
+## 0.1.7
+
+### Patch Changes
+
+- [#176](https://github.com/VoltAgent/voltagent/pull/176) [`790d070`](https://github.com/VoltAgent/voltagent/commit/790d070e26a41a6467927471933399020ceec275) Thanks [@omeraplak](https://github.com/omeraplak)! - The `error` column has been deprecated and replaced with `statusMessage` column for better consistency and clearer messaging. The old `error` column is still supported for backward compatibility but will be removed in a future major version.
+
+  Changes:
+
+  - Deprecated `error` column (still functional)
+  - Improved error handling and status reporting
+
+- Updated dependencies [[`790d070`](https://github.com/VoltAgent/voltagent/commit/790d070e26a41a6467927471933399020ceec275), [`790d070`](https://github.com/VoltAgent/voltagent/commit/790d070e26a41a6467927471933399020ceec275)]:
+  - @voltagent/core@0.1.24
 
 ## 0.1.6
 
@@ -1709,6 +1810,24 @@
 ---
 
 ## Package: @voltagent/vercel-ai-exporter
+
+## 0.1.4
+
+### Patch Changes
+
+- [`7c28c1e`](https://github.com/VoltAgent/voltagent/commit/7c28c1ee7a11da0e5ca32c248e412cc588e7fcdf) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: the default base URL setting to `https://api.voltagent.dev`
+
+## 0.1.3
+
+### Patch Changes
+
+- [#176](https://github.com/VoltAgent/voltagent/pull/176) [`790d070`](https://github.com/VoltAgent/voltagent/commit/790d070e26a41a6467927471933399020ceec275) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: resolve displayName issue in agent events
+
+  Fixed an issue where the displayName property was not being properly handled in agent events, ensuring consistent agent identification across the system.
+
+- Updated dependencies [[`790d070`](https://github.com/VoltAgent/voltagent/commit/790d070e26a41a6467927471933399020ceec275), [`790d070`](https://github.com/VoltAgent/voltagent/commit/790d070e26a41a6467927471933399020ceec275), [`790d070`](https://github.com/VoltAgent/voltagent/commit/790d070e26a41a6467927471933399020ceec275)]:
+  - @voltagent/core@0.1.24
+  - @voltagent/sdk@0.1.4
 
 ## 0.1.2
 
