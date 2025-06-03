@@ -11,6 +11,7 @@ import ZoomableMermaid from '@site/src/components/blog-widgets/ZoomableMermaid';
 import ScenarioRecommender from '@site/src/components/blog-widgets/ScenarioRecommender';
 import ModelPerformanceComparator from '@site/src/components/blog-widgets/ModelPerformanceComparator';
 
+
 This is among the most common questions we get when building our AI agent framework. Developers are always asking: "How do I train my agent on my own data?" RAG or fine-tuning?
 
 Both are implemented in our framework, and I have seen quite a lot of different use cases over the years. I found it helpful to pass on my experience to new learners who have difficulties figuring out what is best for their case.
