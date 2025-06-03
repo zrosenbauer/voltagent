@@ -161,10 +161,10 @@ export function Manifesto() {
           Team
         </h2>
 
-        <div className="grid grid-cols-2 place-items-center gap-12 max-w-3xl mx-auto mt-6">
+        <div className="grid grid-cols-2 place-items-center gap-6 sm:gap-8 md:gap-12 max-w-3xl mx-auto mt-6">
           {/* Static team members, no loading needed */}
           <div className="flex flex-col items-center text-center">
-            <div className="w-48 h-48 rounded-full mb-4 overflow-hidden border-2 border-main-emerald/40">
+            <div className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 rounded-full mb-4 overflow-hidden border-2 border-main-emerald/40">
               <img
                 src="https://cdn.voltagent.dev/website/team/omer.jpeg"
                 alt="Omer Aplak"
@@ -196,7 +196,7 @@ export function Manifesto() {
           </div>
 
           <div className="flex flex-col items-center text-center">
-            <div className="w-48 h-48 rounded-full mb-4  overflow-hidden border-2 border-main-emerald/40">
+            <div className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 rounded-full mb-4  overflow-hidden border-2 border-main-emerald/40">
               <img
                 src="https://cdn.voltagent.dev/website/team/necatiozmen.jpg"
                 alt="Necati Ozmen"
@@ -235,10 +235,10 @@ export function Manifesto() {
           Angel Investors
         </h2>
 
-        <div className="grid grid-cols-2 place-items-center gap-12 max-w-3xl mx-auto mt-6">
+        <div className="grid grid-cols-2 place-items-center gap-6 sm:gap-8 md:gap-12 max-w-3xl mx-auto mt-6">
           {/* Static angel investors, no loading needed */}
           <div className="flex flex-col items-center text-center">
-            <div className="w-48 h-48 rounded-full overflow-hidden mb-4 border-2 border-main-emerald/40">
+            <div className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 rounded-full overflow-hidden mb-4 border-2 border-main-emerald/40">
               <img
                 src="https://cdn.voltagent.dev/website/team/emre.jpeg"
                 alt="Emre Baran"
@@ -272,7 +272,7 @@ export function Manifesto() {
           </div>
 
           <div className="flex flex-col items-center text-center">
-            <div className="w-48 h-48 rounded-full overflow-hidden mb-4 border-2 border-main-emerald/40">
+            <div className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 rounded-full overflow-hidden mb-4 border-2 border-main-emerald/40">
               <img
                 src="https://cdn.voltagent.dev/website/team/umur.jpeg"
                 alt="Umur Cubukcu"
@@ -319,7 +319,7 @@ export function Manifesto() {
           VoltAgent!
         </p>
 
-        <div className="grid grid-cols-4 sm:grid-cols-3 md:grid-cols-7 gap-4 max-w-4xl mx-auto mt-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3 sm:gap-4 max-w-4xl mx-auto mt-6">
           {loading
             ? // Skeleton loading for contributors
               Array(13)
@@ -400,7 +400,7 @@ export function Manifesto() {
           GitHub stars and growing! Recent supporters:
         </p>
 
-        <div className="grid grid-cols-4 sm:grid-cols-3 md:grid-cols-10 gap-4 max-w-4xl mx-auto mt-6">
+        <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-10 gap-3 sm:gap-4 max-w-4xl mx-auto mt-6">
           {loading ? (
             // Skeleton loading for stargazers
             Array(10)
