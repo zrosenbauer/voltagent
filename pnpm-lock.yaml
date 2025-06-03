@@ -1160,8 +1160,8 @@ importers:
         specifier: 3.24.2
         version: 3.24.2
       zod-from-json-schema:
-        specifier: ^0.4.1
-        version: 0.4.1
+        specifier: ^0.0.5
+        version: 0.0.5
     devDependencies:
       '@types/jest':
         specifier: ^29.5.0
@@ -16602,6 +16602,12 @@ packages:
   /yoctocolors-cjs@2.1.2:
     resolution: {integrity: sha512-cYVsTjKl8b+FrnidjibDWskAv7UKOfcwaVZdp/it9n1s9fU3IkgDbhdIRKCW4JDsAlECJY0ytoVPT3sK6kideA==}
     engines: {node: '>=18'}
+    dev: false
+
+  /zod-from-json-schema@0.0.5:
+    resolution: {integrity: sha512-zYEoo86M1qpA1Pq6329oSyHLS785z/mTwfr9V1Xf/ZLhuuBGaMlDGu/pDVGVUe4H4oa1EFgWZT53DP0U3oT9CQ==}
+    dependencies:
+      zod: 3.24.2
     dev: false
 
   /zod-from-json-schema@0.4.1:
