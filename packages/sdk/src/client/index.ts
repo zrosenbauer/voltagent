@@ -8,7 +8,7 @@ import type {
   Event,
   ApiResponse,
   ApiError,
-} from "./types";
+} from "../types";
 
 export class VoltAgentCoreAPI {
   private baseUrl: string;

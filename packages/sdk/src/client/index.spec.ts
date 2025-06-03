@@ -1,4 +1,4 @@
-import { VoltAgentCoreAPI } from "../client";
+import { VoltAgentCoreAPI } from ".";
 
 // Mock global fetch
 globalThis.fetch = jest.fn() as jest.Mock;

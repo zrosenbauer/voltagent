@@ -4,7 +4,7 @@
 export { VoltAgentCoreAPI } from "./client";
 
 // High-level wrapper SDK
-export { VoltAgentObservabilitySDK } from "./wrapper";
+export { VoltAgentObservabilitySDK } from "./sdk";
 
 // Type tanımlarını da re-export ediyoruz
 export type {

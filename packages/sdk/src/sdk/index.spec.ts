@@ -1,4 +1,4 @@
-import { VoltAgentObservabilitySDK } from "../wrapper";
+import { VoltAgentObservabilitySDK } from ".";
 import { VoltAgentCoreAPI } from "../client";
 import type {
   VoltAgentClientOptions,

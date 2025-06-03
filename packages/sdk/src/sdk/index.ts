@@ -1,4 +1,4 @@
-import { VoltAgentCoreAPI } from "./client";
+import { VoltAgentCoreAPI } from "../client";
 import type {
   VoltAgentClientOptions,
   CreateHistoryRequest,
@@ -28,7 +28,7 @@ import type {
   RetrieverSuccessOptions,
   RetrieverErrorOptions,
   EventContext,
-} from "./types";
+} from "../types";
 import { randomUUID } from "node:crypto";
 
 class TraceContextImpl implements TraceContext {
