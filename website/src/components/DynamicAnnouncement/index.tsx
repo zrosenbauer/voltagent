@@ -172,19 +172,19 @@ const announcementContent: AnnouncementContent = {
 
 export default function DynamicAnnouncement(): JSX.Element | null {
   const [country, setCountry] = useState<string>("default");
-  const [isVisible, setIsVisible] = useState(true);
+  const [isVisible, setIsVisible] = useState(() => {
+    // Check localStorage immediately during initialization to prevent flash
+    if (typeof window !== "undefined") {
+      const isAnnouncementClosed = localStorage.getItem(
+        "voltagent-announcement-closed",
+      );
+      return isAnnouncementClosed !== "true";
+    }
+    return true; // Default to true for SSR
+  });
 
   useEffect(() => {
-    // Check if announcement was previously closed
-    const isAnnouncementClosed = localStorage.getItem(
-      "voltagent-announcement-closed",
-    );
-    if (isAnnouncementClosed === "true") {
-      setIsVisible(false);
-      return;
-    }
-
-    // Fetch user's country in background
+    // Only fetch country since visibility is already handled in useState
     fetch("https://love.voltagent.dev/api/country")
       .then((response) => response.json())
       .then((data) => {
