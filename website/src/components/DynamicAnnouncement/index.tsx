@@ -172,7 +172,7 @@ const announcementContent: AnnouncementContent = {
 
 export default function DynamicAnnouncement(): JSX.Element | null {
   const [country, setCountry] = useState<string>("default");
-  const [isVisible, setIsVisible] = useState(false); // Start with false to prevent SSR flashing
+  const [isVisible, setIsVisible] = useState(true); // Start with false to prevent SSR flashing
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -200,11 +200,6 @@ export default function DynamicAnnouncement(): JSX.Element | null {
       });
   }, []);
 
-  const handleClose = () => {
-    setIsVisible(false);
-    localStorage.setItem("voltagent-announcement-closed", "true");
-  };
-
   // Don't render anything until mounted on client-side
   if (!isMounted || !isVisible) {
     return null;
@@ -213,9 +208,8 @@ export default function DynamicAnnouncement(): JSX.Element | null {
   const content = announcementContent[country] || announcementContent.default;
 
   return (
-    <div className="bg-emerald-500 text-gray-900 text-center py-2 landing-md:py-0 px-4 relative z-50 text-sm font-medium border-b border-white/10">
-      <div className="flex items-center justify-between max-w-7xl mx-auto">
-        <div className="w-8" />
+    <div className="bg-emerald-500 text-gray-900 text-center py-3 landing-md:py-2 px-4 relative z-50 text-sm font-medium border-b border-white/10">
+      <div className="flex items-center justify-center max-w-7xl mx-auto">
         <a
           href={content.link}
           target="_blank"
@@ -226,14 +220,14 @@ export default function DynamicAnnouncement(): JSX.Element | null {
           <span className="hidden md:inline">{content.text}</span>
           <span className="md:hidden">{content.mobile}</span>
         </a>
-        <button
+        {/*  <button
           type="button"
           className="bg-transparent border-none text-gray-900 text-lg font-bold cursor-pointer py-1 px-2 rounded transition-colors duration-200 hover:bg-white/10 focus:outline-2 focus:outline-gray-700/50 focus:outline-offset-2 w-8 flex items-center justify-center"
           onClick={handleClose}
           aria-label="Close announcement"
         >
           ×
-        </button>
+        </button> */}
       </div>
     </div>
   );
