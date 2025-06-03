@@ -76,7 +76,7 @@ const sidebars: SidebarsConfig = {
         {
           type: "doc",
           id: "python-sdk",
-          label: "🚧 Python SDK",
+          label: "Python SDK",
         },
         {
           type: "doc",

@@ -343,7 +343,6 @@ const policyChecker = await agent.addAgent({
   instructions: "You are responsible for verifying customer requests against company policies.",
   metadata: {
     role: "policy-verification",
-    parentAgent: agent.id,
     modelParameters: {
       model: "gpt-4",
     },
@@ -403,7 +402,6 @@ const verifier = await policyChecker.addAgent({
   instructions: "You handle two-factor authentication verification processes.",
   metadata: {
     role: "two-factor-auth",
-    parentAgent: policyChecker.id,
     modelParameters: {
       model: "gpt-3.5-turbo",
     },
