@@ -27,6 +27,12 @@ import {
   type TextRequestSchema,
   type ObjectRequestSchema,
 } from "./api.routes";
+import type { CustomEndpointDefinition } from "./custom-endpoints";
+import {
+  CustomEndpointError,
+  validateCustomEndpoint,
+  validateCustomEndpoints,
+} from "./custom-endpoints";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";
 
 const app = new OpenAPIHono();
@@ -737,6 +743,114 @@ app.doc("/doc", {
 
 // Swagger UI endpoint
 app.get("/ui", swaggerUI({ url: "/doc" }));
+
+/**
+ * Register a single custom endpoint with the API server
+ * @param endpoint The custom endpoint definition
+ * @throws CustomEndpointError if the endpoint definition is invalid or registration fails
+ */
+export function registerCustomEndpoint(endpoint: CustomEndpointDefinition): void {
+  try {
+    // Validate the endpoint
+    const validatedEndpoint = validateCustomEndpoint(endpoint);
+    const { path, method, handler } = validatedEndpoint;
+
+    // Register the endpoint with the app
+    switch (method) {
+      case "get":
+        app.get(path, handler);
+        break;
+      case "post":
+        app.post(path, handler);
+        break;
+      case "put":
+        app.put(path, handler);
+        break;
+      case "patch":
+        app.patch(path, handler);
+        break;
+      case "delete":
+        app.delete(path, handler);
+        break;
+      case "options":
+        app.options(path, handler);
+        break;
+      default:
+        throw new CustomEndpointError(`Unsupported HTTP method: ${method}`);
+    }
+
+    // Store registered endpoint for later display in server startup (accumulate, don't override)
+    if (!(global as any).__voltAgentCustomEndpoints) {
+      (global as any).__voltAgentCustomEndpoints = [];
+    }
+    (global as any).__voltAgentCustomEndpoints.push(validatedEndpoint);
+  } catch (error) {
+    if (error instanceof CustomEndpointError) {
+      throw error;
+    }
+    throw new CustomEndpointError(
+      `Failed to register custom endpoint: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+}
+
+/**
+ * Register multiple custom endpoints with the API server
+ * @param endpoints Array of custom endpoint definitions
+ * @throws CustomEndpointError if any endpoint definition is invalid or registration fails
+ */
+export function registerCustomEndpoints(endpoints: CustomEndpointDefinition[]): void {
+  try {
+    // Validate all endpoints first
+    const validatedEndpoints = validateCustomEndpoints(endpoints);
+
+    if (validatedEndpoints.length === 0) {
+      return;
+    }
+
+    // Register each endpoint quietly
+    for (const endpoint of validatedEndpoints) {
+      const { path, method, handler } = endpoint;
+
+      // Register the endpoint with the app (without individual logging)
+      switch (method) {
+        case "get":
+          app.get(path, handler);
+          break;
+        case "post":
+          app.post(path, handler);
+          break;
+        case "put":
+          app.put(path, handler);
+          break;
+        case "patch":
+          app.patch(path, handler);
+          break;
+        case "delete":
+          app.delete(path, handler);
+          break;
+        case "options":
+          app.options(path, handler);
+          break;
+        default:
+          throw new CustomEndpointError(`Unsupported HTTP method: ${method}`);
+      }
+    }
+
+    // Store registered endpoints for later display in server startup (accumulate, don't override)
+    if (!(global as any).__voltAgentCustomEndpoints) {
+      (global as any).__voltAgentCustomEndpoints = [];
+    }
+    (global as any).__voltAgentCustomEndpoints.push(...validatedEndpoints);
+  } catch (error) {
+    if (error instanceof CustomEndpointError) {
+      throw error;
+    }
+    throw new CustomEndpointError(
+      `Failed to register custom endpoints: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+}
 
 export { app as default };
 

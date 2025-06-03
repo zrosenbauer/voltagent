@@ -83,6 +83,251 @@ While the Swagger UI (`/ui`) provides the most comprehensive details, here's a b
 Please note that while the API documentation for `/object` and `/stream-object` specifies that the `schema` parameter should be a standard JSON Schema object, the current backend implementation (`Agent.generateObject`, `Agent.streamObject`) still expects a Zod schema instance.
 :::
 
+## Custom REST Endpoints
+
+VoltAgent allows you to register custom REST API endpoints alongside the built-in agent endpoints. This feature enables you to extend your API server with custom business logic, data endpoints, or integration points.
+
+### Overview
+
+Custom endpoints are regular REST API routes that you can define with:
+
+- **Path**: URL pattern (with optional parameters)
+- **HTTP Method**: GET, POST, PUT, PATCH, DELETE, OPTIONS
+- **Handler**: Function that processes requests and returns responses
+- **Description**: Optional documentation string
+
+All custom endpoints are automatically displayed in the server startup banner and are included in your API server alongside the core VoltAgent endpoints.
+
+### Registration Methods
+
+You can register custom endpoints using two different methods:
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Tabs>
+<TabItem value="function" label="Function Call Registration" default>
+
+Use `registerCustomEndpoints()` for programmatic registration, conditional logic, or when you need to register endpoints before creating the VoltAgent instance.
+
+```typescript
+import { registerCustomEndpoints } from "@voltagent/core";
+
+const endpoints = [
+  {
+    path: "/api/health",
+    method: "get" as const,
+    handler: async (c) => {
+      return c.json({
+        success: true,
+        data: { status: "healthy", timestamp: new Date().toISOString() },
+      });
+    },
+    description: "Health check endpoint",
+  },
+];
+
+// Register before creating VoltAgent
+registerCustomEndpoints(endpoints);
+
+// Then create your VoltAgent instance
+new VoltAgent({ agents: { myAgent } });
+```
+
+**Best for:**
+
+- Conditional endpoint registration
+- Registering endpoints before VoltAgent creation
+- Multiple registration calls
+- Dynamic endpoint configuration
+
+</TabItem>
+<TabItem value="constructor" label="Constructor Registration">
+
+Pass endpoints directly to the VoltAgent constructor - the most convenient method for most use cases.
+
+```typescript
+new VoltAgent({
+  agents: { myAgent },
+  customEndpoints: [
+    {
+      path: "/api/users/:id",
+      method: "get" as const,
+      handler: async (c) => {
+        const userId = c.req.param("id");
+        return c.json({
+          success: true,
+          data: { id: userId, name: "John Doe" },
+        });
+      },
+      description: "Get user by ID",
+    },
+  ],
+});
+```
+
+**Best for:**
+
+- Simple, static endpoint registration
+- Most common use cases
+- Clean, declarative configuration
+- Single registration point
+
+</TabItem>
+</Tabs>
+
+#### Using Both Methods
+
+Both methods work together! You can use them simultaneously and all endpoints will be properly registered.
+
+```typescript
+// Function Call: Register some endpoints via function
+registerCustomEndpoints(authEndpoints);
+
+// Constructor: Register others via constructor
+new VoltAgent({
+  agents: { myAgent },
+  customEndpoints: dataEndpoints,
+});
+
+// Result: Both authEndpoints and dataEndpoints are registered
+```
+
+### Endpoint Definition Structure
+
+Each custom endpoint follows this TypeScript interface:
+
+```typescript
+interface CustomEndpointDefinition {
+  path: string; // Must start with "/"
+  method: HttpMethod; // "get" | "post" | "put" | "patch" | "delete" | "options"
+  handler: Function; // Request handler function
+  description?: string; // Optional description for documentation
+}
+```
+
+### Path Patterns
+
+Custom endpoints support various path patterns:
+
+```typescript
+const endpoints = [
+  // Static paths
+  { path: "/api/health", method: "get", handler: healthHandler },
+
+  // Path parameters
+  { path: "/api/users/:id", method: "get", handler: getUserHandler },
+  { path: "/api/posts/:postId/comments/:commentId", method: "get", handler: getCommentHandler },
+
+  // Nested paths
+  { path: "/api/v1/admin/users", method: "post", handler: createUserHandler },
+
+  // File-like paths
+  { path: "/api/files/:filename", method: "get", handler: getFileHandler },
+];
+```
+
+### Handler Functions
+
+Handler functions receive a Hono context object with request/response utilities:
+
+```typescript
+const endpoints = [
+  // GET endpoint
+  {
+    path: "/api/users/:id",
+    method: "get" as const,
+    handler: async (c) => {
+      const userId = c.req.param("id");
+      const user = await getUserById(userId);
+
+      if (!user) {
+        return c.json({ success: false, error: "User not found" }, 404);
+      }
+
+      return c.json({ success: true, data: user });
+    },
+  },
+
+  // POST endpoint with JSON body
+  {
+    path: "/api/users",
+    method: "post" as const,
+    handler: async (c) => {
+      try {
+        const body = await c.req.json();
+        const { name, email } = body;
+
+        const newUser = await createUser({ name, email });
+        return c.json({ success: true, data: newUser }, 201);
+      } catch (error) {
+        return c.json(
+          {
+            success: false,
+            error: "Invalid request body",
+          },
+          400
+        );
+      }
+    },
+  },
+
+  // Query parameters
+  {
+    path: "/api/search",
+    method: "get" as const,
+    handler: async (c) => {
+      const query = c.req.query("q");
+      const limit = parseInt(c.req.query("limit") || "10");
+
+      const results = await searchData(query, limit);
+      return c.json({ success: true, data: results });
+    },
+  },
+];
+```
+
+### Request/Response Utilities
+
+The handler context provides these utilities:
+
+```typescript
+handler: async (c) => {
+  // Path parameters
+  const id = c.req.param("id");
+
+  // Query parameters
+  const page = c.req.query("page");
+  const filters = c.req.queries("filter"); // Array for multiple values
+
+  // Request body
+  const jsonData = await c.req.json();
+  const formData = await c.req.formData();
+  const textData = await c.req.text();
+
+  // Headers
+  const authHeader = c.req.header("authorization");
+
+  // JSON response
+  return c.json({ data: "response" });
+
+  // Text response
+  return c.text("Hello World");
+
+  // HTML response
+  return c.html("<h1>Hello</h1>");
+
+  // Custom response
+  return c.body("Custom content", {
+    status: 201,
+    headers: { "Content-Type": "text/plain" },
+  });
+
+  // Redirect
+  return c.redirect("/new-url");
+};
+```
+
 ## Authentication
 
 Currently, the Core API does not implement built-in authentication routes. Ensure that your API server is deployed in a secure environment or protected by appropriate network-level security (e.g., firewall rules, reverse proxy authentication) if exposing it outside your local machine.
