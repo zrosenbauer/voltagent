@@ -235,7 +235,7 @@ export function Manifesto() {
           Angel Investors
         </h2>
 
-        <div className="grid grid-cols-1 place-items-center gap-12 max-w-3xl mx-auto mt-6">
+        <div className="grid grid-cols-2 place-items-center gap-12 max-w-3xl mx-auto mt-6">
           {/* Static angel investors, no loading needed */}
           <div className="flex flex-col items-center text-center">
             <div className="w-48 h-48 rounded-full overflow-hidden mb-4 border-2 border-main-emerald/40">
@@ -270,9 +270,9 @@ export function Manifesto() {
               </a>
             </div>
           </div>
-          {/* 
+
           <div className="flex flex-col items-center text-center">
-            <div className="w-24 h-24 rounded-full overflow-hidden mb-4 border-2 border-main-emerald/40">
+            <div className="w-48 h-48 rounded-full overflow-hidden mb-4 border-2 border-main-emerald/40">
               <img
                 src="https://cdn.voltagent.dev/website/team/umur.jpeg"
                 alt="Umur Cubukcu"
@@ -305,7 +305,7 @@ export function Manifesto() {
                 <XLogo className="w-5 h-5" />
               </a>
             </div>
-          </div> */}
+          </div>
         </div>
       </div>
 
