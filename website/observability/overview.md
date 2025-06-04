@@ -1,13 +1,13 @@
 ---
-title: VoltAgent Observability Platform
+title: VoltOps LLM Observability Platform
 slug: /
 ---
 
-# VoltAgent Observability Platform
+# VoltOps LLM Observability Platform
 
-VoltAgent Observability is a **framework-agnostic** platform designed to help you monitor, debug, and improve AI agents across any framework or technology stack.
+Voltops is a **framework-agnostic** platform designed to help you monitor, debug, and improve AI agents across any framework or technology stack.
 
-![VoltAgent Console](https://cdn.voltagent.dev/readme/demo.gif)
+![VoltOps LLM Observability Platform](https://cdn.voltagent.dev/readme/demo.gif)
 
 ## Framework Agnostic Design
 
