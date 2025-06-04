@@ -171,24 +171,10 @@ const announcementContent: AnnouncementContent = {
 };
 
 export default function DynamicAnnouncement(): JSX.Element | null {
-  const [country, setCountry] = useState<string>("default");
-  const [isVisible, setIsVisible] = useState(true); // Start with false to prevent SSR flashing
-  const [isMounted, setIsMounted] = useState(false);
+  const [country, setCountry] = useState<string>("US"); // Start with US instead of default
 
   useEffect(() => {
-    // Mark as mounted and check localStorage
-    setIsMounted(true);
-
-    // Check if announcement was previously closed
-    const isAnnouncementClosed = localStorage.getItem(
-      "voltagent-announcement-closed",
-    );
-
-    if (isAnnouncementClosed !== "true") {
-      setIsVisible(true);
-    }
-
-    // Fetch country
+    // Fetch country and update content
     fetch("https://love.voltagent.dev/api/country")
       .then((response) => response.json())
       .then((data) => {
@@ -199,11 +185,6 @@ export default function DynamicAnnouncement(): JSX.Element | null {
         setCountry("default");
       });
   }, []);
-
-  // Don't render anything until mounted on client-side
-  if (!isMounted || !isVisible) {
-    return null;
-  }
 
   const content = announcementContent[country] || announcementContent.default;
 
