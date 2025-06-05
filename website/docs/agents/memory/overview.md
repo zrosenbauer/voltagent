@@ -63,6 +63,7 @@ VoltAgent achieves memory persistence through swappable **Memory Providers**. Th
 VoltAgent includes built-in providers and supports custom implementations:
 
 - **[`LibSQLStorage`](./libsql.md):** (Default Provider) Uses LibSQL (including Turso and local SQLite files) for persistence. Ideal for easy setup, local development, and serverless deployments compatible with SQLite.
+- **[`@voltagent/postgres`](./postgres.md):** Uses PostgreSQL for persistence. Ideal for production applications requiring enterprise-grade database storage, complex queries, or integration with existing PostgreSQL infrastructure.
 - **[`@voltagent/supabase`](./supabase.md):** Uses Supabase (PostgreSQL) for persistence. Suitable for applications already using Supabase or requiring a robust, scalable PostgreSQL backend.
 - **[`InMemoryStorage`](./in-memory.md):** Stores conversation history only in the application's memory. Useful for testing, development, or stateless scenarios. Data is lost on application restart.
 - **[Custom Providers](#implementing-custom-memory-providers):** You can implement the `Memory` interface to connect to any database or storage system (e.g., Redis, MongoDB, DynamoDB, etc.).
