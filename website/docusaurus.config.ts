@@ -145,6 +145,14 @@ const config: Config = {
   ],
   themeConfig: {
     image: "img/social2.png",
+    announcementBar: {
+      id: "support_us",
+      content:
+        "<a target='_blank' rel='noopener noreferrer' href='https://github.com/voltagent/voltagent'>⭐️ Love VoltAgent? Give us a star on GitHub and help us reach more developers!</a>",
+      backgroundColor: "#10b981",
+      textColor: "#000000",
+      isCloseable: true,
+    },
     colorMode: {
       disableSwitch: true,
       defaultMode: "dark",
