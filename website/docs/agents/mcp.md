@@ -114,14 +114,6 @@ if (clients.reddit) {
   clients.reddit.on("error", (error) => {
     console.error("Reddit MCP server connection error:", error.message);
   });
-
-  // Example: Listen for specific MCP messages (raw interaction)
-  clients.reddit.on("message", (message) => {
-    // console.log("Received MCP message from Reddit:", message);
-    if (message.type === "tool_call") {
-      console.log(`MCP Log: Tool ${message.tool_name} called`);
-    }
-  });
 }
 ```
 
