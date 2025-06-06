@@ -17,9 +17,6 @@ import path from "node:path"; // Used for filesystem path example
 
 // Create MCP Configuration with multiple types of servers
 const mcpConfig = new MCPConfiguration({
-  // Optional unique identifier for this configuration instance
-  id: "my-mcp-config",
-
   servers: {
     // Example 1: HTTP-based server (e.g., external web service or API gateway)
     reddit: {
