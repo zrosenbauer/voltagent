@@ -1,5 +1,13 @@
 ## Package: @voltagent/core
 
+## 0.1.29
+
+### Patch Changes
+
+- [#191](https://github.com/VoltAgent/voltagent/pull/191) [`07d99d1`](https://github.com/VoltAgent/voltagent/commit/07d99d133232babf78ba4e1c32fe235d5b3c9944) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - Remove console based logging in favor of a dev-only logger that will not output logs in production environments by leveraging the NODE_ENV
+
+- [#196](https://github.com/VoltAgent/voltagent/pull/196) [`67b0e7e`](https://github.com/VoltAgent/voltagent/commit/67b0e7ea704d23bf9efb722c0b0b4971d0974153) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add `systemPrompt` and `messages` array to metadata for display on VoltOps Platform
+
 ## 0.1.28
 
 ### Patch Changes
@@ -1907,6 +1915,63 @@
 
 ## Package: @voltagent/voice
 
+## 0.2.0
+
+### Minor Changes
+
+- [#195](https://github.com/VoltAgent/voltagent/pull/195) [`0c4e941`](https://github.com/VoltAgent/voltagent/commit/0c4e9418ae75c82b20a503678e75277729c0174b) Thanks [@Ajay-Satish-01](https://github.com/Ajay-Satish-01)! - 🚨 Breaking Change: Renamed XsAI and Xsai to XSAI
+
+  We’ve renamed the XsAI and Xsai classes to XSAI to keep naming consistent across the framework.
+
+  What changed?
+
+  If you’re using the XsAIProvider or XsAIVoiceProvider, you now need to update your code to use XSAIProvider and XSAIVoiceProvider.
+
+  Before:
+
+  ```ts
+  import { XsAIVoiceProvider } from "@voltagent/voice";
+
+  const agent = new Agent({
+    name: "Asistant",
+    description: "A helpful assistant that answers questions without using tools",
+    llm: new XsAIProvider({
+      apiKey: process.env.OPENAI_API_KEY!,
+    }),
+    model: "gpt-4o-mini",
+  });
+
+  const voiceProvider = new XsAIVoiceProvider({
+    apiKey: process.env.OPENAI_API_KEY!,
+  });
+  ```
+
+  After:
+
+  ```ts
+  import { XSAIVoiceProvider } from "@voltagent/voice";
+
+  const agent = new Agent({
+    name: "Asistant",
+    description: "A helpful assistant that answers questions without using tools",
+    llm: new XSAIProvider({
+      apiKey: process.env.OPENAI_API_KEY!,
+    }),
+    model: "gpt-4o-mini",
+  });
+
+  const voiceProvider = new XSAIVoiceProvider({
+    apiKey: process.env.OPENAI_API_KEY!,
+  });
+  ```
+
+  This change resolves [#140](https://github.com/your-repo/issues/140).
+
+### Patch Changes
+
+- Updated dependencies [[`07d99d1`](https://github.com/VoltAgent/voltagent/commit/07d99d133232babf78ba4e1c32fe235d5b3c9944), [`67b0e7e`](https://github.com/VoltAgent/voltagent/commit/67b0e7ea704d23bf9efb722c0b0b4971d0974153)]:
+  - @voltagent/core@0.1.29
+
 ## 0.1.7
 
 ### Patch Changes
@@ -2001,6 +2066,63 @@
 ---
 
 ## Package: @voltagent/xsai
+
+## 0.2.0
+
+### Minor Changes
+
+- [#195](https://github.com/VoltAgent/voltagent/pull/195) [`0c4e941`](https://github.com/VoltAgent/voltagent/commit/0c4e9418ae75c82b20a503678e75277729c0174b) Thanks [@Ajay-Satish-01](https://github.com/Ajay-Satish-01)! - 🚨 Breaking Change: Renamed XsAI and Xsai to XSAI
+
+  We’ve renamed the XsAI and Xsai classes to XSAI to keep naming consistent across the framework.
+
+  What changed?
+
+  If you’re using the XsAIProvider or XsAIVoiceProvider, you now need to update your code to use XSAIProvider and XSAIVoiceProvider.
+
+  Before:
+
+  ```ts
+  import { XsAIVoiceProvider } from "@voltagent/voice";
+
+  const agent = new Agent({
+    name: "Asistant",
+    description: "A helpful assistant that answers questions without using tools",
+    llm: new XsAIProvider({
+      apiKey: process.env.OPENAI_API_KEY!,
+    }),
+    model: "gpt-4o-mini",
+  });
+
+  const voiceProvider = new XsAIVoiceProvider({
+    apiKey: process.env.OPENAI_API_KEY!,
+  });
+  ```
+
+  After:
+
+  ```ts
+  import { XSAIVoiceProvider } from "@voltagent/voice";
+
+  const agent = new Agent({
+    name: "Asistant",
+    description: "A helpful assistant that answers questions without using tools",
+    llm: new XSAIProvider({
+      apiKey: process.env.OPENAI_API_KEY!,
+    }),
+    model: "gpt-4o-mini",
+  });
+
+  const voiceProvider = new XSAIVoiceProvider({
+    apiKey: process.env.OPENAI_API_KEY!,
+  });
+  ```
+
+  This change resolves [#140](https://github.com/your-repo/issues/140).
+
+### Patch Changes
+
+- Updated dependencies [[`07d99d1`](https://github.com/VoltAgent/voltagent/commit/07d99d133232babf78ba4e1c32fe235d5b3c9944), [`67b0e7e`](https://github.com/VoltAgent/voltagent/commit/67b0e7ea704d23bf9efb722c0b0b4971d0974153)]:
+  - @voltagent/core@0.1.29
 
 ## 0.1.9
 
