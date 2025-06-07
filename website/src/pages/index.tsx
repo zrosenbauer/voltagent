@@ -2,7 +2,6 @@ import Head from "@docusaurus/Head";
 import Layout from "@theme/Layout";
 
 import { Hero } from "../components/hero";
-import { Footer } from "../components/footer";
 import LivePreview from "../components/live-preview";
 import { DotPattern } from "../components/ui/dot-pattern";
 import { AgentsDetail } from "../components/agents-detail";
@@ -42,7 +41,6 @@ export default function Home(): JSX.Element {
             <FeaturedBlog />
             <CommunitySection />
           </div>
-          <Footer />
         </main>
       </Layout>
     </>

@@ -8,7 +8,7 @@ import { BoltIcon } from "@heroicons/react/24/solid";
 
 export function Footer() {
   return (
-    <footer className="bg-[#080f11d9] text-[#dcdcdc] font-['Inter'] py-8 md:py-12 relative w-[100vw] left-[50%] right-[50%] ml-[-50vw] mr-[-50vw] border-solid border-b-0 border-l-0 border-r-0 border-t border-white/10">
+    <footer className="bg-[#080f11d9] text-[#dcdcdc] font-['Inter'] py-8 md:py-12 border-solid border-b-0 border-l-0 border-r-0 border-t border-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left section with logo and social links */}
@@ -90,9 +90,17 @@ export function Footer() {
                   href="https://voltagent.dev/llms.txt"
                   target="_blank"
                 >
-                  LLMs
+                  llms.txt
                 </FooterLink>
               </li>
+              {/* <li>
+                <FooterLink
+                  href="https://voltagent.dev/llms-full.txt"
+                  target="_blank"
+                >
+                  llms-full.txt
+                </FooterLink>
+              </li> */}
             </ul>
           </div>
 

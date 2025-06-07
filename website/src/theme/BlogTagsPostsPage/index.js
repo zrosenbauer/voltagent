@@ -13,7 +13,6 @@ import BlogPostItems from "@theme/BlogPostItems";
 import SearchMetadata from "@theme/SearchMetadata";
 import Unlisted from "@theme/Unlisted";
 import clsx from "clsx";
-import { Footer } from "@site/src/components/footer";
 import ExecutionEnvironment from "@docusaurus/ExecutionEnvironment";
 
 const POSTS_PER_PAGE = 12;
@@ -215,7 +214,6 @@ export default function BlogTagsPostsPage(props) {
     >
       <BlogTagsPostsPageMetadata {...rest} />
       <BlogTagsPostsPageContent {...rest} tags={tags} />
-      <Footer />
     </HtmlClassNameProvider>
   );
 }

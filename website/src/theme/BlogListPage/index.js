@@ -4,7 +4,6 @@ import {
   ThemeClassNames,
 } from "@docusaurus/theme-common";
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
-import { Footer } from "@site/src/components/footer";
 import BlogLayout from "@theme/BlogLayout";
 import BlogListPaginator from "@theme/BlogListPaginator";
 import BlogPostItems from "@theme/BlogPostItems";
@@ -124,7 +123,6 @@ export default function BlogListPage(props) {
     >
       <BlogListPageMetadata {...props} />
       <BlogListPageContent {...props} />
-      <Footer />
     </HtmlClassNameProvider>
   );
 }

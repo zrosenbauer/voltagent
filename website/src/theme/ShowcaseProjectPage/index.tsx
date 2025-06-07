@@ -5,7 +5,6 @@ import Link from "@docusaurus/Link";
 import { motion } from "framer-motion";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { GitHubLogo } from "../../../static/img/logos/github";
-import { Footer } from "../../components/footer";
 import { DotPattern } from "../../components/ui/dot-pattern";
 
 interface ShowcaseProjectPageProps {
@@ -288,8 +287,6 @@ export default function ShowcaseProjectPage({
             </motion.div>
           </div>
         </section>
-
-        <Footer />
       </main>
     </Layout>
   );
