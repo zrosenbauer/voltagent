@@ -10,7 +10,7 @@ const PricingSection = () => {
       period: "/month",
       description: "Perfect for getting started with AI agent monitoring",
       features: [
-        "1 seat, 1 organization, 1 project",
+        "1 seat, 1 project",
         "10.000 events per month",
         "Limited requests limits",
         "Up to 5 agents",
