@@ -179,6 +179,8 @@ class MockProvider implements LLMProvider<MockModelType> {
           role: "assistant",
           content: "Using test-tool",
           id: "test-tool-call-id",
+          name: "test-tool",
+          arguments: {},
         });
       }
 
@@ -189,11 +191,24 @@ class MockProvider implements LLMProvider<MockModelType> {
           role: "tool",
           content: "tool result",
           id: "test-tool-call-id",
+          name: "test-tool",
+          result: "tool result",
         });
       }
     }
 
     const result = { text: "Hello, I am a test agent!" };
+
+    // Simulate final text response step like real providers do
+    if (options.onStepFinish) {
+      await options.onStepFinish({
+        type: "text",
+        role: "assistant",
+        content: result.text,
+        id: "final-text-step",
+      });
+    }
+
     return {
       provider: result,
       text: result.text,
@@ -249,6 +264,7 @@ class MockProvider implements LLMProvider<MockModelType> {
     messages: BaseMessage[];
     model: MockModelType;
     schema: T;
+    onStepFinish?: (step: StepWithContent) => Promise<void>;
   }): Promise<ProviderObjectResponse<MockGenerateObjectResult<z.infer<T>>, z.infer<T>>> {
     this.generateObjectCalls++;
     this.lastMessages = options.messages;
@@ -260,6 +276,16 @@ class MockProvider implements LLMProvider<MockModelType> {
         hobbies: ["reading", "gaming"],
       } as z.infer<T>,
     };
+
+    // Simulate final object response step like real providers do
+    if (options.onStepFinish) {
+      await options.onStepFinish({
+        type: "text",
+        role: "assistant",
+        content: JSON.stringify(result.object),
+        id: "final-object-step",
+      });
+    }
 
     return {
       provider: result,
@@ -1159,6 +1185,78 @@ describe("Agent", () => {
       const references = capturedUserContext?.get("references");
       expect(references).toBeDefined();
       expect(Array.isArray(references)).toBe(true);
+    });
+  });
+
+  describe("onEnd hook", () => {
+    it("should call onEnd hook with conversationId", async () => {
+      const onEndSpy = jest.fn();
+      const agentWithOnEnd = new TestAgent({
+        name: "OnEnd Test Agent",
+        model: mockModel,
+        llm: mockProvider,
+        hooks: createHooks({ onEnd: onEndSpy }),
+        instructions: "OnEnd Test Agent instructions",
+      });
+
+      const userInput = "Hello, how are you?";
+      await agentWithOnEnd.generateText(userInput);
+
+      expect(onEndSpy).toHaveBeenCalledTimes(1);
+      const callArgs = onEndSpy.mock.calls[0][0];
+
+      // Check basic structure
+      expect(callArgs).toHaveProperty("agent");
+      expect(callArgs).toHaveProperty("output");
+      expect(callArgs).toHaveProperty("error");
+      expect(callArgs).toHaveProperty("conversationId");
+      expect(callArgs).toHaveProperty("context");
+
+      // Check other properties
+      expect(callArgs.agent).toBe(agentWithOnEnd);
+      expect(callArgs.output).toBeDefined();
+      expect(callArgs.error).toBeUndefined();
+      expect(callArgs.context).toBeDefined();
+      expect(callArgs.conversationId).toEqual(expect.any(String));
+    });
+
+    it("should call onEnd hook with userContext passed correctly", async () => {
+      const onEndSpy = jest.fn();
+      const agentWithOnEnd = new TestAgent({
+        name: "OnEnd Context Test Agent",
+        model: mockModel,
+        llm: mockProvider,
+        hooks: createHooks({ onEnd: onEndSpy }),
+        instructions: "OnEnd Context Test Agent instructions",
+      });
+
+      const userContext = new Map<string | symbol, unknown>();
+      userContext.set("testKey", "testValue");
+
+      await agentWithOnEnd.generateText("Test with context", { userContext });
+
+      expect(onEndSpy).toHaveBeenCalledTimes(1);
+      const callArgs = onEndSpy.mock.calls[0][0];
+
+      expect(callArgs.context.userContext).toBeInstanceOf(Map);
+      expect(callArgs.context.userContext.get("testKey")).toBe("testValue");
+    });
+
+    it("should call streamText without errors", async () => {
+      const agentWithOnEnd = new TestAgent({
+        name: "OnEnd Stream Test Agent",
+        model: mockModel,
+        llm: mockProvider,
+        instructions: "OnEnd Stream Test Agent instructions",
+      });
+
+      const userInput = "Stream test";
+      const result = await agentWithOnEnd.streamText(userInput);
+
+      // Verify that streamText was called and returns expected structure
+      expect(mockProvider.streamTextCalls).toBe(1);
+      expect(result).toBeDefined();
+      expect(result.textStream).toBeDefined();
     });
   });
 
