@@ -140,9 +140,10 @@ export type ModelType<T> = T extends { llm: LLMProvider<any> }
 /**
  * Infer generate text options type
  */
-export type InferGenerateTextOptions<T extends { llm: LLMProvider<any> }> = Parameters<
-  T["llm"]["generateText"]
->[0];
+export type InferGenerateTextOptions<T extends { llm: LLMProvider<any> }> = Omit<
+  Parameters<T["llm"]["generateText"]>[0],
+  "messages" | "model" | "tools" | "maxSteps" | "schema"
+>;
 
 /**
  * Infer generate text response type
@@ -154,9 +155,10 @@ export type InferGenerateTextResponse<T extends { llm: LLMProvider<any> }> = Awa
 /**
  * Infer generate object options type
  */
-export type InferStreamTextOptions<T extends { llm: LLMProvider<any> }> = Parameters<
-  T["llm"]["streamText"]
->[0];
+export type InferStreamTextOptions<T extends { llm: LLMProvider<any> }> = Omit<
+  Parameters<T["llm"]["streamText"]>[0],
+  "messages" | "model" | "tools" | "maxSteps" | "schema"
+>;
 
 /**
  * Infer stream text response type
@@ -168,9 +170,10 @@ export type InferStreamTextResponse<T extends { llm: LLMProvider<any> }> = Await
 /**
  * Infer stream text options type
  */
-export type InferGenerateObjectOptions<T extends { llm: LLMProvider<any> }> = Parameters<
-  T["llm"]["generateObject"]
->[0];
+export type InferGenerateObjectOptions<T extends { llm: LLMProvider<any> }> = Omit<
+  Parameters<T["llm"]["generateObject"]>[0],
+  "messages" | "model" | "tools" | "maxSteps" | "schema"
+>;
 
 /**
  * Infer generate object response type
@@ -182,9 +185,10 @@ export type InferGenerateObjectResponse<T extends { llm: LLMProvider<any> }> = A
 /**
  * Infer stream object options type
  */
-export type InferStreamObjectOptions<T extends { llm: LLMProvider<any> }> = Parameters<
-  T["llm"]["streamObject"]
->[0];
+export type InferStreamObjectOptions<T extends { llm: LLMProvider<any> }> = Omit<
+  Parameters<T["llm"]["streamObject"]>[0],
+  "messages" | "model" | "schema"
+>;
 
 /**
  * Infer stream object response type

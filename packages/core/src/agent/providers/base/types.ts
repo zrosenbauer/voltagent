@@ -2,7 +2,6 @@ import type { z } from "zod";
 import type { Tool } from "../../../tool";
 import type {
   OperationContext,
-  ProviderOptions,
   StreamObjectOnFinishCallback,
   StreamOnErrorCallback,
   StreamTextOnFinishCallback,
@@ -249,23 +248,23 @@ export interface StepWithContent {
 export type StepFinishCallback = (step: StepWithContent) => void | Promise<void>;
 export type StepChunkCallback = (chunk: any) => void | Promise<void>;
 
-export interface GenerateTextOptions<TModel> {
+export interface GenerateTextOptions<TProvider> {
   messages: BaseMessage[];
-  model: TModel;
+  model: InferModel<TProvider>;
   tools?: BaseTool[];
   maxSteps?: number;
-  provider?: ProviderOptions;
+  provider?: InferGenerateTextProviderOptions<TProvider>;
   onStepFinish?: StepFinishCallback;
   signal?: AbortSignal;
   toolExecutionContext?: ToolExecutionContext;
 }
 
-export interface StreamTextOptions<TModel> {
+export interface StreamTextOptions<TProvider> {
   messages: BaseMessage[];
-  model: TModel;
+  model: InferModel<TProvider>;
   tools?: BaseTool[];
   maxSteps?: number;
-  provider?: ProviderOptions;
+  provider?: InferStreamTextProviderOptions<TProvider>;
   onStepFinish?: StepFinishCallback;
   onChunk?: StepChunkCallback;
   onFinish?: StreamTextOnFinishCallback;
@@ -274,21 +273,21 @@ export interface StreamTextOptions<TModel> {
   toolExecutionContext?: ToolExecutionContext;
 }
 
-export interface GenerateObjectOptions<TModel, TSchema extends z.ZodType> {
+export interface GenerateObjectOptions<TProvider, TSchema extends z.ZodType> {
   messages: BaseMessage[];
-  model: TModel;
+  model: InferModel<TProvider>;
   schema: TSchema;
-  provider?: ProviderOptions;
+  provider?: InferGenerateObjectProviderOptions<TProvider>;
   onStepFinish?: StepFinishCallback;
   signal?: AbortSignal;
   toolExecutionContext?: ToolExecutionContext;
 }
 
-export interface StreamObjectOptions<TModel, TSchema extends z.ZodType> {
+export interface StreamObjectOptions<TProvider, TSchema extends z.ZodType> {
   messages: BaseMessage[];
-  model: TModel;
+  model: InferModel<TProvider>;
   schema: TSchema;
-  provider?: ProviderOptions;
+  provider?: InferStreamObjectProviderOptions<TProvider>;
   onStepFinish?: StepFinishCallback;
   onFinish?: StreamObjectOnFinishCallback<z.infer<TSchema>>;
   onError?: StreamOnErrorCallback;
@@ -302,6 +301,32 @@ export type InferStreamResponse<T> = T extends {
 }
   ? R
   : unknown;
+
+export type InferStreamTextProviderOptions<T> = T extends {
+  streamText: (options: infer P) => any;
+}
+  ? P extends {
+      messages: any;
+      model: any;
+      tools?: any;
+      maxSteps?: any;
+      schema?: any;
+    }
+    ? Omit<P, "messages" | "model" | "tools" | "maxSteps" | "schema">
+    : Record<string, unknown>
+  : Record<string, unknown>;
+
+export type InferStreamObjectProviderOptions<T> = T extends {
+  streamObject: (options: infer P) => any;
+}
+  ? P extends {
+      messages: any;
+      model: any;
+      schema: any;
+    }
+    ? Omit<P, "messages" | "model" | "schema">
+    : Record<string, unknown>
+  : Record<string, unknown>;
 
 export type InferMessage<T> = T extends {
   toMessage: (message: BaseMessage) => infer R;
@@ -327,11 +352,37 @@ export type InferGenerateTextResponse<T> = T extends {
   ? R
   : unknown;
 
+export type InferGenerateTextProviderOptions<T> = T extends {
+  generateText: (options: infer P) => any;
+}
+  ? P extends {
+      messages: any;
+      model: any;
+      tools?: any;
+      maxSteps?: any;
+      schema?: any;
+    }
+    ? Omit<P, "messages" | "model" | "tools" | "maxSteps" | "schema">
+    : Record<string, unknown>
+  : Record<string, unknown>;
+
 export type InferGenerateObjectResponse<T> = T extends {
   generateObject: (...args: any[]) => Promise<infer R>;
 }
   ? R
   : unknown;
+
+export type InferGenerateObjectProviderOptions<T> = T extends {
+  generateObject: (options: infer P) => any;
+}
+  ? P extends {
+      messages: any;
+      model: any;
+      schema: any;
+    }
+    ? Omit<P, "messages" | "model" | "schema">
+    : Record<string, unknown>
+  : Record<string, unknown>;
 
 export type InferProviderParams<T> = T extends {
   generateText: (options: infer P) => any;
@@ -356,11 +407,11 @@ export type LLMProvider<TProvider> = {
    * @throws {VoltAgentError} If an error occurs during generation.
    */
   generateText(
-    options: GenerateTextOptions<InferModel<TProvider>>,
+    options: GenerateTextOptions<TProvider>,
   ): Promise<ProviderTextResponse<InferGenerateTextResponse<TProvider>>>;
 
   streamText(
-    options: StreamTextOptions<InferModel<TProvider>>,
+    options: StreamTextOptions<TProvider>,
   ): Promise<ProviderTextStreamResponse<InferStreamResponse<TProvider>>>;
 
   /**
@@ -369,11 +420,11 @@ export type LLMProvider<TProvider> = {
    * @throws {VoltAgentError} If an error occurs during generation.
    */
   generateObject<TSchema extends z.ZodType>(
-    options: GenerateObjectOptions<InferModel<TProvider>, TSchema>,
+    options: GenerateObjectOptions<TProvider, TSchema>,
   ): Promise<ProviderObjectResponse<InferGenerateObjectResponse<TProvider>, z.infer<TSchema>>>;
 
   streamObject<TSchema extends z.ZodType>(
-    options: StreamObjectOptions<InferModel<TProvider>, TSchema>,
+    options: StreamObjectOptions<TProvider, TSchema>,
   ): Promise<ProviderObjectStreamResponse<InferStreamResponse<TProvider>, z.infer<TSchema>>>;
 
   // Message conversion methods
