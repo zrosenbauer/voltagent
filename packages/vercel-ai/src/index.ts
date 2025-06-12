@@ -12,11 +12,8 @@ import type {
   StreamObjectFinishResult,
   StreamObjectOptions,
   StreamTextOptions,
-  ToolErrorInfo,
   UsageInfo,
-  VoltAgentError,
 } from "@voltagent/core";
-// Import directly from the types file path within the dist folder
 import type {
   CallWarning,
   CoreMessage,
@@ -35,10 +32,9 @@ import type {
 import { generateObject, generateText, streamObject, streamText } from "ai";
 import type { z } from "zod";
 import type { VercelProviderOptions } from "./types";
-import { convertToolsForSDK } from "./utils";
+import { convertToolsForSDK, createVoltagentErrorFromSdkError } from "./utils";
 
 export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
-  // @ts-ignore
   constructor(private options?: VercelProviderOptions) {
     // Bind methods to preserve 'this' context
     this.generateText = this.generateText.bind(this);
@@ -50,18 +46,33 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
     this.getModelIdentifier = this.getModelIdentifier.bind(this);
   }
 
-  getModelIdentifier = (model: LanguageModelV1): string => {
+  /**
+   * Gets the model identifier for the Vercel SDK
+   * @param model - The model to get the identifier for
+   * @returns The model identifier
+   */
+  public getModelIdentifier(model: LanguageModelV1): string {
     return model.modelId;
-  };
+  }
 
-  toMessage = (message: BaseMessage): CoreMessage => {
+  /**
+   * Converts a BaseMessage to a CoreMessage for the Vercel SDK
+   * @param message - The BaseMessage to convert
+   * @returns The CoreMessage for the Vercel SDK
+   */
+  public toMessage(message: BaseMessage): CoreMessage {
     return message as CoreMessage;
-  };
+  }
 
-  createStepFromChunk = (chunk: {
+  /**
+   * Creates a step from a chunk of the Vercel SDK
+   * @param chunk - The chunk to create a step from
+   * @returns The step
+   */
+  public createStepFromChunk(chunk: {
     type: string;
     [key: string]: any;
-  }): StepWithContent | null => {
+  }): StepWithContent | null {
     if (chunk.type === "text" && chunk.text) {
       return {
         id: "",
@@ -111,59 +122,16 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
     }
 
     return null;
-  };
-
-  /**
-   * Creates a standardized VoltAgentError from a raw Vercel SDK error object.
-   */
-  private _createVoltagentErrorFromSdkError(
-    sdkError: any, // The raw error object from the SDK
-    errorStage:
-      | "llm_stream"
-      | "object_stream"
-      | "llm_generate"
-      | "object_generate"
-      | "tool_execution" = "llm_stream",
-  ): VoltAgentError {
-    const originalError = sdkError.error ?? sdkError; // Handle potential nesting
-    let voltagentErr: VoltAgentError;
-
-    const potentialToolCallId = (originalError as any)?.toolCallId;
-    const potentialToolName = (originalError as any)?.toolName;
-
-    if (potentialToolCallId && potentialToolName) {
-      const toolErrorDetails: ToolErrorInfo = {
-        toolCallId: potentialToolCallId,
-        toolName: potentialToolName,
-        toolArguments: (originalError as any)?.args,
-        toolExecutionError: originalError,
-      };
-      voltagentErr = {
-        message: `Error during Vercel SDK operation (tool '${potentialToolName}'): ${originalError instanceof Error ? originalError.message : "Unknown tool error"}`,
-        originalError: originalError,
-        toolError: toolErrorDetails,
-        stage: "tool_execution",
-        code: (originalError as any)?.code,
-      };
-    } else {
-      voltagentErr = {
-        message:
-          originalError instanceof Error
-            ? originalError.message
-            : `An unknown error occurred during Vercel AI operation (stage: ${errorStage})`,
-        originalError: originalError,
-        toolError: undefined,
-        stage: errorStage,
-        code: (originalError as any)?.code,
-      };
-    }
-    // Return the created error instead of calling callback
-    return voltagentErr;
   }
 
-  generateText = async (
+  /**
+   * Generates a text response using the Vercel SDK
+   * @param options - The options for the text generation
+   * @returns The text response
+   */
+  public async generateText(
     options: GenerateTextOptions<LanguageModelV1>,
-  ): Promise<ProviderTextResponse<GenerateTextResult<Record<string, any>, never>>> => {
+  ): Promise<ProviderTextResponse<GenerateTextResult<Record<string, any>, never>>> {
     const vercelMessages = options.messages.map(this.toMessage);
     const vercelTools = options.tools ? convertToolsForSDK(options.tools) : undefined;
 
@@ -240,13 +208,18 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
       };
     } catch (sdkError) {
       // Create VoltAgentError using the helper
-      const voltagentErr = this._createVoltagentErrorFromSdkError(sdkError, "llm_generate"); // Use appropriate stage
+      const voltagentErr = createVoltagentErrorFromSdkError(sdkError, "llm_generate"); // Use appropriate stage
       // Throw the standardized error
       throw voltagentErr;
     }
-  };
+  }
 
-  async streamText(
+  /**
+   * Streams a text response using the Vercel SDK
+   * @param options - The options for the text streaming
+   * @returns The text stream response
+   */
+  public async streamText(
     options: StreamTextOptions<LanguageModelV1>,
   ): Promise<ProviderTextStreamResponse<StreamTextResult<Record<string, any>, never>>> {
     const vercelMessages = options.messages.map(this.toMessage);
@@ -329,7 +302,7 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
         : undefined,
       onError: (sdkError) => {
         // Create the error using the helper
-        const voltagentErr = this._createVoltagentErrorFromSdkError(sdkError, "llm_stream");
+        const voltagentErr = createVoltagentErrorFromSdkError(sdkError, "llm_stream");
         // Call the agent's onError callback if it exists
         if (options.onError) {
           options.onError(voltagentErr);
@@ -344,9 +317,14 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
     };
   }
 
-  generateObject = async <TSchema extends z.ZodType>(
+  /**
+   * Generates an object response using the Vercel SDK
+   * @param options - The options for the object generation
+   * @returns The object response
+   */
+  public async generateObject<TSchema extends z.ZodType>(
     options: GenerateObjectOptions<LanguageModelV1, TSchema>,
-  ): Promise<ProviderObjectResponse<GenerateObjectResult<z.infer<TSchema>>, z.infer<TSchema>>> => {
+  ): Promise<ProviderObjectResponse<GenerateObjectResult<z.infer<TSchema>>, z.infer<TSchema>>> {
     const vercelMessages = options.messages.map(this.toMessage);
 
     // For object generation, we use onFinish as onStepFinish is not supported
@@ -404,13 +382,18 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
       };
     } catch (sdkError) {
       // Create VoltAgentError using the helper
-      const voltagentErr = this._createVoltagentErrorFromSdkError(sdkError, "object_generate"); // Use appropriate stage
+      const voltagentErr = createVoltagentErrorFromSdkError(sdkError, "object_generate"); // Use appropriate stage
       // Throw the standardized error
       throw voltagentErr;
     }
-  };
+  }
 
-  async streamObject<TSchema extends z.ZodType>(
+  /**
+   * Streams an object response using the Vercel SDK
+   * @param options - The options for the object streaming
+   * @returns The object stream response
+   */
+  public async streamObject<TSchema extends z.ZodType>(
     options: StreamObjectOptions<LanguageModelV1, TSchema>,
   ): Promise<
     ProviderObjectStreamResponse<
@@ -479,7 +462,7 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
       ...(options.onStepFinish || options.onFinish ? { onFinish: sdkOnFinish } : {}),
       onError: (sdkError) => {
         // Create the error using the helper
-        const voltagentErr = this._createVoltagentErrorFromSdkError(sdkError, "object_stream");
+        const voltagentErr = createVoltagentErrorFromSdkError(sdkError, "object_stream");
         // Call the agent's onError callback if it exists
         if (options.onError) {
           options.onError(voltagentErr);
