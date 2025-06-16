@@ -16,8 +16,6 @@ import type {
   UsageInfo,
   VoltAgentError,
   StreamPart,
-  BaseTool,
-  StepFinishCallback,
 } from "@voltagent/core";
 // Import directly from the types file path within the dist folder
 import type {
@@ -327,15 +325,92 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
     options: StreamTextOptions<LanguageModelV1>,
   ): Promise<ProviderTextStreamResponse<StreamTextResult<Record<string, any>, never>>> {
     try {
-      const result = await streamText({
-        model: options.model,
-        messages: options.messages.map(this.toMessage),
-        tools: options.tools ? await this.convertTools(options.tools) : undefined,
-        maxSteps: options.maxSteps,
-        onStepFinish: this.createStepFinishHandler(options.onStepFinish),
-        onFinish: options.onFinish,
-        onChunk: options.onChunk,
+      const vercelMessages = options.messages.map(this.toMessage);
+      const vercelTools = options.tools ? convertToolsForSDK(options.tools) : undefined;
+
+      // Process onStepFinish if provided
+      const onStepFinish = options.onStepFinish
+        ? async (result: StepResult<Record<string, any>>) => {
+            if (options.onStepFinish) {
+              // Handle text response
+              if (result.text) {
+                const step = this.createStepFromChunk({
+                  type: "text",
+                  text: result.text,
+                  usage: result.usage,
+                });
+                if (step) await options.onStepFinish(step);
+              }
+
+              // Handle all tool calls - each as a separate step
+              if (result.toolCalls && result.toolCalls.length > 0) {
+                for (const toolCall of result.toolCalls) {
+                  const step = this.createStepFromChunk({
+                    type: "tool-call",
+                    toolCallId: toolCall.toolCallId,
+                    toolName: toolCall.toolName,
+                    args: toolCall.args,
+                    usage: result.usage,
+                  });
+                  if (step) await options.onStepFinish(step);
+                }
+              }
+
+              // Handle all tool results - each as a separate step
+              if (result.toolResults && result.toolResults.length > 0) {
+                for (const toolResult of result.toolResults) {
+                  const step = this.createStepFromChunk({
+                    type: "tool-result",
+                    toolCallId: toolResult.toolCallId,
+                    toolName: toolResult.toolName,
+                    result: toolResult.result,
+                    usage: result.usage,
+                  });
+                  if (step) await options.onStepFinish(step);
+                }
+              }
+            }
+          }
+        : undefined;
+
+      const result = streamText({
         ...options.provider,
+        messages: vercelMessages,
+        model: options.model,
+        tools: vercelTools,
+        maxSteps: options.maxSteps,
+        abortSignal: options.signal,
+        onStepFinish,
+        onChunk: async ({ chunk }) => {
+          if (options?.onChunk) {
+            // Handle the chunk directly without usage tracking
+            const step = this.createStepFromChunk(chunk);
+            if (step) await options.onChunk(step);
+          }
+        },
+        onFinish: options.onFinish
+          ? async (
+              result: Omit<StepResult<Record<string, any>>, "stepType" | "isContinued"> & {
+                readonly steps: StepResult<Record<string, any>>[];
+              },
+            ) => {
+              options.onFinish?.({
+                text: result.text,
+                usage: result.usage,
+                finishReason: result.finishReason,
+                warnings: result.warnings,
+                providerResponse: result,
+              });
+            }
+          : undefined,
+        onError: (sdkError) => {
+          // Create the error using the helper
+          const voltagentErr = this._createVoltagentErrorFromSdkError(sdkError, "llm_stream");
+          // Call the agent's onError callback if it exists
+          if (options.onError) {
+            options.onError(voltagentErr);
+          }
+        },
       });
 
       // Return provider, textStream, and mapped fullStream
@@ -499,56 +574,6 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
     return {
       provider: { ...result, partialObjectStream },
       objectStream: partialObjectStream,
-    };
-  }
-
-  // Convert VoltAgent tools to Vercel AI SDK format
-  private async convertTools(tools: BaseTool[]): Promise<any> {
-    return convertToolsForSDK(tools);
-  }
-
-  // Create step finish handler for Vercel AI SDK
-  private createStepFinishHandler(onStepFinish?: StepFinishCallback): any {
-    if (!onStepFinish) return undefined;
-
-    return async (result: StepResult<Record<string, any>>) => {
-      // Handle text response
-      if (result.text) {
-        const step = this.createStepFromChunk({
-          type: "text",
-          text: result.text,
-          usage: result.usage,
-        });
-        if (step) await onStepFinish(step);
-      }
-
-      // Handle all tool calls - each as a separate step
-      if (result.toolCalls && result.toolCalls.length > 0) {
-        for (const toolCall of result.toolCalls) {
-          const step = this.createStepFromChunk({
-            type: "tool-call",
-            toolCallId: toolCall.toolCallId,
-            toolName: toolCall.toolName,
-            args: toolCall.args,
-            usage: result.usage,
-          });
-          if (step) await onStepFinish(step);
-        }
-      }
-
-      // Handle all tool results - each as a separate step
-      if (result.toolResults && result.toolResults.length > 0) {
-        for (const toolResult of result.toolResults) {
-          const step = this.createStepFromChunk({
-            type: "tool-result",
-            toolCallId: toolResult.toolCallId,
-            toolName: toolResult.toolName,
-            result: toolResult.result,
-            usage: result.usage,
-          });
-          if (step) await onStepFinish(step);
-        }
-      }
     };
   }
 }
