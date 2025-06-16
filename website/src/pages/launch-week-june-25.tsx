@@ -78,7 +78,7 @@ const DayComponent: React.FC<DayProps> = ({
 
 const Day1 = () => (
   <DayComponent
-    enabled={false}
+    enabled={true}
     date="DAY 1 | MONDAY, JUNE 16, 2025"
     title={
       <>
