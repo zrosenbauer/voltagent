@@ -221,8 +221,8 @@ describe("SubAgentManager", () => {
 
   describe("handoffTask", () => {
     it("should handoff task to target agent", async () => {
-      // Spy on streamText instead of generateText
-      const streamTextSpy = jest.spyOn(mockAgent1, "streamText");
+      // Spy on generateText
+      const streamTextSpy = vi.spyOn(mockAgent1, "streamText");
 
       const options: AgentHandoffOptions = {
         task: "Solve this math problem",
@@ -246,7 +246,7 @@ describe("SubAgentManager", () => {
     });
 
     it("should call onHandoff hook with correct arguments when target agent has hooks", async () => {
-      const onHandoffSpy = jest.fn();
+      const onHandoffSpy = vi.fn();
 
       // Create a mock agent with hooks
       const mockAgentWithHooks = new MockAgent("agent3", "Agent with Hooks") as any;
@@ -276,7 +276,7 @@ describe("SubAgentManager", () => {
 
   describe("handoffToMultiple", () => {
     it("should handoff task to multiple target agents", async () => {
-      const handoffTaskSpy = jest.spyOn(subAgentManager, "handoffTask");
+      const handoffTaskSpy = vi.spyOn(subAgentManager, "handoffTask");
 
       const options = {
         task: "Process this request",
@@ -327,7 +327,7 @@ describe("SubAgentManager", () => {
       subAgentManager.addSubAgent(mockAgent1);
       subAgentManager.addSubAgent(mockAgent2);
 
-      const handoffToMultipleSpy = jest
+      const handoffToMultipleSpy = vi
         .spyOn(subAgentManager, "handoffToMultiple")
         .mockResolvedValue([
           {
@@ -378,7 +378,7 @@ describe("SubAgentManager", () => {
       subAgentManager.addSubAgent(mockAgent1 as any); // Math Agent
 
       // Spy on mockAgent1.streamText to check the options it receives
-      const streamTextSpy = jest.spyOn(mockAgent1, "streamText");
+      const streamTextSpy = vi.spyOn(mockAgent1, "streamText");
 
       const supervisorUserContext = new Map<string | symbol, unknown>();
       supervisorUserContext.set("supervisorKey", "supervisorValue");
@@ -450,7 +450,7 @@ describe("SubAgentManager", () => {
 
   describe("event forwarding", () => {
     it("should forward events during handoffTask", async () => {
-      const forwardEventSpy = jest.fn();
+      const forwardEventSpy = vi.fn();
       const mockAgent = new MockAgent("test-agent", "Test Agent");
 
       const options: AgentHandoffOptions = {
@@ -464,7 +464,8 @@ describe("SubAgentManager", () => {
       await subAgentManager.handoffTask(options);
 
       // Verify that events were forwarded
-      expect(forwardEventSpy).toHaveBeenCalledTimes(3); // tool-call, tool-result, subagent-finish
+      // Mock agent sends: 3x text-delta + 1x tool-call + 1x tool-result (finish events no longer forwarded) = 5 events
+      expect(forwardEventSpy).toHaveBeenCalledTimes(5);
 
       // Verify tool-call event
       expect(forwardEventSpy).toHaveBeenCalledWith({
@@ -495,27 +496,14 @@ describe("SubAgentManager", () => {
         subAgentId: "test-agent",
         subAgentName: "Test Agent",
       });
-
-      // Verify subagent-finish event
-      expect(forwardEventSpy).toHaveBeenCalledWith({
-        type: "subagent-finish",
-        data: {
-          finishReason: "stop",
-          usage: { totalTokens: 10 },
-          response: "Hello from Test Agent",
-        },
-        timestamp: expect.any(String),
-        subAgentId: "test-agent",
-        subAgentName: "Test Agent",
-      });
     });
 
     it("should forward error events when stream fails", async () => {
-      const forwardEventSpy = jest.fn();
+      const forwardEventSpy = vi.fn();
       const mockAgent = new MockAgent("error-agent", "Error Agent");
 
       // Mock streamText to throw an error in the stream
-      mockAgent.streamText = jest.fn().mockReturnValue({
+      mockAgent.streamText = vi.fn().mockReturnValue({
         fullStream: (async function* () {
           yield { type: "text-delta", textDelta: "Starting..." };
           yield {
@@ -565,7 +553,7 @@ describe("SubAgentManager", () => {
     });
 
     it("should forward events through delegate tool", async () => {
-      const forwardEventSpy = jest.fn();
+      const forwardEventSpy = vi.fn();
       const mockAgent = new MockAgent("delegate-agent", "Delegate Agent");
 
       subAgentManager.addSubAgent(mockAgent as any);
@@ -584,21 +572,24 @@ describe("SubAgentManager", () => {
       });
 
       // Verify that events were forwarded through the delegate tool
-      expect(forwardEventSpy).toHaveBeenCalledTimes(3); // tool-call, tool-result, subagent-finish
+      // Mock agent sends: 3x text-delta + 1x tool-call + 1x tool-result (finish events no longer forwarded) = 5 events
+      expect(forwardEventSpy).toHaveBeenCalledTimes(5);
 
       // Check that events have the correct structure
       const toolCallEvent = forwardEventSpy.mock.calls.find((call) => call[0].type === "tool-call");
       expect(toolCallEvent).toBeDefined();
-      expect(toolCallEvent[0]).toMatchObject({
-        type: "tool-call",
-        subAgentId: "delegate-agent",
-        subAgentName: "Delegate Agent",
-        timestamp: expect.any(String),
-      });
+      if (toolCallEvent) {
+        expect(toolCallEvent[0]).toMatchObject({
+          type: "tool-call",
+          subAgentId: "delegate-agent",
+          subAgentName: "Delegate Agent",
+          timestamp: expect.any(String),
+        });
+      }
     });
 
     it("should handle multiple agents with event forwarding", async () => {
-      const forwardEventSpy = jest.fn();
+      const forwardEventSpy = vi.fn();
       const mockAgent1 = new MockAgent("multi-agent-1", "Multi Agent 1");
       const mockAgent2 = new MockAgent("multi-agent-2", "Multi Agent 2");
 
@@ -619,8 +610,8 @@ describe("SubAgentManager", () => {
       });
 
       // Verify that events from both agents were forwarded
-      // Each agent generates 3 events (tool-call, tool-result, subagent-finish)
-      expect(forwardEventSpy).toHaveBeenCalledTimes(6);
+      // Each agent generates 5 events (3x text-delta + tool-call + tool-result, finish events no longer forwarded)
+      expect(forwardEventSpy).toHaveBeenCalledTimes(10);
 
       // Check that events from both agents are present
       const agent1Events = forwardEventSpy.mock.calls.filter(
@@ -630,12 +621,12 @@ describe("SubAgentManager", () => {
         (call) => call[0].subAgentId === "multi-agent-2",
       );
 
-      expect(agent1Events).toHaveLength(3);
-      expect(agent2Events).toHaveLength(3);
+      expect(agent1Events).toHaveLength(5);
+      expect(agent2Events).toHaveLength(5);
     });
 
     it("should include correct timestamp format in forwarded events", async () => {
-      const forwardEventSpy = jest.fn();
+      const forwardEventSpy = vi.fn();
       const mockAgent = new MockAgent("timestamp-agent", "Timestamp Agent");
 
       const options: AgentHandoffOptions = {
@@ -657,7 +648,7 @@ describe("SubAgentManager", () => {
     });
 
     it("should handle event forwarding errors by treating them as regular errors", async () => {
-      const failingForwardEvent = jest.fn().mockRejectedValue(new Error("Event forwarding failed"));
+      const failingForwardEvent = vi.fn().mockRejectedValue(new Error("Event forwarding failed"));
       const mockAgent = new MockAgent("failing-forward-agent", "Failing Forward Agent");
 
       const options: AgentHandoffOptions = {

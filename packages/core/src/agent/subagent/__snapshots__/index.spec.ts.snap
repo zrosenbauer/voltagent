@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`SubAgentManager generateSupervisorSystemMessage should match snapshot 1`] = `
+exports[`SubAgentManager > generateSupervisorSystemMessage > should match snapshot 1`] = `
 "You are a supervisor agent that coordinates between specialized agents:
 
 <specialized_agents>

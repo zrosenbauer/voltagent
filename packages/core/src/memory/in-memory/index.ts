@@ -118,7 +118,7 @@ export class InMemoryStorage implements Memory {
     if (!value.events) value.events = [];
     if (!value.steps) value.steps = [];
 
-    // Store the entry directly
+    // Store the entry directly with userId and conversationId support
     this.historyEntries.set(key, {
       ...value,
       _agentId: agentId,

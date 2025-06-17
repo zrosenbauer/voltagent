@@ -199,12 +199,55 @@ Context: ${JSON.stringify(context)}`,
         switch (part.type) {
           case "text-delta": {
             finalText += part.textDelta;
+
+            const eventData = {
+              type: "text-delta",
+              data: {
+                textDelta: part.textDelta,
+              },
+              timestamp,
+              subAgentId: targetAgent.id,
+              subAgentName: targetAgent.name,
+            };
+
+            // Forward event in real-time
+            if (forwardEvent) {
+              await forwardEvent(eventData);
+            }
             break;
           }
           case "reasoning": {
+            const eventData = {
+              type: "reasoning",
+              data: {
+                reasoning: part.reasoning,
+              },
+              timestamp,
+              subAgentId: targetAgent.id,
+              subAgentName: targetAgent.name,
+            };
+
+            // Forward event in real-time
+            if (forwardEvent) {
+              await forwardEvent(eventData);
+            }
             break;
           }
           case "source": {
+            const eventData = {
+              type: "source",
+              data: {
+                source: part.source,
+              },
+              timestamp,
+              subAgentId: targetAgent.id,
+              subAgentName: targetAgent.name,
+            };
+
+            // Forward event in real-time
+            if (forwardEvent) {
+              await forwardEvent(eventData);
+            }
             break;
           }
           case "tool-call": {
@@ -249,25 +292,7 @@ Context: ${JSON.stringify(context)}`,
             }
             break;
           }
-          case "finish": {
-            const eventData = {
-              type: "subagent-finish", // Use different type to avoid stopping parent stream
-              data: {
-                finishReason: part.finishReason,
-                usage: part.usage,
-                response: finalText, // Include the final response text
-              },
-              timestamp,
-              subAgentId: targetAgent.id,
-              subAgentName: targetAgent.name,
-            };
 
-            // Forward event in real-time
-            if (forwardEvent) {
-              await forwardEvent(eventData);
-            }
-            break;
-          }
           case "error": {
             const eventData = {
               type: "error",
