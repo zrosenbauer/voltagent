@@ -109,11 +109,11 @@ const Day1 = () => (
 
 const Day2 = () => (
   <DayComponent
-    enabled={false}
+    enabled={true}
     date="DAY 2 | TUESDAY, JUNE 17, 2025"
-    title="Enhanced Streaming with fullStream"
-    description="For more detailed streaming information including tool calls, reasoning steps, and completion status, you can use the fullStream property available in the response."
-    detailsLink="#"
+    title="Generative UI Support"
+    description="Detailed streaming with tool calls, reasoning steps, and completion status via fullStream."
+    detailsLink="https://voltagent.dev/docs/agents/overview/#enhanced-streaming-with-fullstream/"
   >
     <div className="w-full">
       <div className="bg-gray-900 border-solid border-gray-800 rounded-xl sm:rounded-md overflow-hidden flex flex-col h-full">
@@ -123,7 +123,7 @@ const Day2 = () => (
             <div className="w-2 h-2 sm:w-3 sm:h-3 bg-yellow-500 rounded-full" />
             <div className="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full" />
             <span className="ml-2 sm:ml-3 text-gray-400 text-xs sm:text-sm font-mono">
-              streaming.ts
+              my-agent.ts
             </span>
           </div>
         </div>
@@ -133,22 +133,23 @@ const Day2 = () => (
             showLineNumbers={false}
             className="!m-0 !p-0 h-full [&>pre]:!m-0 [&>pre]:!p-4 [&>pre]:h-full"
           >
-            {`// Enhanced streaming with fullStream
-const response = await agent.chat({
-  messages: [{ role: "user", content: "Analyze this data" }],
-  stream: true,
-  fullStream: true, // Enable detailed streaming
-});
+            {`const response = await agent.streamText("What's the weather like in San Francisco?");
 
-for await (const chunk of response) {
-  if (chunk.type === 'tool_call') {
-    console.log('Tool being called:', chunk.tool);
-  } else if (chunk.type === 'reasoning') {
-    console.log('Agent reasoning:', chunk.thought);
-  } else if (chunk.type === 'completion') {
-    console.log('Progress:', chunk.progress);
-  }
-}`}
+for await (const chunk of response.fullStream) {
+  switch (chunk.type) {
+    case "text-delta":
+      process.stdout.write(chunk.textDelta); 
+      break;
+    case "tool-call":
+      console.log(\`Using tool: \${chunk.toolName}\`);
+      break;
+    case "tool-result":
+      console.log(\`Tool completed: \${chunk.toolName}\`);
+      break;
+    case "finish":
+      console.log(\`Done! Tokens used: \${chunk.usage?.totalTokens}\`);
+      break;
+  }`}
           </CodeBlock>
         </div>
       </div>
@@ -160,9 +161,9 @@ const Day3 = () => (
   <DayComponent
     enabled={false}
     date="DAY 3 | WEDNESDAY, JUNE 18, 2025"
-    title="Agent UI"
-    description="Beautiful UI components that integrate with Vercel AI SDK. Build conversational interfaces in minutes."
-    detailsLink="#"
+    title="Vercel AI UI Support"
+    description="Added Vercel AI UI Support: instantly spin up agent UIs with built-in, Vercel-compatible components."
+    detailsLink="https://github.com/VoltAgent/voltagent/tree/main/packages/vercel-ui/"
   >
     <div className="w-full">
       <div className="bg-gray-900 border-solid border-gray-800 rounded-xl sm:rounded-md overflow-hidden flex flex-col h-full">
@@ -172,7 +173,7 @@ const Day3 = () => (
             <div className="w-2 h-2 sm:w-3 sm:h-3 bg-yellow-500 rounded-full" />
             <div className="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full" />
             <span className="ml-2 sm:ml-3 text-gray-400 text-xs sm:text-sm font-mono">
-              chat.tsx
+              my-agent.ts
             </span>
           </div>
         </div>
@@ -182,29 +183,21 @@ const Day3 = () => (
             showLineNumbers={false}
             className="!m-0 !p-0 h-full [&>pre]:!m-0 [&>pre]:!p-4 [&>pre]:h-full"
           >
-            {`import { ChatUI } from '@voltagent/ui'
-
-export default function Chat() {
-  return (
-    <ChatUI
-      theme="dark"
-      messages={messages}
-      onSend={handleSend}
-      suggestions={[
-        "How can I help you?",
-        "Tell me more about your project"
-      ]}
-      tools={[
-        {
-          name: "search",
-          description: "Search through docs"
-        }
-      ]}
-      streaming={true}
-      className="h-[600px] w-full"
-    />
-  )
-}`}
+            {`const agent = new Agent({
+  id: "assistant",
+  name: "Assistant",
+  instructions: "You are a helpful assistant that can answer questions and help with tasks.",
+  model: "gpt-4.1-mini",
+  llm: new VercelAIProvider(),
+  hooks: {
+    onEnd: async (result) => {
+      await chatStore.save({
+        conversationId: result.conversationId,
+        messages: convertToUIMessages(result.operationContext),
+      });
+    },
+  },
+});`}
           </CodeBlock>
         </div>
       </div>
@@ -218,7 +211,7 @@ const Day4 = () => (
     date="DAY 4 | THURSDAY, JUNE 19, 2025"
     title="Custom API Routes"
     description="Create custom endpoints for your agents with built-in authentication, rate limiting, and monitoring."
-    detailsLink="#"
+    detailsLink="https://voltagent.dev/docs/api/overview/#custom-rest-endpoints"
   >
     <div className="w-full">
       <div className="bg-gray-900 border-solid border-gray-800 rounded-xl sm:rounded-md overflow-hidden flex flex-col h-full">
@@ -238,29 +231,20 @@ const Day4 = () => (
             showLineNumbers={false}
             className="!m-0 !p-0 h-full [&>pre]:!m-0 [&>pre]:!p-4 [&>pre]:h-full"
           >
-            {`// app/api/agents/[agentId]/route.ts
-import { VoltAgent } from '@voltagent/sdk';
-import { auth } from '@/lib/auth';
-
-export async function POST(
-  request: Request,
-  { params }: { params: { agentId: string } }
-) {
-  const user = await auth(request);
-  
-  const agent = new VoltAgent({
-    agentId: params.agentId,
-    userId: user.id,
-    rateLimit: {
-      requests: 100,
-      window: '1h'
-    },
-    monitoring: {
-      traces: true,
-      metrics: true,
-      alerts: true
-    }
-  });
+            {`new VoltAgent({
+  agents: { myAgent },
+  server: {
+    customEndpoints: [
+      // Custom API endpoints
+      {
+        path: "/api/health",
+        method: "get" as const,
+        handler: async (c) => c.json({ status: "healthy" }),
+        description: "Health check endpoint",
+      },
+    ],
+  },
+});
 `}
           </CodeBlock>
         </div>
