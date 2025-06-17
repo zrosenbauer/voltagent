@@ -113,7 +113,7 @@ const Day2 = () => (
     date="DAY 2 | TUESDAY, JUNE 17, 2025"
     title="Generative UI Support"
     description="Detailed streaming with tool calls, reasoning steps, and completion status via fullStream."
-    detailsLink="https://voltagent.dev/docs/agents/overview/#enhanced-streaming-with-fullstream/"
+    detailsLink="https://voltagent.dev/docs/agents/overview/#enhanced-streaming-with-fullstream"
   >
     <div className="w-full">
       <div className="bg-gray-900 border-solid border-gray-800 rounded-xl sm:rounded-md overflow-hidden flex flex-col h-full">
