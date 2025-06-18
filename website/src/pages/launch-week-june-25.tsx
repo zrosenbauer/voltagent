@@ -159,7 +159,7 @@ for await (const chunk of response.fullStream) {
 
 const Day3 = () => (
   <DayComponent
-    enabled={false}
+    enabled={true}
     date="DAY 3 | WEDNESDAY, JUNE 18, 2025"
     title="Vercel AI UI Support"
     description="Added Vercel AI UI Support: instantly spin up agent UIs with built-in, Vercel-compatible components."
