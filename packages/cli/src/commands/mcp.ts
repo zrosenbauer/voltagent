@@ -19,10 +19,9 @@ function createMCPConfig(ide: IDEType, projectRoot: string): void {
       file: "mcp.json",
       content: {
         mcpServers: {
-          "voltagent-docs": {
+          voltagent: {
             command: "npx",
-            args: ["@voltagent/docs-mcp"],
-            env: {},
+            args: ["-y", "@voltagent/docs-mcp"],
           },
         },
       },
@@ -32,10 +31,9 @@ function createMCPConfig(ide: IDEType, projectRoot: string): void {
       file: "mcp.json",
       content: {
         mcpServers: {
-          "voltagent-docs": {
+          voltagent: {
             command: "npx",
-            args: ["@voltagent/docs-mcp"],
-            env: {},
+            args: ["-y", "@voltagent/docs-mcp"],
           },
         },
       },
@@ -46,7 +44,7 @@ function createMCPConfig(ide: IDEType, projectRoot: string): void {
       content: isWindows
         ? {
             servers: {
-              "voltagent-docs": {
+              voltagent: {
                 command: "cmd",
                 args: ["/c", "npx", "-y", "@voltagent/docs-mcp"],
                 type: "stdio",
@@ -55,9 +53,9 @@ function createMCPConfig(ide: IDEType, projectRoot: string): void {
           }
         : {
             servers: {
-              "voltagent-docs": {
+              voltagent: {
                 command: "npx",
-                args: ["@voltagent/docs-mcp"],
+                args: ["-y", "@voltagent/docs-mcp"],
                 type: "stdio",
               },
             },

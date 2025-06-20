@@ -64,10 +64,9 @@ If you prefer manual configuration, directly configure your IDE:
 
 ```json
 {
-  "name": "voltagent-docs",
+  "name": "voltagent",
   "command": "npx",
-  "args": ["@voltagent/docs-mcp"],
-  "env": {}
+  "args": ["-y", "@voltagent/docs-mcp"]
 }
 ```
 
@@ -75,10 +74,9 @@ If you prefer manual configuration, directly configure your IDE:
 
 ```json
 {
-  "name": "voltagent-docs",
+  "name": "voltagent",
   "command": "node",
-  "args": ["path/to/voltagent/packages/docs-mcp/dist/server.js"],
-  "env": {}
+  "args": ["path/to/voltagent/packages/docs-mcp/dist/server.js"]
 }
 ```
 
@@ -93,10 +91,9 @@ If you prefer manual configuration, directly configure your IDE:
 
 ```json
 {
-  "name": "voltagent-docs",
+  "name": "voltagent",
   "command": "npx",
-  "args": ["@voltagent/docs-mcp"],
-  "env": {}
+  "args": ["-y", "@voltagent/docs-mcp"]
 }
 ```
 
@@ -104,10 +101,9 @@ If you prefer manual configuration, directly configure your IDE:
 
 ```json
 {
-  "name": "voltagent-docs",
+  "name": "voltagent",
   "command": "node",
-  "args": ["path/to/voltagent/packages/docs-mcp/dist/server.js"],
-  "env": {}
+  "args": ["path/to/voltagent/packages/docs-mcp/dist/server.js"]
 }
 ```
 
@@ -128,7 +124,7 @@ If you prefer manual configuration, directly configure your IDE:
 ```json
 {
   "servers": {
-    "voltagent-docs": {
+    "voltagent": {
       "command": "cmd",
       "args": ["/c", "npx", "-y", "@voltagent/docs-mcp"],
       "type": "stdio"
@@ -142,9 +138,9 @@ If you prefer manual configuration, directly configure your IDE:
 ```json
 {
   "servers": {
-    "voltagent-docs": {
+    "voltagent": {
       "command": "npx",
-      "args": ["@voltagent/docs-mcp"],
+      "args": ["-y", "@voltagent/docs-mcp"],
       "type": "stdio"
     }
   }
@@ -163,10 +159,9 @@ If you prefer manual configuration, directly configure your IDE:
 ```json
 {
   "mcpServers": {
-    "voltagent-docs": {
+    "voltagent": {
       "command": "npx",
-      "args": ["@voltagent/docs-mcp"],
-      "env": {}
+      "args": ["-y", "@voltagent/docs-mcp"]
     }
   }
 }

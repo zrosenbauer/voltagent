@@ -4,7 +4,7 @@ import path from "node:path";
 
 // Copy docs functionality
 const skipDirs = new Set(["node_modules", ".git", ".next", "dist", "build", ".turbo", ".vercel"]);
-const skipFiles = new Set([".DS_Store", "Thumbs.db"]);
+const skipFiles = new Set([".DS_Store", "Thumbs.db", ".env"]);
 
 function shouldSkip(itemName: string, isDirectory: boolean) {
   if (isDirectory && skipDirs.has(itemName)) {
@@ -130,24 +130,17 @@ function copyPackageChangelogs(sourcePkgPath: string, targetPkgPath: string) {
   }
 }
 
-export default defineConfig([
-  {
-    entry: ["src/index.ts"],
-    format: ["esm", "cjs"],
-    dts: true,
-    sourcemap: true,
-    clean: false,
-    outDir: "dist",
-    onSuccess: async () => {
-      copyDocs();
-    },
+export default defineConfig({
+  entry: ["src/index.ts"],
+  format: ["esm", "cjs"],
+  dts: true,
+  sourcemap: true,
+  clean: false,
+  outDir: "dist",
+  banner: {
+    js: "#!/usr/bin/env node",
   },
-  {
-    entry: ["src/server.ts"],
-    format: ["esm", "cjs"],
-    dts: true,
-    sourcemap: true,
-    clean: false,
-    outDir: "dist",
+  onSuccess: async () => {
+    copyDocs();
   },
-]);
+});

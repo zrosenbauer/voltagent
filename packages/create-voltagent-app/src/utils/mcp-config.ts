@@ -15,9 +15,9 @@ export type McpServerConfig = {
  */
 export const generateMcpServerConfig = (): McpServerConfig => {
   return {
-    name: "voltagent-docs",
+    name: "voltagent",
     command: "npx",
-    args: ["@voltagent/docs-mcp"],
+    args: ["-y", "@voltagent/docs-mcp"],
     env: {},
   };
 };
@@ -114,7 +114,7 @@ const configureVSCode = async (targetDir: string, mcpConfig: McpServerConfig): P
           }
         : {
             command: "npx",
-            args: ["@voltagent/docs-mcp"],
+            args: ["-y", "@voltagent/docs-mcp"],
             type: "stdio",
           },
     },

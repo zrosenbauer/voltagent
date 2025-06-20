@@ -73,10 +73,9 @@ For detailed setup instructions and troubleshooting, see the [complete documenta
 
 ```json
 {
-  "name": "voltagent-docs",
+  "name": "voltagent",
   "command": "npx",
-  "args": ["@voltagent/docs-mcp"],
-  "env": {}
+  "args": ["-y", "@voltagent/docs-mcp"]
 }
 ```
 
@@ -84,10 +83,9 @@ Alternatively, if you've built locally:
 
 ```json
 {
-  "name": "voltagent-docs",
+  "name": "voltagent",
   "command": "node",
-  "args": ["path/to/voltagent/packages/docs-mcp/dist/server.js"],
-  "env": {}
+  "args": ["path/to/voltagent/packages/docs-mcp/dist/server.js"]
 }
 ```
 
@@ -99,10 +97,9 @@ Alternatively, if you've built locally:
 
 ```json
 {
-  "name": "voltagent-docs",
+  "name": "voltagent",
   "command": "npx",
-  "args": ["@voltagent/docs-mcp"],
-  "env": {}
+  "args": ["-y", "@voltagent/docs-mcp"]
 }
 ```
 
@@ -110,10 +107,9 @@ Or if you prefer to use the locally built version:
 
 ```json
 {
-  "name": "voltagent-docs",
+  "name": "voltagent",
   "command": "node",
-  "args": ["path/to/voltagent/packages/docs-mcp/dist/server.js"],
-  "env": {}
+  "args": ["path/to/voltagent/packages/docs-mcp/dist/server.js"]
 }
 ```
 
@@ -126,10 +122,10 @@ Or if you prefer to use the locally built version:
 
 ```json
 {
-  "name": "voltagent-docs",
+  "name": "voltagent",
   "command": "npx",
-  "args": ["@voltagent/docs-mcp"],
-  "env": {}
+  "args": ["-y", "@voltagent/docs-mcp"],
+  "type": "stdio"
 }
 ```
 
