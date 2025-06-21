@@ -24,11 +24,6 @@
 <br/>
 
 <div align="center">
-<a href="https://voltagent.dev/">
-<img width="896" alt="flow" src="https://github.com/user-attachments/assets/f0627868-6153-4f63-ba7f-bdfcc5dd603d" />
-</a>
-
-<div align="center">
     <strong>VoltAgent 是一個開源的 TypeScript 框架，用於構建和編排 AI 智能體。</strong><br>
 擺脫無代碼構建器的局限性和從零開始的複雜性。
     <br />
@@ -45,7 +40,10 @@
 </div>
 
 <br/>
-
+<div align="center">
+<a href="https://voltagent.dev/">
+<img width="896" alt="flow" src="https://github.com/user-attachments/assets/f0627868-6153-4f63-ba7f-bdfcc5dd603d" />
+</a>
 </div>
 
 ## 什麼是 VoltAgent？
