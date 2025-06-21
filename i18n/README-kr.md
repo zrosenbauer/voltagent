@@ -6,6 +6,10 @@
 <br/>
 <br/>
 
+<div align="center">
+<a href="../README.md">English</a> | <a href="README-cn-traditional.md">繁體中文</a> | <a href="README-cn-bsc.md">简体中문</a> | <a href="README-jp.md">日本語</a> | 한국어
+</div>
+
 <br/>
 
 <div align="center">
