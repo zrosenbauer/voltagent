@@ -7,6 +7,12 @@
 <br/>
 
 <div align="center">
+<a href="../README.md">English</a> | <a href="README-cn-traditional.md">繁體中文</a> | 简体中文 | <a href="README-jp.md">日本語</a> | <a href="README-kr.md">한국어</a>
+</div>
+
+<br/>
+
+<div align="center">
     <a href="https://voltagent.dev">首页</a> |
     <a href="https://voltagent.dev/docs/">文档</a> |
     <a href="https://github.com/voltagent/voltagent/tree/main/examples">示例</a> |
