@@ -2,6 +2,14 @@ import { devLogger } from "@voltagent/internal/dev";
 import { z } from "zod";
 import { AgentRegistry } from "../../server/registry";
 import { createTool } from "../../tool";
+import type {
+  StreamEventReasoning,
+  StreamEventSource,
+  StreamEventTextDelta,
+  StreamEventToolCall,
+  StreamEventToolResult,
+} from "../../utils/streams";
+import type { StreamEventError } from "../../utils/streams/types";
 import type { Agent } from "../index";
 import type { BaseMessage } from "../providers";
 import type { BaseTool } from "../providers";
@@ -213,7 +221,7 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
                 timestamp,
                 subAgentId: targetAgent.id,
                 subAgentName: targetAgent.name,
-              };
+              } satisfies StreamEventTextDelta;
 
               // Forward event in real-time
               if (forwardEvent) {
@@ -230,7 +238,7 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
                 timestamp,
                 subAgentId: targetAgent.id,
                 subAgentName: targetAgent.name,
-              };
+              } satisfies StreamEventReasoning;
 
               // Forward event in real-time
               if (forwardEvent) {
@@ -247,7 +255,7 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
                 timestamp,
                 subAgentId: targetAgent.id,
                 subAgentName: targetAgent.name,
-              };
+              } satisfies StreamEventSource;
 
               // Forward event in real-time
               if (forwardEvent) {
@@ -259,16 +267,14 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
               const eventData = {
                 type: "tool-call",
                 data: {
-                  toolCall: {
-                    toolCallId: part.toolCallId,
-                    toolName: part.toolName,
-                    args: part.args,
-                  },
+                  toolCallId: part.toolCallId,
+                  toolName: part.toolName,
+                  args: part.args,
                 },
                 timestamp,
                 subAgentId: targetAgent.id,
                 subAgentName: targetAgent.name,
-              };
+              } satisfies StreamEventToolCall;
 
               // Forward event in real-time
               if (forwardEvent) {
@@ -280,16 +286,14 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
               const eventData = {
                 type: "tool-result",
                 data: {
-                  toolResult: {
-                    toolCallId: part.toolCallId,
-                    toolName: part.toolName,
-                    result: part.result,
-                  },
+                  toolCallId: part.toolCallId,
+                  toolName: part.toolName,
+                  result: part.result,
                 },
                 timestamp,
                 subAgentId: targetAgent.id,
                 subAgentName: targetAgent.name,
-              };
+              } satisfies StreamEventToolResult;
 
               // Forward event in real-time
               if (forwardEvent) {
@@ -303,12 +307,13 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
                 type: "error",
                 data: {
                   error: part.error?.message || "Stream error occurred",
+                  // @ts-expect-error - code is not part of the StreamEventError type currently
                   code: "STREAM_ERROR",
                 },
                 timestamp,
                 subAgentId: targetAgent.id,
                 subAgentName: targetAgent.name,
-              };
+              } satisfies StreamEventError;
 
               // Forward event in real-time
               if (forwardEvent) {
