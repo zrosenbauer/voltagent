@@ -41,13 +41,16 @@
 
 <br/>
 
+<div align="center">
+<a href="https://voltagent.dev/">
+<img width="896" alt="flow" src="https://github.com/user-attachments/assets/f0627868-6153-4f63-ba7f-bdfcc5dd603d" />
+</a>
+
 </div>
 
 ## VoltAgent とは？
 
 > **AI エージェントフレームワーク**は、自律エージェントによって駆動されるアプリケーションを構築するために必要な基盤構造とツールを提供します。これらのエージェントは、しばしば大規模言語モデル（LLM）によって駆動され、環境を認識し、決定を下し、特定の目標を達成するための行動を取ることができます。このようなエージェントをゼロから構築するには、LLM との複雑な相互作用の管理、状態の処理、外部ツールやデータへの接続、ワークフローの編成が必要です。
-
-[![VoltAgent VoltOps Platform Demo](https://github.com/user-attachments/assets/0adbec33-1373-4cf4-b67d-825f7baf1cb4)](https://github.com/VoltAgent/voltagent/blob/main/CONSOLE.md)
 
 **VoltAgent** は、この重要なツールキットとして機能するオープンソースの TypeScript フレームワークです。モジュラーな構築ブロック、標準化されたパターン、抽象化を提供することで AI エージェントアプリケーションの開発を簡素化します。チャットボット、バーチャルアシスタント、自動化ワークフロー、複雑なマルチエージェントシステムのいずれを作成する場合でも、VoltAgent は基盤の複雑さを処理し、エージェントの能力とロジックの定義に集中することができます。
 

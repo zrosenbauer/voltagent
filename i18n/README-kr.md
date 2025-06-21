@@ -21,6 +21,11 @@
 </div>
 </div>
 
+<div align="center">
+<a href="https://voltagent.dev/">
+<img width="896" alt="flow" src="https://github.com/user-attachments/assets/f0627868-6153-4f63-ba7f-bdfcc5dd603d" />
+</a>
+
 <br/>
 
 <div align="center">
@@ -51,8 +56,6 @@
 ## VoltAgent란 무엇인가요?
 
 > **AI 에이전트 프레임워크**는 자율 에이전트에 의해 구동되는 애플리케이션을 구축하는 데 필요한 기초 구조와 도구를 제공합니다. 이러한 에이전트는 종종 대규모 언어 모델(LLM)에 의해 구동되며, 환경을 인식하고 결정을 내리며 특정 목표를 달성하기 위한 행동을 취할 수 있습니다. 이러한 에이전트를 처음부터 구축하려면 LLM과의 복잡한 상호작용 관리, 상태 처리, 외부 도구 및 데이터 연결, 워크플로 오케스트레이션이 필요합니다.
-
-[![VoltAgent VoltOps Platform Demo](https://github.com/user-attachments/assets/0adbec33-1373-4cf4-b67d-825f7baf1cb4)](https://github.com/VoltAgent/voltagent/blob/main/CONSOLE.md)
 
 **VoltAgent**는 이러한 필수 툴킷 역할을 하는 오픈 소스 TypeScript 프레임워크입니다. 모듈식 빌딩 블록, 표준화된 패턴, 추상화를 제공하여 AI 에이전트 애플리케이션 개발을 단순화합니다. 챗봇, 가상 어시스턴트, 자동화 워크플로 또는 복잡한 멀티 에이전트 시스템을 만들든, VoltAgent는 기반 복잡성을 처리하여 에이전트의 기능과 로직 정의에 집중할 수 있게 합니다.
 

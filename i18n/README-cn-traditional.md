@@ -24,6 +24,11 @@
 <br/>
 
 <div align="center">
+<a href="https://voltagent.dev/">
+<img width="896" alt="flow" src="https://github.com/user-attachments/assets/f0627868-6153-4f63-ba7f-bdfcc5dd603d" />
+</a>
+
+<div align="center">
     <strong>VoltAgent 是一個開源的 TypeScript 框架，用於構建和編排 AI 智能體。</strong><br>
 擺脫無代碼構建器的局限性和從零開始的複雜性。
     <br />
@@ -46,8 +51,6 @@
 ## 什麼是 VoltAgent？
 
 > **AI 智能體框架**提供了構建由自主智能體驅動的應用程式所需的基礎結構和工具。這些智能體通常由大型語言模型（LLM）驅動，能夠感知環境、做出決策並採取行動來實現特定目標。從零開始構建此類智能體涉及管理與 LLM 的複雜交互、處理狀態、連接外部工具和數據，以及編排工作流程。
-
-[![VoltAgent VoltOps Platform Demo](https://github.com/user-attachments/assets/0adbec33-1373-4cf4-b67d-825f7baf1cb4)](https://github.com/VoltAgent/voltagent/blob/main/CONSOLE.md)
 
 **VoltAgent** 是一個開源的 TypeScript 框架，作為這個重要的工具包。它通過提供模組化的構建塊、標準化模式和抽象來簡化 AI 智能體應用程式的開發。無論您是在創建聊天機器人、虛擬助手、自動化工作流程還是複雜的多智能體系統，VoltAgent 都能處理底層複雜性，讓您專注於定義智能體的能力和邏輯。
 
