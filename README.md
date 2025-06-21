@@ -7,7 +7,7 @@
 <br/>
 
 <div align="center">
-English | <a href="i18n/README-cn-traditional.md">繁體中文</a> | <a href="i18n/README-cn-simple.md">简体中文</a> | <a href="i18n/README-jp.md">日本語</a> | <a href="i18n/README-kr.md">한국어</a>
+English | <a href="i18n/README-cn-traditional.md">繁體中文</a> | <a href="i18n/README-cn-bsc.md">简体中文</a> | <a href="i18n/README-jp.md">日本語</a> | <a href="i18n/README-kr.md">한국어</a>
 </div>
 
 <br/>

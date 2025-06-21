@@ -7,7 +7,7 @@
 <br/>
 
 <div align="center">
-<a href="../README.md">English</a> | <a href="README-cn-traditional.md">繁體中文</a> | <a href="README-cn-simple.md">简体中文</a> | 日本語 | <a href="README-kr.md">한국어</a>
+<a href="../README.md">English</a> | <a href="README-cn-traditional.md">繁體中文</a> | <a href="README-cn-bsc.md">简体中文</a> | 日本語 | <a href="README-kr.md">한국어</a>
 </div>
 
 <br/>
@@ -40,11 +40,6 @@
 </div>
 
 <br/>
-
-<div align="center">
-<a href="https://voltagent.dev/">
-<img width="896" alt="flow" src="https://github.com/user-attachments/assets/f0627868-6153-4f63-ba7f-bdfcc5dd603d" />
-</a>
 
 </div>
 

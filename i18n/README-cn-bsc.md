@@ -41,11 +41,6 @@
 
 <br/>
 
-<div align="center">
-<a href="https://voltagent.dev/">
-<img width="896" alt="flow" src="https://github.com/user-attachments/assets/f0627868-6153-4f63-ba7f-bdfcc5dd603d" />
-</a>
-
 </div>
 
 ## 什么是 VoltAgent？
