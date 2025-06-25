@@ -909,7 +909,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Generate a text response without streaming
    */
-  async generateText(
+  public async generateText(
     input: string | BaseMessage[],
     options: PublicGenerateOptions = {},
   ): Promise<InferGenerateTextResponseFromProvider<TProvider>> {
@@ -1318,7 +1318,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Stream a text response
    */
-  async streamText(
+  public async streamText(
     input: string | BaseMessage[],
     options: PublicGenerateOptions = {},
   ): Promise<InferStreamTextResponseFromProvider<TProvider>> {
@@ -1848,7 +1848,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Generate a structured object response
    */
-  async generateObject<TSchema extends z.ZodType>(
+  public async generateObject<TSchema extends z.ZodType>(
     input: string | BaseMessage[],
     schema: TSchema,
     options: PublicGenerateOptions = {},
@@ -2127,7 +2127,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   /**
    * Stream a structured object response
    */
-  async streamObject<TSchema extends z.ZodType>(
+  public async streamObject<TSchema extends z.ZodType>(
     input: string | BaseMessage[],
     schema: TSchema,
     options: PublicGenerateOptions = {},
