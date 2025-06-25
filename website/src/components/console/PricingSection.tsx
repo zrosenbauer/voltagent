@@ -34,6 +34,7 @@ const PricingSection = () => {
       features: [
         "Up to 5 seats included",
         "5.000 traces per month",
+        "Additional 5,000 traces: $10",
         "4000 requests/min",
         "Unlimited agents",
         "90 days data retention",
@@ -327,15 +328,32 @@ const PricingSection = () => {
                     <div key={`${tier.name}-${feature}`}>
                       <div className="flex items-start">
                         <CheckCircleIcon className="w-4 h-4 landing-xs:w-3 landing-xs:h-3 landing-sm:w-5 landing-sm:h-5 text-emerald-400 mr-2 landing-xs:mr-1.5 landing-sm:mr-3 flex-shrink-0" />
-                        <span
-                          className={`text-xs landing-xs:text-xs landing-sm:text-sm ${
-                            feature === "Enterprise only features"
-                              ? "text-emerald-500 font-medium"
-                              : "text-gray-300"
-                          }`}
-                        >
-                          {feature}
-                        </span>
+                        <div className="flex-1 flex items-center justify-between">
+                          <span
+                            className={`text-xs landing-xs:text-xs landing-sm:text-sm ${
+                              feature === "Enterprise only features"
+                                ? "text-emerald-500 font-medium"
+                                : "text-gray-300"
+                            }`}
+                          >
+                            {feature}
+                          </span>
+                          {feature === "Additional 5,000 traces: $10" && (
+                            <span
+                              onClick={() => setCalculatorOpen(true)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  setCalculatorOpen(true);
+                                }
+                              }}
+                              role="button"
+                              tabIndex={0}
+                              className="text-emerald-400 hover:text-emerald-300 text-xs cursor-pointer transition-colors ml-2"
+                            >
+                              Calculate
+                            </span>
+                          )}
+                        </div>
                       </div>
                       {feature === "Up to 10 seats included" && (
                         <p className="text-emerald-400 text-xs landing-xs:text-xs mt-1 ml-6 landing-xs:ml-4 landing-sm:ml-8">
@@ -348,25 +366,6 @@ const PricingSection = () => {
               </div>
             </motion.div>
           ))}
-        </div>
-
-        {/* Pricing Calculator Section */}
-        <div className="max-w-7xl mx-auto px-4 landing-xs:px-3 landing-sm:px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="text-center mb-10 landing-xs:mb-8 landing-sm:mb-12 landing-md:mb-16"
-          >
-            <button
-              type="button"
-              onClick={() => setCalculatorOpen(true)}
-              className="inline-flex items-center justify-center gap-2 border-solid border font-semibold rounded transition-colors px-4 landing-xs:px-3 landing-sm:px-5 py-3 landing-xs:py-2 landing-sm:py-3 text-sm landing-xs:text-xs landing-sm:text-base bg-emerald-400/10 text-emerald-400 border-emerald-400/20 hover:bg-emerald-400/20"
-            >
-              <CalculatorIcon className="w-4 h-4 landing-xs:w-3 landing-xs:h-3 landing-sm:w-5 landing-sm:h-5" />
-              Calculate Your Pro Plan Cost
-            </button>
-          </motion.div>
         </div>
 
         {/* Comparison Table */}
