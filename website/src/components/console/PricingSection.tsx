@@ -1,8 +1,14 @@
-import { CheckCircleIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import {
+  CheckCircleIcon,
+  XMarkIcon,
+  CalculatorIcon,
+} from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
-import React from "react";
+import React, { useState } from "react";
+import PricingCalculatorModal from "./PricingCalculatorModal";
 
 const PricingSection = () => {
+  const [calculatorOpen, setCalculatorOpen] = useState(false);
   const pricingTiers = [
     {
       name: "Free",
@@ -11,9 +17,9 @@ const PricingSection = () => {
       description: "Perfect for getting started with AI agent monitoring",
       features: [
         "1 seat, 1 project",
-        "10.000 events per month",
+        "100 traces per month",
         "Limited requests limits",
-        "Up to 5 agents",
+        "Up to 3 agents",
         "7-day data retention",
       ],
       buttonText: "Get Started",
@@ -27,7 +33,7 @@ const PricingSection = () => {
       description: "Ideal for growing teams and production environments",
       features: [
         "Up to 5 seats included",
-        "100.000 events per month",
+        "5.000 traces per month",
         "4000 requests/min",
         "Unlimited agents",
         "90 days data retention",
@@ -89,9 +95,9 @@ const PricingSection = () => {
       category: "Usage & Limits",
       features: [
         {
-          name: "Monthly Events",
-          free: "10k events",
-          pro: "100k events",
+          name: "Monthly Traces",
+          free: "100 traces",
+          pro: "5.000 traces",
           enterprise: "Unlimited",
         },
         {
@@ -344,6 +350,25 @@ const PricingSection = () => {
           ))}
         </div>
 
+        {/* Pricing Calculator Section */}
+        <div className="max-w-7xl mx-auto px-4 landing-xs:px-3 landing-sm:px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="text-center mb-10 landing-xs:mb-8 landing-sm:mb-12 landing-md:mb-16"
+          >
+            <button
+              type="button"
+              onClick={() => setCalculatorOpen(true)}
+              className="inline-flex items-center justify-center gap-2 border-solid border font-semibold rounded transition-colors px-4 landing-xs:px-3 landing-sm:px-5 py-3 landing-xs:py-2 landing-sm:py-3 text-sm landing-xs:text-xs landing-sm:text-base bg-emerald-400/10 text-emerald-400 border-emerald-400/20 hover:bg-emerald-400/20"
+            >
+              <CalculatorIcon className="w-4 h-4 landing-xs:w-3 landing-xs:h-3 landing-sm:w-5 landing-sm:h-5" />
+              Calculate Your Pro Plan Cost
+            </button>
+          </motion.div>
+        </div>
+
         {/* Comparison Table */}
         <div className="w-full bg-[#191c24] overflow-hidden">
           <div className="overflow-x-auto w-full">
@@ -425,6 +450,12 @@ const PricingSection = () => {
           </p>
         </motion.div>
       </div>
+
+      {/* Pricing Calculator Modal */}
+      <PricingCalculatorModal
+        isOpen={calculatorOpen}
+        onClose={() => setCalculatorOpen(false)}
+      />
     </section>
   );
 };
