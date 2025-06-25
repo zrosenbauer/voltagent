@@ -155,8 +155,14 @@ ${agentsMemory || "No previous agent interactions available."}
    * Hand off a task to another agent
    */
   public async handoffTask(options: AgentHandoffOptions): Promise<AgentHandoffResult> {
-    const { task, conversationId, userId, parentAgentId, parentHistoryEntryId, userContext } =
-      options;
+    const {
+      task,
+      conversationId,
+      userId,
+      parentAgentId,
+      parentHistoryEntryId,
+      parentOperationContext,
+    } = options;
     // TODO: Fix the types here
     const context = options.context as OperationContext | undefined;
     const sourceAgent = options.sourceAgent as Agent<DangerouslyAllowAny>;
@@ -189,7 +195,6 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
         content: taskContent,
       };
 
-      // Use streamText without handoff context in system message
       const streamResponse = await targetAgent.streamText([...sharedContext, taskMessage], {
         conversationId: handoffConversationId,
         userId,
@@ -197,7 +202,7 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
         // @ts-expect-error - bad types
         parentAgentId: sourceAgent?.id || parentAgentId,
         parentHistoryEntryId,
-        userContext,
+        parentOperationContext,
       });
 
       // Collect all stream chunks for final result
@@ -363,7 +368,6 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
   public async handoffToMultiple(
     options: Omit<AgentHandoffOptions, "targetAgent"> & {
       targetAgents: Agent<any>[];
-      userContext?: Map<string | symbol, unknown>;
     },
   ): Promise<AgentHandoffResult[]> {
     const {
@@ -371,7 +375,7 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
       conversationId,
       parentAgentId,
       parentHistoryEntryId,
-      userContext,
+      parentOperationContext,
       ...restOptions
     } = options;
 
@@ -388,7 +392,7 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
             conversationId: handoffConversationId,
             parentAgentId,
             parentHistoryEntryId,
-            userContext,
+            parentOperationContext,
           });
         } catch (error) {
           devLogger.error(`Error in handoffToMultiple for agent ${agent.name}:`, error);
@@ -483,8 +487,7 @@ ${task}\n\nContext: ${JSON.stringify(context, null, 2)}`;
             // Get current history entry ID for parent context
             // This is passed from the Agent class via options when the tool is called
             parentHistoryEntryId: currentHistoryEntryId,
-            // Pass the supervisor's userContext to the handoff options
-            userContext: operationContext?.userContext,
+            parentOperationContext: operationContext,
             // Pass the real-time event forwarder
             forwardEvent,
             ...restOptions,
