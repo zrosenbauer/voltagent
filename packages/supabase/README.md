@@ -103,6 +103,8 @@ CREATE TABLE IF NOT EXISTS voltagent_memory_agent_history (
     output JSONB,
     usage JSONB,
     metadata JSONB,
+    user_id TEXT,
+    conversation_id TEXT,
     -- Legacy columns for migration compatibility
     key TEXT,
     value JSONB
