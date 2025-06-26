@@ -75,11 +75,11 @@ export default function Pricing(): JSX.Element {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <h1 className="text-3xl landing-xs:text-xl landing-sm:text-4xl landing-md:text-5xl lg:text-5xl text-left font-bold mb-6 landing-xs:mb-4">
+              <h1 className="text-4xl landing-xs:text-xl landing-sm:text-4xl md:text-5xl lg:text-5xl text-left font-bold mb-4 landing-md:mb-6">
                 <span className="text-white">Choose Your</span>{" "}
                 <span className="text-orange-400">Observability Plan</span>
               </h1>
-              <p className="text-lg landing-xs:text-sm landing-sm:text-xl md:text-2xl text-gray-400 mb-8 landing-xs:mb-6 max-w-4xl text-left leading-relaxed">
+              <p className="text-xl landing-xs:text-sm landing-sm:text-lg md:text-2xl text-gray-400 mb-8 landing-xs:mb-6 max-w-4xl text-left leading-relaxed">
                 Track, debug, test, monitor and optimize your AI app & agents
                 performance with{" "}
                 <span className="text-orange-400 font-medium">
@@ -90,8 +90,8 @@ export default function Pricing(): JSX.Element {
 
               {/* Open Source Notice */}
               <div className="text-left mb-8 landing-xs:mb-6">
-                <div className="bg-gradient-to-r from-blue-500/10 to-emerald-500/10 border border-blue-500/20 rounded-2xl landing-xs:rounded-lg landing-md:p-4 ">
-                  <p className="text-gray-300 text-base landing-xs:text-sm leading-relaxed mb-4 landing-xs:mb-3">
+                <div className="bg-gradient-to-r from-blue-500/10 to-emerald-500/10 border border-blue-500/20  rounded-2xl landing-xs:rounded-lg ">
+                  <p className="text-sm landing-xs:text-lg leading-relaxed mb-4 landing-xs:mb-3">
                     The{" "}
                     <span className="text-emerald-400 font-medium">
                       VoltAgent Core Framework
@@ -100,9 +100,9 @@ export default function Pricing(): JSX.Element {
                     <span className="text-emerald-400 font-medium">
                       open source and free
                     </span>
-                    . Build AI agents without any cost.
+                    . Build AI agents & LLM Apps without any cost.
                   </p>
-                  <p className="text-gray-300 text-base landing-xs:text-sm leading-relaxed">
+                  <p className="text-xs landing-xs:text-lg leading-relaxed">
                     The pricing is for{" "}
                     <span className="text-orange-400 font-medium">
                       VoltOps LLM Observability
@@ -114,7 +114,7 @@ export default function Pricing(): JSX.Element {
                       href="/voltops-llm-observability-docs/"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center  border-solid border-orange-500/20 text-orange-400 font-medium px-4 py-2 landing-xs:px-3 landing-xs:py-1.5 rounded-lg border border-orange-500/30 hover:bg-orange-500/30 transition-colors no-underline text-sm landing-xs:text-xs"
+                      className="inline-flex items-center  border-solid border-orange-500/20 text-orange-400 font-medium px-4 py-2 landing-xs:px-3 landing-xs:py-1.5 rounded-lg border border-orange-500/30 hover:bg-orange-500/30 transition-colors no-underline text-xs landing-xs:text-sm"
                     >
                       VoltOps LLM Observability Docs
                       <ArrowTopRightOnSquareIcon className="w-4 h-4 landing-xs:w-3 landing-xs:h-3 ml-2 landing-xs:ml-1" />
@@ -123,7 +123,7 @@ export default function Pricing(): JSX.Element {
                       href="/docs/"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center  border-solid border-emerald-500/20 text-emerald-400 font-medium px-4 py-2 landing-xs:px-3 landing-xs:py-1.5 rounded-lg border border-emerald-500/30 hover:bg-emerald-500/30 transition-colors no-underline text-sm landing-xs:text-xs"
+                      className="inline-flex items-center  border-solid border-emerald-500/20 text-emerald-400 font-medium px-4 py-2 landing-xs:px-3 landing-xs:py-1.5 rounded-lg border border-emerald-500/30 hover:bg-emerald-500/30 transition-colors no-underline text-xs landing-xs:text-sm"
                     >
                       VoltAgent Core Framework Docs
                       <ArrowTopRightOnSquareIcon className="w-4 h-4 landing-xs:w-3 landing-xs:h-3 ml-2 landing-xs:ml-1" />
@@ -147,15 +147,15 @@ export default function Pricing(): JSX.Element {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-center mb-12 landing-xs:mb-8 landing-sm:mb-16"
             >
-              <h2 className="text-2xl landing-xs:text-lg landing-sm:text-3xl landing-md:text-4xl font-bold text-white mb-4 landing-xs:mb-3">
+              <h2 className="text-3xl landing-xs:text-lg landing-sm:text-3xl md:text-4xl font-bold text-white mb-4 landing-xs:mb-3">
                 Frequently Asked Questions
               </h2>
-              <p className="text-gray-400 text-base landing-xs:text-xs landing-sm:text-lg">
+              <p className="text-gray-400 text-lg landing-xs:text-xs landing-sm:text-lg">
                 Everything you need to know about VoltOps LLM Observability
               </p>
             </motion.div>
 
-            <div className="space-y-3 landing-xs:space-y-2 landing-sm:space-y-4">
+            <div className="space-y-4 landing-xs:space-y-2">
               {faqData.map((faq, index) => (
                 <motion.div
                   key={faq.question}
@@ -171,13 +171,13 @@ export default function Pricing(): JSX.Element {
                         toggleFAQ(index);
                       }
                     }}
-                    className="w-full text-left p-4 landing-xs:p-3 landing-sm:p-5 landing-md:p-6 flex items-center justify-between focus:outline-none focus:bg-gray-800/20 hover:bg-gray-800/20 transition-colors cursor-pointer"
+                    className="w-full text-left p-6 landing-xs:p-3 landing-sm:p-5 flex items-center justify-between focus:outline-none focus:bg-gray-800/20 hover:bg-gray-800/20 transition-colors cursor-pointer"
                   >
-                    <span className="text-base landing-xs:text-xs landing-sm:text-lg landing-md:text-lg font-semibold text-white pr-3 landing-xs:pr-2 landing-sm:pr-4">
+                    <span className="text-lg landing-xs:text-xs landing-sm:text-lg font-semibold text-white pr-4 landing-xs:pr-2">
                       {faq.question}
                     </span>
                     <ChevronDownIcon
-                      className={`w-4 h-4 landing-xs:w-3 landing-xs:h-3 landing-sm:w-5 landing-sm:h-5 text-gray-400 transition-transform duration-200 flex-shrink-0 ${
+                      className={`w-5 h-5 landing-xs:w-3 landing-xs:h-3 landing-sm:w-5 text-gray-400 transition-transform duration-200 flex-shrink-0 ${
                         openFAQ === index ? "rotate-180" : ""
                       }`}
                     />
@@ -192,8 +192,8 @@ export default function Pricing(): JSX.Element {
                     transition={{ duration: 0.3, ease: "easeInOut" }}
                     className="overflow-hidden"
                   >
-                    <div className="px-4 pb-4 landing-xs:px-3 landing-xs:pb-3 landing-sm:px-5 landing-sm:pb-5 landing-md:px-6 landing-md:pb-6">
-                      <p className="text-gray-400 leading-relaxed text-sm landing-xs:text-xs landing-sm:text-base">
+                    <div className="px-6 pb-6 landing-xs:px-3 landing-xs:pb-3 landing-sm:px-5 landing-sm:pb-5">
+                      <p className="text-gray-400 leading-relaxed landing-xs:text-xs landing-sm:text-base">
                         {faq.answer}
                       </p>
                     </div>
