@@ -21,11 +21,11 @@ export default function Pricing(): JSX.Element {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6">
+              <h1 className="text-4xl md:text-6xl lg:text-6xl text-left font-bold mb-6">
                 <span className="text-white">Choose Your</span>{" "}
                 <span className="text-orange-400">Observability Plan</span>
               </h1>
-              <p className="text-xl md:text-2xl text-gray-400 mb-8 max-w-4xl mx-auto leading-relaxed">
+              <p className="text-xl md:text-2xl text-gray-400 mb-8 max-w-4xl text-left leading-relaxed">
                 Track, debug, test, monitor and optimize your AI app & agents
                 performance with{" "}
                 <span className="text-orange-400 font-medium">
