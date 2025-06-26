@@ -3,6 +3,7 @@ import Layout from "@theme/Layout";
 import { motion } from "framer-motion";
 import PricingSection from "../components/console/PricingSection";
 import { DotPattern } from "../components/ui/dot-pattern";
+import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
 
 export default function Pricing(): JSX.Element {
   return (
@@ -25,17 +26,18 @@ export default function Pricing(): JSX.Element {
                 <span className="text-orange-400">Observability Plan</span>
               </h1>
               <p className="text-xl md:text-2xl text-gray-400 mb-8 max-w-4xl mx-auto leading-relaxed">
-                Monitor your AI agents with{" "}
+                Track, debug, test, monitor and optimize your AI app & agents
+                performance with{" "}
                 <span className="text-orange-400 font-medium">
                   VoltOps LLM Observability
                 </span>{" "}
-                Platform.
+                Platform whether you're building with VoltAgent or not.
               </p>
 
               {/* Open Source Notice */}
               <div className="max-w-5xl mx-auto mb-8">
                 <div className="bg-gradient-to-r from-blue-500/10 to-emerald-500/10 border border-blue-500/20 rounded-2xl p-6">
-                  <p className="text-gray-300 text-base leading-relaxed mb-4">
+                  <p className="text-gray-300 text-lg leading-relaxed mb-4">
                     The{" "}
                     <span className="text-emerald-400 font-medium">
                       VoltAgent Core Framework
@@ -46,38 +48,31 @@ export default function Pricing(): JSX.Element {
                     </span>
                     . Build AI agents without any cost.
                   </p>
-                  <p className="text-gray-300 text-base leading-relaxed">
+                  <p className="text-gray-300 text-lg leading-relaxed">
                     The pricing is for{" "}
                     <span className="text-orange-400 font-medium">
                       VoltOps LLM Observability
                     </span>
-                    , a monitoring and analytics platform that helps you track,
-                    debug, test, and optimize your AI app and agent performance
-                    whether you're building with VoltAgent or not, in both local
-                    development and production.
+                    , a framework-agnostic monitoring and analytics platform.
                   </p>
                   <div className="mt-4 flex flex-col sm:flex-row gap-3 justify-center">
                     <a
-                      href="https://github.com/voltagent/voltagent"
+                      href="/docs/"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center bg-blue-500/20 text-blue-400 font-medium px-4 py-2 rounded-lg border border-blue-500/30 hover:bg-blue-500/30 transition-colors no-underline text-sm"
+                      className="inline-flex items-center justify-center border-solid border-emerald-500/20 text-emerald-400 font-medium px-4 py-2 rounded-lg border border-emerald-500/30 hover:bg-emerald-500/30 transition-colors no-underline text-sm"
                     >
-                      <svg
-                        className="w-4 h-4 mr-2"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <title>GitHub</title>
-                        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
-                      </svg>
-                      VoltAgent on GitHub
+                      VoltAgent Core Framework Docs
+                      <ArrowTopRightOnSquareIcon className="w-4 h-4 ml-2" />
                     </a>
                     <a
-                      href="/docs/"
-                      className="inline-flex items-center justify-center bg-emerald-500/20 text-emerald-400 font-medium px-4 py-2 rounded-lg border border-emerald-500/30 hover:bg-emerald-500/30 transition-colors no-underline text-sm"
+                      href="/voltops-llm-observability-docs/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center border-solid border-orange-500/20 text-orange-400 font-medium px-4 py-2 rounded-lg border border-orange-500/30 hover:bg-orange-500/30 transition-colors no-underline text-sm"
                     >
-                      Framework Documentation
+                      VoltOps LLM Observability Docs
+                      <ArrowTopRightOnSquareIcon className="w-4 h-4 ml-2" />
                     </a>
                   </div>
                 </div>
