@@ -23,7 +23,6 @@ return result.userContext; // ✅ Includes userContext
 
 Now users can access the `userContext` in the response from all agent methods:
 
-```typescript
 // Set custom context before calling the agent
 const customContext = new Map();
 customContext.set("sessionId", "user-123");
