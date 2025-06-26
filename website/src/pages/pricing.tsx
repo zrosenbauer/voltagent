@@ -1,11 +1,65 @@
-import React from "react";
+import React, { useState } from "react";
 import Layout from "@theme/Layout";
 import { motion } from "framer-motion";
 import PricingSection from "../components/console/PricingSection";
 import { DotPattern } from "../components/ui/dot-pattern";
-import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
+import {
+  ArrowTopRightOnSquareIcon,
+  ChevronDownIcon,
+} from "@heroicons/react/24/outline";
 
 export default function Pricing(): JSX.Element {
+  const [openFAQ, setOpenFAQ] = useState<number | null>(null);
+
+  const toggleFAQ = (index: number) => {
+    setOpenFAQ(openFAQ === index ? null : index);
+  };
+
+  const faqData = [
+    {
+      question:
+        "My application isn't written in Python or TypeScript. Will VoltOps be helpful?",
+      answer:
+        "Yes! VoltOps LLM Observability works with applications written in any programming language. Our REST API and webhook integrations allow you to send traces from Java, C#, Go, Ruby, PHP, or any other language. We also provide SDKs for Python and JavaScript/TypeScript for easier integration.",
+    },
+    {
+      question: "How can VoltOps help with observability and evaluation?",
+      answer:
+        "VoltOps provides comprehensive LLM observability with detailed traces, token usage tracking, cost analysis, performance metrics, and user session monitoring. You can evaluate your AI agents' performance, debug issues in real-time, and optimize your applications based on production data insights.",
+    },
+    {
+      question: "What counts as a trace in VoltOps?",
+      answer:
+        "A trace represents a single execution flow through your AI agent or application. This includes LLM calls, tool usage, function calls, and any nested operations that occur during a single request or conversation turn. Each user interaction that triggers your AI system typically generates one trace.",
+    },
+    {
+      question: "How does VoltOps pricing work with trace overages?",
+      answer:
+        "VoltOps Pro plan includes 5,000 traces per month for $50. If you exceed this limit, you'll be charged $10 for every additional 5,000 traces. Use our pricing calculator to estimate your monthly costs based on expected usage. You can set up billing alerts to monitor your usage.",
+    },
+    {
+      question:
+        "I can't have data leave my environment. Can I self-host VoltOps?",
+      answer:
+        "Yes! VoltOps Enterprise plan includes self-hosted deployment options. You can run VoltOps entirely within your own infrastructure, ensuring your sensitive AI application data never leaves your environment while still getting full monitoring capabilities.",
+    },
+    {
+      question: "Where is VoltOps data stored?",
+      answer:
+        "For our cloud offering, VoltOps data is securely stored in SOC 2 compliant data centers with encryption at rest and in transit. For Enterprise customers, we offer self-hosted options where all data remains in your own infrastructure and never leaves your environment.",
+    },
+    {
+      question: "Will VoltOps add latency to my application?",
+      answer:
+        "VoltOps is designed for minimal performance impact. Our SDKs send data asynchronously in the background, typically adding less than 1ms of overhead. The monitoring happens without blocking your AI application's main execution flow.",
+    },
+    {
+      question: "Will you train on the data that I send VoltOps?",
+      answer:
+        "No, absolutely not. VoltOps never uses your data to train models or for any other purpose beyond providing you with monitoring and analytics. Your AI application data is strictly used only for observability features and remains completely private to your organization.",
+    },
+  ];
+
   return (
     <Layout
       title="VoltOps LLM Observability Pricing"
@@ -14,18 +68,18 @@ export default function Pricing(): JSX.Element {
       <DotPattern dotColor="#94a3b8" dotSize={1.2} spacing={20} />
       <main className="min-h-screen">
         {/* Hero Section */}
-        <section className="relative py-20 px-4">
-          <div className="max-w-7xl mx-auto text-center">
+        <section className="relative  px-4">
+          <div className="max-w-7xl mx-auto md:pt-20 pt-8 text-center px-4 landing-xs:px-3 landing-sm:px-6">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <h1 className="text-4xl md:text-6xl lg:text-6xl text-left font-bold mb-6">
+              <h1 className="text-3xl landing-xs:text-xl landing-sm:text-4xl landing-md:text-5xl lg:text-5xl text-left font-bold mb-6 landing-xs:mb-4">
                 <span className="text-white">Choose Your</span>{" "}
                 <span className="text-orange-400">Observability Plan</span>
               </h1>
-              <p className="text-xl md:text-2xl text-gray-400 mb-8 max-w-4xl text-left leading-relaxed">
+              <p className="text-lg landing-xs:text-sm landing-sm:text-xl md:text-2xl text-gray-400 mb-8 landing-xs:mb-6 max-w-4xl text-left leading-relaxed">
                 Track, debug, test, monitor and optimize your AI app & agents
                 performance with{" "}
                 <span className="text-orange-400 font-medium">
@@ -35,9 +89,9 @@ export default function Pricing(): JSX.Element {
               </p>
 
               {/* Open Source Notice */}
-              <div className="max-w-5xl mx-auto mb-8">
-                <div className="bg-gradient-to-r from-blue-500/10 to-emerald-500/10 border border-blue-500/20 rounded-2xl p-6">
-                  <p className="text-gray-300 text-lg leading-relaxed mb-4">
+              <div className="text-left mb-8 landing-xs:mb-6">
+                <div className="bg-gradient-to-r from-blue-500/10 to-emerald-500/10 border border-blue-500/20 rounded-2xl landing-xs:rounded-lg landing-md:p-4 ">
+                  <p className="text-gray-300 text-base landing-xs:text-sm leading-relaxed mb-4 landing-xs:mb-3">
                     The{" "}
                     <span className="text-emerald-400 font-medium">
                       VoltAgent Core Framework
@@ -48,31 +102,31 @@ export default function Pricing(): JSX.Element {
                     </span>
                     . Build AI agents without any cost.
                   </p>
-                  <p className="text-gray-300 text-lg leading-relaxed">
+                  <p className="text-gray-300 text-base landing-xs:text-sm leading-relaxed">
                     The pricing is for{" "}
                     <span className="text-orange-400 font-medium">
                       VoltOps LLM Observability
                     </span>
                     , a framework-agnostic monitoring and analytics platform.
                   </p>
-                  <div className="mt-4 flex flex-col sm:flex-row gap-3 justify-center">
-                    <a
-                      href="/docs/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center border-solid border-emerald-500/20 text-emerald-400 font-medium px-4 py-2 rounded-lg border border-emerald-500/30 hover:bg-emerald-500/30 transition-colors no-underline text-sm"
-                    >
-                      VoltAgent Core Framework Docs
-                      <ArrowTopRightOnSquareIcon className="w-4 h-4 ml-2" />
-                    </a>
+                  <div className="mt-4 landing-xs:mt-3 flex flex-col sm:flex-row gap-3 landing-xs:gap-2 text-left ">
                     <a
                       href="/voltops-llm-observability-docs/"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center border-solid border-orange-500/20 text-orange-400 font-medium px-4 py-2 rounded-lg border border-orange-500/30 hover:bg-orange-500/30 transition-colors no-underline text-sm"
+                      className="inline-flex items-center  border-solid border-orange-500/20 text-orange-400 font-medium px-4 py-2 landing-xs:px-3 landing-xs:py-1.5 rounded-lg border border-orange-500/30 hover:bg-orange-500/30 transition-colors no-underline text-sm landing-xs:text-xs"
                     >
                       VoltOps LLM Observability Docs
-                      <ArrowTopRightOnSquareIcon className="w-4 h-4 ml-2" />
+                      <ArrowTopRightOnSquareIcon className="w-4 h-4 landing-xs:w-3 landing-xs:h-3 ml-2 landing-xs:ml-1" />
+                    </a>
+                    <a
+                      href="/docs/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center  border-solid border-emerald-500/20 text-emerald-400 font-medium px-4 py-2 landing-xs:px-3 landing-xs:py-1.5 rounded-lg border border-emerald-500/30 hover:bg-emerald-500/30 transition-colors no-underline text-sm landing-xs:text-xs"
+                    >
+                      VoltAgent Core Framework Docs
+                      <ArrowTopRightOnSquareIcon className="w-4 h-4 landing-xs:w-3 landing-xs:h-3 ml-2 landing-xs:ml-1" />
                     </a>
                   </div>
                 </div>
@@ -85,77 +139,65 @@ export default function Pricing(): JSX.Element {
         <PricingSection />
 
         {/* FAQ Section */}
-        <section className="py-20 px-4">
+        <section className="landing-xs:pt-8 landing-sm:pt-16 landing-md:pt-20 px-4 landing-xs:px-3 landing-sm:px-6">
           <div className="max-w-4xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-center mb-16"
+              className="text-center mb-12 landing-xs:mb-8 landing-sm:mb-16"
             >
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              <h2 className="text-2xl landing-xs:text-lg landing-sm:text-3xl landing-md:text-4xl font-bold text-white mb-4 landing-xs:mb-3">
                 Frequently Asked Questions
               </h2>
-              <p className="text-gray-400 text-lg">
+              <p className="text-gray-400 text-base landing-xs:text-xs landing-sm:text-lg">
                 Everything you need to know about VoltOps LLM Observability
-                pricing
               </p>
             </motion.div>
 
-            <div className="space-y-8">
-              {[
-                {
-                  question: "Is VoltAgent Core Framework really free?",
-                  answer:
-                    "Yes! VoltAgent Core Framework is completely free and open source under the MIT license. You can build, deploy, and use AI agents without any cost. The pricing on this page is only for VoltOps LLM Observability, our optional monitoring platform.",
-                },
-                {
-                  question: "What counts as a trace in VoltOps?",
-                  answer:
-                    "A trace represents a single execution flow through your AI agent or application. This includes LLM calls, tool usage, and any nested operations that occur during a single request or conversation turn.",
-                },
-                {
-                  question: "How does the overage pricing work?",
-                  answer:
-                    "If you exceed your plan's included traces, you'll be charged $10 for every additional 5,000 traces. Use our pricing calculator to estimate your monthly costs based on your expected usage.",
-                },
-                {
-                  question: "Can I use VoltAgent without VoltOps monitoring?",
-                  answer:
-                    "Absolutely! VoltAgent Core Framework works independently. VoltOps LLM Observability is an optional service that provides advanced monitoring, analytics, and debugging capabilities for production AI applications.",
-                },
-                {
-                  question: "Can I change plans anytime?",
-                  answer:
-                    "Yes! You can upgrade or downgrade your VoltOps plan at any time. Changes take effect immediately, and you'll be charged or credited on a pro-rated basis.",
-                },
-                {
-                  question: "Do you offer annual discounts?",
-                  answer:
-                    "Yes, we offer significant discounts for annual VoltOps subscriptions. Contact our sales team for enterprise pricing and custom arrangements.",
-                },
-                {
-                  question: "What happens if I exceed my limits?",
-                  answer:
-                    "Your VoltOps service won't be interrupted. You'll automatically be charged for overage usage at the rates specified in your plan. You can set up billing alerts to monitor your usage.",
-                },
-                {
-                  question: "Is there a free trial for paid plans?",
-                  answer:
-                    "Our VoltOps Free plan gives you a comprehensive look at all core monitoring features. For Enterprise features, we offer a 14-day trial period to evaluate the platform with your specific requirements.",
-                },
-              ].map((faq, index) => (
+            <div className="space-y-3 landing-xs:space-y-2 landing-sm:space-y-4">
+              {faqData.map((faq, index) => (
                 <motion.div
                   key={faq.question}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.1 * index }}
-                  className="bg-[#191c24] border border-gray-700/50 rounded-lg p-6 hover:border-emerald-400/30 transition-colors"
+                  className="bg-[#191c24] border border-solid border-gray-700/50 rounded-lg landing-xs:rounded-md overflow-hidden hover:border-emerald-400/30 transition-colors"
                 >
-                  <h3 className="text-xl font-semibold text-white mb-3">
-                    {faq.question}
-                  </h3>
-                  <p className="text-gray-400 leading-relaxed">{faq.answer}</p>
+                  <div
+                    onClick={() => toggleFAQ(index)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        toggleFAQ(index);
+                      }
+                    }}
+                    className="w-full text-left p-4 landing-xs:p-3 landing-sm:p-5 landing-md:p-6 flex items-center justify-between focus:outline-none focus:bg-gray-800/20 hover:bg-gray-800/20 transition-colors cursor-pointer"
+                  >
+                    <span className="text-base landing-xs:text-xs landing-sm:text-lg landing-md:text-lg font-semibold text-white pr-3 landing-xs:pr-2 landing-sm:pr-4">
+                      {faq.question}
+                    </span>
+                    <ChevronDownIcon
+                      className={`w-4 h-4 landing-xs:w-3 landing-xs:h-3 landing-sm:w-5 landing-sm:h-5 text-gray-400 transition-transform duration-200 flex-shrink-0 ${
+                        openFAQ === index ? "rotate-180" : ""
+                      }`}
+                    />
+                  </div>
+
+                  <motion.div
+                    initial={false}
+                    animate={{
+                      height: openFAQ === index ? "auto" : 0,
+                      opacity: openFAQ === index ? 1 : 0,
+                    }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="overflow-hidden"
+                  >
+                    <div className="px-4 pb-4 landing-xs:px-3 landing-xs:pb-3 landing-sm:px-5 landing-sm:pb-5 landing-md:px-6 landing-md:pb-6">
+                      <p className="text-gray-400 leading-relaxed text-sm landing-xs:text-xs landing-sm:text-base">
+                        {faq.answer}
+                      </p>
+                    </div>
+                  </motion.div>
                 </motion.div>
               ))}
             </div>

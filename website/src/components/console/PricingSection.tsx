@@ -252,7 +252,7 @@ const PricingSection = () => {
           >
             <div className="text-left mb-8 landing-xs:mb-6 landing-sm:mb-12">
               <h2 className="text-lg landing-xs:text-base landing-sm:text-xl landing-md:text-2xl landing-lg:text-3xl text-emerald-500 font-bold mb-3 landing-xs:mb-2 landing-sm:mb-4">
-                Simple, Transparent Pricing
+                Simple, Transparent VoltOps Pricing
               </h2>
               <p className="text-gray-400 max-w-3xl text-sm landing-xs:text-xs landing-sm:text-base landing-md:text-lg">
                 Start free, scale as you grow.
