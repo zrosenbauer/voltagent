@@ -413,6 +413,14 @@ export default function Navbar() {
               </div>
             </div>
           </div>
+          <Link
+            to="/pricing/"
+            className={`${styles.mobileNavLink} ${
+              isActive("/pricing/") ? styles.active : ""
+            }`}
+          >
+            PRICING
+          </Link>
           <div className={styles.mobileNavLink}>
             <button
               type="button"
