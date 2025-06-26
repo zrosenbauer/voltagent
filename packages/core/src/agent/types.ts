@@ -633,3 +633,27 @@ type InferOriginalResponseFromProvider<
   TProvider extends { llm: LLMProvider<any> },
   TMethod extends "generateText" | "streamText" | "generateObject" | "streamObject",
 > = InferResponseFromProvider<TProvider, TMethod>["provider"];
+
+export type GenerateTextResponse<TProvider extends { llm: LLMProvider<any> }> =
+  InferGenerateTextResponseFromProvider<TProvider> & {
+    userContext: Map<string | symbol, unknown>;
+  };
+
+export type StreamTextResponse<TProvider extends { llm: LLMProvider<any> }> =
+  InferStreamTextResponseFromProvider<TProvider> & {
+    userContext?: Map<string | symbol, unknown>;
+  };
+
+export type GenerateObjectResponse<
+  TProvider extends { llm: LLMProvider<any> },
+  TSchema extends z.ZodType,
+> = InferGenerateObjectResponseFromProvider<TProvider, TSchema> & {
+  userContext: Map<string | symbol, unknown>;
+};
+
+export type StreamObjectResponse<
+  TProvider extends { llm: LLMProvider<any> },
+  TSchema extends z.ZodType,
+> = InferStreamObjectResponseFromProvider<TProvider, TSchema> & {
+  userContext?: Map<string | symbol, unknown>;
+};

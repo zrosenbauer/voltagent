@@ -10,7 +10,16 @@ import type { OperationContext, VoltAgentError } from "../types";
 // Mock LLM provider
 class MockProvider {
   async generateText() {
-    return { text: "Mock response" };
+    return {
+      provider: { originalResponse: true },
+      text: "Mock response",
+      usage: {
+        promptTokens: 10,
+        completionTokens: 5,
+        totalTokens: 15,
+      },
+      finishReason: "stop",
+    };
   }
 
   getModelIdentifier() {
@@ -103,7 +112,8 @@ describe("Agent Hooks Functionality", () => {
           text: response.text,
           usage: response.usage,
           finishReason: response.finishReason,
-          providerResponse: response,
+          provider: response.provider,
+          userContext: expect.any(Map), // Verify userContext is included
         }),
         error: undefined,
         conversationId: expect.any(String),
@@ -112,6 +122,37 @@ describe("Agent Hooks Functionality", () => {
           isActive: expect.any(Boolean),
         }),
       });
+    });
+
+    it("should include userContext in the onEnd hook output", async () => {
+      const onEndSpy = vi.fn();
+      agent.hooks = createHooks({ onEnd: onEndSpy });
+
+      const userContext = new Map<string | symbol, unknown>();
+      userContext.set("agentName", "Test Agent");
+      userContext.set("sessionId", "test-session-123");
+
+      const response = await agent.generateText("Test input", { userContext });
+
+      // Verify onEnd was called with userContext properly passed through
+      expect(onEndSpy).toHaveBeenCalledWith({
+        agent: agent,
+        output: expect.objectContaining({
+          text: response.text,
+          userContext: expect.any(Map),
+        }),
+        error: undefined,
+        conversationId: expect.any(String),
+        context: expect.objectContaining({
+          operationId: expect.any(String),
+          isActive: expect.any(Boolean),
+        }),
+      });
+
+      // Verify the specific userContext values are present
+      const callArgs = onEndSpy.mock.calls[0][0];
+      expect(callArgs.output.userContext.get("agentName")).toBe("Test Agent");
+      expect(callArgs.output.userContext.get("sessionId")).toBe("test-session-123");
     });
 
     // Add a test for the error case (optional but recommended)

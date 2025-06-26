@@ -47,17 +47,15 @@ import type {
   CommonGenerateOptions,
   DynamicValue,
   DynamicValueOptions,
-  InferGenerateObjectResponseFromProvider,
-  InferGenerateTextResponseFromProvider,
-  InferStreamObjectResponseFromProvider,
-  InferStreamTextResponseFromProvider,
+  GenerateObjectResponse,
+  GenerateTextResponse,
+  StreamObjectResponse,
+  StreamTextResponse,
   InternalGenerateOptions,
   ModelType,
   OperationContext,
   ProviderInstance,
   PublicGenerateOptions,
-  StandardizedObjectResult,
-  StandardizedTextResult,
   StreamObjectFinishResult,
   StreamObjectOnFinishCallback,
   StreamOnErrorCallback,
@@ -817,7 +815,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     if (otelSpan) {
       endOperationSpan({
         span: otelSpan,
-        status: status as any,
+        status: status as "completed" | "error",
         data,
       });
     } else {
@@ -930,7 +928,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   public async generateText(
     input: string | BaseMessage[],
     options: PublicGenerateOptions = {},
-  ): Promise<InferGenerateTextResponseFromProvider<TProvider>> {
+  ): Promise<GenerateTextResponse<TProvider>> {
     const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
     const {
       userId,
@@ -1225,26 +1223,25 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       this.publishTimelineEvent(operationContext, agentSuccessEvent);
 
       // Original agent completion event for backward compatibility
-      this.addAgentEvent(operationContext, "finished", "completed" as any, {
+      this.addAgentEvent(operationContext, "finished", "completed", {
         input: messages,
         output: response.text,
         usage: response.usage,
-        status: "completed" as any,
+        status: "completed",
       });
 
       operationContext.isActive = false;
-      const standardizedOutput: StandardizedTextResult = {
-        text: response.text,
-        usage: response.usage,
-        finishReason: response.finishReason,
-        providerResponse: response,
+
+      // Extend the original response with userContext for backward compatibility
+      const extendedResponse: GenerateTextResponse<TProvider> = {
+        ...response,
         userContext: new Map(operationContext.userContext),
       };
 
       await this.hooks.onEnd?.({
         conversationId: finalConversationId,
         agent: this,
-        output: standardizedOutput,
+        output: extendedResponse,
         error: undefined,
         context: operationContext,
       });
@@ -1253,10 +1250,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         output: response.text,
         usage: response.usage,
         endTime: new Date(),
-        status: "completed" as any,
+        status: "completed",
       });
 
-      return response;
+      return extendedResponse;
     } catch (error) {
       const voltagentError = error as VoltAgentError;
 
@@ -1302,11 +1299,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       this.publishTimelineEvent(operationContext, agentErrorEvent);
 
       // Original error event for backward compatibility
-      this.addAgentEvent(operationContext, "finished", "error" as any, {
+      this.addAgentEvent(operationContext, "finished", "error", {
         input: messages,
         error: voltagentError,
         errorMessage: voltagentError.message,
-        status: "error" as any,
+        status: "error",
         metadata: {
           code: voltagentError.code,
           originalError: voltagentError.originalError,
@@ -1341,7 +1338,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   public async streamText(
     input: string | BaseMessage[],
     options: PublicGenerateOptions = {},
-  ): Promise<InferStreamTextResponseFromProvider<TProvider>> {
+  ): Promise<StreamTextResponse<TProvider>> {
     const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
     const {
       userId,
@@ -1659,7 +1656,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           output: result.text,
           usage: result.usage,
           endTime: new Date(),
-          status: "completed" as any,
+          status: "completed",
         });
 
         const agentSuccessEvent: AgentSuccessEvent = {
@@ -1696,11 +1693,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         this.publishTimelineEvent(operationContext, agentSuccessEvent);
 
         // Original agent completion event for backward compatibility
-        this.addAgentEvent(operationContext, "finished", "completed" as any, {
+        this.addAgentEvent(operationContext, "finished", "completed", {
           input: messages,
           output: result.text,
           usage: result.usage,
-          status: "completed" as any,
+          status: "completed",
           metadata: {
             finishReason: result.finishReason,
             warnings: result.warnings,
@@ -1827,11 +1824,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         this.publishTimelineEvent(operationContext, agentErrorEvent);
 
         // Original error event for backward compatibility
-        this.addAgentEvent(operationContext, "finished", "error" as any, {
+        this.addAgentEvent(operationContext, "finished", "error", {
           input: messages,
           error: error,
           errorMessage: error.message,
-          status: "error" as any,
+          status: "error",
           metadata: {
             code: error.code,
             originalError: error.originalError,
@@ -1856,12 +1853,13 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       },
     });
 
-    // Create enhanced stream with real-time SubAgent event injection
-    const wrappedResponse = {
+    // Create enhanced stream with real-time SubAgent event injection and add userContext
+    const wrappedResponse: StreamTextResponse<TProvider> = {
       ...response,
       fullStream: response.fullStream
         ? this.createEnhancedFullStream(response.fullStream, streamController, subAgentStatus)
         : undefined,
+      userContext: new Map(operationContext.userContext),
     };
 
     return wrappedResponse;
@@ -1874,7 +1872,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     input: string | BaseMessage[],
     schema: TSchema,
     options: PublicGenerateOptions = {},
-  ): Promise<InferGenerateObjectResponseFromProvider<TProvider, TSchema>> {
+  ): Promise<GenerateObjectResponse<TProvider, TSchema>> {
     const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
     const {
       userId,
@@ -2041,10 +2039,10 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       this.publishTimelineEvent(operationContext, agentSuccessEvent);
 
       const responseStr = JSON.stringify(response.object);
-      this.addAgentEvent(operationContext, "finished", "completed" as any, {
+      this.addAgentEvent(operationContext, "finished", "completed", {
         output: responseStr,
         usage: response.usage,
-        status: "completed" as any,
+        status: "completed",
         input: messages,
       });
       operationContext.isActive = false;
@@ -2053,26 +2051,24 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         output: responseStr,
         usage: response.usage,
         endTime: new Date(),
-        status: "completed" as any,
+        status: "completed",
       });
 
-      const standardizedOutput: StandardizedObjectResult<z.infer<TSchema>> = {
-        object: response.object,
-        usage: response.usage,
-        finishReason: response.finishReason,
-        providerResponse: response,
+      // Extend the original response with userContext for backward compatibility
+      const extendedResponse: GenerateObjectResponse<TProvider, TSchema> = {
+        ...response,
         userContext: new Map(operationContext.userContext),
       };
 
       await this.hooks.onEnd?.({
         agent: this,
-        output: standardizedOutput,
+        output: extendedResponse,
         error: undefined,
         conversationId: finalConversationId,
         context: operationContext,
       });
 
-      return response;
+      return extendedResponse;
     } catch (error) {
       const voltagentError = error as VoltAgentError;
 
@@ -2117,11 +2113,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       // Publish the agent:error event (background)
       this.publishTimelineEvent(operationContext, agentErrorEvent);
 
-      this.addAgentEvent(operationContext, "finished", "error" as any, {
+      this.addAgentEvent(operationContext, "finished", "error", {
         input: messages,
         error: voltagentError,
         errorMessage: voltagentError.message,
-        status: "error" as any,
+        status: "error",
         metadata: {
           code: voltagentError.code,
           originalError: voltagentError.originalError,
@@ -2156,7 +2152,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     input: string | BaseMessage[],
     schema: TSchema,
     options: PublicGenerateOptions = {},
-  ): Promise<InferStreamObjectResponseFromProvider<TProvider, TSchema>> {
+  ): Promise<StreamObjectResponse<TProvider, TSchema>> {
     const internalOptions: InternalGenerateOptions = options as InternalGenerateOptions;
     const {
       userId,
@@ -2323,11 +2319,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           this.publishTimelineEvent(operationContext, agentSuccessEvent);
 
           const responseStr = JSON.stringify(result.object);
-          this.addAgentEvent(operationContext, "finished", "completed" as any, {
+          this.addAgentEvent(operationContext, "finished", "completed", {
             input: messages,
             output: responseStr,
             usage: result.usage,
-            status: "completed" as any,
+            status: "completed",
             metadata: {
               finishReason: result.finishReason,
               warnings: result.warnings,
@@ -2338,7 +2334,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           this.updateHistoryEntry(operationContext, {
             output: responseStr,
             usage: result.usage,
-            status: "completed" as any,
+            status: "completed",
           });
 
           operationContext.isActive = false;
@@ -2416,11 +2412,11 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           // Publish the agent:error event (background)
           this.publishTimelineEvent(operationContext, agentErrorEvent);
 
-          this.addAgentEvent(operationContext, "finished", "error" as any, {
+          this.addAgentEvent(operationContext, "finished", "error", {
             input: messages,
             error: error,
             errorMessage: error.message,
-            status: "error" as any,
+            status: "error",
             metadata: {
               code: error.code,
               originalError: error.originalError,
@@ -2448,7 +2444,14 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
           });
         },
       });
-      return response;
+
+      // Add userContext to the response for backward compatibility
+      const extendedResponse: StreamObjectResponse<TProvider, TSchema> = {
+        ...response,
+        userContext: new Map(operationContext.userContext),
+      };
+
+      return extendedResponse;
     } catch (error) {
       operationContext.isActive = false;
       await this.hooks.onEnd?.({
