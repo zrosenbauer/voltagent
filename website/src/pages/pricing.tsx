@@ -75,57 +75,76 @@ export default function Pricing(): JSX.Element {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <h1 className="text-4xl landing-xs:text-xl landing-sm:text-4xl md:text-5xl lg:text-5xl text-left font-bold mb-4 landing-md:mb-6">
-                <span className="text-white">Choose Your</span>{" "}
-                <span className="text-orange-400">Observability Plan</span>
-              </h1>
-              <p className="text-xl landing-xs:text-sm landing-sm:text-lg md:text-2xl text-gray-400 mb-8 landing-xs:mb-6 max-w-4xl text-left leading-relaxed">
-                Track, debug, test, monitor and optimize your AI app & agents
-                performance with{" "}
-                <span className="text-orange-400 font-medium">
-                  VoltOps LLM Observability
-                </span>{" "}
-                Platform whether you're building with VoltAgent or not.
-              </p>
-
-              {/* Open Source Notice */}
-              <div className="text-left mb-8 landing-xs:mb-6">
-                <div className="bg-gradient-to-r from-blue-500/10 to-emerald-500/10 border border-blue-500/20  rounded-2xl landing-xs:rounded-lg ">
-                  <p className="text-sm landing-xs:text-lg leading-relaxed mb-4 landing-xs:mb-3">
-                    The{" "}
-                    <span className="text-emerald-400 font-medium">
-                      VoltAgent Core Framework
-                    </span>{" "}
-                    is{" "}
-                    <span className="text-emerald-400 font-medium">
-                      open source and free
+              {/* Free Framework Notice - Moved to top */}
+              <div className="text-left mb-12 landing-xs:mb-8">
+                <div className="bg-gradient-to-r from-emerald-500/15 to-blue-500/15 border border-emerald-500/30 rounded-3xl landing-xs:rounded-xl ">
+                  <div className="flex items-center mb-4">
+                    <span className="bg-emerald-400 text-gray-900 text-xs font-bold px-4 py-2 rounded-full mr-4 ">
+                      OPEN SOURCE & FREE
                     </span>
-                    . Build AI agents & LLM Apps without any cost.
+                  </div>
+                  <h2 className="text-4xl landing-xs:text-2xl landing-sm:text-3xl md:text-5xl font-bold text-emerald-400 mb-6 landing-xs:mb-4">
+                    VoltAgent Core Framework
+                  </h2>
+                  <p className="text-xl landing-xs:text-base landing-sm:text-lg text-gray-400 leading-relaxed mb-8 landing-xs:mb-6 max-w-4xl">
+                    Build TypeScript-based AI agents & LLM Apps without any
+                    cost. No pricing, no limits.
                   </p>
-                  <p className="text-xs landing-xs:text-lg leading-relaxed">
-                    The pricing is for{" "}
-                    <span className="text-orange-400 font-medium">
-                      VoltOps LLM Observability
-                    </span>
-                    , a framework-agnostic monitoring and analytics platform.
-                  </p>
-                  <div className="mt-4 landing-xs:mt-3 flex flex-col sm:flex-row gap-3 landing-xs:gap-2 text-left ">
-                    <a
-                      href="/voltops-llm-observability-docs/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center  border-solid border-orange-500/20 text-orange-400 font-medium px-4 py-2 landing-xs:px-3 landing-xs:py-1.5 rounded-lg border border-orange-500/30 hover:bg-orange-500/30 transition-colors no-underline text-xs landing-xs:text-sm"
-                    >
-                      VoltOps LLM Observability Docs
-                      <ArrowTopRightOnSquareIcon className="w-4 h-4 landing-xs:w-3 landing-xs:h-3 ml-2 landing-xs:ml-1" />
-                    </a>
+                  <div className="flex flex-col sm:flex-row gap-4 landing-xs:gap-3">
                     <a
                       href="/docs/"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center  border-solid border-emerald-500/20 text-emerald-400 font-medium px-4 py-2 landing-xs:px-3 landing-xs:py-1.5 rounded-lg border border-emerald-500/30 hover:bg-emerald-500/30 transition-colors no-underline text-xs landing-xs:text-sm"
+                      className="inline-flex items-center border-solid border-emerald-500/30 text-emerald-400 font-medium px-4 py-2 landing-xs:px-3 landing-xs:py-1.5 rounded-lg border hover:bg-emerald-500/10 transition-colors no-underline text-sm"
                     >
-                      VoltAgent Core Framework Docs
+                      VoltAgent Docs
+                      <ArrowTopRightOnSquareIcon className="w-6 h-6 landing-xs:w-4 landing-xs:h-4 ml-3 landing-xs:ml-2" />
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pricing Header */}
+
+              <div className="flex items-center mb-4">
+                <span className="bg-orange-400 text-gray-900 text-xs font-bold px-4 py-2 rounded-full ">
+                  ENTERPRISE GRADE OBSERVABILITY
+                </span>
+              </div>
+
+              <h1 className="text-4xl landing-xs:text-xl landing-sm:text-4xl md:text-5xl lg:text-5xl text-left font-bold mb-4 landing-md:mb-6">
+                <span className="text-orange-400">
+                  VoltOps LLM Observability Platform
+                </span>
+              </h1>
+              <p className="text-xl landing-xs:text-base text-left landing-sm:text-lg text-gray-400 leading-relaxed mb-8 landing-xs:mb-6 max-w-3xl">
+                Track, debug, test, monitor and optimize your AI app & agents
+                performance with{" "}
+                <span className="text-orange-400 font-medium">VoltOps</span>.
+                Works with JS/TS, Python, Vercel AI SDK and various frameworks,
+                not just VoltAgent.
+              </p>
+
+              {/* Observability Details */}
+              <div className="text-left mb-8 landing-xs:mb-6">
+                <div className="bg-gradient-to-r from-orange-500/10 to-orange-600/10 border border-orange-500/20 rounded-2xl landing-xs:rounded-lg">
+                  <div className="flex flex-col sm:flex-row gap-3 landing-xs:gap-2">
+                    <a
+                      href="/voltops-llm-observability-docs/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center border-solid border-orange-500/30 text-orange-400 font-medium px-4 py-2 landing-xs:px-3 landing-xs:py-1.5 rounded-lg border hover:bg-orange-500/10 transition-colors no-underline text-sm"
+                    >
+                      VoltOps Docs
+                      <ArrowTopRightOnSquareIcon className="w-4 h-4 landing-xs:w-3 landing-xs:h-3 ml-2 landing-xs:ml-1" />
+                    </a>
+                    <a
+                      href="https://console.voltagent.dev"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center bg-orange-400 text-gray-900 font-semibold px-4 py-2 landing-xs:px-3 landing-xs:py-1.5 rounded-lg hover:bg-orange-300 transition-colors no-underline text-sm"
+                    >
+                      Try VoltOps Free
                       <ArrowTopRightOnSquareIcon className="w-4 h-4 landing-xs:w-3 landing-xs:h-3 ml-2 landing-xs:ml-1" />
                     </a>
                   </div>
@@ -136,7 +155,13 @@ export default function Pricing(): JSX.Element {
         </section>
 
         {/* Pricing Section */}
-        <PricingSection />
+        <PricingSection
+          primaryColor="orange-400"
+          primaryColorHover="orange-300"
+          primaryColorBorder="orange-500/30"
+          primaryColorShadow="orange-400/20"
+          primaryColorText="orange-500"
+        />
 
         {/* FAQ Section */}
         <section className="landing-xs:pt-8 landing-sm:pt-16 landing-md:pt-20 px-4 landing-xs:px-3 landing-sm:px-6">

@@ -7,7 +7,21 @@ import { motion } from "framer-motion";
 import React, { useState } from "react";
 import PricingCalculatorModal from "./PricingCalculatorModal";
 
-const PricingSection = () => {
+interface PricingSectionProps {
+  primaryColor?: string;
+  primaryColorHover?: string;
+  primaryColorBorder?: string;
+  primaryColorShadow?: string;
+  primaryColorText?: string;
+}
+
+const PricingSection = ({
+  primaryColor = "emerald-400",
+  primaryColorHover = "emerald-300",
+  primaryColorBorder = "emerald-500/30",
+  primaryColorShadow = "emerald-400/20",
+  primaryColorText = "emerald-500",
+}: PricingSectionProps) => {
   const [calculatorOpen, setCalculatorOpen] = useState(false);
   const pricingTiers = [
     {
@@ -219,7 +233,9 @@ const PricingSection = () => {
   const renderFeatureValue = (value: boolean | string) => {
     if (typeof value === "boolean") {
       return value ? (
-        <CheckCircleIcon className="w-4 h-4 landing-xs:w-3 landing-xs:h-3 landing-sm:w-5 landing-sm:h-5 text-emerald-400 mx-auto" />
+        <CheckCircleIcon
+          className={`w-4 h-4 landing-xs:w-3 landing-xs:h-3 landing-sm:w-5 landing-sm:h-5 text-${primaryColor} mx-auto`}
+        />
       ) : (
         <XMarkIcon className="w-4 h-4 landing-xs:w-3 landing-xs:h-3 landing-sm:w-5 landing-sm:h-5 text-gray-500 mx-auto" />
       );
@@ -227,7 +243,9 @@ const PricingSection = () => {
 
     if (value === "soon") {
       return (
-        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-500 border border-emerald-500/30">
+        <span
+          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-${primaryColorText}/20 text-${primaryColorText} border border-${primaryColorBorder}`}
+        >
           Soon
         </span>
       );
@@ -251,8 +269,11 @@ const PricingSection = () => {
             transition={{ duration: 0.5 }}
           >
             <div className="text-left mb-8 landing-xs:mb-6 landing-sm:mb-12">
-              <h2 className="text-lg landing-xs:text-base landing-sm:text-xl landing-md:text-2xl landing-lg:text-3xl text-emerald-500 font-bold mb-3 landing-xs:mb-2 landing-sm:mb-4">
-                Simple, Transparent VoltOps Pricing
+              <h2
+                className={`text-lg landing-xs:text-base landing-sm:text-xl landing-md:text-2xl landing-lg:text-3xl text-${primaryColorText} font-bold mb-3 landing-xs:mb-2 landing-sm:mb-4`}
+              >
+                <span className="text-[#DCDCDC]">Simple, Transparent</span>{" "}
+                VoltOps <span className="text-[#DCDCDC]">Pricing</span>
               </h2>
               <p className="text-gray-400 max-w-3xl text-sm landing-xs:text-xs landing-sm:text-base landing-md:text-lg">
                 Start free, scale as you grow.
@@ -268,9 +289,9 @@ const PricingSection = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className={`relative rounded-lg border-solid border-2 bg-[#191c24] backdrop-blur-sm transition-all duration-300 hover:border-emerald-400/50 ${
+              className={`relative rounded-lg border-solid border-2 bg-[#191c24] backdrop-blur-sm transition-all duration-300 hover:border-${primaryColor}/50 ${
                 tier.popular
-                  ? "border-emerald-400 shadow-lg shadow-emerald-400/20"
+                  ? `border-${primaryColor} shadow-lg shadow-${primaryColorShadow}`
                   : "border-gray-700/50"
               }`}
             >
@@ -298,8 +319,8 @@ const PricingSection = () => {
                   }}
                   className={`w-full inline-flex mb-4 landing-xs:mb-3 landing-sm:mb-6 items-center justify-center no-underline border-solid border font-semibold rounded transition-colors cursor-pointer px-3 landing-xs:px-2 landing-sm:px-4 py-2 landing-xs:py-1.5 landing-sm:py-3 text-sm landing-xs:text-xs landing-sm:text-base ${
                     tier.buttonVariant === "primary"
-                      ? "bg-emerald-400 text-gray-900 border-emerald-400 hover:bg-emerald-300"
-                      : "bg-emerald-400/10 text-emerald-400 border-emerald-400/20 hover:bg-emerald-400/20"
+                      ? `bg-${primaryColor} text-gray-900 border-${primaryColor} hover:bg-${primaryColorHover}`
+                      : `bg-${primaryColor}/10 text-${primaryColor} border-${primaryColorBorder} hover:bg-${primaryColor}/20`
                   }`}
                 >
                   {tier.buttonText}
@@ -317,7 +338,9 @@ const PricingSection = () => {
                     )}
                   </div>
                   {tier.name === "Free" && (
-                    <p className="text-emerald-400 text-xs landing-xs:text-xs mt-1">
+                    <p
+                      className={`text-${primaryColor} text-xs landing-xs:text-xs mt-1`}
+                    >
                       No credit card required
                     </p>
                   )}
@@ -327,12 +350,14 @@ const PricingSection = () => {
                   {tier.features.map((feature) => (
                     <div key={`${tier.name}-${feature}`}>
                       <div className="flex items-start">
-                        <CheckCircleIcon className="w-4 h-4 landing-xs:w-3 landing-xs:h-3 landing-sm:w-5 landing-sm:h-5 text-emerald-400 mr-2 landing-xs:mr-1.5 landing-sm:mr-3 flex-shrink-0" />
+                        <CheckCircleIcon
+                          className={`w-4 h-4 landing-xs:w-3 landing-xs:h-3 landing-sm:w-5 landing-sm:h-5 text-${primaryColor} mr-2 landing-xs:mr-1.5 landing-sm:mr-3 flex-shrink-0`}
+                        />
                         <div className="flex-1 flex items-center justify-between">
                           <span
                             className={`text-xs landing-xs:text-xs landing-sm:text-sm ${
                               feature === "Enterprise only features"
-                                ? "text-emerald-500 font-medium"
+                                ? `text-${primaryColorText} font-medium`
                                 : "text-gray-300"
                             }`}
                           >
@@ -348,7 +373,7 @@ const PricingSection = () => {
                               }}
                               role="button"
                               tabIndex={0}
-                              className="text-emerald-400 hover:text-emerald-300 text-xs cursor-pointer transition-colors ml-2"
+                              className={`text-${primaryColor} hover:text-${primaryColorHover} text-xs cursor-pointer transition-colors ml-2`}
                             >
                               Calculate
                             </span>
@@ -356,7 +381,9 @@ const PricingSection = () => {
                         </div>
                       </div>
                       {feature === "Up to 10 seats included" && (
-                        <p className="text-emerald-400 text-xs landing-xs:text-xs mt-1 ml-6 landing-xs:ml-4 landing-sm:ml-8">
+                        <p
+                          className={`text-${primaryColor} text-xs landing-xs:text-xs mt-1 ml-6 landing-xs:ml-4 landing-sm:ml-8`}
+                        >
                           $50 per additional seat
                         </p>
                       )}
@@ -380,7 +407,9 @@ const PricingSection = () => {
                   <th className="text-center py-3 landing-xs:py-2 landing-sm:py-4 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-8 text-xs landing-xs:text-xs landing-sm:text-sm font-semibold text-gray-300 bg-[#191c24] w-[26.67%]">
                     Free
                   </th>
-                  <th className="text-center py-3 landing-xs:py-2 landing-sm:py-4 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-8 text-xs landing-xs:text-xs landing-sm:text-sm font-semibold text-emerald-400 bg-[#191c24] w-[26.67%]">
+                  <th
+                    className={`text-center py-3 landing-xs:py-2 landing-sm:py-4 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-8 text-xs landing-xs:text-xs landing-sm:text-sm font-semibold text-${primaryColor} bg-[#191c24] w-[26.67%]`}
+                  >
                     Pro
                   </th>
                   <th className="text-center py-3 landing-xs:py-2 landing-sm:py-4 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-8 text-xs landing-xs:text-xs landing-sm:text-sm font-semibold text-gray-300 bg-[#191c24] w-[26.67%]">
@@ -394,7 +423,7 @@ const PricingSection = () => {
                     <tr className="border-b border-gray-700/30">
                       <td
                         colSpan={4}
-                        className="py-3 landing-xs:py-2 landing-sm:py-4 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-8 text-xs landing-xs:text-xs landing-sm:text-sm font-semibold text-emerald-400 bg-gray-800/30"
+                        className={`py-3 landing-xs:py-2 landing-sm:py-4 px-3 landing-xs:px-2 landing-sm:px-4 landing-md:px-8 text-xs landing-xs:text-xs landing-sm:text-sm font-semibold text-${primaryColor} bg-gray-800/30`}
                       >
                         {category.category}
                       </td>
@@ -441,7 +470,7 @@ const PricingSection = () => {
               href="https://forms.gle/BrnyFF4unP9pZxAh7"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-emerald-400 cursor-pointer hover:underline"
+              className={`text-${primaryColor} cursor-pointer hover:underline`}
             >
               Contact us
             </a>{" "}
