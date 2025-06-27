@@ -77,25 +77,25 @@ export default function Pricing(): JSX.Element {
             >
               {/* Free Framework Notice - Moved to top */}
               <div className="text-left mb-12 landing-xs:mb-8">
-                <div className="bg-gradient-to-r from-emerald-500/15 to-blue-500/15 border border-emerald-500/30 rounded-3xl landing-xs:rounded-xl ">
-                  <div className="flex items-center mb-4">
-                    <span className="bg-emerald-400 text-gray-900 text-xs font-bold px-4 py-2 rounded-full mr-4 ">
+                <div className="bg-gradient-to-r from-emerald-500/15 to-blue-500/15 border border-emerald-500/30 rounded-3xl landing-xs:rounded-xl p-8 landing-xs:p-4 landing-sm:p-6">
+                  <div className="flex items-center justify-center landing-sm:justify-start mb-4 landing-xs:mb-3">
+                    <span className="bg-emerald-400 text-gray-900 text-xs landing-xs:text-xs landing-sm:text-sm font-bold px-4 py-2 landing-xs:px-3 landing-xs:py-1.5 rounded-full">
                       OPEN SOURCE & FREE
                     </span>
                   </div>
-                  <h2 className="text-4xl landing-xs:text-2xl landing-sm:text-3xl md:text-5xl font-bold text-emerald-400 mb-6 landing-xs:mb-4">
+                  <h2 className="text-4xl landing-xs:text-2xl landing-sm:text-3xl md:text-4xl lg:text-5xl font-bold text-emerald-400 mb-6 landing-xs:mb-4 text-center landing-sm:text-left">
                     VoltAgent Core Framework
                   </h2>
-                  <p className="text-xl landing-xs:text-sm text-gray-400 landing-sm:text-base landing-md:text-lg landing-lg:text-xl text-center landing-sm:text-left ">
+                  <p className="text-xl landing-xs:text-sm landing-sm:text-base landing-md:text-lg landing-lg:text-xl text-gray-400 leading-relaxed mb-8 landing-xs:mb-6 max-w-4xl text-center landing-sm:text-left mx-auto landing-sm:mx-0">
                     Build TypeScript-based AI agents & LLM Apps without any
                     cost. No pricing, no limits.
                   </p>
-                  <div className="flex flex-col sm:flex-row gap-4 landing-xs:gap-3">
+                  <div className="flex flex-col sm:flex-row gap-4 landing-xs:gap-3 justify-center landing-sm:justify-start">
                     <a
                       href="/docs/"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center border-solid border-emerald-500/30 text-emerald-400 font-medium px-4 py-2 landing-xs:px-3 landing-xs:py-1.5 rounded-lg border hover:bg-emerald-500/10 transition-colors no-underline text-sm"
+                      className="inline-flex items-center justify-center border-solid border-emerald-500/30 text-emerald-400 font-medium px-4 py-2 landing-xs:px-3 landing-xs:py-1.5 rounded-lg border hover:bg-emerald-500/10 transition-colors no-underline text-sm landing-xs:text-xs w-full sm:w-auto"
                     >
                       VoltAgent Docs
                       <ArrowTopRightOnSquareIcon className="w-6 h-6 landing-xs:w-4 landing-xs:h-4 ml-3 landing-xs:ml-2" />
