@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Layout from "@theme/Layout";
 import { motion } from "framer-motion";
 import PricingSection from "../components/console/PricingSection";
+import PricingCalculatorModal from "../components/console/PricingCalculatorModal";
 import { DotPattern } from "../components/ui/dot-pattern";
 import {
   ArrowTopRightOnSquareIcon,
@@ -10,6 +11,7 @@ import {
 
 export default function Pricing(): JSX.Element {
   const [openFAQ, setOpenFAQ] = useState<number | null>(null);
+  const [calculatorOpen, setCalculatorOpen] = useState(false);
 
   const toggleFAQ = (index: number) => {
     setOpenFAQ(openFAQ === index ? null : index);
@@ -18,9 +20,9 @@ export default function Pricing(): JSX.Element {
   const faqData = [
     {
       question:
-        "My application isn't written in Python or TypeScript. Will VoltOps be helpful?",
+        "My application isn't written in VoltAgent. Will VoltOps be useful?",
       answer:
-        "Yes! VoltOps LLM Observability works with applications written in any programming language. Our REST API and webhook integrations allow you to send traces from Java, C#, Go, Ruby, PHP, or any other language. We also provide SDKs for Python and JavaScript/TypeScript for easier integration.",
+        "Yes! VoltOps LLM Observability works with JS/TS, Python, Vercel AI SDK and various frameworks, not just VoltAgent. Our REST API and webhook integrations allow you to send traces from Java, C#, Go, Ruby, PHP, or any other language.",
     },
     {
       question: "How can VoltOps help with observability and evaluation?",
@@ -34,8 +36,28 @@ export default function Pricing(): JSX.Element {
     },
     {
       question: "How does VoltOps pricing work with trace overages?",
-      answer:
-        "VoltOps Pro plan includes 5,000 traces per month for $50. If you exceed this limit, you'll be charged $10 for every additional 5,000 traces. Use our pricing calculator to estimate your monthly costs based on expected usage. You can set up billing alerts to monitor your usage.",
+      answer: (
+        <span>
+          VoltOps Pro plan includes 5,000 traces per month for $50. If you
+          exceed this limit, you'll be charged $10 for every additional 5,000
+          traces.{" "}
+          <span
+            onClick={() => setCalculatorOpen(true)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                setCalculatorOpen(true);
+              }
+            }}
+            role="button"
+            tabIndex={0}
+            className="text-emerald-400 hover:text-emerald-300  cursor-pointer transition-colors"
+          >
+            Use our pricing calculator
+          </span>{" "}
+          to estimate your monthly costs based on expected usage. You can set up
+          billing alerts to monitor your usage.
+        </span>
+      ),
     },
     {
       question:
@@ -238,7 +260,9 @@ export default function Pricing(): JSX.Element {
                   >
                     <div className="px-6 pb-6 landing-xs:px-3 landing-xs:pb-3 landing-sm:px-5 landing-sm:pb-5">
                       <p className="text-gray-400 leading-relaxed landing-xs:text-xs landing-sm:text-base">
-                        {faq.answer}
+                        {typeof faq.answer === "string"
+                          ? faq.answer
+                          : faq.answer}
                       </p>
                     </div>
                   </motion.div>
@@ -285,6 +309,12 @@ export default function Pricing(): JSX.Element {
             </motion.div>
           </div>
         </section>
+
+        {/* Pricing Calculator Modal */}
+        <PricingCalculatorModal
+          isOpen={calculatorOpen}
+          onClose={() => setCalculatorOpen(false)}
+        />
       </main>
     </Layout>
   );
