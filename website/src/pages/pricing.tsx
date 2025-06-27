@@ -86,7 +86,7 @@ export default function Pricing(): JSX.Element {
                   <h2 className="text-4xl landing-xs:text-2xl landing-sm:text-3xl md:text-5xl font-bold text-emerald-400 mb-6 landing-xs:mb-4">
                     VoltAgent Core Framework
                   </h2>
-                  <p className="text-xl landing-xs:text-base landing-sm:text-lg text-gray-400 leading-relaxed mb-8 landing-xs:mb-6 max-w-4xl">
+                  <p className="text-xl landing-xs:text-sm text-gray-400 landing-sm:text-base landing-md:text-lg landing-lg:text-xl text-center landing-sm:text-left ">
                     Build TypeScript-based AI agents & LLM Apps without any
                     cost. No pricing, no limits.
                   </p>
@@ -108,63 +108,66 @@ export default function Pricing(): JSX.Element {
             </motion.div>
           </div>
         </section>
-        <div className="max-w-7xl mx-auto  text-center px-4 landing-xs:px-3 landing-sm:px-6 border-solid border-gray-700/50 rounded-lg">
+        <div className="max-w-7xl mx-auto  text-center px-2 landing-xs:px-3 landing-sm:px-3 border-solid border-gray-700/50 rounded-lg">
           {/* Clarification Note */}
-          <div className="  bg-gray-800/30 justify-center p-4 w-1/2 mx-auto flex border border-gray-600/40 rounded-b-lg mb-8">
-            <div className="flex items-start space-x-3">
-              <div>
-                <p className="text-gray-300 text-lg font-medium mb-1">
+          <div className="bg-gray-800/30 justify-center p-4 landing-xs:p-3 landing-sm:p-4 w-full landing-sm:w-3/4 landing-md:w-2/3 landing-lg:w-1/2 mx-auto flex border border-gray-600/40 rounded-b-lg mb-8 landing-xs:mb-16">
+            <div className="flex items-start space-x-3 landing-xs:space-x-2">
+              <div className="text-center landing-sm:text-left">
+                <p className="text-gray-300 text-base landing-xs:text-sm landing-sm:text-base landing-md:text-lg font-medium mb-1 landing-xs:mb-0.5">
                   This pricing is for VoltOps LLM Observability Platform only
                 </p>
-                <p className="text-gray-500 text-md mb-0">
+                <p className="text-gray-500 text-sm landing-xs:text-xs landing-sm:text-sm landing-md:text-base mb-0">
                   VoltAgent Core Framework remains completely free with no
                   pricing
                 </p>
               </div>
             </div>
           </div>
-          <div className="flex items-center mb-4">
-            <span className="bg-orange-400 text-gray-900 text-xs font-bold px-4 py-2 rounded-full ">
-              ENTERPRISE GRADE OBSERVABILITY
-            </span>
-          </div>
 
-          <h1 className="text-4xl landing-xs:text-xl landing-sm:text-4xl md:text-5xl lg:text-5xl text-left font-bold mb-4 landing-md:mb-6">
-            <span className="text-orange-400">
-              VoltOps LLM Observability Platform
-            </span>
-          </h1>
+          <div className="px-4">
+            <div className="flex items-center justify-center landing-sm:justify-start mb-4 landing-xs:mb-4">
+              <span className="bg-orange-400 text-gray-900 text-xs landing-xs:text-xs landing-sm:text-xs landing-md:text-sm font-bold px-4 py-2 landing-xs:px-3 landing-xs:py-1.5 rounded-full">
+                ENTERPRISE GRADE OBSERVABILITY
+              </span>
+            </div>
 
-          <p className="text-xl landing-xs:text-base text-left landing-sm:text-lg text-gray-400 leading-relaxed mb-8 landing-xs:mb-6 max-w-3xl">
-            Track, debug, test, monitor and optimize your AI app & agents
-            performance with{" "}
-            <span className="text-orange-400 font-medium">VoltOps</span>. Works
-            with JS/TS, Python, Vercel AI SDK and various frameworks, not just
-            VoltAgent.
-          </p>
+            <h1 className="text-4xl landing-xs:text-2xl landing-sm:text-3xl md:text-4xl lg:text-5xl text-center landing-sm:text-left font-bold mb-4 landing-xs:mb-3 landing-md:mb-6">
+              <span className="text-orange-400">
+                VoltOps LLM Observability Platform
+              </span>
+            </h1>
 
-          {/* Observability Details */}
-          <div className="text-left mb-8 landing-xs:mb-6">
-            <div className="bg-gradient-to-r from-orange-500/10 to-orange-600/10 border border-orange-500/20 rounded-2xl landing-xs:rounded-lg">
-              <div className="flex flex-col sm:flex-row gap-3 landing-xs:gap-2">
-                <a
-                  href="/voltops-llm-observability-docs/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center border-solid border-orange-500/30 text-orange-400 font-medium px-4 py-2 landing-xs:px-3 landing-xs:py-1.5 rounded-lg border hover:bg-orange-500/10 transition-colors no-underline text-sm"
-                >
-                  VoltOps Docs
-                  <ArrowTopRightOnSquareIcon className="w-4 h-4 landing-xs:w-3 landing-xs:h-3 ml-2 landing-xs:ml-1" />
-                </a>
-                <a
-                  href="https://console.voltagent.dev"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center bg-orange-400 text-gray-900 font-semibold px-4 py-2 landing-xs:px-3 landing-xs:py-1.5 rounded-lg hover:bg-orange-300 transition-colors no-underline text-sm"
-                >
-                  Try VoltOps Free
-                  <ArrowTopRightOnSquareIcon className="w-4 h-4 landing-xs:w-3 landing-xs:h-3 ml-2 landing-xs:ml-1" />
-                </a>
+            <p className="text-xl landing-xs:text-sm landing-sm:text-base landing-md:text-lg landing-lg:text-xl text-center landing-sm:text-left text-gray-400 leading-relaxed mb-8 landing-xs:mb-6 max-w-3xl mx-auto landing-sm:mx-0">
+              Track, debug, test, monitor and optimize your AI app & agents
+              performance with{" "}
+              <span className="text-orange-400 font-medium">VoltOps</span>.
+              Works with JS/TS, Python, Vercel AI SDK and various frameworks,
+              not just VoltAgent.
+            </p>
+
+            {/* Observability Details */}
+            <div className="text-center landing-sm:text-left mb-8 landing-xs:mb-6">
+              <div className="bg-gradient-to-r from-orange-500/10 to-orange-600/10 border border-orange-500/20 rounded-2xl landing-xs:rounded-lg ">
+                <div className="flex flex-col sm:flex-row gap-3 landing-xs:gap-2 justify-center landing-sm:justify-start">
+                  <a
+                    href="/voltops-llm-observability-docs/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center border-solid border-orange-500/30 text-orange-400 font-medium px-4 py-2 landing-xs:px-3 landing-xs:py-1.5 rounded-lg border hover:bg-orange-500/10 transition-colors no-underline text-sm"
+                  >
+                    VoltOps Docs
+                    <ArrowTopRightOnSquareIcon className="w-6 h-6 landing-xs:w-4 landing-xs:h-4 ml-3 landing-xs:ml-2" />
+                  </a>
+                  <a
+                    href="https://console.voltagent.dev"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center bg-orange-400 text-gray-900 font-semibold px-4 py-2 landing-xs:px-3 landing-xs:py-1.5 rounded-lg hover:bg-orange-300 transition-colors no-underline text-sm"
+                  >
+                    Try VoltOps Free
+                    <ArrowTopRightOnSquareIcon className="w-6 h-6 landing-xs:w-4 landing-xs:h-4 ml-3 landing-xs:ml-2" />
+                  </a>
+                </div>
               </div>
             </div>
           </div>
