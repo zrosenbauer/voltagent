@@ -105,63 +105,79 @@ export default function Pricing(): JSX.Element {
               </div>
 
               {/* Pricing Header */}
-
-              <div className="flex items-center mb-4">
-                <span className="bg-orange-400 text-gray-900 text-xs font-bold px-4 py-2 rounded-full ">
-                  ENTERPRISE GRADE OBSERVABILITY
-                </span>
-              </div>
-
-              <h1 className="text-4xl landing-xs:text-xl landing-sm:text-4xl md:text-5xl lg:text-5xl text-left font-bold mb-4 landing-md:mb-6">
-                <span className="text-orange-400">
-                  VoltOps LLM Observability Platform
-                </span>
-              </h1>
-              <p className="text-xl landing-xs:text-base text-left landing-sm:text-lg text-gray-400 leading-relaxed mb-8 landing-xs:mb-6 max-w-3xl">
-                Track, debug, test, monitor and optimize your AI app & agents
-                performance with{" "}
-                <span className="text-orange-400 font-medium">VoltOps</span>.
-                Works with JS/TS, Python, Vercel AI SDK and various frameworks,
-                not just VoltAgent.
-              </p>
-
-              {/* Observability Details */}
-              <div className="text-left mb-8 landing-xs:mb-6">
-                <div className="bg-gradient-to-r from-orange-500/10 to-orange-600/10 border border-orange-500/20 rounded-2xl landing-xs:rounded-lg">
-                  <div className="flex flex-col sm:flex-row gap-3 landing-xs:gap-2">
-                    <a
-                      href="/voltops-llm-observability-docs/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center border-solid border-orange-500/30 text-orange-400 font-medium px-4 py-2 landing-xs:px-3 landing-xs:py-1.5 rounded-lg border hover:bg-orange-500/10 transition-colors no-underline text-sm"
-                    >
-                      VoltOps Docs
-                      <ArrowTopRightOnSquareIcon className="w-4 h-4 landing-xs:w-3 landing-xs:h-3 ml-2 landing-xs:ml-1" />
-                    </a>
-                    <a
-                      href="https://console.voltagent.dev"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center bg-orange-400 text-gray-900 font-semibold px-4 py-2 landing-xs:px-3 landing-xs:py-1.5 rounded-lg hover:bg-orange-300 transition-colors no-underline text-sm"
-                    >
-                      Try VoltOps Free
-                      <ArrowTopRightOnSquareIcon className="w-4 h-4 landing-xs:w-3 landing-xs:h-3 ml-2 landing-xs:ml-1" />
-                    </a>
-                  </div>
-                </div>
-              </div>
             </motion.div>
           </div>
         </section>
+        <div className="max-w-7xl mx-auto  text-center px-4 landing-xs:px-3 landing-sm:px-6 border-solid border-gray-700/50 rounded-lg">
+          {/* Clarification Note */}
+          <div className="  bg-gray-800/30 justify-center p-4 w-1/2 mx-auto flex border border-gray-600/40 rounded-b-lg mb-8">
+            <div className="flex items-start space-x-3">
+              <div>
+                <p className="text-gray-300 text-lg font-medium mb-1">
+                  This pricing is for VoltOps LLM Observability Platform only
+                </p>
+                <p className="text-gray-500 text-md mb-0">
+                  VoltAgent Core Framework remains completely free with no
+                  pricing
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center mb-4">
+            <span className="bg-orange-400 text-gray-900 text-xs font-bold px-4 py-2 rounded-full ">
+              ENTERPRISE GRADE OBSERVABILITY
+            </span>
+          </div>
 
-        {/* Pricing Section */}
-        <PricingSection
-          primaryColor="orange-400"
-          primaryColorHover="orange-300"
-          primaryColorBorder="orange-500/30"
-          primaryColorShadow="orange-400/20"
-          primaryColorText="orange-500"
-        />
+          <h1 className="text-4xl landing-xs:text-xl landing-sm:text-4xl md:text-5xl lg:text-5xl text-left font-bold mb-4 landing-md:mb-6">
+            <span className="text-orange-400">
+              VoltOps LLM Observability Platform
+            </span>
+          </h1>
+
+          <p className="text-xl landing-xs:text-base text-left landing-sm:text-lg text-gray-400 leading-relaxed mb-8 landing-xs:mb-6 max-w-3xl">
+            Track, debug, test, monitor and optimize your AI app & agents
+            performance with{" "}
+            <span className="text-orange-400 font-medium">VoltOps</span>. Works
+            with JS/TS, Python, Vercel AI SDK and various frameworks, not just
+            VoltAgent.
+          </p>
+
+          {/* Observability Details */}
+          <div className="text-left mb-8 landing-xs:mb-6">
+            <div className="bg-gradient-to-r from-orange-500/10 to-orange-600/10 border border-orange-500/20 rounded-2xl landing-xs:rounded-lg">
+              <div className="flex flex-col sm:flex-row gap-3 landing-xs:gap-2">
+                <a
+                  href="/voltops-llm-observability-docs/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center border-solid border-orange-500/30 text-orange-400 font-medium px-4 py-2 landing-xs:px-3 landing-xs:py-1.5 rounded-lg border hover:bg-orange-500/10 transition-colors no-underline text-sm"
+                >
+                  VoltOps Docs
+                  <ArrowTopRightOnSquareIcon className="w-4 h-4 landing-xs:w-3 landing-xs:h-3 ml-2 landing-xs:ml-1" />
+                </a>
+                <a
+                  href="https://console.voltagent.dev"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center bg-orange-400 text-gray-900 font-semibold px-4 py-2 landing-xs:px-3 landing-xs:py-1.5 rounded-lg hover:bg-orange-300 transition-colors no-underline text-sm"
+                >
+                  Try VoltOps Free
+                  <ArrowTopRightOnSquareIcon className="w-4 h-4 landing-xs:w-3 landing-xs:h-3 ml-2 landing-xs:ml-1" />
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* Pricing Section */}
+          <PricingSection
+            primaryColor="orange-400"
+            primaryColorHover="orange-300"
+            primaryColorBorder="orange-500/30"
+            primaryColorShadow="orange-400/20"
+            primaryColorText="orange-500"
+          />
+        </div>
 
         {/* FAQ Section */}
         <section className="landing-xs:pt-8 landing-sm:pt-16 landing-md:pt-20 px-4 landing-xs:px-3 landing-sm:px-6">
