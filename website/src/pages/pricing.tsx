@@ -110,7 +110,7 @@ export default function Pricing(): JSX.Element {
         </section>
         <div className="max-w-7xl mx-auto  text-center px-2 landing-xs:px-3 landing-sm:px-3 border-solid border-gray-700/50 rounded-lg">
           {/* Clarification Note */}
-          <div className="bg-gray-800/30 justify-center p-4 landing-xs:p-3 landing-sm:p-4 w-full landing-sm:w-3/4 landing-md:w-2/3 landing-lg:w-1/2 mx-auto flex border border-gray-600/40 rounded-b-lg mb-8 landing-xs:mb-16">
+          <div className="bg-gray-800/30 backdrop-blur-md justify-center p-4 landing-xs:p-3 landing-sm:p-4 w-full landing-sm:w-3/4 landing-md:w-2/3 landing-lg:w-1/2 mx-auto flex border border-gray-600/40 rounded-b-2xl mb-8 landing-xs:mb-16">
             <div className="flex items-start space-x-3 landing-xs:space-x-2">
               <div className="text-center landing-sm:text-left">
                 <p className="text-gray-300 text-base landing-xs:text-sm landing-sm:text-base landing-md:text-lg font-medium mb-1 landing-xs:mb-0.5">
@@ -124,7 +124,7 @@ export default function Pricing(): JSX.Element {
             </div>
           </div>
 
-          <div className="px-4">
+          <div className="px-8">
             <div className="flex items-center justify-center landing-sm:justify-start mb-4 landing-xs:mb-4">
               <span className="bg-orange-400 text-gray-900 text-xs landing-xs:text-xs landing-sm:text-xs landing-md:text-sm font-bold px-4 py-2 landing-xs:px-3 landing-xs:py-1.5 rounded-full">
                 ENTERPRISE GRADE OBSERVABILITY
