@@ -53,7 +53,7 @@ Run the example:
 
 ```bash
 npm create voltagent-app@latest -- --example with-chroma
-cd voltagent-example-with-chroma
+cd with-chroma
 cp .env.example .env  # Add your OPENAI_API_KEY
 npm run dev
 ```
@@ -64,7 +64,7 @@ No server setup needed! Just configure your environment:
 
 ```bash
 npm create voltagent-app@latest -- --example with-chroma
-cd voltagent-example-with-chroma
+cd with-chroma
 cp .env.example .env  # Add OPENAI_API_KEY, CHROMA_API_KEY, CHROMA_TENANT, CHROMA_DATABASE
 npm run dev
 ```

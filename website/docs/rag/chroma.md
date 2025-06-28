@@ -22,7 +22,7 @@ Create a new VoltAgent project with Chroma integration:
 
 ```bash
 npm create voltagent-app@latest -- --example with-chroma
-cd voltagent-example-with-chroma
+cd with-chroma
 ```
 
 This creates a complete VoltAgent + Chroma setup with sample data and two different agent configurations.
