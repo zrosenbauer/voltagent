@@ -61,11 +61,20 @@ The console provides several views and features to enhance observability:
 ### Create & Run Your VoltAgent Application
 
 - First, create a new project if you haven't already using the quick start command:
+
   ```bash
   npm create voltagent-app@latest my-agent-app
   cd my-agent-app
   ```
-  _(The `create-voltagent-app` tool will typically prompt you for necessary API keys and create a `.env` file for you. If you need to add keys manually later, create or edit the `.env` file in your project root, e.g., `OPENAI_API_KEY=your_key`)_
+
+- **Add your API key**: Create or edit the `.env` file in your project root and add your OpenAI API key:
+
+  ```bash
+  OPENAI_API_KEY=your-api-key-here
+  ```
+
+  _Get your API key from [OpenAI Platform](https://platform.openai.com/api-keys)_
+
 - Then, run your VoltAgent application locally. When you run the `dev` command (e.g., `npm run dev`), you should see the VoltAgent server startup message in your terminal:
 
   ```bash
