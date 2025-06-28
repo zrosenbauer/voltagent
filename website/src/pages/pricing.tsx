@@ -8,6 +8,7 @@ import {
   ArrowTopRightOnSquareIcon,
   ChevronDownIcon,
 } from "@heroicons/react/24/outline";
+import { TwoBlocks } from "../components/two-blocks-pricing";
 
 export default function Pricing(): JSX.Element {
   const [openFAQ, setOpenFAQ] = useState<number | null>(null);
@@ -97,103 +98,13 @@ export default function Pricing(): JSX.Element {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              {/* Free Framework Notice - Moved to top */}
-              <div className="text-left mb-12 landing-xs:mb-8">
-                <div className="bg-gradient-to-r from-emerald-500/15 to-blue-500/15 border border-emerald-500/30 rounded-3xl landing-xs:rounded-xl p-8 landing-xs:p-4 landing-sm:p-6">
-                  <div className="flex items-center justify-center landing-sm:justify-start mb-4 landing-xs:mb-3">
-                    <span className="bg-emerald-400 text-gray-900 text-xs landing-xs:text-xs landing-sm:text-sm font-bold px-4 py-2 landing-xs:px-3 landing-xs:py-1.5 rounded-full">
-                      OPEN SOURCE & FREE
-                    </span>
-                  </div>
-                  <h2 className="text-4xl landing-xs:text-2xl landing-sm:text-3xl md:text-4xl lg:text-5xl font-bold text-emerald-400 mb-6 landing-xs:mb-4 text-center landing-sm:text-left">
-                    VoltAgent Core Framework
-                  </h2>
-                  <p className="text-xl landing-xs:text-sm landing-sm:text-base landing-md:text-lg landing-lg:text-xl text-gray-400 leading-relaxed mb-8 landing-xs:mb-6 max-w-4xl text-center landing-sm:text-left mx-auto landing-sm:mx-0">
-                    Build TypeScript-based AI agents & LLM Apps without any
-                    cost. No pricing, no limits.
-                  </p>
-                  <div className="flex flex-col sm:flex-row gap-4 landing-xs:gap-3 justify-center landing-sm:justify-start">
-                    <a
-                      href="/docs/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center border-solid border-emerald-500/30 text-emerald-400 font-medium px-4 py-2 landing-xs:px-3 landing-xs:py-1.5 rounded-lg border hover:bg-emerald-500/10 transition-colors no-underline text-sm landing-xs:text-xs w-full sm:w-auto"
-                    >
-                      VoltAgent Docs
-                      <ArrowTopRightOnSquareIcon className="w-6 h-6 landing-xs:w-4 landing-xs:h-4 ml-3 landing-xs:ml-2" />
-                    </a>
-                  </div>
-                </div>
-              </div>
+              <TwoBlocks />
 
               {/* Pricing Header */}
             </motion.div>
           </div>
         </section>
-        <div className="max-w-7xl mx-auto  text-center px-2 landing-xs:px-3 landing-sm:px-3 border-solid border-gray-700/50 rounded-lg">
-          {/* Clarification Note */}
-          <div className="bg-gray-800/30 backdrop-blur-md justify-center p-4 landing-xs:p-3 landing-sm:p-4 w-full landing-sm:w-3/4 landing-md:w-2/3 landing-lg:w-1/2 mx-auto flex border border-gray-600/40 rounded-b-2xl mb-8 landing-xs:mb-16">
-            <div className="flex items-start space-x-3 landing-xs:space-x-2">
-              <div className="text-center landing-sm:text-left">
-                <p className="text-gray-300 text-base landing-xs:text-sm landing-sm:text-base landing-md:text-lg font-medium mb-1 landing-xs:mb-0.5">
-                  This pricing is for VoltOps LLM Observability Platform only
-                </p>
-                <p className="text-gray-500 text-sm landing-xs:text-xs landing-sm:text-sm landing-md:text-base mb-0">
-                  VoltAgent Core Framework remains completely free with no
-                  pricing
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="px-8">
-            <div className="flex items-center justify-center landing-sm:justify-start mb-4 landing-xs:mb-4">
-              <span className="bg-orange-400 text-gray-900 text-xs landing-xs:text-xs landing-sm:text-xs landing-md:text-sm font-bold px-4 py-2 landing-xs:px-3 landing-xs:py-1.5 rounded-full">
-                ENTERPRISE GRADE OBSERVABILITY
-              </span>
-            </div>
-
-            <h1 className="text-4xl landing-xs:text-2xl landing-sm:text-3xl md:text-4xl lg:text-5xl text-center landing-sm:text-left font-bold mb-4 landing-xs:mb-3 landing-md:mb-6">
-              <span className="text-orange-400">
-                VoltOps LLM Observability Platform
-              </span>
-            </h1>
-
-            <p className="text-xl landing-xs:text-sm landing-sm:text-base landing-md:text-lg landing-lg:text-xl text-center landing-sm:text-left text-gray-400 leading-relaxed mb-8 landing-xs:mb-6 max-w-3xl mx-auto landing-sm:mx-0">
-              Track, debug, test, monitor and optimize your AI app & agents
-              performance with{" "}
-              <span className="text-orange-400 font-medium">VoltOps</span>.
-              Works with JS/TS, Python, Vercel AI SDK and various frameworks,
-              not just VoltAgent.
-            </p>
-
-            {/* Observability Details */}
-            <div className="text-center landing-sm:text-left mb-8 landing-xs:mb-6">
-              <div className="bg-gradient-to-r from-orange-500/10 to-orange-600/10 border border-orange-500/20 rounded-2xl landing-xs:rounded-lg ">
-                <div className="flex flex-col sm:flex-row gap-3 landing-xs:gap-2 justify-center landing-sm:justify-start">
-                  <a
-                    href="/voltops-llm-observability-docs/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center border-solid border-orange-500/30 text-orange-400 font-medium px-4 py-2 landing-xs:px-3 landing-xs:py-1.5 rounded-lg border hover:bg-orange-500/10 transition-colors no-underline text-sm"
-                  >
-                    VoltOps Docs
-                    <ArrowTopRightOnSquareIcon className="w-6 h-6 landing-xs:w-4 landing-xs:h-4 ml-3 landing-xs:ml-2" />
-                  </a>
-                  <a
-                    href="https://console.voltagent.dev"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center bg-orange-400 text-gray-900 font-semibold px-4 py-2 landing-xs:px-3 landing-xs:py-1.5 rounded-lg hover:bg-orange-300 transition-colors no-underline text-sm"
-                  >
-                    Try VoltOps Free
-                    <ArrowTopRightOnSquareIcon className="w-6 h-6 landing-xs:w-4 landing-xs:h-4 ml-3 landing-xs:ml-2" />
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-
+        <div className="max-w-7xl mx-auto  text-center px-2 landing-xs:px-3 landing-sm:px-3 ">
           {/* Pricing Section */}
           <PricingSection
             primaryColor="orange-400"
@@ -269,44 +180,6 @@ export default function Pricing(): JSX.Element {
                 </motion.div>
               ))}
             </div>
-          </div>
-        </section>
-
-        {/* CTA Section */}
-        <section className="py-20 px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="bg-gradient-to-r from-emerald-400/10 to-emerald-600/10 border border-emerald-400/20 rounded-2xl p-12"
-            >
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                Ready to start monitoring your AI agents?
-              </h2>
-              <p className="text-gray-400 text-lg mb-8 max-w-2xl mx-auto">
-                Start building with the free VoltAgent framework, then add
-                VoltOps monitoring when you're ready to scale in production.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <a
-                  href="https://console.voltagent.dev"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center bg-emerald-400 text-gray-900 font-semibold px-8 py-4 rounded-lg hover:bg-emerald-300 transition-colors no-underline"
-                >
-                  Start VoltOps Free
-                </a>
-                <a
-                  href="https://forms.gle/BrnyFF4unP9pZxAh7"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center bg-transparent text-emerald-400 font-semibold px-8 py-4 rounded-lg border border-emerald-400/30 hover:bg-emerald-400/10 transition-colors no-underline"
-                >
-                  Contact Sales
-                </a>
-              </div>
-            </motion.div>
           </div>
         </section>
 

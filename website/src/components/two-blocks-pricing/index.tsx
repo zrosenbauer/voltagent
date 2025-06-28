@@ -13,6 +13,7 @@ import {
   LlamaIndexLogo,
   AutogenLogo,
 } from "../../../static/img/logos/integrations";
+import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
 
 export function TwoBlocks() {
   return (
@@ -40,7 +41,8 @@ export function TwoBlocks() {
                 DEVELOPMENT & ORCHESTRATION{" "}
               </p>
               <span className="text-gray-300 landing-xs:text-base landing-md:text-lg text-center">
-                Build agents with VoltAgent
+                Build agents with{" "}
+                <span className="text-[#00d992] font-bold">VoltAgent</span>
               </span>
             </div>
 
@@ -50,16 +52,17 @@ export function TwoBlocks() {
                   <p className="landing-xs:text-lg landing-md:text-2xl mb-0 font-bold text-white ">
                     VoltAgent{" "}
                     <span className="landing-xs:text-lg landing-md:text-2xl font-bold text-main-emerald">
-                      Framework
+                      Core Framework
                     </span>
                   </p>
                   <span className="px-2 py-1 bg-[#00d992]/10 text-[#00d992] landing-xs:text-xs text-xs font-medium rounded border border-[#00d992]/20">
                     open-source
                   </span>
                 </div>
-                <p className="text-gray-400 landing-xs:text-sm landing-md:text-lg leading-relaxed">
-                  A TypeScript framework for building and AI agents with
-                  enterprise-grade capabilities and seamless integrations.
+                <p className="text-gray-400 landing-xs:text-sm landing-md:text-lg  text-left leading-relaxed">
+                  A TypeScript framework for building AI agents and LLM apps
+                  with enterprise-grade capabilities, fully free and
+                  open-source.
                 </p>
               </div>
 
@@ -93,12 +96,13 @@ export function TwoBlocks() {
               {/* CTA Button */}
               <button
                 type="button"
-                className="w-full landing-xs:py-2 landing-xs:px-3 landing-md:py-3 landing-md:px-4 text-emerald-400 font-semibold rounded-lg border border-emerald-400/20 bg-emerald-400/10 hover:bg-emerald-400/20 transition-colors duration-200 cursor-pointer landing-xs:text-sm landing-md:text-base"
+                className="w-full landing-xs:py-2 backdrop-blur-md  landing-xs:px-3 landing-md:py-3 landing-md:px-4 text-emerald-400 font-semibold rounded-lg border border-emerald-400/20 bg-emerald-400/10 hover:bg-emerald-400/20 transition-colors duration-200 cursor-pointer landing-xs:text-sm landing-md:text-base"
                 onClick={() => {
                   window.open("https://voltagent.dev/docs/", "_blank");
                 }}
               >
-                Explore VoltAgent
+                <span>DOCS</span>
+                <ArrowTopRightOnSquareIcon className="landing-xs:w-4 landing-xs:h-4 ml-3 landing-xs:ml-2" />
               </button>
             </div>
           </div>
@@ -110,21 +114,22 @@ export function TwoBlocks() {
                 LLM OBSERVABILITY PLATFORM
               </p>
               <span className="text-gray-300 landing-xs:text-base landing-md:text-lg text-center">
-                Gain visibility with VoltOps
+                Enterprise-grade observability with{" "}
+                <span className="text-orange-500 font-bold">VoltOps</span>
               </span>
             </div>
 
             <div className="relative landing-xs:p-4 landing-md:p-6 rounded-lg border border-solid border-white/10 bg-white/5 hover:border-orange-400/30 transition-all duration-300 ">
               <div className="landing-xs:mb-3 landing-md:mb-4">
-                <p className="landing-xs:text-lg landing-md:text-2xl font-bold text-white landing-xs:mb-1 landing-md:mb-2">
+                <p className="landing-xs:text-lg landing-md:text-2xl text-left font-bold text-white landing-xs:mb-1 landing-md:mb-2">
                   VoltOps{" "}
                   <span className="landing-xs:text-lg landing-md:text-2xl font-bold text-orange-500">
                     LLM Observability
                   </span>
                 </p>
-                <p className="text-gray-400 landing-xs:text-sm landing-md:text-lg leading-relaxed">
+                <p className="text-gray-400 landing-xs:text-sm landing-md:text-lg text-left leading-relaxed">
                   Framework-agnostic observability platform for tracing,
-                  debugging, and monitoring AI agents across tech stacks.
+                  debugging, and monitoring AI agents & LLM apps.
                 </p>
               </div>
 
@@ -211,22 +216,35 @@ export function TwoBlocks() {
                 </div>
               </div>
 
-              {/* CTA Button */}
-              <button
-                type="button"
-                className="w-full landing-xs:py-2 landing-xs:px-3 landing-md:py-3 landing-md:px-4 text-orange-400 font-semibold rounded-lg border border-orange-400/20 bg-orange-400/10 hover:bg-orange-400/20 transition-colors duration-200 cursor-pointer landing-xs:text-sm landing-md:text-base"
-                onClick={() => {
-                  const livePreviewSection = document.querySelector(
-                    '[data-section="live-preview"]',
-                  );
-                  if (livePreviewSection) {
-                    livePreviewSection.scrollIntoView({ behavior: "smooth" });
-                    window.dispatchEvent(new CustomEvent("activateVoltOpsTab"));
-                  }
-                }}
-              >
-                See VoltOps in action
-              </button>
+              <div className="flex justify-between gap-6">
+                {/* CTA Buttons */}
+                <button
+                  type="button"
+                  className="w-full landing-xs:py-2 landing-xs:px-3 landing-md:py-3 backdrop-blur-md landing-md:px-4 text-orange-400 font-semibold rounded-lg border border-orange-400/20 bg-orange-400/10 hover:bg-orange-400/20 transition-colors duration-200 cursor-pointer landing-xs:text-sm landing-md:text-base"
+                  onClick={() => {
+                    window.open("/voltops-llm-observability-docs/", "_blank");
+                  }}
+                >
+                  <span>DOCS</span>
+                  <ArrowTopRightOnSquareIcon className="landing-xs:w-4 landing-xs:h-4 ml-3 landing-xs:ml-2" />
+                </button>
+                <button
+                  type="button"
+                  className="w-full landing-xs:py-2 landing-xs:px-3 landing-md:py-3 backdrop-blur-md landing-md:px-4 text-orange-400 font-semibold rounded-lg border border-orange-400/20 bg-orange-400/10 hover:bg-orange-400/20 transition-colors duration-200 cursor-pointer landing-xs:text-sm landing-md:text-base"
+                  onClick={() => {
+                    const voltOpsPricingSection = document.querySelector(
+                      '[data-section="voltops-pricing"]',
+                    );
+                    if (voltOpsPricingSection) {
+                      voltOpsPricingSection.scrollIntoView({
+                        behavior: "smooth",
+                      });
+                    }
+                  }}
+                >
+                  See VoltOps Pricing
+                </button>
+              </div>
             </div>
           </div>
         </div>

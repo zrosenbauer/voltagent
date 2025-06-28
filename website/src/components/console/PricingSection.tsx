@@ -260,27 +260,25 @@ const PricingSection = ({
 
   return (
     <section className="relative w-full py-8 landing-xs:py-6 landing-sm:py-12 landing-md:py-16 landing-lg:py-20">
-      <div className="max-w-7xl mx-auto px-4 landing-xs:px-3 landing-sm:px-6">
-        {/* Header */}
-        <div className="text-left mb-8 landing-xs:mb-6 landing-sm:mb-12 landing-md:mb-16">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="text-left mb-8 landing-xs:mb-6 landing-sm:mb-12">
-              <h2
-                className={`text-lg landing-xs:text-base landing-sm:text-xl landing-md:text-2xl landing-lg:text-3xl text-${primaryColorText} font-bold mb-3 landing-xs:mb-2 landing-sm:mb-4`}
-              >
-                <span className="text-[#DCDCDC]">Simple, Transparent</span>{" "}
-                VoltOps <span className="text-[#DCDCDC]">Pricing</span>
-              </h2>
-              <p className="text-gray-400 max-w-3xl text-sm landing-xs:text-xs landing-sm:text-base landing-md:text-lg">
-                Start free, scale as you grow.
-              </p>
-            </div>
-          </motion.div>
-        </div>
+      <div className="max-w-7xl mx-auto px-4 landing-xs:px-3 landing-sm:px-6 landing-md:px-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          data-section="voltops-pricing"
+        >
+          <div className="text-left mb-8 landing-xs:mb-6 landing-sm:mb-12">
+            <h2
+              className={`text-lg landing-xs:text-base landing-sm:text-xl landing-md:text-2xl landing-lg:text-3xl text-${primaryColorText} font-bold mb-3 landing-xs:mb-2 landing-sm:mb-4`}
+            >
+              <span className="text-[#DCDCDC]">Simple, Transparent</span>{" "}
+              VoltOps <span className="text-[#DCDCDC]">Pricing</span>
+            </h2>
+            <p className="text-gray-400 max-w-3xl text-sm landing-xs:text-xs landing-sm:text-base landing-md:text-lg">
+              Start free, scale as you grow.
+            </p>
+          </div>
+        </motion.div>
 
         <div className="grid grid-cols-1 landing-md:grid-cols-3 gap-4 landing-xs:gap-3 landing-sm:gap-6 landing-md:gap-8 mb-10 landing-xs:mb-8 landing-sm:mb-12 landing-md:mb-16">
           {pricingTiers.map((tier, index) => (
