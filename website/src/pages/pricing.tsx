@@ -98,6 +98,13 @@ export default function Pricing(): JSX.Element {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
+              {/* Pricing Header */}
+              <div className="text-center mb-20 landing-xs:mb-8 landing-sm:mb-24">
+                <h1 className="text-4xl landing-xs:text-3xl landing-sm:text-5xl md:text-6xl lg:text-6xl font-bold text-main-emerald mb-4 landing-xs:mb-3">
+                  Pricing
+                </h1>
+              </div>
+
               <TwoBlocks />
 
               {/* Pricing Header */}
