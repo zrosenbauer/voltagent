@@ -58,7 +58,7 @@ cp .env.example .env  # Add your OPENAI_API_KEY
 npm run dev
 ```
 
-**Option 2: Chroma Cloud**
+**Option 2: [Chroma Cloud](https://www.trychroma.com/)**
 
 No server setup needed! Just configure your environment:
 
