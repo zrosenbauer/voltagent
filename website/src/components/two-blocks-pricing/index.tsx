@@ -17,8 +17,8 @@ import { ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
 
 export function TwoBlocks() {
   return (
-    <div className="text-white relative w-full overflow-hidden landing-xs:mb-16 landing-md:mb-36">
-      <div className="max-w-7xl mx-auto landing-xs:px-3 landing-md:px-4">
+    <div className="text-white relative w-full overflow-hidden landing-xs:mb-8 landing-md:mb-36">
+      <div className="max-w-7xl mx-auto landing-xs:px-2 landing-md:px-4">
         {/* Header Section */}
         {/*  <div className="mb-12">
           <h2 className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-4 font-semibold text-main-emerald tracking-wide uppercase">
@@ -33,25 +33,25 @@ export function TwoBlocks() {
         </div> */}
 
         {/* VoltAgent vs VoltOps Comparison */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 landing-xs:gap-6 landing-md:gap-8 items-stretch">
+        <div className="grid grid-cols-1 lg:grid-cols-2 landing-xs:gap-6 landing-sm:gap-10 landing-md:gap-8 items-stretch">
           {/* VoltAgent - Left Side */}
           <div>
             <div className="flex flex-col items-center gap-2 landing-xs:mb-3 landing-md:mb-4">
-              <p className="text-main-emerald landing-xs:text-lg landing-md:text-xl font-bold mb-0 uppercase tracking-wide text-center">
+              <p className="text-main-emerald landing-xs:text-sm landing-sm:text-lg landing-md:text-xl font-bold mb-0 uppercase tracking-wide text-center leading-tight">
                 DEVELOPMENT & ORCHESTRATION{" "}
               </p>
-              <span className="text-gray-300 landing-xs:text-base landing-md:text-lg text-center">
+              <span className="text-gray-300 landing-xs:text-xs landing-sm:text-base landing-md:text-lg text-center">
                 Build agents with{" "}
                 <span className="text-[#00d992] font-bold">VoltAgent</span>
               </span>
             </div>
 
-            <div className="relative landing-xs:p-4 landing-md:p-6 rounded-lg border border-solid border-white/10  hover:border-[#00d992]/30 transition-all duration-300 ">
-              <div className="landing-xs:mb-3 landing-md:mb-4">
+            <div className="relative landing-xs:p-3 landing-md:p-6 rounded-lg border border-solid border-white/10  hover:border-[#00d992]/30 transition-all duration-300 ">
+              <div className="landing-xs:mb-2 landing-md:mb-4">
                 <div className="flex items-center gap-2 landing-xs:mb-1 landing-md:mb-2">
-                  <p className="landing-xs:text-lg landing-md:text-2xl mb-0 font-bold text-white ">
+                  <p className="landing-xs:text-base landing-md:text-2xl mb-0 font-bold text-white ">
                     VoltAgent{" "}
-                    <span className="landing-xs:text-lg landing-md:text-2xl font-bold text-main-emerald">
+                    <span className="landing-xs:text-base landing-md:text-2xl font-bold text-main-emerald">
                       Core Framework
                     </span>
                   </p>
@@ -59,7 +59,7 @@ export function TwoBlocks() {
                     open-source
                   </span>
                 </div>
-                <p className="text-gray-400 landing-xs:text-sm landing-md:text-lg  text-left leading-relaxed">
+                <p className="text-gray-400 landing-xs:text-xs landing-md:text-lg  text-left leading-relaxed">
                   A TypeScript framework for building AI agents and LLM apps
                   with enterprise-grade capabilities, fully free and
                   open-source.
@@ -67,7 +67,7 @@ export function TwoBlocks() {
               </div>
 
               {/* Feature Pills */}
-              <div className="flex flex-wrap gap-2 landing-xs:mb-4 landing-md:mb-6">
+              <div className="flex flex-wrap gap-2 landing-xs:mb-3 landing-md:mb-6">
                 <span className="px-3 py-1 bg-[#00d992]/10 text-[#00d992] text-xs font-medium rounded-full border border-[#00d992]/20">
                   LLMs
                 </span>
@@ -86,9 +86,9 @@ export function TwoBlocks() {
               </div>
 
               {/* Language Icon */}
-              <div className="flex items-center gap-2 landing-xs:mb-4 landing-md:mb-6">
-                <TypeScriptLogo className="landing-xs:w-5 landing-xs:h-5 landing-md:w-6 landing-md:h-6" />
-                <span className="text-gray-300 landing-xs:text-sm text-sm">
+              <div className="flex items-center gap-2 landing-xs:mb-3 landing-md:mb-6">
+                <TypeScriptLogo className="landing-xs:w-4 landing-xs:h-4 landing-md:w-6 landing-md:h-6" />
+                <span className="text-gray-300 landing-xs:text-xs text-sm">
                   Built with TypeScript
                 </span>
               </div>
@@ -96,13 +96,13 @@ export function TwoBlocks() {
               {/* CTA Button */}
               <button
                 type="button"
-                className="w-full landing-xs:py-2 backdrop-blur-md  landing-xs:px-3 landing-md:py-3 landing-md:px-4 text-emerald-400 font-semibold rounded-lg border border-emerald-400/20 bg-emerald-400/10 hover:bg-emerald-400/20 transition-colors duration-200 cursor-pointer landing-xs:text-sm landing-md:text-base"
+                className="w-full landing-xs:py-1.5 backdrop-blur-md  landing-xs:px-3 landing-md:py-3 landing-md:px-4 text-emerald-400 font-semibold rounded-lg border border-emerald-400/20 bg-emerald-400/10 hover:bg-emerald-400/20 transition-colors duration-200 cursor-pointer landing-xs:text-xs landing-md:text-base"
                 onClick={() => {
                   window.open("https://voltagent.dev/docs/", "_blank");
                 }}
               >
                 <span>DOCS</span>
-                <ArrowTopRightOnSquareIcon className="landing-xs:w-4 landing-xs:h-4 ml-3 landing-xs:ml-2" />
+                <ArrowTopRightOnSquareIcon className="landing-xs:w-3 landing-xs:h-3 ml-3 landing-xs:ml-2" />
               </button>
             </div>
           </div>
@@ -110,31 +110,31 @@ export function TwoBlocks() {
           {/* VoltOps - Right Side */}
           <div>
             <div className="flex flex-col items-center gap-2 landing-xs:mb-3 landing-md:mb-4">
-              <p className="text-orange-500 landing-xs:text-lg landing-md:text-xl font-bold mb-0 uppercase tracking-wide text-center">
+              <p className="text-orange-500 landing-xs:text-sm landing-sm:text-lg landing-md:text-xl font-bold mb-0 uppercase tracking-wide text-center leading-tight">
                 LLM OBSERVABILITY PLATFORM
               </p>
-              <span className="text-gray-300 landing-xs:text-base landing-md:text-lg text-center">
+              <span className="text-gray-300 landing-xs:text-xs landing-sm:text-base landing-md:text-lg text-center">
                 Enterprise-grade observability with{" "}
                 <span className="text-orange-500 font-bold">VoltOps</span>
               </span>
             </div>
 
-            <div className="relative landing-xs:p-4 landing-md:p-6 rounded-lg border border-solid border-white/10 bg-white/5 hover:border-orange-400/30 transition-all duration-300 ">
-              <div className="landing-xs:mb-3 landing-md:mb-4">
-                <p className="landing-xs:text-lg landing-md:text-2xl text-left font-bold text-white landing-xs:mb-1 landing-md:mb-2">
+            <div className="relative landing-xs:p-3 landing-md:p-6 rounded-lg border border-solid border-white/10 bg-white/5 hover:border-orange-400/30 transition-all duration-300 ">
+              <div className="landing-xs:mb-2 landing-md:mb-4">
+                <p className="landing-xs:text-base landing-md:text-2xl text-left font-bold text-white landing-xs:mb-1 landing-md:mb-2">
                   VoltOps{" "}
-                  <span className="landing-xs:text-lg landing-md:text-2xl font-bold text-orange-500">
+                  <span className="landing-xs:text-base landing-md:text-2xl font-bold text-orange-500">
                     LLM Observability
                   </span>
                 </p>
-                <p className="text-gray-400 landing-xs:text-sm landing-md:text-lg text-left leading-relaxed">
+                <p className="text-gray-400 landing-xs:text-xs landing-md:text-lg text-left leading-relaxed">
                   Framework-agnostic observability platform for tracing,
                   debugging, and monitoring AI agents & LLM apps.
                 </p>
               </div>
 
               {/* Framework Icons - Sliding Animation */}
-              <div className="landing-xs:mb-4 landing-md:mb-6">
+              <div className="landing-xs:mb-3 landing-md:mb-6">
                 <style>{`
                   @keyframes scrollLeftSmall {
                     0% {
@@ -216,21 +216,21 @@ export function TwoBlocks() {
                 </div>
               </div>
 
-              <div className="flex justify-between gap-6">
+              <div className="flex flex-col landing-sm:flex-row justify-between landing-xs:gap-2 landing-sm:gap-6">
                 {/* CTA Buttons */}
                 <button
                   type="button"
-                  className="w-full landing-xs:py-2 landing-xs:px-3 landing-md:py-3 backdrop-blur-md landing-md:px-4 text-orange-400 font-semibold rounded-lg border border-orange-400/20 bg-orange-400/10 hover:bg-orange-400/20 transition-colors duration-200 cursor-pointer landing-xs:text-sm landing-md:text-base"
+                  className="w-full landing-xs:py-1.5 landing-xs:px-3 landing-md:py-3 backdrop-blur-md landing-md:px-4 text-orange-400 font-semibold rounded-lg border border-orange-400/20 bg-orange-400/10 hover:bg-orange-400/20 transition-colors duration-200 cursor-pointer landing-xs:text-xs landing-md:text-base"
                   onClick={() => {
                     window.open("/voltops-llm-observability-docs/", "_blank");
                   }}
                 >
                   <span>DOCS</span>
-                  <ArrowTopRightOnSquareIcon className="landing-xs:w-4 landing-xs:h-4 ml-3 landing-xs:ml-2" />
+                  <ArrowTopRightOnSquareIcon className="landing-xs:w-3 landing-xs:h-3 ml-3 landing-xs:ml-2" />
                 </button>
                 <button
                   type="button"
-                  className="w-full landing-xs:py-2 landing-xs:px-3 landing-md:py-3 backdrop-blur-md landing-md:px-4 text-orange-400 font-semibold rounded-lg border border-orange-400/20 bg-orange-400/10 hover:bg-orange-400/20 transition-colors duration-200 cursor-pointer landing-xs:text-sm landing-md:text-base"
+                  className="w-full landing-xs:py-1.5 landing-xs:px-3 landing-md:py-3 backdrop-blur-md landing-md:px-4 text-orange-400 font-semibold rounded-lg border border-orange-400/20 bg-orange-400/10 hover:bg-orange-400/20 transition-colors duration-200 cursor-pointer landing-xs:text-xs landing-md:text-base"
                   onClick={() => {
                     const voltOpsPricingSection = document.querySelector(
                       '[data-section="voltops-pricing"]',

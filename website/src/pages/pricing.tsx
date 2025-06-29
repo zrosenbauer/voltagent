@@ -91,16 +91,16 @@ export default function Pricing(): JSX.Element {
       <DotPattern dotColor="#94a3b8" dotSize={1.2} spacing={20} />
       <main className="min-h-screen">
         {/* Hero Section */}
-        <section className="relative  px-4">
-          <div className="max-w-7xl mx-auto md:pt-20 pt-8 text-center px-4 landing-xs:px-3 landing-sm:px-6">
+        <section className="relative px-4">
+          <div className="max-w-7xl mx-auto md:pt-20 pt-8 text-center px-4 landing-xs:px-4 landing-sm:px-6">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
               {/* Pricing Header */}
-              <div className="text-center mb-20 landing-xs:mb-8 landing-sm:mb-24">
-                <h1 className="text-4xl landing-xs:text-3xl landing-sm:text-5xl md:text-6xl lg:text-6xl font-bold text-main-emerald mb-4 landing-xs:mb-3">
+              <div className="text-center mb-20 landing-xs:mb-6 landing-sm:mb-16 landing-md:mb-24">
+                <h1 className="text-4xl landing-xs:text-3xl landing-sm:text-5xl md:text-6xl lg:text-6xl font-bold text-main-emerald mb-4 landing-xs:mb-4">
                   Pricing
                 </h1>
               </div>
@@ -123,7 +123,7 @@ export default function Pricing(): JSX.Element {
         </div>
 
         {/* FAQ Section */}
-        <section className="landing-xs:pt-8 landing-sm:pt-16 landing-md:pt-20 px-4 landing-xs:px-3 landing-sm:px-6">
+        <section className="landing-xs:py-8 landing-sm:py-16 landing-md:py-20 px-4 landing-xs:px-3 landing-sm:px-6">
           <div className="max-w-4xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
