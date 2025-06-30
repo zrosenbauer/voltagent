@@ -51,7 +51,7 @@ export default function Pricing(): JSX.Element {
             }}
             role="button"
             tabIndex={0}
-            className="text-emerald-400 hover:text-emerald-300  cursor-pointer transition-colors"
+            className="text-emerald-400 hover:text-emerald-300 cursor-pointer transition-colors"
           >
             Use our pricing calculator
           </span>{" "}
@@ -92,7 +92,7 @@ export default function Pricing(): JSX.Element {
       <main className="min-h-screen">
         {/* Hero Section */}
         <section className="relative px-4">
-          <div className="max-w-7xl mx-auto md:pt-20 pt-8 text-center px-4 landing-xs:px-4 landing-sm:px-6">
+          <div className="max-w-7xl mx-auto md:pt-20 pt-8 text-center px-2 landing-sm:px-6">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
