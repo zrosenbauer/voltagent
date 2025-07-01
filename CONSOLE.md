@@ -1,13 +1,9 @@
 <div align="center">
 <a href="https://voltagent.dev/">
-<img width="1800" alt="435380213-b6253409-8741-462b-a346-834cd18565a9" src="[https://github.com/user-attachments/assets/452a03e7-eeda-4394-9ee7-0ffbcf37245c](https://github.com/user-attachments/assets/9d091b11-7eb5-448c-8574-155d9f20d3c0)" />
+<img width="1800" alt="435380213-b6253409-8741-462b-a346-834cd18565a9" src="https://github.com/user-attachments/assets/9d091b11-7eb5-448c-8574-155d9f20d3c0" />
 </a>
 </div>
-<br/>
-<img width="1500" alt="Frame 48" src="https://github.com/user-attachments/assets/9d091b11-7eb5-448c-8574-155d9f20d3c0" />
 </div>
-
-<br/>
 
 <div align="center">
 
