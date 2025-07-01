@@ -34,9 +34,7 @@ Unlike traditional text-based logging tools, VoltOps visualizes your agent workf
 
 <br/>
 
-<a href="https://console.voltagent.dev/">
-<img width="1800" alt="VoltOps LLM Observability Platform" src="https://cdn.voltagent.dev/readme/demo.gif" />
-</a>
+
 
 ## What is VoltOps?
 
@@ -56,6 +54,9 @@ Instead of relying on traditional text-based logs that become overwhelming with 
 
 VoltOps transforms the black-box nature of AI agents into transparent, understandable workflows that you can monitor, debug, and optimize.
 
+<br/>
+
+[![VoltAgent VoltOps Platform Demo](https://github.com/user-attachments/assets/0adbec33-1373-4cf4-b67d-825f7baf1cb4)](https://console.voltagent.dev/)
 ## Why VoltOps?
 
 Building AI agents that work reliably in production is fundamentally different from traditional software development. Here's why standard monitoring approaches fall short and how VoltOps solves these challenges:
