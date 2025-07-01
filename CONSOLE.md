@@ -35,19 +35,6 @@ Unlike traditional text-based logging tools, VoltOps visualizes your agent workf
     <br />
 </div>
 
-<div align="center">
-<a href="https://console.voltagent.dev/demo">
-<img width="896" alt="VoltOps Interactive Agent Workflow Visualization" src="https://cdn.voltagent.dev/readme/demo.gif" />
-</a>
-</div>
-
-Access the hosted VoltOps at: [https://console.voltagent.dev](https://console.voltagent.dev/)
-
-[![VoltOps LLM Observability Platform](https://github.com/user-attachments/assets/0adbec33-1373-4cf4-b67d-825f7baf1cb4)](https://console.voltagent.dev/)
-
-You can also try a live interactive demo here: [https://console.voltagent.dev/demo](https://console.voltagent.dev/demo)
-
-<div align="center">
 <a href="https://console.voltagent.dev/">
 <img width="1800" alt="VoltOps LLM Observability Platform" src="https://cdn.voltagent.dev/readme/demo.gif" />
 </a>
@@ -119,26 +106,26 @@ npm create voltagent-app@latest my-agent-app
 cd my-agent-app
 ```
 
-- **Add your API key**: Create or edit the `.env` file in your project root and add your OpenAI API key:
+**Add your API key**: Create or edit the `.env` file in your project root and add your OpenAI API key:
 
-  ```bash
-  OPENAI_API_KEY=your-api-key-here
-  ```
+```bash
+OPENAI_API_KEY=your-api-key-here
+```
 
-  _Get your API key from [OpenAI Platform](https://platform.openai.com/api-keys)_
+_Get your API key from [OpenAI Platform](https://platform.openai.com/api-keys)_
 
-- Then, run your VoltAgent application locally. When you run the `dev` command (e.g., `npm run dev`), you should see the VoltAgent server startup message in your terminal:
+Then, run your VoltAgent application locally. When you run the `dev` command (e.g., `npm run dev`), you should see the VoltAgent server startup message in your terminal:
 
-  ```bash
-  ══════════════════════════════════════════════════
-    VOLTAGENT SERVER STARTED SUCCESSFULLY
-  ══════════════════════════════════════════════════
-    ✓ HTTP Server: http://localhost:3141
+```bash
+══════════════════════════════════════════════════
+  VOLTAGENT SERVER STARTED SUCCESSFULLY
+══════════════════════════════════════════════════
+  ✓ HTTP Server: http://localhost:3141
 
-    VoltOps Platform:    https://console.voltagent.dev
-  ══════════════════════════════════════════════════
-  [VoltAgent] All packages are up to date
-  ```
+  VoltOps Platform:    https://console.voltagent.dev
+══════════════════════════════════════════════════
+[VoltAgent] All packages are up to date
+```
 
 Visit [console.voltagent.dev](https://console.voltagent.dev/) to see your agent in real-time.
 
@@ -392,49 +379,6 @@ VoltOps is developed by the team behind [VoltAgent](https://github.com/voltagent
 
 Every feature in VoltOps comes from actual pain points experienced while building and maintaining AI agent applications, not theoretical problems. We focus on what actually matters when your agent fails in production and you need to understand why immediately.
 
-## Getting Started
-
-Ready to gain visibility into your AI agents?
-
-### Quick Start Options
-
-1. **[Try the Live Demo](https://console.voltagent.dev/demo)** - Experience VoltOps with no setup required
-2. **[Read the Documentation](https://voltagent.dev/docs/observability/)** - Learn about integration options
-3. **[Join our Discord](https://s.voltagent.dev/discord)** - Get help from our community
-4. **[Start Building](https://console.voltagent.dev)** - Sign up and begin monitoring your agents
-
-### For VoltAgent Users (Detailed Setup)
-
-If you're using VoltAgent Framework, follow these steps for complete setup:
-
-```bash
-npm create voltagent-app@latest my-agent-app
-cd my-agent-app
-```
-
-**Add your API key**: Create or edit the `.env` file in your project root and add your OpenAI API key:
-
-```bash
-OPENAI_API_KEY=your-api-key-here
-```
-
-_Get your API key from [OpenAI Platform](https://platform.openai.com/api-keys)_
-
-Then, run your VoltAgent application locally. When you run the `dev` command (e.g., `npm run dev`), you should see the VoltAgent server startup message in your terminal:
-
-```bash
-══════════════════════════════════════════════════
-  VOLTAGENT SERVER STARTED SUCCESSFULLY
-══════════════════════════════════════════════════
-  ✓ HTTP Server: http://localhost:3141
-
-  VoltOps Platform:    https://console.voltagent.dev
-══════════════════════════════════════════════════
-[VoltAgent] All packages are up to date
-```
-
-Visit [console.voltagent.dev](https://console.voltagent.dev/) to see your agent in real-time.
-
 ## Enterprise
 
 VoltOps offers enterprise features for teams that need advanced capabilities:
@@ -458,13 +402,3 @@ VoltOps offers enterprise features for teams that need advanced capabilities:
 - **[Documentation](https://voltagent.dev/docs/observability/)**: Comprehensive guides and API references
 - **[GitHub Issues](https://github.com/voltagent/voltagent/issues)**: Report bugs or request features
 - **[Twitter](https://twitter.com/voltagent_dev)**: Follow us for updates and announcements
-
----
-
-<div align="center">
-
-**Start monitoring your AI agents today with VoltOps**
-
-[Get Started](https://console.voltagent.dev) • [Live Demo](https://console.voltagent.dev/demo) • [Documentation](https://voltagent.dev/docs/observability/)
-
-</div>
