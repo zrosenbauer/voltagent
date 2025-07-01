@@ -3,7 +3,26 @@
 <img width="1800" alt="435380213-b6253409-8741-462b-a346-834cd18565a9" src="https://github.com/user-attachments/assets/9d091b11-7eb5-448c-8574-155d9f20d3c0" />
 </a>
 </div>
+<br/>
+
+<div align="center">
+    <a href="https://voltagent.dev">Home Page</a> |
+    <a href="https://voltagent.dev/docs/">Documentation</a> |
+    <a href="https://github.com/voltagent/voltagent/tree/main/examples">Examples</a> |
+    <a href="https://s.voltagent.dev/discord">Discord</a> |
+    <a href="https://voltagent.dev/blog/">Blog</a>
 </div>
+</div>
+
+<br/>
+
+<div align="center">
+    <strong>VoltOps is a framework-agnostic LLM observability platform designed to help you monitor, debug, and improve AI agents across any technology stack.</strong>
+Unlike traditional text-based logging tools, VoltOps visualizes your agent workflows as interactive flowcharts, making complex multi-agent interactions instantly understandable.
+
+</div>
+
+<br/>
 
 <div align="center">
 
@@ -15,19 +34,9 @@
 
 <br/>
 
-<div align="center">
-    <strong>VoltOps is a framework-agnostic LLM observability platform designed to help you monitor, debug, and improve AI agents across any technology stack.</strong><br>
-Unlike traditional text-based logging tools, VoltOps visualizes your agent workflows as interactive flowcharts, making complex multi-agent interactions instantly understandable.
-    <br />
-    <br />
-</div>
-
 <a href="https://console.voltagent.dev/">
 <img width="1800" alt="VoltOps LLM Observability Platform" src="https://cdn.voltagent.dev/readme/demo.gif" />
 </a>
-
-<br/>
-<br/>
 
 ## What is VoltOps?
 
