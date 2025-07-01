@@ -1,17 +1,10 @@
 <div align="center">
 <a href="https://voltagent.dev/">
-<img width="1800" alt="435380213-b6253409-8741-462b-a346-834cd18565a9" src="https://github.com/user-attachments/assets/452a03e7-eeda-4394-9ee7-0ffbcf37245c" />
+<img width="1800" alt="435380213-b6253409-8741-462b-a346-834cd18565a9" src="[https://github.com/user-attachments/assets/452a03e7-eeda-4394-9ee7-0ffbcf37245c](https://github.com/user-attachments/assets/9d091b11-7eb5-448c-8574-155d9f20d3c0)" />
 </a>
 </div>
 <br/>
-
-<div align="center">
-    <a href="https://console.voltagent.dev">VoltOps Platform</a> |
-    <a href="https://voltagent.dev/docs/observability/">Documentation</a> |
-    <a href="https://console.voltagent.dev/demo">Live Demo</a> |
-    <a href="https://s.voltagent.dev/discord">Discord</a> |
-    <a href="https://voltagent.dev/blog/">Blog</a>
-</div>
+<img width="1500" alt="Frame 48" src="https://github.com/user-attachments/assets/9d091b11-7eb5-448c-8574-155d9f20d3c0" />
 </div>
 
 <br/>
