@@ -55,7 +55,7 @@ _Full transparency: I'm one of the maintainers of VoltOps, and you're reading th
 
 VoltOps was created to address the specific challenges we faced when monitoring LLM applications. When I first started building AI agents, I kept running into the same problem: _I had no idea what my agents were actually doing in production._
 
-Traditional APM tools excel at monitoring web applications - tracking HTTP requests, response times, and infrastructure metrics. But when you're dealing with AI agents making dynamic decisions about which tools to call and when, you need a different kind of visibility. Understanding why an agent chose to call the weather API instead of the calendar API requires seeing the reasoning process, not just the API call logs.
+Traditional APM tools excel at monitoring web applications tracking HTTP requests, response times, and infrastructure metrics. But when you're dealing with AI agents making dynamic decisions about which tools to call and when, you need a different kind of visibility. Understanding why an agent chose to call the weather API instead of the calendar API requires seeing the reasoning process, not just the API call logs.
 
 So we built VoltOps to fill this gap.
 
@@ -179,10 +179,10 @@ Datadog is particularly valuable when you need to understand how your AI applica
 
 Look, LLM observability is still evolving. What we have today is _way_ better than the chaos of six months ago, but we're nowhere near where we need to be.
 
-My advice? Start simple. Pick a tool that fits your current workflow, get some basic monitoring going, and iterate. Don't wait for the perfect solution - it doesn't exist yet.
+My advice? Start simple. Pick a tool that fits your current workflow, get some basic monitoring going, and iterate. Don't wait for the perfect solution, it doesn't exist yet.
 
 And whatever you do, don't deploy LLM apps to production without _some_ kind of monitoring. Trust me on this one. I've been there, debugged that nightmare, and it's exactly why we built VoltOps in the first place.
 
-The future of AI applications depends on our ability to understand what they're actually doing. These tools - all of them - are our first step toward that goal.
+The future of AI applications depends on our ability to understand what they're actually doing. These tools, all of them are our first step toward that goal.
 
 _What observability tools are you using? Drop us a line or join our [Discord community](https://s.voltagent.dev/discord) - we're always curious about what's working (or not working) for other developers building AI applications._
