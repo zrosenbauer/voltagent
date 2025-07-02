@@ -169,7 +169,6 @@ export class VoltOpsClient implements IVoltOpsClient {
     }
 
     // Priority 3: Fallback to default instructions
-    devLogger.warn(`[Agent ${agentId}] No VoltOpsClient available, using fallback instructions`);
     return {
       getPrompt: async () => {
         console.log(`
