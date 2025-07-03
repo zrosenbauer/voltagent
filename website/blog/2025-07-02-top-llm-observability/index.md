@@ -49,7 +49,9 @@ After building AI apps for the past year and going through this pain myself, I'v
 
 So here's my honest take on the **top 5 LLM observability tools** that actually work in 2025. No marketing fluff, just real experience from someone who's been in the trenches.
 
-## #1 VoltOps - The Game Changer
+## VoltOps
+
+![voltops](https://cdn.voltagent.dev/2025-07-02-top-llm-observability/voltops.png)
 
 _Full transparency: I'm one of the maintainers of VoltOps, and you're reading this on the VoltAgent blog. So yeah, I'm obviously biased. But let me explain why we built this thing._
 
@@ -97,6 +99,8 @@ Even as someone who works on the platform, I regularly discover new insights abo
 
 ## LangSmith - The LangChain Native
 
+![langchain](https://cdn.voltagent.dev/2025-07-02-top-llm-observability/langchain.png)
+
 If you're already deep in the LangChain ecosystem, LangSmith is the natural choice. It's made by the LangChain team, so the integration feels native.
 
 ### What It Does Well
@@ -117,6 +121,8 @@ LangSmith excels in LangChain-heavy environments. The debugging capabilities are
 
 ## Weights & Biases - The ML Veteran
 
+![wb](https://cdn.voltagent.dev/2025-07-02-top-llm-observability/wb.png)
+
 W&B has been the go-to platform for ML experiment tracking, and they've expanded their capabilities to cover LLM applications effectively.
 
 ### What Works
@@ -135,7 +141,9 @@ W&B is particularly powerful for research and experimentation phases. If you're 
 
 **Website:** [wandb.ai](https://wandb.ai)
 
-## Arize AI - The Enterprise Choice
+## Arize AI
+
+![arize](https://cdn.voltagent.dev/2025-07-02-top-llm-observability/arize.png)
 
 Arize brings enterprise-grade monitoring capabilities to LLM applications, with a focus on production reliability and compliance.
 
@@ -155,7 +163,9 @@ Arize excels in large-scale production environments where reliability and compli
 
 **Website:** [arize.com](https://arize.com)
 
-## Datadog - The Infrastructure Pro
+## Datadog
+
+![datadog](https://cdn.voltagent.dev/2025-07-02-top-llm-observability/datadog.png)
 
 Datadog's APM platform has evolved to support AI applications effectively, leveraging their strong infrastructure monitoring foundation.
 
