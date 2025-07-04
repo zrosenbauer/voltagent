@@ -17,7 +17,6 @@ import { createAsyncIterableStream } from "@voltagent/core";
 import type {
   GenerateObjectResult,
   GenerateTextResult,
-  GenerateTextStepResult,
   ImagePart,
   Message,
   StreamObjectResult,
@@ -119,8 +118,8 @@ export class XSAIProvider implements LLMProvider<string> {
 
   createStepFinishHandler = (onStepFinish?: (step: StepWithContent) => void | Promise<void>) => {
     if (!onStepFinish) return undefined;
-
-    return async (result: GenerateTextStepResult | StreamTextStep) => {
+    // TODO: Handle GenerateTextResult and StreamTextResult
+    return async (result: any) => {
       // Handle text response
       if ("text" in result && result.text) {
         const step = {
@@ -293,7 +292,8 @@ export class XSAIProvider implements LLMProvider<string> {
     const xsaiMessages = options.messages.map(this.toMessage);
 
     const onStepFinishWrapper = options.onStepFinish
-      ? async (result: GenerateTextStepResult) => {
+      ? // TODO: fix type
+        async (result: any) => {
           // For generateObject, we need to wrap text content in a special format
           const handler = this.createStepFinishHandler(async (step) => {
             if (step.type === "text") {
