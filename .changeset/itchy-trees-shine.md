@@ -1,5 +1,5 @@
 ---
-"@voltagent/core": minor
+"@voltagent/core": patch
 ---
 
 feat: add abort signal support for operation cancellation
