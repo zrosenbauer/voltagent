@@ -796,6 +796,86 @@ Use these standardized options to:
 
 The options are applied consistently whether you're using `generateText`, `streamText`, `generateObject`, or `streamObject` methods.
 
+### Cancellation with AbortSignal
+
+**Why?** To provide graceful cancellation of long-running operations like LLM generation, tool execution, or streaming responses. This is essential for user-initiated cancellations, implementing timeouts, and preventing unnecessary work when results are no longer needed.
+
+VoltAgent supports the standard `AbortSignal` API across all generation methods. When an operation is aborted, it immediately stops processing, cancels any ongoing tool executions, and cleans up resources.
+
+```ts
+import { Agent } from "@voltagent/core";
+import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { openai } from "@ai-sdk/openai";
+
+const agent = new Agent({
+  name: "Cancellable Assistant",
+  instructions: "An assistant that supports operation cancellation",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o"),
+});
+
+// Example 1: User-initiated cancellation
+const controller = new AbortController();
+const signal = controller.signal;
+
+// Set up a cancel button or timeout
+const cancelButton = document.getElementById("cancel-btn");
+cancelButton?.addEventListener("click", () => {
+  controller.abort("User cancelled the operation");
+});
+
+try {
+  // Pass the signal to any generation method
+  const response = await agent.generateText("Write a very long story...", {
+    signal, // The operation will be cancelled if signal is aborted
+  });
+  console.log(response.text);
+} catch (error) {
+  if (error.name === "AbortError") {
+    console.log("Operation was cancelled by user");
+  } else {
+    console.error("Generation failed:", error);
+  }
+}
+```
+
+#### Tool Cancellation
+
+When an `AbortSignal` is provided to agent methods, it's automatically propagated to any tools that the agent uses. Tools receive this signal as part of their execution options and can implement cancellation logic:
+
+```ts
+const searchTool = createTool({
+  name: "search_web",
+  description: "Search the web for information",
+  parameters: z.object({
+    query: z.string().describe("The search query"),
+  }),
+  execute: async (args, options) => {
+    // AbortSignal is available in options.signal
+    const signal = options?.signal;
+
+    // Pass signal to cancellable operations like fetch
+    const response = await fetch(`https://api.search.com?q=${args.query}`, {
+      signal: signal,
+    });
+
+    return await response.json();
+  },
+});
+```
+
+This means if you cancel an agent operation, any active tool executions will also be cancelled gracefully if the tools implement signal handling.
+
+**Common Cancellation Scenarios:**
+
+- **User Interface**: Let users cancel long-running operations
+- **Timeouts**: Prevent operations from running too long
+- **Resource Management**: Stop unnecessary work when switching contexts
+- **Error Recovery**: Cancel related operations when one fails
+- **Batch Processing**: Cancel remaining operations when stopping a batch
+
+For detailed examples of implementing cancellable tools, including error handling and best practices, see the [Tools documentation on AbortSignal](./tools.md#cancellable-tools-with-abortsignal).
+
 ### MCP (Model Context Protocol)
 
 **Why?** To enable standardized communication between your agent and external, potentially independent, model/tool servers, promoting interoperability and modular deployment.
