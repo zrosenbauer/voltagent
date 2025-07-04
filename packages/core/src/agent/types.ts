@@ -82,6 +82,29 @@ export type ProviderOptions = {
 };
 
 /**
+ * Configuration for supervisor agents that have subagents
+ */
+export type SupervisorConfig = {
+  /**
+   * Complete custom system message for the supervisor agent
+   * If provided, this completely replaces the default template
+   * Only agents memory section will be appended if includeAgentsMemory is true
+   */
+  systemMessage?: string;
+
+  /**
+   * Whether to include agents memory in the supervisor system message
+   * @default true
+   */
+  includeAgentsMemory?: boolean;
+
+  /**
+   * Additional custom guidelines for the supervisor agent
+   */
+  customGuidelines?: string[];
+};
+
+/**
  * Agent configuration options
  */
 export type AgentOptions = {
@@ -121,11 +144,6 @@ export type AgentOptions = {
   tools?: ToolsDynamicValue;
 
   /**
-   * Sub-agents that this agent can delegate tasks to
-   */
-  subAgents?: SubAgentConfig[];
-
-  /**
    * Maximum number of steps (turns) the agent can take before stopping
    * This overrides any supervisor config maxSteps setting
    */
@@ -150,6 +168,16 @@ export type AgentOptions = {
    * ✨ Benefits: Observability + prompt management + dynamic prompts from console
    */
   telemetryExporter?: VoltAgentExporter;
+
+  /**
+   * Sub-agents that this agent can delegate tasks to
+   */
+  subAgents?: SubAgentConfig[];
+
+  /**
+   * Configuration for supervisor behavior when subAgents are present
+   */
+  supervisorConfig?: SupervisorConfig;
 } & (
   | {
       /**
