@@ -185,6 +185,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
   private readonly supervisorConfig?: SupervisorConfig;
 
   /**
+   * User-defined context passed at agent creation
+   * Can be overridden during execution
+   */
+  private readonly defaultUserContext?: Map<string | symbol, unknown>;
+
+  /**
    * Create a new agent
    */
   constructor(
@@ -237,6 +243,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
 
     // Store supervisor configuration if provided
     this.supervisorConfig = options.supervisorConfig;
+
+    // Store user context if provided
+    this.defaultUserContext = options.userContext;
 
     // Initialize hooks
     if (options.hooks) {
@@ -759,7 +768,9 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     const opContext: OperationContext = {
       operationId: historyEntry.id,
       userContext:
-        (options.parentOperationContext?.userContext || options.userContext) ??
+        (options.parentOperationContext?.userContext ||
+          options.userContext ||
+          this.defaultUserContext) ??
         new Map<string | symbol, unknown>(),
       historyEntry,
       isActive: true,
