@@ -138,6 +138,14 @@ export type AgentOptions = {
   memoryOptions?: MemoryOptions;
 
   /**
+   * Memory instance for storing execution history and telemetry.
+   * If not provided, defaults to LibSQLStorage.
+   * Use InMemoryStorage for environments without filesystem access (e.g., AWS Lambda).
+   * @since 0.1.55
+   */
+  historyMemory?: Memory;
+
+  /**
    * Tools and/or Toolkits that the agent can use
    * Can be static or dynamic based on user context
    */

@@ -255,7 +255,12 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
     }
 
     // Initialize memory manager
-    this.memoryManager = new MemoryManager(this.id, options.memory, options.memoryOptions || {});
+    this.memoryManager = new MemoryManager(
+      this.id,
+      options.memory,
+      options.memoryOptions || {},
+      options.historyMemory,
+    );
 
     // Initialize tool manager with empty array if dynamic, will be resolved later
     const staticTools = typeof options.tools === "function" ? [] : options.tools || [];

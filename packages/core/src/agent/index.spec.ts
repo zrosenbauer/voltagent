@@ -962,6 +962,88 @@ describe("Agent", () => {
     });
   });
 
+  describe("historyMemory configuration", () => {
+    it("should use provided historyMemory instance when specified", () => {
+      const mockHistoryMemory = {
+        setCurrentUserId: vi.fn(),
+        saveMessage: vi.fn(),
+        getMessages: vi.fn(),
+        clearMessages: vi.fn(),
+        getAllUsers: vi.fn(),
+      } as unknown as Memory;
+
+      const agentWithCustomHistoryMemory = new Agent({
+        name: "Test Agent",
+        instructions: "Test instructions",
+        model: mockModel,
+        llm: mockProvider,
+        memory: mockMemory,
+        historyMemory: mockHistoryMemory,
+      });
+
+      // Access the memory manager to verify historyMemory was set correctly
+      const memoryManager = (agentWithCustomHistoryMemory as any).memoryManager;
+      expect(memoryManager.historyMemory).toBe(mockHistoryMemory);
+    });
+
+    it("should use same memory instance for historyMemory when not specified", () => {
+      const agentWithDefaultHistory = new Agent({
+        name: "Test Agent",
+        instructions: "Test instructions",
+        model: mockModel,
+        llm: mockProvider,
+        memory: mockMemory,
+        // historyMemory not specified
+      });
+
+      const memoryManager = (agentWithDefaultHistory as any).memoryManager;
+      // Should use the same memory instance as conversation memory
+      expect(memoryManager.historyMemory).toBe(mockMemory);
+      expect(memoryManager.conversationMemory).toBe(mockMemory);
+    });
+
+    it("should allow same memory instance for both conversation and history", () => {
+      const sharedMemory = {
+        setCurrentUserId: vi.fn(),
+        saveMessage: vi.fn(),
+        getMessages: vi.fn(),
+        clearMessages: vi.fn(),
+        getAllUsers: vi.fn(),
+      } as unknown as Memory;
+
+      const agentWithSharedMemory = new Agent({
+        name: "Test Agent",
+        instructions: "Test instructions",
+        model: mockModel,
+        llm: mockProvider,
+        memory: sharedMemory,
+        historyMemory: sharedMemory,
+      });
+
+      const memoryManager = (agentWithSharedMemory as any).memoryManager;
+      expect(memoryManager.conversationMemory).toBe(sharedMemory);
+      expect(memoryManager.historyMemory).toBe(sharedMemory);
+    });
+
+    it("should use LibSQLStorage for historyMemory when conversation memory is disabled", () => {
+      const agentWithDisabledMemory = new Agent({
+        name: "Test Agent",
+        instructions: "Test instructions",
+        model: mockModel,
+        llm: mockProvider,
+        memory: false, // Conversation memory disabled
+        // historyMemory not specified
+      });
+
+      const memoryManager = (agentWithDisabledMemory as any).memoryManager;
+      // Conversation memory should be undefined
+      expect(memoryManager.conversationMemory).toBeUndefined();
+      // History memory should still exist (defaults to LibSQLStorage)
+      expect(memoryManager.historyMemory).toBeDefined();
+      expect(memoryManager.historyMemory.constructor.name).toBe("LibSQLStorage");
+    });
+  });
+
   describe("history management", () => {
     it("should create history entries during text generation", async () => {
       // Track the addEntry method of HistoryManager with a spy
