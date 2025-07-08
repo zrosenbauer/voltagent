@@ -20,7 +20,6 @@ export type {
   DynamicValueOptions,
   PromptApiClient,
   PromptApiResponse,
-  VoltOpsClient,
   VoltOpsClientOptions,
   VoltOpsPromptManager,
 } from "./voltops/types";
