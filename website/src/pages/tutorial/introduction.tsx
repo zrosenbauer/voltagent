@@ -228,7 +228,7 @@ export default function TutorialIntroduction() {
                   <p className="text-gray-300 mb-2 pt-1 text-xs landing-md:text-base">
                     Navigate to Project
                   </p>
-                  <CodeBlock language="bash">cd my-agent-app</CodeBlock>
+                  <CodeBlock language="bash">cd my-voltagent-app</CodeBlock>
                 </div>
               </div>
 
