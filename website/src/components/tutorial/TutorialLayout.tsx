@@ -51,8 +51,8 @@ export const TutorialLayout: React.FC<TutorialLayoutProps> = ({
           <TutorialNavbar currentStep={currentStep} totalSteps={totalSteps} />
 
           {/* Main Content - Centered Single Column */}
-          <div className="pt-28 landing-md:pt-24">
-            <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 md:py-8">
+          <div className="pt-[190px] landing-md:pt-36">
+            <div className="max-w-5xl mx-auto px-4 md:px-6  md:py-8">
               {/* Header Section */}
               <div className="mb-8 md:mb-12">
                 <div className="flex items-start justify-center space-x-3 md:space-x-4 mb-4 md:mb-6">
