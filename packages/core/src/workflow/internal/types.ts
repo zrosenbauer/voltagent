@@ -14,10 +14,18 @@ export type InternalBaseWorkflowInputSchema = z.ZodTypeAny | BaseMessage | BaseM
  * The state parameter for the workflow, used to pass the state to a step or other function (i.e. hooks)
  * @private - INTERNAL USE ONLY
  */
-export type InternalWorkflowStateParam<INPUT> = Omit<
+export type InternalWorkflowStateParam<INPUT, RESULT> = Omit<
   WorkflowState<INPUT, DangerouslyAllowAny>,
   "data" | "result"
->;
+> & {
+  /**
+   * Force the workflow to exit
+   * @param result - The result to return
+   * @param reason - The reason for exiting the workflow
+   * @returns The result of the workflow
+   */
+  exit: (result: RESULT) => Promise<void>;
+};
 
 /**
  * A function that can be executed by the workflow
@@ -25,7 +33,7 @@ export type InternalWorkflowStateParam<INPUT> = Omit<
  */
 export type InternalWorkflowFunc<INPUT, DATA, RESULT> = (
   data: InternalExtractWorkflowInputData<DATA>,
-  state: InternalWorkflowStateParam<INPUT>,
+  state: InternalWorkflowStateParam<INPUT, RESULT>,
 ) => Promise<RESULT>;
 
 export type InternalWorkflowStepConfig<T extends PlainObject = PlainObject> = {
@@ -73,7 +81,7 @@ export interface InternalBaseWorkflowStep<INPUT, DATA, RESULT> {
    */
   execute: (
     data: InternalExtractWorkflowInputData<DATA>,
-    state: InternalWorkflowStateParam<INPUT>,
+    state: InternalWorkflowStateParam<INPUT, RESULT>,
   ) => Promise<RESULT>;
 }
 
@@ -101,8 +109,6 @@ export type InternalInferWorkflowStepsResult<
   [K in keyof STEPS]: Awaited<ReturnType<STEPS[K]["execute"]>>;
 };
 
-// Awaited<ReturnType<GetFunc<STEPS[K]>>>
-
 export type InternalExtractWorkflowInputData<T> = TF.IsUnknown<T> extends true
   ? BaseMessage | BaseMessage[] | string
   : TF.IsAny<T> extends true
@@ -110,11 +116,3 @@ export type InternalExtractWorkflowInputData<T> = TF.IsUnknown<T> extends true
     : T extends z.ZodType
       ? z.infer<T>
       : T;
-
-// type GetFunc<T> = T extends InternalAnyWorkflowStep<
-//   DangerouslyAllowAny,
-//   DangerouslyAllowAny,
-//   DangerouslyAllowAny
-// >
-//   ? T["execute"]
-//   : never;

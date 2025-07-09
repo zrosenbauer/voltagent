@@ -5,7 +5,7 @@ import type { UserContext } from "../../agent/types";
 import type { WorkflowRunOptions } from "../types";
 import type { InternalExtractWorkflowInputData } from "./types";
 
-export type WorkflowStateStatus = "pending" | "running" | "completed" | "failed";
+export type WorkflowStateStatus = "pending" | "running" | "completed" | "failed" | "exited";
 
 export type WorkflowState<INPUT, RESULT> = {
   executionId: string;
@@ -47,6 +47,12 @@ export interface WorkflowStateManager<DATA, RESULT> {
    * @returns The updated state
    */
   fail: (error?: unknown) => Error;
+  /**
+   * Exit the workflow
+   * @param result - The result to return
+   * @returns The updated state
+   */
+  exit: (result: RESULT) => void;
   /**
    * Finish the workflow
    * @returns The updated state
@@ -131,6 +137,23 @@ class WorkflowStateManagerInternal<DATA, RESULT> implements WorkflowStateManager
       endAt: state.endAt!,
       status: state.status as "completed",
       result: state.result as RESULT,
+    };
+  }
+
+  exit(result: RESULT) {
+    assertCanMutate(this.#state);
+    this.update({
+      status: "exited",
+      endAt: new Date(),
+      result,
+    });
+    return {
+      executionId: this.#state.executionId,
+      startAt: this.#state.startAt,
+      // biome-ignore lint/style/noNonNullAssertion: this is safe
+      endAt: this.#state.endAt!,
+      status: "exited",
+      result,
     };
   }
 

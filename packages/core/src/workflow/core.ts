@@ -1,3 +1,4 @@
+import { devLogger } from "@voltagent/internal/dev";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type { z } from "zod";
 import { createWorkflowStateManager } from "./internal/state";
@@ -557,17 +558,28 @@ export function createWorkflow<
       stateManager.start(input);
       for (const step of steps as BaseStep[]) {
         try {
-          await hooks?.onStepStart?.(stateManager.state);
-          const result = await step.execute(
-            stateManager.state.data,
-            convertWorkflowStateToParam(stateManager.state),
-          );
+          if (stateManager.state.status === "exited") {
+            devLogger.warn("Workflow exited before step execution", {
+              executionId: stateManager.state.executionId,
+              stepId: step.id,
+            });
+            break;
+          }
+
+          const state = {
+            ...stateManager.state,
+            exit: (result: z.infer<RESULT_SCHEMA>) => {
+              stateManager.exit(result);
+            },
+          };
+          await hooks?.onStepStart?.(state);
+          const result = await step.execute(state.data, convertWorkflowStateToParam(state));
           // Update the state with the result
           stateManager.update({
             data: result,
             result: result,
           });
-          await hooks?.onStepEnd?.(stateManager.state);
+          await hooks?.onStepEnd?.(state);
         } catch (error) {
           stateManager.fail(error);
           await hooks?.onEnd?.(stateManager.state);
