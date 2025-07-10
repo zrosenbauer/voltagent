@@ -1,4 +1,10 @@
-import type { InternalAnyWorkflowStep, InternalInferWorkflowStepsResult } from "../internal/types";
+import { match } from "ts-pattern";
+import type {
+  InferWorkflowSteps,
+  InternalAnyWorkflowStep,
+  InternalInferWorkflowStepsResult,
+  InternalWorkflowFunc,
+} from "../internal/types";
 import { defaultStepConfig } from "../internal/utils";
 import { matchStep } from "./helpers";
 import type { WorkflowStepParallelAll, WorkflowStepParallelAllConfig } from "./types";
@@ -38,16 +44,47 @@ export function andAll<
   INPUT,
   DATA,
   RESULT,
-  STEPS extends ReadonlyArray<InternalAnyWorkflowStep<INPUT, DATA, RESULT>>,
-  INFERRED_RESULT = InternalInferWorkflowStepsResult<STEPS>,
+  STEPS extends
+    | Array<InternalAnyWorkflowStep<INPUT, DATA, RESULT>>
+    | InternalWorkflowFunc<INPUT, DATA, Array<InternalAnyWorkflowStep<INPUT, DATA, RESULT>>>,
+  INFERRED_RESULT = InternalInferWorkflowStepsResult<InferWorkflowSteps<STEPS>>,
 >({ steps, ...config }: WorkflowStepParallelAllConfig<STEPS>) {
   return {
     ...defaultStepConfig(config),
     type: "parallel-all",
     steps: steps as unknown as InternalAnyWorkflowStep<INPUT, DATA, INFERRED_RESULT>[],
     execute: async (data, state) => {
-      const promises = steps.map((step) => matchStep(step).execute(data, state));
+      const finalSteps = await match(steps)
+        .returnType<Promise<ReadonlyArray<InternalAnyWorkflowStep<INPUT, DATA, RESULT>>>>()
+        .when(
+          (s) => isStepFunc<INPUT, DATA, RESULT>(s),
+          (s) => s(data, state),
+        )
+        .when(
+          (s) => isStepArray<INPUT, DATA, RESULT>(s),
+          (s) => Promise.resolve(s),
+        )
+        .otherwise(() => {
+          throw new Error("Invalid steps");
+        });
+      const promises = finalSteps.map((step) => matchStep(step).execute(data, state));
       return (await Promise.all(promises)) as INFERRED_RESULT;
     },
   } satisfies WorkflowStepParallelAll<INPUT, DATA, INFERRED_RESULT>;
+}
+
+function isStepFunc<INPUT, DATA, RESULT>(
+  steps: unknown,
+): steps is InternalWorkflowFunc<
+  INPUT,
+  DATA,
+  ReadonlyArray<InternalAnyWorkflowStep<INPUT, DATA, RESULT>>
+> {
+  return typeof steps === "function" && !Array.isArray(steps);
+}
+
+function isStepArray<INPUT, DATA, RESULT>(
+  steps: unknown,
+): steps is ReadonlyArray<InternalAnyWorkflowStep<INPUT, DATA, RESULT>> {
+  return Array.isArray(steps);
 }

@@ -20,8 +20,6 @@ import { MemoryManager } from "../memory";
 import type { BaseRetriever } from "../retriever/retriever";
 import { AgentRegistry } from "../server/registry";
 import type { VoltAgentExporter } from "../telemetry/exporter";
-import { VoltOpsClient as VoltOpsClientClass } from "../voltops/client";
-import type { VoltOpsClient } from "../voltops/client";
 import type { Tool, Toolkit } from "../tool";
 import { ToolManager } from "../tool";
 import type { ReasoningToolExecuteOptions } from "../tool/reasoning/types";
@@ -32,6 +30,9 @@ import {
   transformStreamEventToStreamPart,
 } from "../utils/streams";
 import type { Voice } from "../voice";
+import { VoltOpsClient as VoltOpsClientClass } from "../voltops/client";
+import type { VoltOpsClient } from "../voltops/client";
+import type { PromptContent } from "../voltops/types";
 import { type AgentHistoryEntry, HistoryManager } from "./history";
 import { type AgentHooks, createHooks } from "./hooks";
 import { endOperationSpan, endToolSpan, startOperationSpan, startToolSpan } from "./open-telemetry";
@@ -52,25 +53,24 @@ import type {
   DynamicValueOptions,
   GenerateObjectResponse,
   GenerateTextResponse,
-  ModelDynamicValue,
-  StreamObjectResponse,
-  StreamTextResponse,
   InternalGenerateOptions,
+  ModelDynamicValue,
   ModelType,
   OperationContext,
   ProviderInstance,
   PublicGenerateOptions,
   StreamObjectFinishResult,
   StreamObjectOnFinishCallback,
+  StreamObjectResponse,
   StreamOnErrorCallback,
   StreamTextFinishResult,
   StreamTextOnFinishCallback,
+  StreamTextResponse,
   SupervisorConfig,
   SystemMessageResponse,
   ToolExecutionContext,
   VoltAgentError,
 } from "./types";
-import type { PromptContent } from "../voltops/types";
 
 /**
  * Agent class for interacting with AI models

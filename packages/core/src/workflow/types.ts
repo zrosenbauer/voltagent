@@ -2,8 +2,11 @@ import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type * as TF from "type-fest";
 import type { z } from "zod";
 import type { BaseMessage } from "../agent/providers";
-import type { WorkflowState } from "./internal/state";
-import type { InternalBaseWorkflowInputSchema } from "./internal/types";
+import type { UserContext } from "../agent/types";
+import type {
+  InternalBaseWorkflowInputSchema,
+  InternalExtractWorkflowInputData,
+} from "./internal/types";
 import type { WorkflowStep } from "./steps";
 
 export interface WorkflowRunOptions {
@@ -26,6 +29,65 @@ export interface WorkflowRunOptions {
    */
   userId?: string;
 }
+
+/**
+ * The status of a workflow
+ */
+export type WorkflowStateStatus = "pending" | "running" | "completed" | "failed";
+
+/**
+ * The state of a workflow
+ */
+export type WorkflowState<INPUT, RESULT> = {
+  /**
+   * The execution ID, this can be used to track the current execution in a workflow
+   */
+  executionId: string;
+  /**
+   * The conversation ID, this can be used to track the current conversation in a workflow
+   */
+  conversationId?: string;
+  /**
+   * The user ID, this can be used to track the current user in a workflow
+   */
+  userId?: string;
+  /**
+   * The user context, this can be used to track the current user in a workflow
+   */
+  userContext?: UserContext;
+  /**
+   * The active step, this can be used to track the current step in a workflow
+   */
+  active: number;
+  /**
+   * The start time of the workflow
+   */
+  startAt: Date;
+  /**
+   * The end time of the workflow
+   */
+  endAt: Date | null;
+  /**
+   * The status of the workflow
+   */
+  status: WorkflowStateStatus;
+  /**
+   * The initial input data to the workflow
+   */
+  input: InternalExtractWorkflowInputData<INPUT>;
+  /**
+   * The current data being processed
+   */
+  data: DangerouslyAllowAny;
+  /**
+   * The result of workflow execution, null until execution is complete
+   */
+  result: RESULT | null;
+  /**
+   * The error of the workflow
+   */
+  error: Error | null;
+};
 
 /**
  * Hooks for the workflow

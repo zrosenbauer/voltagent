@@ -1,11 +1,7 @@
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import { v4 as uuidv4 } from "uuid";
-import type { WorkflowState } from "./state";
-import type {
-  InternalBaseWorkflowStep,
-  InternalWorkflowStateParam,
-  InternalWorkflowStepConfig,
-} from "./types";
+import type { WorkflowState } from "../types";
+import type { InternalWorkflowStateParam, InternalWorkflowStepConfig } from "./types";
 
 /**
  * Convert a workflow state to a parameter for a step or hook

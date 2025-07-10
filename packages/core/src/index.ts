@@ -22,7 +22,7 @@ export {
   andAll,
   andRace,
 } from "./workflow";
-export type { Workflow, WorkflowConfig } from "./workflow";
+export type { Workflow, WorkflowConfig, WorkflowState } from "./workflow";
 
 export * from "./agent";
 export * from "./agent/hooks";

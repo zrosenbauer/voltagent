@@ -1,29 +1,8 @@
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type * as TF from "type-fest";
 import { v4 as uuid } from "uuid";
-import type { UserContext } from "../../agent/types";
-import type { WorkflowRunOptions } from "../types";
+import type { WorkflowRunOptions, WorkflowState } from "../types";
 import type { InternalExtractWorkflowInputData } from "./types";
-
-export type WorkflowStateStatus = "pending" | "running" | "completed" | "failed";
-
-export type WorkflowState<INPUT, RESULT> = {
-  executionId: string;
-  conversationId?: string;
-  userId?: string;
-  userContext?: UserContext;
-  active: number;
-  startAt: Date;
-  endAt: Date | null;
-  status: WorkflowStateStatus;
-  /** the initial input data to the workflow */
-  input: InternalExtractWorkflowInputData<INPUT>;
-  /** current data being processed */
-  data: DangerouslyAllowAny;
-  /** the result of workflow execution, null until execution is complete */
-  result: RESULT | null;
-  error: Error | null;
-};
 
 // TODO: Add in the core context from VoltAgent
 export interface WorkflowStateManager<DATA, RESULT> {

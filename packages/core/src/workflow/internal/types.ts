@@ -2,7 +2,7 @@ import type { DangerouslyAllowAny, PlainObject } from "@voltagent/internal/types
 import type * as TF from "type-fest";
 import type { z } from "zod";
 import type { BaseMessage } from "../../agent/providers";
-import type { WorkflowState } from "./state";
+import type { WorkflowState } from "../types";
 
 /**
  * The base input type for the workflow
@@ -27,6 +27,16 @@ export type InternalWorkflowFunc<INPUT, DATA, RESULT> = (
   data: InternalExtractWorkflowInputData<DATA>,
   state: InternalWorkflowStateParam<INPUT>,
 ) => Promise<RESULT>;
+
+/**
+ * Infer the steps type from a list of steps
+ * @private - INTERNAL USE ONLY
+ */
+export type InferWorkflowSteps<STEPS> = STEPS extends Array<DangerouslyAllowAny>
+  ? STEPS
+  : STEPS extends (...args: any[]) => Promise<Array<DangerouslyAllowAny>>
+    ? Awaited<ReturnType<STEPS>>
+    : never;
 
 export type InternalWorkflowStepConfig<T extends PlainObject = PlainObject> = {
   /**

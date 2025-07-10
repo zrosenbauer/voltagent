@@ -225,7 +225,7 @@ export class WorkflowChain<
    */
   andAll<
     NEW_DATA,
-    STEPS extends ReadonlyArray<
+    STEPS extends Array<
       InternalAnyWorkflowStep<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA, NEW_DATA>
     >,
     INFERRED_RESULT = InternalInferWorkflowStepsResult<STEPS>,

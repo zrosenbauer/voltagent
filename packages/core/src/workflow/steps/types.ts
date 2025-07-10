@@ -52,7 +52,13 @@ export interface WorkflowStepParallelRace<INPUT, DATA, RESULT>
 }
 
 export type WorkflowStepParallelAllConfig<
-  STEPS extends ReadonlyArray<InternalAnyWorkflowStep<DangerouslyAllowAny, DangerouslyAllowAny>>,
+  STEPS extends
+    | ReadonlyArray<InternalAnyWorkflowStep<DangerouslyAllowAny, DangerouslyAllowAny>>
+    | InternalWorkflowFunc<
+        DangerouslyAllowAny,
+        DangerouslyAllowAny,
+        ReadonlyArray<InternalAnyWorkflowStep<DangerouslyAllowAny, DangerouslyAllowAny>>
+      >,
 > = InternalWorkflowStepConfig<{
   steps: STEPS;
 }>;
