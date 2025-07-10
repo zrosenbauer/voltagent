@@ -266,7 +266,7 @@
   {
     "id": 9,
     "slug": "dave-dupont-housedna",
-    "published": true,
+    "published": false,
     "customer": {
       "name": "HouseDNA",
       "website": "https://www.linkedin.com/in/dave-dupont/",
