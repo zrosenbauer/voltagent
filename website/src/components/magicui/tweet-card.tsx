@@ -96,27 +96,20 @@ export const TweetHeader = ({ tweet }: { tweet: EnrichedTweet }) => (
         />
       </a>
       <div>
-        <a
-          href={tweet.user.url}
-          target="_blank"
-          rel="noreferrer"
-          className="flex items-center no-underline whitespace-nowrap font-semibold"
-        >
+        <span className="flex items-center no-underline whitespace-nowrap font-semibold">
           {truncate(tweet.user.name, 20)}
           {tweet.user.verified ||
             (tweet.user.is_blue_verified && (
               <Verified className="ml-1 inline size-4 text-blue-500" />
             ))}
-        </a>
+        </span>
         <div className="flex items-center space-x-1">
-          <a
-            href={tweet.user.url}
-            target="_blank"
+          <span
             rel="noreferrer"
             className="text-sm text-gray-500 transition-all no-underline duration-75"
           >
             @{truncate(tweet.user.screen_name, 16)}
-          </a>
+          </span>
         </div>
       </div>
     </div>
@@ -136,15 +129,9 @@ export const TweetBody = ({ tweet }: { tweet: EnrichedTweet }) => (
         case "hashtag":
         case "mention":
           return (
-            <a
-              key={idx}
-              href={entity.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm font-normal no-underline text-emerald-500"
-            >
+            <span className="text-sm font-normal no-underline text-emerald-500">
               <span>{entity.text}</span>
-            </a>
+            </span>
           );
         case "text":
           return (
