@@ -85,18 +85,16 @@ export const TweetNotFound = ({
 export const TweetHeader = ({ tweet }: { tweet: EnrichedTweet }) => (
   <div className="flex flex-row justify-between tracking-tight">
     <div className="flex items-center space-x-2 ">
-      <a href={tweet.user.url} target="_blank" rel="noreferrer">
-        <img
-          title={`Profile picture of ${tweet.user.name}`}
-          alt={tweet.user.screen_name}
-          height={48}
-          width={48}
-          src={tweet.user.profile_image_url_https}
-          className="overflow-hidden rounded-full border border-transparent"
-        />
-      </a>
+      <img
+        title={`Profile picture of ${tweet.user.name}`}
+        alt={tweet.user.screen_name}
+        height={48}
+        width={48}
+        src={tweet.user.profile_image_url_https}
+        className="overflow-hidden rounded-full border border-transparent"
+      />
       <div>
-        <span className="flex items-center no-underline whitespace-nowrap font-semibold">
+        <span className="flex items-center no-decoration no-underline text-[#dcdcdc] whitespace-nowrap font-semibold">
           {truncate(tweet.user.name, 20)}
           {tweet.user.verified ||
             (tweet.user.is_blue_verified && (
@@ -114,14 +112,13 @@ export const TweetHeader = ({ tweet }: { tweet: EnrichedTweet }) => (
       </div>
     </div>
     <a href={tweet.url} target="_blank" rel="noreferrer">
-      <span className="sr-only">Link to tweet</span>
       <XLogo className="w-5 h-5 text-main-emerald" />
     </a>
   </div>
 );
 
 export const TweetBody = ({ tweet }: { tweet: EnrichedTweet }) => (
-  <div className="break-words leading-normal tracking-tighter">
+  <div className="break-words text-[#dcdcdc] leading-normal tracking-tighter">
     {tweet.entities.map((entity, idx) => {
       switch (entity.type) {
         case "url":
@@ -207,17 +204,24 @@ export const MagicTweet = ({
 }) => {
   const enrichedTweet = enrichTweet(tweet);
   return (
-    <div
-      className={cn(
-        "relative flex size-full max-w-lg flex-col gap-2 overflow-hidden rounded-lg border p-4 backdrop-blur-md border-white/10 border-solid",
-        className,
-      )}
-      {...props}
+    <a
+      href={enrichedTweet.url}
+      target="_blank"
+      className="no-underline no-decoration"
+      rel="noreferrer"
     >
-      <TweetHeader tweet={enrichedTweet} />
-      <TweetBody tweet={enrichedTweet} />
-      {/*  <TweetMedia tweet={enrichedTweet} /> */}
-    </div>
+      <div
+        className={cn(
+          "relative flex size-full max-w-lg flex-col gap-2 overflow-hidden rounded-lg border p-4 backdrop-blur-md border-white/10 border-solid",
+          className,
+        )}
+        {...props}
+      >
+        <TweetHeader tweet={enrichedTweet} />
+        <TweetBody tweet={enrichedTweet} />
+        {/*  <TweetMedia tweet={enrichedTweet} /> */}
+      </div>
+    </a>
   );
 };
 
