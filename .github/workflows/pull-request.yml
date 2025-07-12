@@ -22,9 +22,6 @@ jobs:
     name: Lint (Node ${{ matrix.node-version }})
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v3
-        with:
-          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
@@ -50,9 +47,6 @@ jobs:
     name: Build & Test (Node ${{ matrix.node-version }})
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v3
-        with:
-          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
@@ -107,11 +101,6 @@ jobs:
       - name: Skip if no PostgreSQL changes
         if: steps.check_postgres.outputs.postgres_changed == 'false'
         run: echo "No PostgreSQL changes detected, skipping integration tests"
-      
-      - uses: pnpm/action-setup@v3
-        if: steps.check_postgres.outputs.postgres_changed == 'true'
-        with:
-          version: 9
       
       - uses: actions/setup-node@v4
         if: steps.check_postgres.outputs.postgres_changed == 'true'
