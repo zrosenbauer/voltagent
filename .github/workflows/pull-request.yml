@@ -32,6 +32,8 @@ jobs:
       - name: Install Dependencies
         run: |
           pnpm install -w
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"
       #- name: lint
       #  run: |
       #    pnpm lint:ci
@@ -57,6 +59,8 @@ jobs:
           cache: "pnpm"
       - name: Install
         run: pnpm install
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"
       - name: Build
         run: pnpm build:all
       - name: Publint
@@ -118,6 +122,8 @@ jobs:
       - name: Install Dependencies
         if: steps.check_postgres.outputs.postgres_changed == 'true'
         run: pnpm install
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"
       
       - name: Build Core Dependencies
         if: steps.check_postgres.outputs.postgres_changed == 'true'
