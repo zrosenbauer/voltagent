@@ -106,7 +106,7 @@ export function Testimonials() {
   }, []);
 
   return (
-    <div className="relative max-w-7xl mx-auto px-4 lg:px-8 py-16 md:py-24">
+    <div className="relative max-w-7xl xs:px-4 lg:px-8 mx-auto landing-xs:mb-16 landing-md:mb-36">
       {/* Section Header */}
       <div className="text-center mb-16">
         <h2
@@ -128,7 +128,7 @@ export function Testimonials() {
 
       {/* Tweets Grid */}
       <div
-        className={`grid md:grid-cols-2 gap-8 max-w-5xl mx-auto transition-all duration-1000 delay-500 ${
+        className={`grid md:grid-cols-3 gap-8 max-w-7xl mx-auto transition-all duration-1000 delay-500 ${
           isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
         }`}
       >
@@ -151,7 +151,7 @@ export function Testimonials() {
       <div className="mt-24">
         {/* Discord Messages Grid */}
         <div
-          className={`grid md:grid-cols-2 gap-8 max-w-5xl mx-auto transition-all duration-1000 delay-500 ${
+          className={`grid md:grid-cols-3 gap-8 max-w-7xl mx-auto transition-all duration-1000 delay-500 ${
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
           }`}
         >
@@ -201,7 +201,7 @@ export function Testimonials() {
 
         {/* Articles Grid */}
         <div
-          className={`grid md:grid-cols-2 gap-8 max-w-5xl mx-auto transition-all duration-1000 delay-500 ${
+          className={`grid md:grid-cols-3 gap-8 max-w-7xl mx-auto transition-all duration-1000 delay-500 ${
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
           }`}
         >
