@@ -13,6 +13,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
+    "chroma": "chroma",
     "dev": "tsx watch --env-file=.env ./src",
     "start": "node dist/index.js",
     "volt": "volt"
