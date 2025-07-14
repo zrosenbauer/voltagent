@@ -1,0 +1,215 @@
+import type { BaseMessage } from "@voltagent/core";
+import { convertAsyncIterableToArray } from "@voltagent/internal";
+import { beforeEach, describe, expect, it } from "vitest";
+import { z } from "zod";
+import { <%= classify(name) %>Provider } from "./provider";
+
+
+let provider: <%= classify(name) %>Provider;
+
+// TODO: Replace with the correct mock model from the provider
+class MyMock { }
+
+// TODO: Replace with the correct mock function from the provider
+function simulateReadableStream(args: any[]) {}
+
+beforeEach(() => {
+  provider = new <%= classify(name) %>Provider();
+});
+
+describe("generateText", () => {
+  it("should generate text", async () => {
+    // @todo: implement mock model or import from provider
+    const mockModel = new MyMock(); 
+
+    const result = await provider.generateText({
+      messages: [{ role: "user", content: "Hello!" }],
+      model: mockModel,
+    });
+
+    expect(result).toBeDefined();
+    expect(result.text).toBe("Hello, I am a test response!");
+  });
+});
+
+describe("streamText", () => {
+  let mockModel: MyMock;
+
+  beforeEach(() => {
+    mockModel = new MyMock({
+      doStream: async () => ({
+        stream: simulateReadableStream({
+          chunks: [
+            { type: "text-delta", textDelta: "Hello" },
+            { type: "text-delta", textDelta: ", " },
+            { type: "text-delta", textDelta: "world!" },
+            {
+              type: "finish",
+              finishReason: "stop",
+              logprobs: undefined,
+              usage: { completionTokens: 10, promptTokens: 3 },
+            },
+          ],
+        }),
+      }),
+    });
+  });
+
+  it("should stream text", async () => {
+    const result = await provider.streamText({
+      messages: [{ role: "user", content: "Hello!" }],
+      model: mockModel,
+    });
+
+    expect(result).toBeDefined();
+    expect(result.textStream).toBeDefined();
+    expect(result.textStream).toBeInstanceOf(ReadableStream);
+    expect(await convertAsyncIterableToArray(result.textStream)).toEqual([
+      "Hello",
+      ", ",
+      "world!",
+    ]);
+  });
+
+  it("should include fullStream", async () => {
+    const result = await provider.streamText({
+      messages: [{ role: "user", content: "Hello!" }],
+      model: mockModel,
+    });
+
+    expect(result.fullStream).toBeDefined();
+    // biome-ignore lint/style/noNonNullAssertion: this is a test since other providers don't have this by default
+    expect(await convertAsyncIterableToArray(result.fullStream!)).toEqual([
+      { type: "text-delta", textDelta: "Hello" },
+      { type: "text-delta", textDelta: ", " },
+      { type: "text-delta", textDelta: "world!" },
+      {
+        type: "finish",
+        finishReason: "stop",
+        logprobs: undefined,
+        usage: { completionTokens: 10, promptTokens: 3, totalTokens: 13 },
+      },
+    ]);
+  });
+});
+
+describe("generateObject", () => {
+  it("should generate object", async () => {
+    const testObject = {
+      name: "John Doe",
+      age: 30,
+      hobbies: ["reading", "gaming"],
+    };
+
+    const mockModel = new MyMock({
+      doGenerate: async () => ({
+        rawCall: { rawPrompt: null, rawSettings: {} },
+        finishReason: "stop",
+        usage: { promptTokens: 10, completionTokens: 20 },
+        text: JSON.stringify(testObject),
+        response: {
+          id: "test-id",
+          modelId: "mock-model-id",
+          timestamp: new Date(),
+        },
+      }),
+    });
+
+    const schema = z.object({
+      name: z.string(),
+      age: z.number(),
+      hobbies: z.array(z.string()),
+    });
+
+    const result = await provider.generateObject({
+      messages: [{ role: "user", content: "Get user info" }],
+      model: mockModel,
+      schema,
+    });
+
+    expect(result).toBeDefined();
+    expect(result.object).toEqual(testObject);
+  });
+});
+
+describe("streamObject", () => {
+  it("should stream object", async () => {
+    const mockModel = new MyMock({
+      doStream: async () => ({
+        stream: simulateReadableStream({
+          chunks: [
+            { type: "text-delta", textDelta: "{" },
+            { type: "text-delta", textDelta: '"name": "John Doe",' },
+            { type: "text-delta", textDelta: '"age": 30,' },
+            { type: "text-delta", textDelta: '"hobbies": ["reading", "gaming"]' },
+            { type: "text-delta", textDelta: "}" },
+            {
+              type: "finish",
+              finishReason: "stop",
+              logprobs: undefined,
+              usage: { completionTokens: 10, promptTokens: 3 },
+            },
+          ],
+        }),
+        rawCall: { rawPrompt: null, rawSettings: {} },
+      }),
+    });
+
+    const schema = z.object({
+      name: z.string(),
+      age: z.number(),
+      hobbies: z.array(z.string()),
+    });
+
+    const result = await provider.streamObject({
+      messages: [{ role: "user", content: "Get user info" }],
+      model: mockModel,
+      schema,
+    });
+
+    expect(result).toBeDefined();
+    expect(result.objectStream).toBeDefined();
+    expect(result.objectStream).toBeInstanceOf(ReadableStream);
+  });
+});
+
+describe("toMessage", () => {
+  it("should map basic message correctly", () => {
+    const message: BaseMessage = {
+      role: "user",
+      content: "Hello",
+    };
+
+    const result = provider.toMessage(message);
+    expect(result).toEqual({
+      role: "user",
+      content: "Hello",
+    });
+  });
+
+  it("should map message with name", () => {
+    const message: BaseMessage = {
+      role: "tool",
+      content: "Hello",
+    };
+
+    const result = provider.toMessage(message);
+    expect(result).toEqual({
+      role: "tool",
+      content: "Hello",
+    });
+  });
+
+  it("should map message with function call", () => {
+    const message: BaseMessage = {
+      role: "assistant",
+      content: "Hello",
+    };
+
+    const result = provider.toMessage(message);
+    expect(result).toEqual({
+      role: "assistant",
+      content: "Hello",
+    });
+  });
+});
