@@ -95,7 +95,7 @@ export const TweetHeader = ({ tweet }: { tweet: EnrichedTweet }) => (
       />
       <div>
         <span className="flex items-center no-decoration no-underline text-[#dcdcdc] whitespace-nowrap font-semibold">
-          {truncate(tweet.user.name, 20)}
+          {truncate(tweet.user.name, 12)}
           {tweet.user.verified ||
             (tweet.user.is_blue_verified && (
               <Verified className="ml-1 inline size-4 text-blue-500" />
@@ -106,7 +106,7 @@ export const TweetHeader = ({ tweet }: { tweet: EnrichedTweet }) => (
             rel="noreferrer"
             className="text-sm text-gray-500 transition-all no-underline duration-75"
           >
-            @{truncate(tweet.user.screen_name, 16)}
+            @{truncate(tweet.user.screen_name, 12)}
           </span>
         </div>
       </div>
@@ -212,7 +212,7 @@ export const MagicTweet = ({
     >
       <div
         className={cn(
-          "relative flex size-full max-w-lg flex-col gap-2 overflow-hidden rounded-lg border p-4 backdrop-blur-md border-white/10 border-solid",
+          "relative flex size-full max-w-lg flex-col gap-2 overflow-hidden rounded-lg border p-4 backdrop-blur-md border-white/10 border-solid hover:border-emerald-500 transition-colors duration-200",
           className,
         )}
         {...props}
