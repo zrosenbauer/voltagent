@@ -65,20 +65,6 @@ export function ArticleCard({
               </div>
             </div>
           )}
-
-          {/* Duration Badge (YouTube) */}
-          {isYouTube && duration && (
-            <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded">
-              {duration}
-            </div>
-          )}
-
-          {/* YouTube Logo Badge */}
-          {isYouTube && (
-            <div className="absolute top-2 right-2 bg-black/80 rounded px-2 py-1">
-              <YouTubeLogo className="w-5 h-5" />
-            </div>
-          )}
         </div>
       )}
 
@@ -92,21 +78,6 @@ export function ArticleCard({
                 <span className="ml-1 text-gray-500 text-sm">by {author}</span>
               )}
             </span>
-            <div className="flex items-center space-x-1">
-              {date && (
-                <span className="text-sm text-gray-500 transition-all no-underline duration-75">
-                  {date}
-                </span>
-              )}
-              {(readTime || views) && (
-                <>
-                  <span className="text-gray-500 text-sm">•</span>
-                  <span className="text-sm text-gray-500">
-                    {isYouTube ? views : readTime}
-                  </span>
-                </>
-              )}
-            </div>
           </div>
         </div>
 
@@ -137,9 +108,6 @@ export function ArticleCard({
         <h3 className="font-semibold text-lg mb-2 text-white line-clamp-2">
           {title}
         </h3>
-        {excerpt && (
-          <p className="text-sm text-gray-400 line-clamp-3">{excerpt}</p>
-        )}
       </div>
     </div>
   );
