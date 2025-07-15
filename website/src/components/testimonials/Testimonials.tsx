@@ -1,7 +1,50 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { ClientTweetCard } from "../magicui/tweet-card-client";
 import { DiscordMessage } from "./DiscordMessage";
 import { ArticleCard } from "./ArticleCard";
+
+// Add keyframes for the scrolling animations
+const scrollAnimation = `
+  @keyframes scrollLeft {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  @keyframes scrollRight {
+    0% {
+      transform: translateX(-50%);
+    }
+    100% {
+      transform: translateX(0);
+    }
+  }
+
+  .scroll-left-animation {
+    animation: scrollLeft 180s linear infinite;
+  }
+
+  .scroll-right-animation {
+    animation: scrollRight 180s linear infinite;
+  }
+
+  .animation-paused {
+    animation-play-state: paused;
+  }
+
+  @media (pointer: coarse) {
+    .touch-device-scroll-left {
+      animation: scrollLeft 180s linear infinite;
+    }
+    
+    .touch-device-scroll-right {
+      animation: scrollRight 180s linear infinite;
+    }
+  }
+`;
 
 const testimonialTweetIds = [
   "1942395205011005544",
@@ -101,137 +144,297 @@ const articles = [
 export function Testimonials() {
   const [isVisible, setIsVisible] = useState(false);
 
+  // Animation control states for each row
+  const [isTweetsRowPaused, setIsTweetsRowPaused] = useState(false);
+  const [isDiscordRowPaused, setIsDiscordRowPaused] = useState(false);
+  const [isArticlesRowPaused, setIsArticlesRowPaused] = useState(false);
+
+  // Refs for each scrolling row
+  const tweetsRowRef = useRef<HTMLDivElement>(null);
+  const discordRowRef = useRef<HTMLDivElement>(null);
+  const articlesRowRef = useRef<HTMLDivElement>(null);
+
+  // Duplicate content for continuous scrolling
+  const duplicatedTweetIds = [...testimonialTweetIds, ...testimonialTweetIds];
+  const duplicatedDiscordMessages = [...discordMessages, ...discordMessages];
+  const duplicatedArticles = [...articles, ...articles];
+
+  // Event handlers for tweets row (scrolling left)
+  const handleTweetsRowTouchStart = useCallback(
+    () => setIsTweetsRowPaused(true),
+    [],
+  );
+  const handleTweetsRowTouchEnd = useCallback(
+    () => setIsTweetsRowPaused(false),
+    [],
+  );
+  const handleTweetsRowMouseEnter = useCallback(
+    () => setIsTweetsRowPaused(true),
+    [],
+  );
+  const handleTweetsRowMouseLeave = useCallback(
+    () => setIsTweetsRowPaused(false),
+    [],
+  );
+
+  // Event handlers for discord row (scrolling right)
+  const handleDiscordRowTouchStart = useCallback(
+    () => setIsDiscordRowPaused(true),
+    [],
+  );
+  const handleDiscordRowTouchEnd = useCallback(
+    () => setIsDiscordRowPaused(false),
+    [],
+  );
+  const handleDiscordRowMouseEnter = useCallback(
+    () => setIsDiscordRowPaused(true),
+    [],
+  );
+  const handleDiscordRowMouseLeave = useCallback(
+    () => setIsDiscordRowPaused(false),
+    [],
+  );
+
+  // Event handlers for articles row (scrolling left)
+  const handleArticlesRowTouchStart = useCallback(
+    () => setIsArticlesRowPaused(true),
+    [],
+  );
+  const handleArticlesRowTouchEnd = useCallback(
+    () => setIsArticlesRowPaused(false),
+    [],
+  );
+  const handleArticlesRowMouseEnter = useCallback(
+    () => setIsArticlesRowPaused(true),
+    [],
+  );
+  const handleArticlesRowMouseLeave = useCallback(
+    () => setIsArticlesRowPaused(false),
+    [],
+  );
+
   useEffect(() => {
     setIsVisible(true);
   }, []);
 
+  // Add touch event listeners
+  useEffect(() => {
+    // Tweets row listeners
+    const tweetsElement = tweetsRowRef.current;
+    if (tweetsElement) {
+      tweetsElement.addEventListener("touchstart", handleTweetsRowTouchStart, {
+        passive: true,
+      });
+      tweetsElement.addEventListener("touchend", handleTweetsRowTouchEnd, {
+        passive: true,
+      });
+    }
+
+    // Discord row listeners
+    const discordElement = discordRowRef.current;
+    if (discordElement) {
+      discordElement.addEventListener(
+        "touchstart",
+        handleDiscordRowTouchStart,
+        { passive: true },
+      );
+      discordElement.addEventListener("touchend", handleDiscordRowTouchEnd, {
+        passive: true,
+      });
+    }
+
+    // Articles row listeners
+    const articlesElement = articlesRowRef.current;
+    if (articlesElement) {
+      articlesElement.addEventListener(
+        "touchstart",
+        handleArticlesRowTouchStart,
+        {
+          passive: true,
+        },
+      );
+      articlesElement.addEventListener("touchend", handleArticlesRowTouchEnd, {
+        passive: true,
+      });
+    }
+
+    return () => {
+      // Clean up tweets row listeners
+      if (tweetsElement) {
+        tweetsElement.removeEventListener(
+          "touchstart",
+          handleTweetsRowTouchStart,
+        );
+        tweetsElement.removeEventListener("touchend", handleTweetsRowTouchEnd);
+      }
+
+      // Clean up discord row listeners
+      if (discordElement) {
+        discordElement.removeEventListener(
+          "touchstart",
+          handleDiscordRowTouchStart,
+        );
+        discordElement.removeEventListener(
+          "touchend",
+          handleDiscordRowTouchEnd,
+        );
+      }
+
+      // Clean up articles row listeners
+      if (articlesElement) {
+        articlesElement.removeEventListener(
+          "touchstart",
+          handleArticlesRowTouchStart,
+        );
+        articlesElement.removeEventListener(
+          "touchend",
+          handleArticlesRowTouchEnd,
+        );
+      }
+    };
+  }, [
+    handleTweetsRowTouchStart,
+    handleTweetsRowTouchEnd,
+    handleDiscordRowTouchStart,
+    handleDiscordRowTouchEnd,
+    handleArticlesRowTouchStart,
+    handleArticlesRowTouchEnd,
+  ]);
+
   return (
-    <div className="relative max-w-7xl xs:px-4 lg:px-8 mx-auto landing-xs:mb-16 landing-md:mb-36">
-      {/* Section Header */}
-      <div className="text-center mb-16">
-        <h2
-          className={`text-3xl md:text-4xl font-bold text-white mb-4 transition-all duration-1000 ${
-            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-          }`}
-        >
-          What People Are Saying
-        </h2>
-        <p
-          className={`text-lg text-gray-400 max-w-2xl mx-auto transition-all duration-1000 delay-300 ${
-            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-          }`}
-        >
-          See how developers and companies are using Voltagent to build powerful
-          AI agents
-        </p>
-      </div>
+    <div className="relative max-w-9xl xs:px-4 lg:px-8 mx-auto landing-xs:mb-16 landing-md:mb-36">
+      <style>{scrollAnimation}</style>
 
-      {/* Tweets Grid */}
-      <div
-        className={`grid md:grid-cols-3 gap-8 max-w-7xl mx-auto transition-all duration-1000 delay-500 ${
-          isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-        }`}
-      >
-        {testimonialTweetIds.map((tweetId, index) => (
-          <div
-            key={tweetId}
-            className={`transition-all duration-1000 ${
-              isVisible
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-4"
-            }`}
-            style={{ transitionDelay: `${700 + index * 200}ms` }}
-          >
-            <ClientTweetCard id={tweetId} />
-          </div>
-        ))}
-      </div>
-
-      {/* Discord Messages Section */}
-      <div className="mt-24">
-        {/* Discord Messages Grid */}
+      {/* Tweets Row - Scrolling Left */}
+      <div className="relative mb-8">
         <div
-          className={`grid md:grid-cols-3 gap-8 max-w-7xl mx-auto transition-all duration-1000 delay-500 ${
-            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-          }`}
+          ref={tweetsRowRef}
+          className="flex overflow-hidden"
+          style={{
+            maxWidth: "100%",
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+            WebkitOverflowScrolling: "touch",
+            WebkitMaskImage:
+              "linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)",
+            maskImage:
+              "linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)",
+          }}
+          onMouseEnter={handleTweetsRowMouseEnter}
+          onMouseLeave={handleTweetsRowMouseLeave}
         >
-          {discordMessages.map((message, index) => (
-            <div
-              key={`${message.username}-${message.discriminator}`}
-              className={`transition-all duration-1000 ${
-                isVisible
-                  ? "opacity-100 translate-y-0"
-                  : "opacity-0 translate-y-4"
-              }`}
-              style={{ transitionDelay: `${1200 + index * 200}ms` }}
-            >
-              <DiscordMessage
-                username={message.username}
-                discriminator={message.discriminator}
-                message={message.message}
-                timestamp={message.timestamp}
-              />
-            </div>
-          ))}
+          <div
+            className={`flex space-x-6 py-4 scroll-left-animation ${
+              isTweetsRowPaused ? "animation-paused" : ""
+            }`}
+          >
+            {duplicatedTweetIds.map((tweetId, index) => (
+              <div
+                key={`tweet-${tweetId}-${Math.floor(
+                  index / testimonialTweetIds.length,
+                )}`}
+                className="flex-shrink-0 w-80"
+              >
+                <ClientTweetCard id={tweetId} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Discord Messages Row - Scrolling Right */}
+      <div className="relative mb-8">
+        <div
+          ref={discordRowRef}
+          className="flex overflow-hidden"
+          style={{
+            maxWidth: "100%",
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+            WebkitOverflowScrolling: "touch",
+            WebkitMaskImage:
+              "linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)",
+            maskImage:
+              "linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)",
+          }}
+          onMouseEnter={handleDiscordRowMouseEnter}
+          onMouseLeave={handleDiscordRowMouseLeave}
+        >
+          <div
+            className={`flex space-x-6 py-4 scroll-right-animation ${
+              isDiscordRowPaused ? "animation-paused" : ""
+            }`}
+          >
+            {duplicatedDiscordMessages.map((message, index) => (
+              <div
+                key={`discord-${message.username}-${
+                  message.discriminator
+                }-${Math.floor(index / discordMessages.length)}`}
+                className="flex-shrink-0 w-80"
+              >
+                <DiscordMessage
+                  username={message.username}
+                  discriminator={message.discriminator}
+                  message={message.message}
+                  timestamp={message.timestamp}
+                />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Articles Section */}
-      <div className="mt-24">
-        <div className="text-center mb-16">
-          <h3
-            className={`text-2xl md:text-3xl font-bold text-white mb-4 transition-all duration-1000 ${
-              isVisible
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-4"
-            }`}
+      <div className="mt-8">
+        {/* Articles Row - Scrolling Left */}
+        <div className="relative">
+          <div
+            ref={articlesRowRef}
+            className="flex overflow-hidden"
+            style={{
+              maxWidth: "100%",
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
+              WebkitOverflowScrolling: "touch",
+              WebkitMaskImage:
+                "linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)",
+              maskImage:
+                "linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)",
+            }}
+            onMouseEnter={handleArticlesRowMouseEnter}
+            onMouseLeave={handleArticlesRowMouseLeave}
           >
-            Press & Media
-          </h3>
-          <p
-            className={`text-lg text-gray-400 max-w-2xl mx-auto transition-all duration-1000 delay-300 ${
-              isVisible
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-4"
-            }`}
-          >
-            Articles, tutorials, and videos from the tech community
-          </p>
-        </div>
-
-        {/* Articles Grid */}
-        <div
-          className={`grid md:grid-cols-3 gap-8 max-w-7xl mx-auto transition-all duration-1000 delay-500 ${
-            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-          }`}
-        >
-          {articles.map((article, index) => (
             <div
-              key={article.title}
-              className={`transition-all duration-1000 ${
-                isVisible
-                  ? "opacity-100 translate-y-0"
-                  : "opacity-0 translate-y-4"
+              className={`flex space-x-6 py-4 scroll-left-animation ${
+                isArticlesRowPaused ? "animation-paused" : ""
               }`}
-              style={{ transitionDelay: `${1800 + index * 200}ms` }}
             >
-              <ArticleCard
-                title={article.title}
-                coverImage={article.coverImage}
-                excerpt={article.excerpt}
-                author={article.author}
-                publication={article.publication}
-                date={article.date}
-                readTime={article.readTime}
-                url={article.url}
-                type={article.type}
-                videoId={article.videoId}
-                channel={article.channel}
-                views={article.views}
-                duration={article.duration}
-              />
+              {duplicatedArticles.map((article, index) => (
+                <div
+                  key={`article-${article.title
+                    .replace(/\s+/g, "-")
+                    .toLowerCase()}-${Math.floor(index / articles.length)}`}
+                  className="flex-shrink-0 w-80"
+                >
+                  <ArticleCard
+                    title={article.title}
+                    coverImage={article.coverImage}
+                    excerpt={article.excerpt}
+                    author={article.author}
+                    publication={article.publication}
+                    date={article.date}
+                    readTime={article.readTime}
+                    url={article.url}
+                    type={article.type}
+                    videoId={article.videoId}
+                    channel={article.channel}
+                    views={article.views}
+                    duration={article.duration}
+                  />
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
       </div>
     </div>

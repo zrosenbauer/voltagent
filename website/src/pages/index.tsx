@@ -36,6 +36,7 @@ export default function Home(): JSX.Element {
           <Hero />
           <TwoBlocks />
           <LivePreview />
+
           <div className="relative">
             <AgentsDetail />
             <SupervisorAgent />
