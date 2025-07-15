@@ -1,4 +1,3 @@
-import { CodeBracketIcon } from "@heroicons/react/24/outline";
 import { BoltIcon } from "@heroicons/react/24/solid";
 import { motion } from "framer-motion";
 import React, { useState, useEffect } from "react";
@@ -110,7 +109,7 @@ export const CustomerList = ({ customers = [] }: CustomerListProps) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
         >
           {customers.map((customer) => (
             <ProjectCard key={customer.id} project={customer} />
