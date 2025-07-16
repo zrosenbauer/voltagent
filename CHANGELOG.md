@@ -1,5 +1,403 @@
 ## Package: @voltagent/core
 
+## 0.1.60
+
+### Patch Changes
+
+- [#371](https://github.com/VoltAgent/voltagent/pull/371) [`6ddedc2`](https://github.com/VoltAgent/voltagent/commit/6ddedc2b9be9c3dc4978dc53198a43c2cba74945) Thanks [@omeraplak](https://github.com/omeraplak)! - This update adds a powerful, type-safe workflow engine to `@voltagent/core`. You can now build complex, multi-step processes that chain together your code, AI models, and conditional logic with full type-safety and built-in observability.
+
+  Here is a quick example of what you can build:
+
+  ```typescript
+  import { createWorkflowChain, Agent, VoltAgent } from "@voltagent/core";
+  import { z } from "zod";
+  import { VercelAIProvider } from "@voltagent/vercel-ai";
+  import { openai } from "@ai-sdk/openai";
+
+  // Define an agent to use in the workflow
+  const analyzerAgent = new Agent({
+    name: "Analyzer",
+    llm: new VercelAIProvider(),
+    model: openai("gpt-4o-mini"),
+    instructions: "You are a text analyzer.",
+  });
+
+  // 1. Define the workflow chain
+  const workflow = createWorkflowChain({
+    id: "greeting-analyzer",
+    name: "Greeting Analyzer",
+    input: z.object({ name: z.string() }),
+    result: z.object({ greeting: z.string(), sentiment: z.string() }),
+  })
+    .andThen({
+      id: "create-greeting",
+      execute: async ({ name }) => ({ greeting: `Hello, ${name}!` }),
+    })
+    .andAgent(
+      (data) => `Analyze the sentiment of this greeting: "${data.greeting}"`,
+      analyzerAgent,
+      {
+        schema: z.object({ sentiment: z.string().describe("e.g., positive") }),
+      }
+    );
+
+  // You can run the chain directly
+  const result = await workflow.run({ name: "World" });
+  ```
+
+  To make your workflow runs visible in the **VoltOps Console** for debugging and monitoring, register both the workflow and its agents with a `VoltAgent` instance:
+
+  ![VoltOps Workflow Observability](https://cdn.voltagent.dev/docs/workflow-observability-demo.gif)
+
+  ```typescript
+  // 2. Register the workflow and agent to enable observability
+  new VoltAgent({
+    agents: {
+      analyzerAgent,
+    },
+    workflows: {
+      workflow,
+    },
+  });
+
+  // Now, when you run the workflow, its execution will appear in VoltOps.
+  await workflow.run({ name: "Alice" });
+  ```
+
+  This example showcases the fluent API, data flow between steps, type-safety, and integration with Agents, which are the core pillars of this new feature.
+
+## 0.1.59
+
+### Patch Changes
+
+- [#382](https://github.com/VoltAgent/voltagent/pull/382) [`86acef0`](https://github.com/VoltAgent/voltagent/commit/86acef01dd6ce2e213b13927136c32bcf1078484) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: Allow workflow.run to accept userContext, conversationId, and userId and pass along to all steps & agents
+
+- [#375](https://github.com/VoltAgent/voltagent/pull/375) [`1f55501`](https://github.com/VoltAgent/voltagent/commit/1f55501ec7a221002c11a3a0e87779c8f1379bed) Thanks [@SashankMeka1](https://github.com/SashankMeka1)! - feat(core): MCPServerConfig timeouts - #363.
+
+  Add MCPServerConfig timeouts
+
+  ```ts
+  const mcpConfig = new MCPConfiguration({
+    servers: {
+      filesystem: {
+        type: "stdio",
+        command: "npx",
+        args: ["-y", "@modelcontextprotocol/server-filesystem", path.resolve("./data")],
+        timeout: 10000,
+      },
+    },
+  });
+  ```
+
+- [#385](https://github.com/VoltAgent/voltagent/pull/385) [`bfb13c3`](https://github.com/VoltAgent/voltagent/commit/bfb13c390a8ff59ad61a08144a5f6fa0439d25b7) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix(core): Add back the result for a workflow execution, as the result was removed due to change in state management process
+
+- [#384](https://github.com/VoltAgent/voltagent/pull/384) [`757219c`](https://github.com/VoltAgent/voltagent/commit/757219cc76e7f0320074230788012714f91e81bb) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - feat(core): Add ability to pass hooks into the generate functions (i.e. streamText) that do not update/mutate the agent hooks
+
+  ### Usage
+
+  ```ts
+  const agent = new Agent({
+    name: "My Agent with Hooks",
+    instructions: "An assistant demonstrating hooks",
+    llm: provider,
+    model: openai("gpt-4o"),
+    hooks: myAgentHooks,
+  });
+
+  // both the myAgentHooks and the hooks passed in the generateText method will be called
+  await agent.generateText("Hello, how are you?", {
+    hooks: {
+      onEnd: async ({ context }) => {
+        console.log("End of generation but only on this invocation!");
+      },
+    },
+  });
+  ```
+
+- [#381](https://github.com/VoltAgent/voltagent/pull/381) [`b52cdcd`](https://github.com/VoltAgent/voltagent/commit/b52cdcd2d8072fa93011e14c41841b6ff8a97b0b) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - feat: Add ability to tap into workflow without mutating the data by adding the `andTap` step
+
+  ### Usage
+
+  The andTap step is useful when you want to tap into the workflow without mutating the data, for example:
+
+  ```ts
+  const workflow = createWorkflowChain(config)
+    .andTap({
+      execute: async (data) => {
+        console.log("🔄 Translating text:", data);
+      },
+    })
+    .andTap({
+      id: "sleep",
+      execute: async (data) => {
+        console.log("🔄 Sleeping for 1 second");
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        return data;
+      },
+    })
+    .andThen({
+      execute: async (data) => {
+        return { ...data, translatedText: data.translatedText };
+      },
+    })
+    .run({
+      originalText: "Hello, world!",
+      targetLanguage: "en",
+    });
+  ```
+
+  You will notice that the `andTap` step is not included in the result, BUT it is `awaited` and `executed` before the next step, so you can block processing safely if needed.
+
+## 0.1.58
+
+### Patch Changes
+
+- [#342](https://github.com/VoltAgent/voltagent/pull/342) [`8448674`](https://github.com/VoltAgent/voltagent/commit/84486747b1b40eaca315b900c56fd2ad976780ea) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - feat: add Workflow support (alpha)
+
+  **🧪 ALPHA FEATURE: Workflow orchestration system is now available for early testing.** This feature allows you to create complex, multi-step agent workflows with chaining API and conditional branching. The API is experimental and may change in future releases.
+
+  ## 📋 Usage
+
+  **Basic Workflow Chain Creation:**
+
+  ```typescript
+  import { openai } from "@ai-sdk/openai";
+  import { Agent, VoltAgent, createWorkflowChain } from "@voltagent/core";
+  import { VercelAIProvider } from "@voltagent/vercel-ai";
+  import { z } from "zod";
+
+  // Create workflow agents
+  const analyzerAgent = new Agent({
+    name: "DataAnalyzer",
+    llm: new VercelAIProvider(),
+    model: openai("gpt-4o-mini"),
+    instructions: "Analyze input data and extract key insights with confidence scores",
+  });
+
+  const processorAgent = new Agent({
+    name: "DataProcessor",
+    llm: new VercelAIProvider(),
+    model: openai("gpt-4o-mini"),
+    instructions: "Process and transform analyzed data into structured format",
+  });
+
+  const reporterAgent = new Agent({
+    name: "ReportGenerator",
+    llm: new VercelAIProvider(),
+    model: openai("gpt-4o-mini"),
+    instructions: "Generate comprehensive reports from processed data",
+  });
+
+  // Create workflow chain
+  const dataProcessingWorkflow = createWorkflowChain({
+    id: "data-processing-workflow",
+    name: "Data Processing Pipeline",
+    purpose: "Analyze, process, and generate reports from raw data",
+    input: z.object({
+      rawData: z.string(),
+      analysisType: z.string(),
+    }),
+    result: z.object({
+      originalData: z.string(),
+      analysisResults: z.object({
+        insights: z.array(z.string()),
+        confidence: z.number().min(0).max(1),
+      }),
+      processedData: z.object({
+        summary: z.string(),
+        keyPoints: z.array(z.string()),
+      }),
+      finalReport: z.string(),
+      processingTime: z.number(),
+    }),
+  })
+    .andAgent(
+      async (data) => {
+        return `Analyze the following data: ${data.rawData}. Focus on ${data.analysisType} analysis.`;
+      },
+      analyzerAgent,
+      {
+        schema: z.object({
+          insights: z.array(z.string()),
+          confidence: z.number().min(0).max(1),
+        }),
+      }
+    )
+    .andThen({
+      execute: async (data, state) => {
+        // Skip processing if confidence is too low
+        if (data.confidence < 0.5) {
+          throw new Error(`Analysis confidence too low: ${data.confidence}`);
+        }
+        return {
+          analysisResults: data,
+          originalData: state.input.rawData,
+        };
+      },
+    })
+    .andAgent(
+      async (data, state) => {
+        return `Process these insights: ${JSON.stringify(data.analysisResults.insights)}`;
+      },
+      processorAgent,
+      {
+        schema: z.object({
+          summary: z.string(),
+          keyPoints: z.array(z.string()),
+        }),
+      }
+    )
+    .andAgent(
+      async (data, state) => {
+        return `Generate a final report based on: ${JSON.stringify(data)}`;
+      },
+      reporterAgent,
+      {
+        schema: z.object({
+          finalReport: z.string(),
+        }),
+      }
+    )
+    .andThen({
+      execute: async (data, state) => {
+        return {
+          ...data,
+          processingTime: Date.now() - state.startAt.getTime(),
+        };
+      },
+    });
+
+  // Execute workflow
+  const result = await dataProcessingWorkflow.run({
+    rawData: "User input data...",
+    analysisType: "sentiment",
+  });
+
+  console.log(result.analysisResults); // Analysis results
+  console.log(result.finalReport); // Generated report
+  ```
+
+  **Conditional Logic Example:**
+
+  ```typescript
+  const conditionalWorkflow = createWorkflowChain({
+    id: "conditional-workflow",
+    name: "Smart Processing Pipeline",
+    purpose: "Process data based on complexity level",
+    input: z.object({
+      data: z.string(),
+    }),
+    result: z.object({
+      complexity: z.string(),
+      processedData: z.string(),
+      processingMethod: z.string(),
+    }),
+  })
+    .andAgent(
+      async (data) => {
+        return `Analyze complexity of: ${data.data}`;
+      },
+      validatorAgent,
+      {
+        schema: z.object({
+          complexity: z.enum(["low", "medium", "high"]),
+        }),
+      }
+    )
+    .andThen({
+      execute: async (data, state) => {
+        // Route to different processing based on complexity
+        if (data.complexity === "low") {
+          return { ...data, processingMethod: "simple" };
+        } else {
+          return { ...data, processingMethod: "advanced" };
+        }
+      },
+    })
+    .andAgent(
+      async (data, state) => {
+        if (data.processingMethod === "simple") {
+          return `Simple processing for: ${state.input.data}`;
+        } else {
+          return `Advanced processing for: ${state.input.data}`;
+        }
+      },
+      data.processingMethod === "simple" ? simpleProcessor : advancedProcessor,
+      {
+        schema: z.object({
+          processedData: z.string(),
+        }),
+      }
+    );
+  ```
+
+  **⚠️ Alpha Limitations:**
+
+  - **NOT READY FOR PRODUCTION** - This is an experimental feature
+  - Visual flow UI integration is in development
+  - Error handling and recovery mechanisms are basic
+  - Performance optimizations pending
+  - **API may change significantly** based on community feedback
+  - Limited documentation and examples
+
+  **🤝 Help Shape Workflows:**
+  We need your feedback to make Workflows awesome! The API will evolve based on real-world usage and community input.
+
+  - 💬 **[Join our Discord](https://s.voltagent.dev/discord)**: Share ideas, discuss use cases, and get help
+  - 🐛 **[GitHub Issues](https://github.com/VoltAgent/voltagent/issues)**: Report bugs, request features, or suggest improvements
+  - 🚀 **Early Adopters**: Build experimental projects and share your learnings
+  - 📝 **API Feedback**: Tell us what's missing, confusing, or could be better
+
+  **🔄 Future Plans:**
+
+  - React Flow integration for visual workflow editor
+  - Advanced error handling and retry mechanisms
+  - Workflow templates and presets
+  - Real-time execution monitoring
+  - Comprehensive documentation and tutorials
+
+## 0.1.57
+
+### Patch Changes
+
+- [`894be7f`](https://github.com/VoltAgent/voltagent/commit/894be7feb97630c10e036cf3691974a5e351472c) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: export PromptContent type to resolve "cannot be named" TypeScript error
+
+## 0.1.56
+
+### Patch Changes
+
+- [#351](https://github.com/VoltAgent/voltagent/pull/351) [`f8f8d04`](https://github.com/VoltAgent/voltagent/commit/f8f8d04340d6f9609450f6ae000c9fe1d71072d7) Thanks [@alasano](https://github.com/alasano)! - fix: add historyMemory option to Agent configuration
+
+## 0.1.55
+
+### Patch Changes
+
+- [#352](https://github.com/VoltAgent/voltagent/pull/352) [`b7dcded`](https://github.com/VoltAgent/voltagent/commit/b7dcdedfbbdda5bfb1885317b59b4d4e2495c956) Thanks [@alasano](https://github.com/alasano)! - fix(core): store and use userContext from Agent constructor
+
+- [#345](https://github.com/VoltAgent/voltagent/pull/345) [`822739c`](https://github.com/VoltAgent/voltagent/commit/822739c901bbc679cd11dd2c9df99cd041fc40c7) Thanks [@thujee](https://github.com/thujee)! - fix: moves zod from direct to dev dependency to avoid version conflicts in consuming app
+
+## 0.1.54
+
+### Patch Changes
+
+- [#346](https://github.com/VoltAgent/voltagent/pull/346) [`5100f7f`](https://github.com/VoltAgent/voltagent/commit/5100f7f9419db7e26aa18681b0ad3c09c0957b10) Thanks [@omeraplak](https://github.com/omeraplak)! - fix: export PromptContent type to resolve "cannot be named" TypeScript error
+
+  Fixed a TypeScript compilation error where users would get "cannot be named" errors when exporting variables that use `InstructionsDynamicValue` type. This occurred because `InstructionsDynamicValue` references `PromptContent` type, but `PromptContent` was not being re-exported from the public API.
+
+  **Before:**
+
+  ```typescript
+  export type { DynamicValueOptions, DynamicValue, PromptHelper };
+  ```
+
+  **After:**
+
+  ```typescript
+  export type { DynamicValueOptions, DynamicValue, PromptHelper, PromptContent };
+  ```
+
+  This ensures that all types referenced by public API types are properly exported, preventing TypeScript compilation errors when users export agents or variables that use dynamic instructions.
+
 ## 0.1.53
 
 ### Patch Changes
@@ -2348,6 +2746,22 @@
 
 ## Package: create-voltagent-app
 
+## 0.1.33
+
+### Patch Changes
+
+- [#371](https://github.com/VoltAgent/voltagent/pull/371) [`6ddedc2`](https://github.com/VoltAgent/voltagent/commit/6ddedc2b9be9c3dc4978dc53198a43c2cba74945) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add comprehensive workflow example to new projects
+
+  This change enhances the `create-voltagent-app` template by including a new, comprehensive workflow example. The goal is to provide new users with a practical, out-of-the-box demonstration of VoltAgent's core workflow capabilities.
+
+  The new template now includes:
+
+  - A `comprehensive-workflow` that showcases the combined use of `andThen`, `andAgent`, `andAll`, `andRace`, and `andWhen`.
+  - A dedicated `workflows` directory (`src/workflows`) to promote a modular project structure.
+  - The workflow uses a self-contained `sentimentAgent`, separating it from the main project agent to ensure clarity and avoid conflicts.
+
+  This provides a much richer starting point for developers, helping them understand and build their own workflows more effectively.
+
 ## 0.1.31
 
 ### Patch Changes
@@ -2459,6 +2873,16 @@
 ---
 
 ## Package: @voltagent/docs-mcp
+
+## 0.2.0
+
+### Minor Changes
+
+- [#367](https://github.com/VoltAgent/voltagent/pull/367) [`d71efff`](https://github.com/VoltAgent/voltagent/commit/d71efff5d2b9822d787bfed62329e56ee441774a) Thanks [@Theadd](https://github.com/Theadd)! - feat(docs-mcp): dynamically discover example files
+
+  Refactor the getExampleContent function to dynamically discover all relevant files in an example directory instead of relying on a hardcoded list. This introduces a new discoverExampleFiles helper function that recursively scans for .ts files in src, app, and voltagent directories with depth limits, while retaining backward compatibility. This ensures that documentation examples with complex file structures containing voltagent related code are fully captured and displayed.
+
+  Resolves #365
 
 ## 0.1.8
 
@@ -3181,6 +3605,17 @@
 
 ## Package: @voltagent/postgres
 
+## 0.1.8
+
+### Patch Changes
+
+- [#371](https://github.com/VoltAgent/voltagent/pull/371) [`6ddedc2`](https://github.com/VoltAgent/voltagent/commit/6ddedc2b9be9c3dc4978dc53198a43c2cba74945) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add workflow history support to postgres
+
+  This update introduces persistence for workflow history when using a PostgreSQL database. This includes storing workflow execution details, individual steps, and timeline events. Database tables are migrated automatically, so no manual action is required.
+
+- Updated dependencies [[`6ddedc2`](https://github.com/VoltAgent/voltagent/commit/6ddedc2b9be9c3dc4978dc53198a43c2cba74945)]:
+  - @voltagent/core@0.1.60
+
 ## 0.1.7
 
 ### Patch Changes
@@ -3390,6 +3825,21 @@
 ---
 
 ## Package: @voltagent/supabase
+
+## 0.1.13
+
+### Patch Changes
+
+- [#371](https://github.com/VoltAgent/voltagent/pull/371) [`6ddedc2`](https://github.com/VoltAgent/voltagent/commit/6ddedc2b9be9c3dc4978dc53198a43c2cba74945) Thanks [@omeraplak](https://github.com/omeraplak)! - feat: add workflow history support
+
+  This update introduces persistence for workflow history in Supabase, including execution details, steps, and timeline events.
+
+  ### Manual Migration Required
+
+  - **Database Migration Required**: This version introduces new tables (`voltagent_memory_workflow_history`, `voltagent_memory_workflow_steps`, and `voltagent_memory_workflow_timeline_events`) to your Supabase database. After updating, you must run the SQL migration script logged to the console in your Supabase SQL Editor to apply the changes.
+
+- Updated dependencies [[`6ddedc2`](https://github.com/VoltAgent/voltagent/commit/6ddedc2b9be9c3dc4978dc53198a43c2cba74945)]:
+  - @voltagent/core@0.1.60
 
 ## 0.1.12
 
@@ -3928,6 +4378,12 @@
 
 ## Package: @voltagent/vercel-ui
 
+## 0.1.5
+
+### Patch Changes
+
+- [#354](https://github.com/VoltAgent/voltagent/pull/354) [`5bfb1e2`](https://github.com/VoltAgent/voltagent/commit/5bfb1e22162cb69aed0d333072237c68b705f6c0) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: Fixed passing along an ID of empty string
+
 ## 0.1.4
 
 ### Patch Changes
@@ -4250,6 +4706,15 @@
 ---
 
 ## Package: @voltagent/xsai
+
+## 0.2.4
+
+### Patch Changes
+
+- [#348](https://github.com/VoltAgent/voltagent/pull/348) [`9581df0`](https://github.com/VoltAgent/voltagent/commit/9581df02bce2ba8b25f9f2964b781095bc50b004) Thanks [@Adherentman](https://github.com/Adherentman)! - fix: xsai empty tools will sent undefined - #337
+
+- Updated dependencies [[`b7dcded`](https://github.com/VoltAgent/voltagent/commit/b7dcdedfbbdda5bfb1885317b59b4d4e2495c956), [`822739c`](https://github.com/VoltAgent/voltagent/commit/822739c901bbc679cd11dd2c9df99cd041fc40c7)]:
+  - @voltagent/core@0.1.55
 
 ## 0.2.3
 
