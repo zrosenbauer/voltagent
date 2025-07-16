@@ -431,6 +431,19 @@ new VoltAgent({
 
 This registration step is what connects your locally executed workflows to the broader observability layer, allowing you to monitor, debug, and manage them from a central location.
 
+## Workflow Hooks
+
+Workflows provide hooks that allow you to tap into the lifecycle of a workflow run. You can execute custom logic at key points, such as before and after a step or at the beginning and end of the entire workflow. This is useful for logging, metrics, or any other side effects you want to perform.
+
+| Hook          | Trigger                                         |
+| ------------- | ----------------------------------------------- |
+| `onStart`     | Before the workflow begins execution.           |
+| `onEnd`       | After the workflow finishes (success or error). |
+| `onStepStart` | Before each individual step starts.             |
+| `onStepEnd`   | After each individual step completes.           |
+
+For more details, see the [Workflow Hooks](./hooks.md) documentation.
+
 ## Core Step Types
 
 | Step           | Purpose                            | Example Use Case                     |
@@ -444,4 +457,5 @@ This registration step is what connects your locally executed workflows to the b
 ## Next Steps
 
 1.  **Explore the Step Types**: Dive deeper into each step, starting with [`andThen`](./steps/and-then.md).
-2.  **Check out Example**: See [with-workflow](https://github.com/VoltAgent/voltagent/tree/main/examples/with-workflow) example.
+2.  **Learn about Hooks**: Understand how to use [Workflow Hooks](./hooks.md) to add custom logic to your workflows.
+3.  **Check out Example**: See [with-workflow](https://github.com/VoltAgent/voltagent/tree/main/examples/with-workflow) example.
