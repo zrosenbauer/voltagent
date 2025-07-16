@@ -158,7 +158,7 @@ Your agent is now running! To interact with it:
 
 Your new project also includes a powerful workflow engine. You can test the pre-built `comprehensiveWorkflow` directly from the VoltOps console:
 
-![workflow-observability-demo](https://github.com/user-attachments/assets/9b877c65-f095-407f-9237-d7879964c38a)
+![VoltOps Workflow Observability](https://github.com/user-attachments/assets/9b877c65-f095-407f-9237-d7879964c38a)
 
 1.  **Go to the Workflows Page:** After starting your server, go directly to the [Workflows page](https://console.voltagent.dev/workflows).
 2.  **Select Your Project:** Use the project selector to choose your project (e.g., "my-agent-app").
