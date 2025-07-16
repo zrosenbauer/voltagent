@@ -11,6 +11,10 @@ import { AgentRegistry } from "./server/registry";
 import type { VoltAgentExporter } from "./telemetry/exporter";
 import type { ServerOptions, VoltAgentOptions } from "./types";
 import { checkForUpdates } from "./utils/update";
+import { WorkflowRegistry } from "./workflow/registry";
+import type { Workflow } from "./workflow";
+import type { DangerouslyAllowAny } from "@voltagent/internal/types";
+import type { WorkflowChain } from "./workflow/chain";
 
 let isTelemetryInitializedByVoltAgent = false;
 let registeredProvider: NodeTracerProvider | null = null;
@@ -20,6 +24,7 @@ let registeredProvider: NodeTracerProvider | null = null;
  */
 export class VoltAgent {
   private registry: AgentRegistry;
+  private workflowRegistry: WorkflowRegistry;
   private serverStarted = false;
   private customEndpoints: CustomEndpointDefinition[] = [];
   private serverConfig: ServerConfig = {};
@@ -27,8 +32,8 @@ export class VoltAgent {
 
   constructor(options: VoltAgentOptions) {
     this.registry = AgentRegistry.getInstance();
+    this.workflowRegistry = WorkflowRegistry.getInstance();
 
-    // 🔥 FIX: Set up telemetry BEFORE registering agents
     // NEW: Handle unified VoltOps client
     if (options.voltOpsClient) {
       this.registry.setGlobalVoltOpsClient(options.voltOpsClient);
@@ -73,6 +78,11 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
 
     // ✅ NOW register agents - they can access global telemetry exporter
     this.registerAgents(options.agents);
+
+    // Register workflows if provided
+    if (options.workflows) {
+      this.registerWorkflows(options.workflows);
+    }
 
     // Merge server options with backward compatibility
     // New server object takes precedence over deprecated individual options
@@ -263,6 +273,52 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
    */
   public getAgentCount(): number {
     return this.registry.getAgentCount();
+  }
+
+  /**
+   * Register workflows
+   */
+  public registerWorkflows(
+    workflows: Record<
+      string,
+      | Workflow<DangerouslyAllowAny, DangerouslyAllowAny>
+      | WorkflowChain<DangerouslyAllowAny, DangerouslyAllowAny>
+    >,
+  ): void {
+    Object.values(workflows).forEach((workflow) => {
+      // If it's a WorkflowChain, convert to Workflow first
+      const workflowInstance = "toWorkflow" in workflow ? workflow.toWorkflow() : workflow;
+      this.workflowRegistry.registerWorkflow(workflowInstance);
+    });
+  }
+
+  /**
+   * Register a single workflow
+   */
+  public registerWorkflow(workflow: Workflow<DangerouslyAllowAny, DangerouslyAllowAny>): void {
+    this.workflowRegistry.registerWorkflow(workflow);
+  }
+
+  /**
+   * Get all registered workflows
+   */
+  public getWorkflows(): Workflow<DangerouslyAllowAny, DangerouslyAllowAny>[] {
+    return this.workflowRegistry.getAllWorkflows().map((registered) => registered.workflow);
+  }
+
+  /**
+   * Get workflow by ID
+   */
+  public getWorkflow(id: string): Workflow<DangerouslyAllowAny, DangerouslyAllowAny> | undefined {
+    const registered = this.workflowRegistry.getWorkflow(id);
+    return registered?.workflow;
+  }
+
+  /**
+   * Get workflow count
+   */
+  public getWorkflowCount(): number {
+    return this.workflowRegistry.getWorkflowCount();
   }
 
   private initializeGlobalTelemetry(

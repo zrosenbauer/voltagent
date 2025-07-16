@@ -3,6 +3,7 @@ import type * as TF from "type-fest";
 import type { z } from "zod";
 import type { BaseMessage } from "../../agent/providers";
 import type { WorkflowState } from "./state";
+import type { WorkflowExecutionContext } from "../context";
 
 /**
  * The base input type for the workflow
@@ -17,7 +18,10 @@ export type InternalBaseWorkflowInputSchema = z.ZodTypeAny | BaseMessage | BaseM
 export type InternalWorkflowStateParam<INPUT> = Omit<
   WorkflowState<INPUT, DangerouslyAllowAny>,
   "data" | "result"
->;
+> & {
+  /** Workflow execution context for event tracking */
+  workflowContext?: WorkflowExecutionContext;
+};
 
 /**
  * A function that can be executed by the workflow
@@ -31,9 +35,9 @@ export type InternalWorkflowFunc<INPUT, DATA, RESULT> = (
 export type InternalWorkflowStepConfig<T extends PlainObject = PlainObject> = {
   /**
    * Unique identifier for the step
-   * @default uuidv4
+   * @required - Must be provided for proper step tracking
    */
-  id?: string;
+  id: string;
   /**
    * Human-readable name for the step
    */

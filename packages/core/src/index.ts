@@ -8,6 +8,12 @@ export {
   andRace,
   andTap,
 } from "./workflow";
+export type {
+  WorkflowExecutionContext,
+  WorkflowStepContext,
+  WorkflowHistoryEntry,
+  WorkflowStepHistoryEntry,
+} from "./workflow/context";
 export type { Workflow, WorkflowConfig } from "./workflow";
 export * from "./agent/agent";
 export * from "./agent/hooks";
@@ -24,6 +30,7 @@ export * from "./tool/reasoning/index";
 export * from "./memory";
 export * from "./agent/providers";
 export * from "./events/types";
+export { AgentEventEmitter, WorkflowEventEmitter, type WorkflowEvent } from "./events";
 export type {
   AgentOptions,
   AgentResponse,
@@ -45,6 +52,7 @@ export * from "./utils";
 export * from "./retriever";
 export * from "./mcp";
 export { AgentRegistry } from "./server/registry";
+export { WorkflowRegistry } from "./workflow/registry";
 export { registerCustomEndpoint, registerCustomEndpoints } from "./server/api";
 export * from "./utils/update";
 export { createAsyncIterableStream, type AsyncIterableStream } from "./utils/async-iterable-stream";
