@@ -167,55 +167,62 @@ const linkedInMessages = [
 const articles = [
   {
     title:
-      "Building Enterprise AI Agents with TypeScript: A Deep Dive into Voltagent",
-    coverImage:
-      "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=400&h=300&fit=crop",
+      "The Gift of Reasoning: Enhancing Amazon Nova Lite with VoltAgent for Character Quirks",
+    coverImage: "https://cdn.voltagent.dev/website/testimonials/community.png",
     excerpt:
       "Exploring how Voltagent revolutionizes AI agent development with full TypeScript support and enterprise-grade features.",
-    author: "Alex Johnson",
-    publication: "TechCrunch",
-    date: "Dec 15, 2024",
-    readTime: "8 min read",
-    url: "https://techcrunch.com/voltagent-ai-agents",
+    author: "Marcos Henriquen",
+    url: "https://dev.to/aws-builders/the-gift-of-reasoning-enhancing-amazon-nova-lite-with-voltagent-for-character-quirks-3k63",
     type: "article" as const,
-  },
-  {
-    title: "Voltagent Tutorial: Build Your First AI Agent in 10 Minutes",
-    type: "youtube" as const,
-    videoId: "dQw4w9WgXcQ",
-    channel: "TechExplained",
-    date: "Dec 14, 2024",
-    views: "15K views",
-    duration: "10:32",
-    excerpt:
-      "Step-by-step tutorial showing how to build and deploy your first AI agent using Voltagent framework.",
-    url: "https://youtube.com/watch?v=dQw4w9WgXcQ",
   },
   {
     title:
-      "The Future of AI Development: Open Source Frameworks Leading the Way",
-    coverImage:
-      "https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=400&h=300&fit=crop",
-    excerpt:
-      "How open source AI frameworks like Voltagent are democratizing access to advanced AI agent development tools.",
-    author: "Sarah Chen",
-    publication: "AI Weekly",
-    date: "Dec 12, 2024",
-    readTime: "6 min read",
-    url: "https://aiweekly.co/voltagent-review",
+      "VoltAgent（TypeScript の AIエージェントフレームワーク）を軽く試してみる",
+    coverImage: "https://cdn.voltagent.dev/website/testimonials/community.png",
+    author: "Yosuke Toyota",
+    url: "https://qiita.com/youtoy/items/6990e175e92c54265580",
     type: "article" as const,
   },
   {
-    title: "Live: Building Multi-Agent Systems with Voltagent",
+    title:
+      "VoltAgent: This Open-Source TypeScript Framework Makes Building Multi-Agent AI Systems Super Easy 🔥",
     type: "youtube" as const,
-    videoId: "dQw4w9WgXcQ",
-    channel: "DevStreams",
-    date: "Dec 11, 2024",
-    views: "8.2K views",
-    duration: "45:18",
+    videoId: "IJYgMv1wH30",
     excerpt:
-      "Live coding session demonstrating how to build complex multi-agent systems using Voltagent's orchestration features.",
-    url: "https://youtube.com/watch?v=dQw4w9WgXcQ",
+      "VoltAgent: This Open-Source TypeScript Framework Makes Building Multi-Agent AI Systems Super Easy 🔥",
+    url: "https://www.youtube.com/watch?v=IJYgMv1wH30",
+  },
+  {
+    title: "Do AI with Voltagent, Composio and R2R",
+    type: "youtube" as const,
+    videoId: "m4DMNSVtcCE",
+    excerpt: "Do AI with Voltagent, Composio and R2R",
+    url: "https://www.youtube.com/watch?v=m4DMNSVtcCE",
+  },
+  {
+    title:
+      "Integra WhatsApp Business API a tu Agente de Voltagent: Tutorial + Repo de Código en GitHub",
+    type: "youtube" as const,
+    videoId: "mDKXbcfwCYM",
+    excerpt:
+      "Integra WhatsApp Business API a tu Agente de Voltagent: Tutorial + Repo de Código en GitHub",
+    url: "https://www.youtube.com/watch?v=mDKXbcfwCYM",
+  },
+  {
+    title:
+      "【これ最強】AIエージェント開発の「voltagent」が熱い！画面で見やすく、シンプルで柔軟なTypescriptベースのフレームワーク",
+    type: "youtube" as const,
+    videoId: "5WARn6C9ITM",
+    excerpt:
+      "【これ最強】AIエージェント開発の「voltagent」が熱い！画面で見やすく、シンプルで柔軟なTypescriptベースのフレームワーク",
+    url: "https://www.youtube.com/watch?v=5WARn6C9ITM",
+  },
+  {
+    title: "¿Agentes de IA sin Complicaciones? ¡Este Framework es la Clave!",
+    type: "youtube" as const,
+    videoId: "5WARn6C9ITM",
+    excerpt: "¿Agentes de IA sin Complicaciones? ¡Este Framework es la Clave!",
+    url: "https://www.youtube.com/watch?v=Om03tXjDfJs",
   },
 ];
 

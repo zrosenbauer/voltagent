@@ -52,9 +52,9 @@ export function ArticleCard({
           {/* YouTube Play Button */}
           {isYouTube && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors duration-300">
-              <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-200">
+              <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-200">
                 <svg
-                  className="w-6 h-6 text-white ml-1"
+                  className="w-6 h-6 text-white "
                   fill="currentColor"
                   viewBox="0 0 24 24"
                   aria-label="Play video"
