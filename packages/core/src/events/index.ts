@@ -8,11 +8,20 @@ import type { BaseMessage } from "../index";
 import { AgentRegistry } from "../server/registry";
 import { BackgroundQueue } from "../utils/queue/queue";
 import { deepClone } from "@voltagent/internal/utils";
-import type { NewTimelineEvent } from "./types";
+import type { AgentTimelineEvent } from "./types";
 
 // New type exports
 export type EventStatus = AgentStatus;
-export type TimelineEventType = "memory" | "tool" | "agent" | "retriever";
+export type TimelineEventType =
+  | "memory"
+  | "tool"
+  | "agent"
+  | "retriever"
+  | "workflow"
+  | "workflow-step";
+
+// Export WorkflowEventEmitter
+export { WorkflowEventEmitter, type WorkflowEvent } from "./workflow-emitter";
 
 /**
  * Types for tracked event functionality
@@ -103,7 +112,7 @@ export class AgentEventEmitter extends EventEmitter {
   public publishTimelineEventAsync(params: {
     agentId: string;
     historyId: string;
-    event: NewTimelineEvent;
+    event: AgentTimelineEvent;
     skipPropagation?: boolean;
     parentHistoryEntryId?: string;
   }): void {
@@ -141,7 +150,7 @@ export class AgentEventEmitter extends EventEmitter {
   private async publishTimelineEventSync(params: {
     agentId: string;
     historyId: string;
-    event: NewTimelineEvent;
+    event: AgentTimelineEvent;
     skipPropagation?: boolean;
     parentHistoryEntryId?: string;
   }): Promise<AgentHistoryEntry | undefined> {
@@ -155,13 +164,11 @@ export class AgentEventEmitter extends EventEmitter {
     const historyManager = agent.getHistoryManager();
 
     try {
-      // Call the new method in HistoryManager to persist this new event type
       const updatedEntry = await historyManager.persistTimelineEvent(historyId, event);
 
       if (updatedEntry) {
         this.emitHistoryUpdate(agentId, updatedEntry);
 
-        // Propagate the event to parent agents if not explicitly skipped
         if (!skipPropagation) {
           await this.propagateEventToParentAgents(
             agentId,
@@ -188,14 +195,14 @@ export class AgentEventEmitter extends EventEmitter {
    *
    * @param agentId - The source agent ID (subagent)
    * @param historyId - The history entry ID of the source (not used directly but needed for context)
-   * @param event - The event to propagate
+   * @param event - The agent event to propagate (no workflow events)
    * @param visited - Set of already visited agents (to prevent cycles)
    * @param parentHistoryEntryId - Optional specific parent operation context to avoid confusion between concurrent operations
    */
   private async propagateEventToParentAgents(
     agentId: string,
     _historyId: string,
-    event: NewTimelineEvent,
+    event: AgentTimelineEvent,
     visited: Set<string> = new Set(),
     parentHistoryEntryId?: string,
   ): Promise<void> {
@@ -242,7 +249,7 @@ export class AgentEventEmitter extends EventEmitter {
             `[EventPropagation] Using specific parent operation context: ${parentHistoryEntryId} for agent: ${parentId}`,
           );
 
-          const enrichedEvent: NewTimelineEvent = {
+          const enrichedEvent: AgentTimelineEvent = {
             ...event,
             id: crypto.randomUUID(),
             metadata: {
@@ -255,7 +262,7 @@ export class AgentEventEmitter extends EventEmitter {
           await this.publishTimelineEventSync({
             agentId: parentId,
             historyId: parentHistoryEntryId,
-            event: enrichedEvent,
+            event: enrichedEvent as AgentTimelineEvent,
             skipPropagation: true, // Prevent recursive propagation cycles
           });
 

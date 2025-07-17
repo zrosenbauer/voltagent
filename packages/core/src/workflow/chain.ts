@@ -1,6 +1,6 @@
-import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type { z } from "zod";
-import type { Agent } from "../agent";
+import type { DangerouslyAllowAny } from "@voltagent/internal/types";
+import type { Agent } from "../agent/agent";
 import { createWorkflow } from "./core";
 import type {
   InternalAnyWorkflowStep,
@@ -22,7 +22,7 @@ import {
   andThen,
   andWhen,
 } from "./steps";
-import type { WorkflowConfig, WorkflowInput, WorkflowRunOptions } from "./types";
+import type { WorkflowConfig, WorkflowInput, WorkflowRunOptions, Workflow } from "./types";
 
 /**
  * Agent configuration for the chain
@@ -41,7 +41,8 @@ export type AgentConfig<SCHEMA extends z.ZodTypeAny> = {
  *   name: "User Processing Workflow",
  *   purpose: "Process user data and generate personalized content",
  *   input: z.object({ userId: z.string(), userType: z.enum(["admin", "user"]) }),
- *   result: z.object({ processed: z.boolean(), content: z.string() })
+ *   result: z.object({ processed: z.boolean(), content: z.string() }),
+ *   memory: new LibSQLStorage({ url: "file:memory.db" }) // Optional workflow-specific memory
  * })
  *   .andThen(async (data) => {
  *     const userInfo = await fetchUserInfo(data.userId);
@@ -61,7 +62,11 @@ export type AgentConfig<SCHEMA extends z.ZodTypeAny> = {
  *     content: data.content
  *   }));
  *
- * const result = await workflow.run({ userId: "123", userType: "admin" });
+ * // Run with optional memory override
+ * const result = await workflow.run(
+ *   { userId: "123", userType: "admin" },
+ *   { memory: new LibSQLStorage({ url: "file:memory.db" }) }
+ * );
  * ```
  */
 export class WorkflowChain<
@@ -342,37 +347,15 @@ export class WorkflowChain<
   }
 
   /**
+   * Convert the current chain to a runnable workflow
+   */
+  public toWorkflow(): Workflow<INPUT_SCHEMA, RESULT_SCHEMA> {
+    // @ts-expect-error - upstream types work and this is nature of how the createWorkflow function is typed using variadic args
+    return createWorkflow<INPUT_SCHEMA, RESULT_SCHEMA>(this.config, ...this.steps);
+  }
+
+  /**
    * Execute the workflow with the given input
-   *
-   * @example
-   * ```ts
-   * const workflow = createWorkflowChain({
-   *   id: "user-processing",
-   *   name: "User Processing Workflow",
-   *   purpose: "Process user data and generate personalized content",
-   *   input: z.object({ userId: z.string(), userType: z.enum(["admin", "user"]) }),
-   *   result: z.object({ processed: z.boolean(), content: z.string() })
-   * })
-   *   .andThen(async (data) => {
-   *     const userInfo = await fetchUserInfo(data.userId);
-   *     return { ...data, userInfo };
-   *   })
-   *   .andAgent(
-   *     (data) => `Generate personalized content for ${data.userInfo.name}`,
-   *     agent,
-   *     { schema: z.object({ content: z.string() }) }
-   *   )
-   *   .andThen(async (data) => ({
-   *     processed: true,
-   *     content: data.content
-   *   }));
-   *
-   * const result = await workflow.run({ userId: "123", userType: "admin" });
-   * console.log(result); // { processed: true, content: "Hello John, here's your personalized content..." }
-   * ```
-   *
-   * @param input - The input data for the workflow that matches the input schema
-   * @returns The workflow execution result that matches the result schema
    */
   async run(input: WorkflowInput<INPUT_SCHEMA>, options?: WorkflowRunOptions) {
     // @ts-expect-error - upstream types work and this is nature of how the createWorkflow function is typed using variadic args
@@ -383,49 +366,6 @@ export class WorkflowChain<
 
 /**
  * Creates a new workflow chain with the given configuration
- *
- * @example
- * ```ts
- * const workflow = createWorkflowChain({
- *   id: "data-processing",
- *   name: "Data Processing Pipeline",
- *   purpose: "Process and analyze user data with AI insights",
- *   input: z.object({
- *     userId: z.string(),
- *     data: z.array(z.number()),
- *     options: z.object({
- *       includeAnalysis: z.boolean().default(true)
- *     }).optional()
- *   }),
- *   result: z.object({
- *     processed: z.boolean(),
- *     summary: z.string(),
- *     insights: z.array(z.string()).optional()
- *   })
- * })
- *   .andThen(async (data) => {
- *     const processed = await processData(data.data);
- *     return { ...data, processed };
- *   })
- *   .andWhen(
- *     (data) => data.options?.includeAnalysis ?? true,
- *     (data) => andAgent(
- *       `Analyze the processed data: ${JSON.stringify(data.processed)}`,
- *       agent,
- *       { schema: z.object({ insights: z.array(z.string()) }) }
- *     )
- *   )
- *   .andThen(async (data) => ({
- *     processed: true,
- *     summary: `Processed ${data.data.length} items for user ${data.userId}`,
- *     insights: data.insights
- *   }));
- *
- * const result = await workflow.run(...);
- * ```
- *
- * @param config - The workflow configuration including schemas and metadata
- * @returns A new workflow chain instance ready for building steps
  */
 export function createWorkflowChain<
   INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,

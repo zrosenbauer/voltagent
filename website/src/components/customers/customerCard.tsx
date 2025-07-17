@@ -78,7 +78,7 @@ export const ProjectCard = ({ project }: CustomerCardProps) => {
                 }
                 // Final fallback to default icon
                 return (
-                  <BuildingOfficeIcon className="w-9 h-9 mr-2 text-[#00d992]" />
+                  <BuildingOfficeIcon className="w-9 h-9 mr-2  text-white" />
                 );
               })()}
               <div>
