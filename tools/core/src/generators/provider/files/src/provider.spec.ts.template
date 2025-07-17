@@ -5,7 +5,7 @@
  */
 
 import { convertAsyncIterableToArray } from "@voltagent/internal";
-import { describe, expect, expectTypeOf, it, vi } from "vitest";
+import { beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 import { z } from "zod";
 import { <%= classify(name) %>Provider } from "./provider";
 import { createMockModel } from "./testing";
