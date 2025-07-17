@@ -1,215 +1,440 @@
-import type { BaseMessage } from "@voltagent/core";
+/**
+ * 🚨🚨🚨 WARNING 🚨🚨🚨
+ * This file is generated when you create a new provider, using the nx generate command. It is not recommended to edit this file manually, as
+ * it COULD be OVERWRITTEN in the future if we begin to generate this file on a regular basis (as we update the core provider tests).
+ */
+
 import { convertAsyncIterableToArray } from "@voltagent/internal";
-import { beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, expectTypeOf, it, vi } from "vitest";
 import { z } from "zod";
 import { <%= classify(name) %>Provider } from "./provider";
+import { createMockModel } from "./testing";
 
+const mockMessages = [{ role: "user" as const, content: "Hello, how are you?" }];
 
-let provider: <%= classify(name) %>Provider;
-
-// TODO: Replace with the correct mock model from the provider
-class MyMock { }
-
-// TODO: Replace with the correct mock function from the provider
-function simulateReadableStream(args: any[]) {}
-
-beforeEach(() => {
-  provider = new <%= classify(name) %>Provider();
-});
-
-describe("generateText", () => {
-  it("should generate text", async () => {
-    // @todo: implement mock model or import from provider
-    const mockModel = new MyMock(); 
-
-    const result = await provider.generateText({
-      messages: [{ role: "user", content: "Hello!" }],
-      model: mockModel,
-    });
-
-    expect(result).toBeDefined();
-    expect(result.text).toBe("Hello, I am a test response!");
-  });
-});
-
-describe("streamText", () => {
-  let mockModel: MyMock;
+describe("core", () => {
+  let provider: <%= classify(name) %>Provider;
 
   beforeEach(() => {
-    mockModel = new MyMock({
-      doStream: async () => ({
-        stream: simulateReadableStream({
-          chunks: [
-            { type: "text-delta", textDelta: "Hello" },
-            { type: "text-delta", textDelta: ", " },
-            { type: "text-delta", textDelta: "world!" },
-            {
-              type: "finish",
-              finishReason: "stop",
-              logprobs: undefined,
-              usage: { completionTokens: 10, promptTokens: 3 },
-            },
-          ],
+    provider = new <%= classify(name) %>Provider();
+  });
+
+  describe("generateText", () => {
+    it("should generate text matching expected output", async () => {
+      const result = await provider.generateText({
+        messages: mockMessages,
+        model: createMockModel([
+          { role: "user" as const, content: "Hello, how are you?" },
+          { role: "assistant" as const, content: "I'm doing well, thank you!" },
+        ]),
+      });
+
+      expect(result).toBeDefined();
+      expect(result.text).toBe("Hello, how are you?\nI'm doing well, thank you!");
+    });
+
+    it("should include the original provider response in the result", async () => {
+      const result = await provider.generateText({
+        messages: mockMessages,
+        model: createMockModel([
+          { role: "user" as const, content: "Hello, how are you?" },
+          { role: "assistant" as const, content: "I'm doing well, thank you!" },
+        ]),
+      });
+
+      expect(result).toBeDefined();
+      expect(result.provider).toBeDefined();
+    });
+
+    it("should include usage information in the result if available", async () => {
+      const result = await provider.generateText({
+        messages: mockMessages,
+        model: createMockModel([
+          { role: "user" as const, content: "Hello, how are you?" },
+          { role: "assistant" as const, content: "I'm doing well, thank you!" },
+        ]),
+      });
+
+      expect(result).toBeDefined();
+      // Usage is optional, so we just check if the result is valid
+      if (result.usage) {
+        expect(result.usage).toBeDefined();
+      }
+    });
+
+    it("should handle finish reason", async () => {
+      const result = await provider.generateText({
+        messages: mockMessages,
+        model: createMockModel([
+          { role: "user" as const, content: "Hello, how are you?" },
+          { role: "assistant" as const, content: "I'm doing well, thank you!" },
+        ]),
+      });
+
+      expect(result).toBeDefined();
+      // Finish reason is optional, so we just check if the result is valid
+      if (result.finishReason) {
+        expect(result.finishReason).toBeDefined();
+      }
+    });
+
+    it("should forward errors in the correct format", async () => {
+      await expect(
+        provider.generateText({
+          messages: mockMessages,
+          model: createMockModel(new Error("Test error")),
         }),
-      }),
+      ).rejects.toThrow(
+        expect.objectContaining({
+          message: expect.stringContaining("Test error"),
+          stage: "llm_generate",
+        }),
+      );
+    });
+
+    it("should call onStepFinish with the correct format", async () => {
+      const onStepFinish = vi.fn();
+      await provider.generateText({
+        messages: mockMessages,
+        model: createMockModel([{ role: "assistant" as const, content: "Hello, world!" }]),
+        onStepFinish,
+      });
+      expect(onStepFinish).toHaveBeenCalledWith(
+        expect.objectContaining({
+          content: "Hello, world!",
+          role: "assistant",
+          id: expect.any(String),
+        }),
+      );
     });
   });
 
-  it("should stream text", async () => {
-    const result = await provider.streamText({
-      messages: [{ role: "user", content: "Hello!" }],
-      model: mockModel,
+  describe("streamText", () => {
+    it("should stream text with basic input", async () => {
+      const result = await provider.streamText({
+        messages: mockMessages,
+        model: createMockModel([
+          { role: "user" as const, content: "Hello, how are you?" },
+          { role: "assistant" as const, content: "I'm doing well, thank you!" },
+        ]),
+      });
+
+      expect(result).toBeDefined();
+      expect(await convertAsyncIterableToArray(result.textStream)).toEqual([
+        "Hello, how are you?",
+        "I'm doing well, thank you!",
+      ]);
     });
 
-    expect(result).toBeDefined();
-    expect(result.textStream).toBeDefined();
-    expect(result.textStream).toBeInstanceOf(ReadableStream);
-    expect(await convertAsyncIterableToArray(result.textStream)).toEqual([
-      "Hello",
-      ", ",
-      "world!",
-    ]);
-  });
+    it("should provide readable stream", async () => {
+      const result = await provider.streamText({
+        messages: mockMessages,
+        model: createMockModel([
+          { role: "user" as const, content: "Hello, how are you?" },
+          { role: "assistant" as const, content: "I'm doing well, thank you!" },
+        ]),
+      });
 
-  it("should include fullStream", async () => {
-    const result = await provider.streamText({
-      messages: [{ role: "user", content: "Hello!" }],
-      model: mockModel,
+      expect(result).toBeDefined();
+      expect(result.textStream).toBeDefined();
+
+      // Test that we can read from the stream
+      const reader = result.textStream.getReader();
+      expect(reader).toBeDefined();
+      reader.releaseLock();
     });
 
-    expect(result.fullStream).toBeDefined();
-    // biome-ignore lint/style/noNonNullAssertion: this is a test since other providers don't have this by default
-    expect(await convertAsyncIterableToArray(result.fullStream!)).toEqual([
-      { type: "text-delta", textDelta: "Hello" },
-      { type: "text-delta", textDelta: ", " },
-      { type: "text-delta", textDelta: "world!" },
+    it.each([
+      // TODO: Add onChunk test and support text-delta chunks
+      // onChunk doesn't work because we do NOT support text-delta chunks
       {
-        type: "finish",
-        finishReason: "stop",
-        logprobs: undefined,
-        usage: { completionTokens: 10, promptTokens: 3, totalTokens: 13 },
-      },
-    ]);
-  });
-});
-
-describe("generateObject", () => {
-  it("should generate object", async () => {
-    const testObject = {
-      name: "John Doe",
-      age: 30,
-      hobbies: ["reading", "gaming"],
-    };
-
-    const mockModel = new MyMock({
-      doGenerate: async () => ({
-        rawCall: { rawPrompt: null, rawSettings: {} },
-        finishReason: "stop",
-        usage: { promptTokens: 10, completionTokens: 20 },
-        text: JSON.stringify(testObject),
-        response: {
-          id: "test-id",
-          modelId: "mock-model-id",
-          timestamp: new Date(),
+        name: "onError",
+        input: new Error("Test error"),
+        expected: {
+          message: expect.stringContaining("Test error"),
+          stage: "llm_stream",
         },
-      }),
-    });
+      },
+      {
+        name: "onStepFinish",
+        input: [{ role: "assistant" as const, content: "Hello, world!" }],
+        expected: {
+          content: "Hello, world!",
+          role: "assistant",
+          id: expect.any(String),
+        },
+      },
+      {
+        name: "onFinish",
+        input: [{ role: "assistant" as const, content: "Hello, world!" }],
+        expected: {
+          text: "Hello, world!",
+        },
+      },
+    ])("should call $name with the correct format", async ({ name, input, expected }) => {
+      const func = vi.fn();
 
-    const schema = z.object({
-      name: z.string(),
-      age: z.number(),
-      hobbies: z.array(z.string()),
-    });
+      const result = await provider.streamText({
+        messages: [{ role: "user", content: "Hello!" }],
+        model: createMockModel(input),
+        [name]: func,
+      });
+      await convertAsyncIterableToArray(result.textStream);
 
-    const result = await provider.generateObject({
-      messages: [{ role: "user", content: "Get user info" }],
-      model: mockModel,
-      schema,
+      expect(func).toHaveBeenCalledWith(expect.objectContaining(expected));
     });
-
-    expect(result).toBeDefined();
-    expect(result.object).toEqual(testObject);
   });
-});
 
-describe("streamObject", () => {
-  it("should stream object", async () => {
-    const mockModel = new MyMock({
-      doStream: async () => ({
-        stream: simulateReadableStream({
-          chunks: [
-            { type: "text-delta", textDelta: "{" },
-            { type: "text-delta", textDelta: '"name": "John Doe",' },
-            { type: "text-delta", textDelta: '"age": 30,' },
-            { type: "text-delta", textDelta: '"hobbies": ["reading", "gaming"]' },
-            { type: "text-delta", textDelta: "}" },
-            {
-              type: "finish",
-              finishReason: "stop",
-              logprobs: undefined,
-              usage: { completionTokens: 10, promptTokens: 3 },
-            },
-          ],
+  describe("generateObject", () => {
+    it("should generate object with basic input", async () => {
+      const result = await provider.generateObject({
+        messages: mockMessages,
+        model: createMockModel({
+          name: "John Doe",
+          age: 30,
+          hobbies: ["reading", "gaming"],
         }),
-        rawCall: { rawPrompt: null, rawSettings: {} },
-      }),
+        schema: z.object({
+          name: z.string(),
+          age: z.number(),
+          hobbies: z.array(z.string()),
+        }),
+      });
+
+      expect(result).toBeDefined();
+      expect(result.object).toEqual({
+        name: "John Doe",
+        age: 30,
+        hobbies: ["reading", "gaming"],
+      });
     });
 
-    const schema = z.object({
-      name: z.string(),
-      age: z.number(),
-      hobbies: z.array(z.string()),
+    it("should match types for the schema", async () => {
+      const schema = z.object({
+        name: z.string(),
+        age: z.number(),
+        hobbies: z.array(z.string()),
+      });
+
+      const result = await provider.generateObject({
+        messages: mockMessages,
+        model: createMockModel({
+          name: "John Doe",
+          age: 30,
+          hobbies: ["reading", "gaming"],
+        }),
+        schema,
+      });
+
+      expectTypeOf(result.object).toMatchObjectType<z.infer<typeof schema>>();
     });
 
-    const result = await provider.streamObject({
-      messages: [{ role: "user", content: "Get user info" }],
-      model: mockModel,
-      schema,
+    it("should handle object generation without schema", async () => {
+      // This test may fail for providers that require schemas
+      try {
+        const result = await provider.generateObject({
+          messages: mockMessages,
+          model: createMockModel({
+            name: "John Doe",
+            age: 30,
+            hobbies: ["reading", "gaming"],
+          }),
+          // @ts-expect-error - This test may fail for providers that require schemas
+          schema: undefined,
+        });
+
+        expect(result).toBeDefined();
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
     });
 
-    expect(result).toBeDefined();
-    expect(result.objectStream).toBeDefined();
-    expect(result.objectStream).toBeInstanceOf(ReadableStream);
+    it("should forward errors in the correct format", async () => {
+      await expect(
+        provider.generateObject({
+          messages: mockMessages,
+          model: createMockModel(new Error("Test error")),
+          schema: z.object({
+            name: z.string(),
+            age: z.number(),
+            hobbies: z.array(z.string()),
+          }),
+        }),
+      ).rejects.toThrow(
+        expect.objectContaining({
+          message: expect.stringContaining("Test error"),
+          stage: "object_generate",
+        }),
+      );
+    });
+
+    it("should call onStepFinish with the correct format", async () => {
+      const onStepFinish = vi.fn();
+      await provider.generateObject({
+        messages: mockMessages,
+        model: createMockModel({
+          name: "John Doe",
+          age: 30,
+          hobbies: ["reading", "gaming"],
+        }),
+        schema: z.object({
+          name: z.string(),
+          age: z.number(),
+          hobbies: z.array(z.string()),
+        }),
+        onStepFinish,
+      });
+      expect(onStepFinish).toHaveBeenCalledWith(
+        expect.objectContaining({
+          content: JSON.stringify({
+            name: "John Doe",
+            age: 30,
+            hobbies: ["reading", "gaming"],
+          }),
+          role: "assistant",
+          id: expect.any(String),
+        }),
+      );
+    });
   });
-});
 
-describe("toMessage", () => {
-  it("should map basic message correctly", () => {
-    const message: BaseMessage = {
-      role: "user",
-      content: "Hello",
-    };
+  describe("streamObject", () => {
+    it("should stream object with basic input", async () => {
+      const result = await provider.streamObject({
+        messages: mockMessages,
+        model: createMockModel({
+          name: "John Doe",
+          age: 30,
+          hobbies: ["reading", "gaming"],
+        }),
+        schema: z.object({
+          name: z.string(),
+          age: z.number(),
+          hobbies: z.array(z.string()),
+        }),
+      });
 
-    const result = provider.toMessage(message);
-    expect(result).toEqual({
-      role: "user",
-      content: "Hello",
+      expect(result).toBeDefined();
+      expect(await convertAsyncIterableToArray(result.objectStream)).toEqual([
+        {},
+        { name: "John Doe" },
+        {
+          name: "John Doe",
+          age: 30,
+        },
+        {
+          name: "John Doe",
+          age: 30,
+          hobbies: [],
+        },
+        {
+          name: "John Doe",
+          age: 30,
+          hobbies: ["reading"],
+        },
+        {
+          name: "John Doe",
+          age: 30,
+          hobbies: ["reading", "gaming"],
+        },
+      ]);
+    });
+
+    it("should provide readable object stream", async () => {
+      const result = await provider.streamObject({
+        messages: mockMessages,
+        model: createMockModel({
+          name: "John Doe",
+          age: 30,
+          hobbies: ["reading", "gaming"],
+        }),
+        schema: z.object({
+          name: z.string(),
+          age: z.number(),
+          hobbies: z.array(z.string()),
+        }),
+      });
+
+      expect(result).toBeDefined();
+      expect(result.objectStream).toBeDefined();
+
+      const reader = result.objectStream.getReader();
+      expect(reader).toBeDefined();
+      reader.releaseLock();
+    });
+
+    it.each([
+      // TODO: Add onChunk test and support text-delta chunks
+      // onChunk doesn't work because we do NOT support text-delta chunks
+      {
+        name: "onError",
+        input: new Error("Test error"),
+        expected: {
+          message: expect.stringContaining("Test error"),
+          stage: "object_stream",
+        },
+      },
+      {
+        name: "onStepFinish",
+        input: {
+          name: "John Doe",
+          age: 30,
+          hobbies: ["reading", "gaming"],
+        },
+        expected: {
+          content: JSON.stringify({
+            name: "John Doe",
+            age: 30,
+            hobbies: ["reading", "gaming"],
+          }),
+          role: "assistant",
+          id: expect.any(String),
+        },
+      },
+      {
+        name: "onFinish",
+        input: {
+          name: "John Doe",
+          age: 30,
+          hobbies: ["reading", "gaming"],
+        },
+        expected: {
+          object: {
+            name: "John Doe",
+            age: 30,
+            hobbies: ["reading", "gaming"],
+          },
+        },
+      },
+    ])("should call $name with the correct format", async ({ name, input, expected }) => {
+      const func = vi.fn();
+
+      const result = await provider.streamObject({
+        messages: [{ role: "user", content: "Hello!" }],
+        model: createMockModel(input),
+        schema: z.object({
+          name: z.string(),
+          age: z.number(),
+          hobbies: z.array(z.string()),
+        }),
+        [name]: func,
+      });
+      await convertAsyncIterableToArray(result.objectStream);
+      expect(func).toHaveBeenCalledWith(expect.objectContaining(expected));
     });
   });
 
-  it("should map message with name", () => {
-    const message: BaseMessage = {
-      role: "tool",
-      content: "Hello",
-    };
-
-    const result = provider.toMessage(message);
-    expect(result).toEqual({
-      role: "tool",
-      content: "Hello",
-    });
-  });
-
-  it("should map message with function call", () => {
-    const message: BaseMessage = {
-      role: "assistant",
-      content: "Hello",
-    };
-
-    const result = provider.toMessage(message);
-    expect(result).toEqual({
-      role: "assistant",
-      content: "Hello",
+  describe("getModelIdentifier", () => {
+    it("should return the model identifier", () => {
+      const result = provider.getModelIdentifier(
+        createMockModel({
+          name: "John Doe",
+          age: 30,
+          hobbies: ["reading", "gaming"],
+        }),
+      );
+      expect(result).toBeDefined();
+      expectTypeOf(result).toBeString();
     });
   });
 });
