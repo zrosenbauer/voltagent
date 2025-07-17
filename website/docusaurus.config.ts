@@ -165,6 +165,10 @@ const config: Config = {
             to: "/docs/rag/overview/",
             from: "/docs/agents/retriever/",
           },
+          {
+            to: "/customers/",
+            from: "/showcase/",
+          },
         ],
       },
     ],
