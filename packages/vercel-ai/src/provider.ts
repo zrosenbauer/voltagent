@@ -24,6 +24,7 @@ import type {
   LanguageModelV1,
   ProviderMetadata,
   StepResult,
+  StreamObjectOnFinishCallback,
   StreamObjectResult,
   StreamTextResult,
 } from "ai";
@@ -311,38 +312,34 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
     >
   > {
     const vercelMessages = options.messages.map(this.toMessage);
-
-    const sdkOnFinish = async (event: {
-      object: z.infer<TSchema> | undefined;
-      error: unknown | undefined;
-      usage: LanguageModelUsage;
-      response: LanguageModelResponseMetadata;
-      warnings?: CallWarning[];
-      providerMetadata: ProviderMetadata | undefined;
-    }) => {
-      if (options.onStepFinish) {
-        const jsonResult = event.object ? JSON.stringify(event.object) : "";
-        const step = createStepFromChunk({
-          type: "text", // Simulate as a text step containing the final JSON
-          text: jsonResult,
-          usage: event.usage,
-        });
-        if (step) {
-          await options.onStepFinish(step);
-        }
-      }
-
-      if (options.onFinish && event.object) {
-        const finishResult: StreamObjectFinishResult<z.infer<TSchema>> = {
-          object: event.object,
-          usage: getUsageInfo(event.usage), // Mapped usage info
-          warnings: event.warnings,
-          providerResponse: event, // Include the original SDK event object
-          // finishReason is not typically available in Vercel's streamObject finish event
+    const onFinish = match(options)
+      .returnType<StreamObjectOnFinishCallback<z.infer<TSchema>> | null>()
+      .with({ onStepFinish: P.not(P.nullish) }, (o) => {
+        return async (event) => {
+          const jsonResult = event.object ? JSON.stringify(event.object) : "";
+          const step = createStepFromChunk({
+            type: "text", // Simulate as a text step containing the final JSON
+            text: jsonResult,
+            usage: event.usage,
+          });
+          if (step) {
+            await o.onStepFinish(step);
+          }
         };
-        await options.onFinish(finishResult);
-      }
-    };
+      })
+      .with({ onFinish: P.not(P.nullish) }, (o) => {
+        return async (event) => {
+          const finishResult: StreamObjectFinishResult<z.infer<TSchema>> = {
+            object: event.object,
+            usage: getUsageInfo(event.usage), // Mapped usage info
+            warnings: event.warnings,
+            providerResponse: event, // Include the original SDK event object
+            // finishReason is not typically available in Vercel's streamObject finish event
+          };
+          await o.onFinish(finishResult);
+        };
+      })
+      .otherwise(() => null);
 
     const result = streamObject({
       ...options.provider,
@@ -350,9 +347,7 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
       model: options.model,
       schema: options.schema,
       abortSignal: options.signal,
-      // Pass the correctly defined sdkOnFinish handler
-      // Only pass it if either onStepFinish or onFinish is provided by the agent
-      ...(options.onStepFinish || options.onFinish ? { onFinish: sdkOnFinish } : {}),
+      ...(onFinish ? { onFinish } : {}),
       onError: (sdkError) => {
         // Create the error using the helper
         const voltagentErr = createVoltagentErrorFromSdkError(sdkError, "object_stream");

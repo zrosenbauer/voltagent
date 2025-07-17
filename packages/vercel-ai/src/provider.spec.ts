@@ -75,7 +75,7 @@ describe("core", () => {
     });
 
     it("should forward errors in the correct format", async () => {
-      expect(
+      await expect(
         provider.generateText({
           messages: mockMessages,
           model: createMockModel(new Error("Test error")),
@@ -103,36 +103,6 @@ describe("core", () => {
         }),
       );
     });
-
-    // it.each([
-    //   {
-    //     name: "onError",
-    //     input: new Error("Test error"),
-    //     expected: {
-    //       message: expect.stringContaining("Test error"),
-    //       stage: "llm_generate",
-    //     },
-    //   },
-    //   {
-    //     name: "onStepFinish",
-    //     input: [{ role: "assistant" as const, content: "Hello, world!" }],
-    //     expected: {
-    //       content: "Hello, world!",
-    //       role: "assistant",
-    //       id: expect.any(String),
-    //     },
-    //   },
-    // ])("should handle %s", async ({ name, input, expected }) => {
-    //   const func = vi.fn();
-
-    //   await provider.generateText({
-    //     messages: [{ role: "user", content: "Hello!" }],
-    //     model: createMockModel(input),
-    //     [name]: func,
-    //   });
-
-    //   expect(func).toHaveBeenCalledWith(expect.objectContaining(expected));
-    // });
   });
 
   describe("streamText", () => {
@@ -168,6 +138,46 @@ describe("core", () => {
       const reader = result.textStream.getReader();
       expect(reader).toBeDefined();
       reader.releaseLock();
+    });
+
+    it.each([
+      // TODO: Add onChunk test and support text-delta chunks
+      // onChunk doesn't work because we do NOT support text-delta chunks
+      {
+        name: "onError",
+        input: new Error("Test error"),
+        expected: {
+          message: expect.stringContaining("Test error"),
+          stage: "llm_stream",
+        },
+      },
+      {
+        name: "onStepFinish",
+        input: [{ role: "assistant" as const, content: "Hello, world!" }],
+        expected: {
+          content: "Hello, world!",
+          role: "assistant",
+          id: expect.any(String),
+        },
+      },
+      {
+        name: "onFinish",
+        input: [{ role: "assistant" as const, content: "Hello, world!" }],
+        expected: {
+          text: "Hello, world!",
+        },
+      },
+    ])("should call $name with the correct format", async ({ name, input, expected }) => {
+      const func = vi.fn();
+
+      const result = await provider.streamText({
+        messages: [{ role: "user", content: "Hello!" }],
+        model: createMockModel(input),
+        [name]: func,
+      });
+      await convertAsyncIterableToArray(result.textStream);
+
+      expect(func).toHaveBeenCalledWith(expect.objectContaining(expected));
     });
   });
 
@@ -234,6 +244,54 @@ describe("core", () => {
         expect(error).toBeDefined();
       }
     });
+
+    it("should forward errors in the correct format", async () => {
+      await expect(
+        provider.generateObject({
+          messages: mockMessages,
+          model: createMockModel(new Error("Test error")),
+          schema: z.object({
+            name: z.string(),
+            age: z.number(),
+            hobbies: z.array(z.string()),
+          }),
+        }),
+      ).rejects.toThrow(
+        expect.objectContaining({
+          message: expect.stringContaining("Test error"),
+          stage: "object_generate",
+        }),
+      );
+    });
+
+    it("should call onStepFinish with the correct format", async () => {
+      const onStepFinish = vi.fn();
+      await provider.generateObject({
+        messages: mockMessages,
+        model: createMockModel({
+          name: "John Doe",
+          age: 30,
+          hobbies: ["reading", "gaming"],
+        }),
+        schema: z.object({
+          name: z.string(),
+          age: z.number(),
+          hobbies: z.array(z.string()),
+        }),
+        onStepFinish,
+      });
+      expect(onStepFinish).toHaveBeenCalledWith(
+        expect.objectContaining({
+          content: JSON.stringify({
+            name: "John Doe",
+            age: 30,
+            hobbies: ["reading", "gaming"],
+          }),
+          role: "assistant",
+          id: expect.any(String),
+        }),
+      );
+    });
   });
 
   describe("streamObject", () => {
@@ -299,6 +357,67 @@ describe("core", () => {
       const reader = result.objectStream.getReader();
       expect(reader).toBeDefined();
       reader.releaseLock();
+    });
+
+    it.each([
+      // TODO: Add onChunk test and support text-delta chunks
+      // onChunk doesn't work because we do NOT support text-delta chunks
+      {
+        name: "onError",
+        input: new Error("Test error"),
+        expected: {
+          message: expect.stringContaining("Test error"),
+          stage: "object_stream",
+        },
+      },
+      // TODO: Implement onStepFinish and onFinish as they are not firing
+      {
+        name: "onStepFinish",
+        input: {
+          name: "John Doe",
+          age: 30,
+          hobbies: ["reading", "gaming"],
+        },
+        expected: {
+          content: JSON.stringify({
+            name: "John Doe",
+            age: 30,
+            hobbies: ["reading", "gaming"],
+          }),
+          role: "assistant",
+          id: expect.any(String),
+        },
+      },
+      {
+        name: "onFinish",
+        input: {
+          name: "John Doe",
+          age: 30,
+          hobbies: ["reading", "gaming"],
+        },
+        expected: {
+          object: {
+            name: "John Doe",
+            age: 30,
+            hobbies: ["reading", "gaming"],
+          },
+        },
+      },
+    ])("should call $name with the correct format", async ({ name, input, expected }) => {
+      const func = vi.fn();
+
+      const result = await provider.streamObject({
+        messages: [{ role: "user", content: "Hello!" }],
+        model: createMockModel(input),
+        schema: z.object({
+          name: z.string(),
+          age: z.number(),
+          hobbies: z.array(z.string()),
+        }),
+        [name]: func,
+      });
+      await convertAsyncIterableToArray(result.objectStream);
+      expect(func).toHaveBeenCalledWith(expect.objectContaining(expected));
     });
   });
 

@@ -1,5 +1,6 @@
 import type { BaseMessage } from "@voltagent/core";
-import { MockLanguageModelV1, simulateReadableStream } from "ai/test";
+import { convertArrayToReadableStream } from "@voltagent/internal";
+import { MockLanguageModelV1 } from "ai/test";
 import type { VercelAIProvider } from "./provider";
 
 /**
@@ -36,9 +37,15 @@ export function createMockModel(
       }
 
       return {
-        stream: simulateReadableStream({
-          chunks: chunks.map((chunk) => ({ type: "text-delta", textDelta: chunk })),
-        }),
+        stream: convertArrayToReadableStream([
+          ...chunks,
+          {
+            type: "finish",
+            finishReason: "stop",
+            usage: { completionTokens: 10, promptTokens: 3 },
+          },
+        ]),
+        usage: { promptTokens: 3, completionTokens: 10 },
         rawCall: { rawPrompt: null, rawSettings: {} },
       };
     },
@@ -52,9 +59,13 @@ function convertMessagesToText(messages: Array<BaseMessage>) {
 }
 
 function covertMessagesToChunks(messages: Array<BaseMessage>) {
-  return convertMessagesToText(messages).split("\n");
+  return convertMessagesToText(messages)
+    .split("\n")
+    .map((chunk) => ({ type: "text-delta", textDelta: chunk }) as const);
 }
 
 function convertObjectToChunks(object: Record<string, any>) {
-  return JSON.stringify(object, null, 2).split("\n");
+  return JSON.stringify(object, null, 2)
+    .split("\n")
+    .map((chunk) => ({ type: "text-delta", textDelta: chunk }) as const);
 }
