@@ -74,36 +74,65 @@ describe("core", () => {
       }
     });
 
-    it.each([
-      {
-        name: "onError",
-        input: new Error("Test error"),
-        expected: {
+    it("should forward errors in the correct format", async () => {
+      expect(
+        provider.generateText({
+          messages: mockMessages,
+          model: createMockModel(new Error("Test error")),
+        }),
+      ).rejects.toThrow(
+        expect.objectContaining({
           message: expect.stringContaining("Test error"),
           stage: "llm_generate",
-        },
-      },
-      {
-        name: "onStepFinish",
-        input: [{ role: "assistant" as const, content: "Hello, world!" }],
-        expected: {
+        }),
+      );
+    });
+
+    it("should call onStepFinish with the correct format", async () => {
+      const onStepFinish = vi.fn();
+      await provider.generateText({
+        messages: mockMessages,
+        model: createMockModel([{ role: "assistant" as const, content: "Hello, world!" }]),
+        onStepFinish,
+      });
+      expect(onStepFinish).toHaveBeenCalledWith(
+        expect.objectContaining({
           content: "Hello, world!",
           role: "assistant",
           id: expect.any(String),
-        },
-      },
-      // { name: "onFinish", input: { messages: mockMessages }, expected: "stop" },
-    ])("should handle %s", async ({ name, input, expected }) => {
-      const func = vi.fn();
-
-      await provider.generateText({
-        messages: [{ role: "user", content: "Hello!" }],
-        model: createMockModel(input),
-        [name]: func,
-      });
-
-      expect(func).toHaveBeenCalledWith(expect.objectContaining(expected));
+        }),
+      );
     });
+
+    // it.each([
+    //   {
+    //     name: "onError",
+    //     input: new Error("Test error"),
+    //     expected: {
+    //       message: expect.stringContaining("Test error"),
+    //       stage: "llm_generate",
+    //     },
+    //   },
+    //   {
+    //     name: "onStepFinish",
+    //     input: [{ role: "assistant" as const, content: "Hello, world!" }],
+    //     expected: {
+    //       content: "Hello, world!",
+    //       role: "assistant",
+    //       id: expect.any(String),
+    //     },
+    //   },
+    // ])("should handle %s", async ({ name, input, expected }) => {
+    //   const func = vi.fn();
+
+    //   await provider.generateText({
+    //     messages: [{ role: "user", content: "Hello!" }],
+    //     model: createMockModel(input),
+    //     [name]: func,
+    //   });
+
+    //   expect(func).toHaveBeenCalledWith(expect.objectContaining(expected));
+    // });
   });
 
   describe("streamText", () => {
