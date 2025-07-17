@@ -8,6 +8,16 @@ interface DiscordMessageProps {
   timestamp?: string;
 }
 
+const truncate = (str: string | null, length: number) => {
+  if (!str) return str;
+
+  // Use Array.from to properly count Unicode characters (including emojis and Japanese characters)
+  const chars = Array.from(str);
+  if (chars.length <= length) return str;
+
+  return `${chars.slice(0, length - 3).join("")}...`;
+};
+
 export function DiscordMessage({
   username,
   discriminator,
@@ -15,9 +25,12 @@ export function DiscordMessage({
   message,
   timestamp,
 }: DiscordMessageProps) {
+  // Truncate message to 181 characters
+  const truncatedMessage = truncate(message, 141);
+
   return (
     <div className="w-full max-w-lg mx-auto">
-      <div className="relative flex size-full max-w-lg flex-col gap-2 overflow-hidden rounded-lg border p-4 backdrop-blur-md border-white/10 border-solid">
+      <div className="relative flex size-full max-w-lg flex-col gap-2 overflow-hidden rounded-lg border p-4 backdrop-blur-md border-white/10 border-solid h-[170px]">
         {/* Discord Header - matching TweetHeader structure */}
         <div className="flex flex-row justify-between tracking-tight">
           <div className="flex items-center space-x-2">
@@ -52,7 +65,7 @@ export function DiscordMessage({
               <div className="flex items-center space-x-1">
                 {timestamp && (
                   <span className="ml-1 text-gray-500 text-sm">
-                    #{discriminator}
+                    {timestamp}
                   </span>
                 )}
               </div>
@@ -64,8 +77,8 @@ export function DiscordMessage({
         </div>
 
         {/* Message Content - matching TweetBody structure */}
-        <div className="break-words text-[#dcdcdc] leading-normal tracking-tighter text-sm">
-          {message}
+        <div className="break-words text-[#dcdcdc] leading-normal tracking-tighter text-sm flex-1 overflow-hidden">
+          {truncatedMessage}
         </div>
       </div>
     </div>

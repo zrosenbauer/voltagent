@@ -9,8 +9,13 @@ interface LinkedInPostProps {
 }
 
 const truncate = (str: string | null, length: number) => {
-  if (!str || str.length <= length) return str;
-  return `${str.slice(0, length - 3)}...`;
+  if (!str) return str;
+
+  // Use Array.from to properly count Unicode characters (including emojis and Japanese characters)
+  const chars = Array.from(str);
+  if (chars.length <= length) return str;
+
+  return `${chars.slice(0, length - 3).join("")}...`;
 };
 
 export function LinkedInPost({
@@ -24,7 +29,7 @@ export function LinkedInPost({
   const truncatedContent = truncate(content, 165);
 
   const PostContent = () => (
-    <div className="relative flex size-full max-w-lg flex-col gap-2 overflow-hidden rounded-lg border p-4 backdrop-blur-md border-white/10 border-solid hover:border-emerald-500 transition-colors duration-200">
+    <div className="relative flex size-full max-w-lg flex-col gap-2 overflow-hidden rounded-lg border p-4 backdrop-blur-md border-white/10 border-solid hover:border-emerald-500 transition-colors duration-200 h-[210px]">
       {/* LinkedIn Header - matching TweetHeader structure */}
       <div className="flex flex-row justify-between tracking-tight">
         <div className="flex items-center space-x-2">
@@ -55,7 +60,7 @@ export function LinkedInPost({
       </div>
 
       {/* Post Content - matching TweetBody structure */}
-      <div className="break-words text-[#dcdcdc] leading-normal tracking-tighter">
+      <div className="break-words text-[#dcdcdc] leading-normal tracking-tighter flex-1 overflow-hidden">
         <span className="text-sm font-normal no-underline">
           {truncatedContent}
         </span>

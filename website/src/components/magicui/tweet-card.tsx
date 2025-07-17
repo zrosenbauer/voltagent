@@ -29,8 +29,13 @@ const Verified = ({ className, ...props }: TwitterIconProps) => (
 );
 
 export const truncate = (str: string | null, length: number) => {
-  if (!str || str.length <= length) return str;
-  return `${str.slice(0, length - 3)}...`;
+  if (!str) return str;
+
+  // Use Array.from to properly count Unicode characters (including emojis and Japanese characters)
+  const chars = Array.from(str);
+  if (chars.length <= length) return str;
+
+  return `${chars.slice(0, length - 3).join("")}...`;
 };
 
 const Skeleton = ({
@@ -120,10 +125,10 @@ export const TweetHeader = ({ tweet }: { tweet: EnrichedTweet }) => (
 export const TweetBody = ({ tweet }: { tweet: EnrichedTweet }) => {
   // Truncate the full tweet text to 165 characters
   const fullText = tweet.entities.map((entity) => entity.text).join("");
-  const shouldTruncate = fullText.length > 165;
+  const shouldTruncate = fullText.length > 150;
 
   if (shouldTruncate) {
-    const truncatedText = truncate(fullText, 165);
+    const truncatedText = truncate(fullText, 150);
     return (
       <div className="break-words text-[#dcdcdc] leading-normal tracking-tighter">
         <span className="text-sm font-normal no-underline">
@@ -233,13 +238,15 @@ export const MagicTweet = ({
     >
       <div
         className={cn(
-          "relative flex size-full max-w-lg flex-col gap-2 overflow-hidden rounded-lg border p-4 backdrop-blur-md border-white/10 border-solid hover:border-emerald-500 transition-colors duration-200",
+          "relative flex size-full max-w-lg flex-col gap-2 overflow-hidden rounded-lg border p-4 backdrop-blur-md border-white/10 border-solid hover:border-emerald-500 transition-colors duration-200 h-[210px]",
           className,
         )}
         {...props}
       >
         <TweetHeader tweet={enrichedTweet} />
-        <TweetBody tweet={enrichedTweet} />
+        <div className="flex-1 overflow-hidden">
+          <TweetBody tweet={enrichedTweet} />
+        </div>
         {/*  <TweetMedia tweet={enrichedTweet} /> */}
       </div>
     </a>

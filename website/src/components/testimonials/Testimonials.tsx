@@ -24,12 +24,12 @@ const scrollAnimation = `
     }
   }
 
-  .scroll-left-animation {
-    animation: scrollLeft 180s linear infinite;
+  .scroll-left-animation-2 {
+    animation: scrollLeft 59s linear infinite;
   }
 
   .scroll-right-animation {
-    animation: scrollRight 180s linear infinite;
+    animation: scrollRight 500s linear infinite;
   }
 
   .animation-paused {
@@ -38,11 +38,11 @@ const scrollAnimation = `
 
   @media (pointer: coarse) {
     .touch-device-scroll-left {
-      animation: scrollLeft 180s linear infinite;
+      animation: scrollLeft 500s linear infinite;
     }
     
     .touch-device-scroll-right {
-      animation: scrollRight 180s linear infinite;
+      animation: scrollRight 500s linear infinite;
     }
   }
 `;
@@ -54,13 +54,14 @@ const testimonialTweetIds = [
   "1927054751666999592",
   "1924486274448306320",
   "1924303206794059823",
-  "1924262217924653243",
   "1924058575485403362",
   "1923352273452671399",
   "1920502438215250259",
   "1916955895709503681",
   "1916757463426302247",
   "1915200495461028321",
+  "1924262217924653243",
+
   "1920502438215250259",
 ];
 
@@ -74,7 +75,7 @@ const linkedInPosts = [
       "Senior Frontend Engineer | Full Stack | Angular | JavaScript | TypeScript",
     content:
       "I'm incredibly honored to be one of the top 10 contributors to the VoltAgent open-source AI agent framework! I've been contributing to this project for a few weeks now and it's been a fantastic experience. I'm a firm believer in the power of open-source to drive innovation, and this project is a perfect example of that.",
-    url: "https://linkedin.com/in/luisaviles",
+    url: "https://www.linkedin.com/feed/update/urn:li:activity:7341294748466323457/",
   },
   {
     id: "linkedin-2",
@@ -84,7 +85,7 @@ const linkedInPosts = [
     title: "Product Marketer | Board Chair | Founder | Nonprofit Leader",
     content:
       "I built a 4-agent AI 'mini-team' to automate Reddit/HN research and draft content (and it kinda worked). This was not a production-ready tool. Just a scrappy experiment using: 🧠 VoltAgent (agent orchestration in TypeScript) 🔧 Composio (plug-and-play Reddit + Hacker News MCP tools) 💬 OpenAI GPT-4o (via Vercel AI SDK)",
-    url: "https://linkedin.com/in/emretezisci",
+    url: "https://www.linkedin.com/feed/update/urn:li:activity:7330969897214062592/",
   },
   {
     id: "linkedin-3",
@@ -95,7 +96,7 @@ const linkedInPosts = [
       "Building AI Agents in TypeScript | LLMs | AWS | NestJS | MongoDB DBA | TypeScript",
     content:
       "Just made my first contribution to VoltAgent on GitHub! I added support for xsAI as a voice provider, making it easier to integrate voice features into AI agents. Big thanks to Omer Aplak for giving me this opportunity and trusting me to contribute.",
-    url: "https://linkedin.com/in/yusuferene",
+    url: "https://www.linkedin.com/feed/update/urn:li:activity:7326679429068316674/",
   },
   {
     id: "linkedin-4",
@@ -105,7 +106,7 @@ const linkedInPosts = [
     title: "Co-founder at Joggr | Using AI 🤖 to automate dev docs",
     content:
       "If you are building AI Agents or Agentic flows and your language of choice is TypeScript you 1000% need to checkout this framework 👇 VoltAgent - an open-source TypeScript framework for building and orchestrating AI agents with built-in visual observability and debugging capabilities. Backed by a solid team (Omer Aplak & Necati Ozmen) consisting of the former CTO/founder and head of growth at refine.dev.",
-    url: "https://linkedin.com/in/zacrosenbauer",
+    url: "https://www.linkedin.com/feed/update/urn:li:activity:7341479739112509441/",
   },
   {
     id: "linkedin-5",
@@ -115,38 +116,34 @@ const linkedInPosts = [
     title: "60,028 followers",
     content:
       "See what Omer Aplak of VoltAgent and Tatyana Mamut, PhD of Wayfound say about joining AGNTCY Collective, the open source collective building the foundational technologies and standards for the Internet of Agents.",
-    url: "https://linkedin.com/company/outshift",
+    url: "https://www.linkedin.com/feed/update/urn:li:activity:7341139122268393475/",
   },
 ];
 
 const discordMessages = [
   {
-    username: "developer_alex",
-    discriminator: "1234",
-    message:
-      "Just deployed my first AI agent with Voltagent! The TypeScript experience is incredible. Built a customer support bot in under 2 hours 🚀",
-    timestamp: "Today at 2:30 PM",
+    username: "Helge Sverre",
+    message: "How do you guys have the energy to ship shit so fast",
   },
   {
-    username: "sarah_codes",
-    discriminator: "5678",
+    username: "bemijonathan",
     message:
-      "Finally, an AI framework that doesn't feel like fighting with black boxes. The full control over agent behavior is exactly what we needed for our enterprise solution.",
-    timestamp: "Today at 1:15 PM",
+      "Awesome job @Omer , this is impressive, also  fact  you started this just 2 weeks ago looking forward to pick a good first issue",
   },
   {
-    username: "mike_startup",
-    discriminator: "9012",
+    username: "Gomino",
     message:
-      "Voltagent saved us weeks of development time. The documentation is top-notch and the community here is amazing! Thanks for building this 💚",
-    timestamp: "Yesterday at 11:45 AM",
+      "Hello guys great job on the DX, would love to see the console really working locally (without login required)",
   },
   {
-    username: "team_lead_jen",
-    discriminator: "3456",
+    username: "power_of_zero",
     message:
-      "Our whole team switched to Voltagent after trying 5+ other frameworks. The DevEx is unmatched, and the agent orchestration features are game-changing.",
-    timestamp: "Yesterday at 9:20 AM",
+      "Hi, firstly, I really like what you've done with VoltAgent. I've gave it a spin with Cline/DeepSeek which has done a pretty good job of spinning me up a basic Supervisor + 3 agent setup using Ragie MCP server for retrievals.",
+  },
+  {
+    username: "Daniel",
+    message:
+      "Found the project a couple of days ago, love it 🥳 having trouble wrapping my head around state/memory/context - to get business logic into the flow.",
   },
 ];
 
@@ -216,9 +213,32 @@ export function Testimonials() {
   const discordRowRef = useRef<HTMLDivElement>(null);
   const articlesRowRef = useRef<HTMLDivElement>(null);
 
-  // Duplicate content for continuous scrolling - mix tweets and LinkedIn posts
-  const duplicatedTweetIds = [...testimonialTweetIds, ...testimonialTweetIds];
-  const duplicatedLinkedInPosts = [...linkedInPosts, ...linkedInPosts];
+  // Create mixed content for seamless scrolling
+  const mixedContent = [];
+  const maxLength = Math.max(testimonialTweetIds.length, linkedInPosts.length);
+
+  for (let i = 0; i < maxLength; i++) {
+    // Add tweet if available
+    if (i < testimonialTweetIds.length) {
+      mixedContent.push({
+        type: "tweet" as const,
+        id: testimonialTweetIds[i],
+        key: `tweet-${testimonialTweetIds[i]}`,
+      });
+    }
+
+    // Add LinkedIn post if available
+    if (i < linkedInPosts.length) {
+      mixedContent.push({
+        type: "linkedin" as const,
+        data: linkedInPosts[i],
+        key: `linkedin-${linkedInPosts[i].id}`,
+      });
+    }
+  }
+
+  // Duplicate the mixed content for continuous scrolling
+  const duplicatedMixedContent = [...mixedContent, ...mixedContent];
   const duplicatedDiscordMessages = [...discordMessages, ...discordMessages];
   const duplicatedArticles = [...articles, ...articles];
 
@@ -383,35 +403,23 @@ export function Testimonials() {
           onMouseLeave={handleTweetsRowMouseLeave}
         >
           <div
-            className={`flex space-x-6 py-4 scroll-left-animation ${
+            className={`flex space-x-6 py-4 scroll-left-animation-2 ${
               isTweetsRowPaused ? "animation-paused" : ""
             }`}
           >
-            {/* Mix tweets and LinkedIn posts */}
-            {duplicatedTweetIds.map((tweetId, index) => (
-              <div
-                key={`tweet-${tweetId}-${Math.floor(
-                  index / testimonialTweetIds.length,
-                )}`}
-                className="flex-shrink-0 w-80"
-              >
-                <ClientTweetCard id={tweetId} />
-              </div>
-            ))}
-            {duplicatedLinkedInPosts.map((post, index) => (
-              <div
-                key={`linkedin-${post.id}-${Math.floor(
-                  index / linkedInPosts.length,
-                )}`}
-                className="flex-shrink-0 w-80"
-              >
-                <LinkedInPost
-                  profileImage={post.profileImage}
-                  name={post.name}
-                  title={post.title}
-                  content={post.content}
-                  url={post.url}
-                />
+            {duplicatedMixedContent.map((item) => (
+              <div key={item.key} className="flex-shrink-0 w-80">
+                {item.type === "tweet" ? (
+                  <ClientTweetCard id={item.id} />
+                ) : (
+                  <LinkedInPost
+                    profileImage={item.data.profileImage}
+                    name={item.data.name}
+                    title={item.data.title}
+                    content={item.data.content}
+                    url={item.data.url}
+                  />
+                )}
               </div>
             ))}
           </div>
