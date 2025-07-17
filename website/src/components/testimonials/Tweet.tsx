@@ -7,17 +7,6 @@ interface TweetProps {
 }
 
 export function Tweet({ username, name, tweetId }: TweetProps) {
-  // Extract date from tweet ID (Twitter snowflake format)
-  const getDateFromTweetId = (tweetId: string) => {
-    const timestamp = (Number.parseInt(tweetId) >> 22) + 1288834974657;
-    const date = new Date(timestamp);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
-
   return (
     <div className="w-full max-w-lg mx-auto">
       <div className="bg-white/5 backdrop-blur-sm rounded-lg p-6 border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300">

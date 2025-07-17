@@ -117,31 +117,52 @@ export const TweetHeader = ({ tweet }: { tweet: EnrichedTweet }) => (
   </div>
 );
 
-export const TweetBody = ({ tweet }: { tweet: EnrichedTweet }) => (
-  <div className="break-words text-[#dcdcdc] leading-normal tracking-tighter">
-    {tweet.entities.map((entity, idx) => {
-      switch (entity.type) {
-        case "url":
-        case "symbol":
-        case "hashtag":
-        case "mention":
-          return (
-            <span className="text-sm font-normal no-underline text-emerald-500">
-              <span>{entity.text}</span>
-            </span>
-          );
-        case "text":
-          return (
-            <span
-              key={idx}
-              className="text-sm font-normal no-underline"
-              dangerouslySetInnerHTML={{ __html: entity.text }}
-            />
-          );
-      }
-    })}
-  </div>
-);
+export const TweetBody = ({ tweet }: { tweet: EnrichedTweet }) => {
+  // Truncate the full tweet text to 165 characters
+  const fullText = tweet.entities.map((entity) => entity.text).join("");
+  const shouldTruncate = fullText.length > 165;
+
+  if (shouldTruncate) {
+    const truncatedText = truncate(fullText, 165);
+    return (
+      <div className="break-words text-[#dcdcdc] leading-normal tracking-tighter">
+        <span className="text-sm font-normal no-underline">
+          {truncatedText}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="break-words text-[#dcdcdc] leading-normal tracking-tighter">
+      {tweet.entities.map((entity, idx) => {
+        // Create a more meaningful key using entity type and content
+        const key = `${entity.type}-${idx}-${entity.text.slice(0, 10)}`;
+
+        switch (entity.type) {
+          case "url":
+          case "symbol":
+          case "hashtag":
+          case "mention":
+            return (
+              <span
+                key={key}
+                className="text-sm font-normal no-underline text-emerald-500"
+              >
+                <span>{entity.text}</span>
+              </span>
+            );
+          case "text":
+            return (
+              <span key={key} className="text-sm font-normal no-underline">
+                {entity.text}
+              </span>
+            );
+        }
+      })}
+    </div>
+  );
+};
 
 export const TweetMedia = ({ tweet }: { tweet: EnrichedTweet }) => {
   if (!tweet.video && !tweet.photos) return null;

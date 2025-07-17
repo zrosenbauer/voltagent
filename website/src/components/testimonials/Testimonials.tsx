@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { ClientTweetCard } from "../magicui/tweet-card-client";
 import { DiscordMessage } from "./DiscordMessage";
 import { ArticleCard } from "./ArticleCard";
+import { LinkedInPost } from "./LinkedInPost";
 
 // Add keyframes for the scrolling animations
 const scrollAnimation = `
@@ -47,12 +48,75 @@ const scrollAnimation = `
 `;
 
 const testimonialTweetIds = [
-  "1942395205011005544",
+  "1930715579155202268",
+  "1929706642851193172",
+  "1927072927213596780",
   "1927054751666999592",
-  "1924374970555109607",
-  "1925149528489120199",
-  "1925350136944939321",
-  "1926170638110044404",
+  "1924486274448306320",
+  "1924303206794059823",
+  "1924262217924653243",
+  "1924058575485403362",
+  "1923352273452671399",
+  "1920502438215250259",
+  "1916955895709503681",
+  "1916757463426302247",
+  "1915200495461028321",
+  "1920502438215250259",
+];
+
+const linkedInPosts = [
+  {
+    id: "linkedin-1",
+    profileImage:
+      "https://cdn.voltagent.dev/website/testimonials/linkedin-user/luis-avi.jpeg",
+    name: "Luis Aviles",
+    title:
+      "Senior Frontend Engineer | Full Stack | Angular | JavaScript | TypeScript",
+    content:
+      "I'm incredibly honored to be one of the top 10 contributors to the VoltAgent open-source AI agent framework! I've been contributing to this project for a few weeks now and it's been a fantastic experience. I'm a firm believer in the power of open-source to drive innovation, and this project is a perfect example of that.",
+    url: "https://linkedin.com/in/luisaviles",
+  },
+  {
+    id: "linkedin-2",
+    profileImage:
+      "https://cdn.voltagent.dev/website/testimonials/linkedin-user/emre.jpeg",
+    name: "Emre Tezisci",
+    title: "Product Marketer | Board Chair | Founder | Nonprofit Leader",
+    content:
+      "I built a 4-agent AI 'mini-team' to automate Reddit/HN research and draft content (and it kinda worked). This was not a production-ready tool. Just a scrappy experiment using: 🧠 VoltAgent (agent orchestration in TypeScript) 🔧 Composio (plug-and-play Reddit + Hacker News MCP tools) 💬 OpenAI GPT-4o (via Vercel AI SDK)",
+    url: "https://linkedin.com/in/emretezisci",
+  },
+  {
+    id: "linkedin-3",
+    profileImage:
+      "https://cdn.voltagent.dev/website/testimonials/linkedin-user/yusuf.jpeg",
+    name: "Yusuf Eren",
+    title:
+      "Building AI Agents in TypeScript | LLMs | AWS | NestJS | MongoDB DBA | TypeScript",
+    content:
+      "Just made my first contribution to VoltAgent on GitHub! I added support for xsAI as a voice provider, making it easier to integrate voice features into AI agents. Big thanks to Omer Aplak for giving me this opportunity and trusting me to contribute.",
+    url: "https://linkedin.com/in/yusuferene",
+  },
+  {
+    id: "linkedin-4",
+    profileImage:
+      "https://cdn.voltagent.dev/website/testimonials/linkedin-user/zac-ros.jpeg",
+    name: "Zac Rosenbauer",
+    title: "Co-founder at Joggr | Using AI 🤖 to automate dev docs",
+    content:
+      "If you are building AI Agents or Agentic flows and your language of choice is TypeScript you 1000% need to checkout this framework 👇 VoltAgent - an open-source TypeScript framework for building and orchestrating AI agents with built-in visual observability and debugging capabilities. Backed by a solid team (Omer Aplak & Necati Ozmen) consisting of the former CTO/founder and head of growth at refine.dev.",
+    url: "https://linkedin.com/in/zacrosenbauer",
+  },
+  {
+    id: "linkedin-5",
+    profileImage:
+      "https://cdn.voltagent.dev/website/testimonials/linkedin-user/outshift.jpeg",
+    name: "Outshift by Cisco",
+    title: "60,028 followers",
+    content:
+      "See what Omer Aplak of VoltAgent and Tatyana Mamut, PhD of Wayfound say about joining AGNTCY Collective, the open source collective building the foundational technologies and standards for the Internet of Agents.",
+    url: "https://linkedin.com/company/outshift",
+  },
 ];
 
 const discordMessages = [
@@ -142,8 +206,6 @@ const articles = [
 ];
 
 export function Testimonials() {
-  const [isVisible, setIsVisible] = useState(false);
-
   // Animation control states for each row
   const [isTweetsRowPaused, setIsTweetsRowPaused] = useState(false);
   const [isDiscordRowPaused, setIsDiscordRowPaused] = useState(false);
@@ -154,8 +216,9 @@ export function Testimonials() {
   const discordRowRef = useRef<HTMLDivElement>(null);
   const articlesRowRef = useRef<HTMLDivElement>(null);
 
-  // Duplicate content for continuous scrolling
+  // Duplicate content for continuous scrolling - mix tweets and LinkedIn posts
   const duplicatedTweetIds = [...testimonialTweetIds, ...testimonialTweetIds];
+  const duplicatedLinkedInPosts = [...linkedInPosts, ...linkedInPosts];
   const duplicatedDiscordMessages = [...discordMessages, ...discordMessages];
   const duplicatedArticles = [...articles, ...articles];
 
@@ -212,10 +275,6 @@ export function Testimonials() {
     () => setIsArticlesRowPaused(false),
     [],
   );
-
-  useEffect(() => {
-    setIsVisible(true);
-  }, []);
 
   // Add touch event listeners
   useEffect(() => {
@@ -328,6 +387,7 @@ export function Testimonials() {
               isTweetsRowPaused ? "animation-paused" : ""
             }`}
           >
+            {/* Mix tweets and LinkedIn posts */}
             {duplicatedTweetIds.map((tweetId, index) => (
               <div
                 key={`tweet-${tweetId}-${Math.floor(
@@ -336,6 +396,22 @@ export function Testimonials() {
                 className="flex-shrink-0 w-80"
               >
                 <ClientTweetCard id={tweetId} />
+              </div>
+            ))}
+            {duplicatedLinkedInPosts.map((post, index) => (
+              <div
+                key={`linkedin-${post.id}-${Math.floor(
+                  index / linkedInPosts.length,
+                )}`}
+                className="flex-shrink-0 w-80"
+              >
+                <LinkedInPost
+                  profileImage={post.profileImage}
+                  name={post.name}
+                  title={post.title}
+                  content={post.content}
+                  url={post.url}
+                />
               </div>
             ))}
           </div>
