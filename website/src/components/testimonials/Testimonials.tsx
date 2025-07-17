@@ -220,7 +220,7 @@ const articles = [
   {
     title: "¿Agentes de IA sin Complicaciones? ¡Este Framework es la Clave!",
     type: "youtube" as const,
-    videoId: "5WARn6C9ITM",
+    videoId: "Om03tXjDfJs",
     excerpt: "¿Agentes de IA sin Complicaciones? ¡Este Framework es la Clave!",
     url: "https://www.youtube.com/watch?v=Om03tXjDfJs",
   },
@@ -436,10 +436,18 @@ export function Testimonials() {
 
   return (
     <div className="relative max-w-9xl xs:px-4 lg:px-8 mx-auto landing-xs:mb-16 landing-md:mb-36">
+      <div className="mb-8 text-left max-w-xl mx-4">
+        <h2 className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-4 font-semibold  text-main-emerald tracking-wide uppercase">
+          Fast Growing Community
+        </h2>
+        <p className="mt-1 landing-xs:text-2xl landing-md:text-4xl landing-xs:mb-2 landing-md:mb-4 landing-xs:font-bold landing-md:font-extrabold text-white sm:text-5xl sm:tracking-tight">
+          What are they saying?
+        </p>
+      </div>
       <style>{scrollAnimation}</style>
 
       {/* Tweets Row - Scrolling Left */}
-      <div className="relative mb-8">
+      <div className="relative mb-1">
         <div
           ref={tweetsRowRef}
           className="flex overflow-hidden"
@@ -481,7 +489,7 @@ export function Testimonials() {
       </div>
 
       {/* Discord Messages Row - Scrolling Right */}
-      <div className="relative mb-8">
+      <div className="relative mb-1">
         <div
           ref={discordRowRef}
           className="flex overflow-hidden"
@@ -529,7 +537,7 @@ export function Testimonials() {
       </div>
 
       {/* Articles Section */}
-      <div className="mt-8">
+      <div className="mt-1">
         {/* Articles Row - Scrolling Left */}
         <div className="relative">
           <div

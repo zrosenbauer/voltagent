@@ -32,10 +32,10 @@ export default function Home(): JSX.Element {
       <Layout>
         <main className="flex-1">
           <DotPattern dotColor="#94a3b8" dotSize={1.2} spacing={20} />
-          <Testimonials />
           <Hero />
           <TwoBlocks />
           <LivePreview />
+          <Testimonials />
 
           <div className="relative">
             <AgentsDetail />
