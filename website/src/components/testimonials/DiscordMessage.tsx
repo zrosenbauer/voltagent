@@ -39,8 +39,8 @@ export function DiscordMessage({
               <img
                 title={`Profile picture of ${username}`}
                 alt={username}
-                height={48}
-                width={48}
+                height={38}
+                width={38}
                 src={avatar}
                 className="overflow-hidden rounded-full border border-transparent"
               />
@@ -73,7 +73,7 @@ export function DiscordMessage({
           </div>
 
           {/* Discord Logo - matching X logo position */}
-          <DiscordLogo className="w-6 h-6 text-[#5865F2]" />
+          <DiscordLogo className="w-5 h-5 text-[#5865F2]" />
         </div>
 
         {/* Message Content - matching TweetBody structure */}

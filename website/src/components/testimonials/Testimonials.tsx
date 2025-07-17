@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { ClientTweetCard } from "../magicui/tweet-card-client";
 import { DiscordMessage } from "./DiscordMessage";
+import { LinkedInMessage } from "./LinkedInMessage";
 import { ArticleCard } from "./ArticleCard";
 import { LinkedInPost } from "./LinkedInPost";
 
@@ -128,7 +129,7 @@ const discordMessages = [
   {
     username: "bemijonathan",
     message:
-      "Awesome job @Omer , this is impressive, also  fact  you started this just 2 weeks ago looking forward to pick a good first issue",
+      "Awesome job @Omer, this is impressive, also fact you started this just 2 weeks ago looking forward to pick a good first issue",
   },
   {
     username: "Gomino",
@@ -140,10 +141,26 @@ const discordMessages = [
     message:
       "Hi, firstly, I really like what you've done with VoltAgent. I've gave it a spin with Cline/DeepSeek which has done a pretty good job of spinning me up a basic Supervisor + 3 agent setup using Ragie MCP server for retrievals.",
   },
+];
+
+const linkedInMessages = [
   {
-    username: "Daniel",
+    id: "linkedin-msg-1",
+    username: "Can Tecim",
+    title: "Senior Backend Developer",
     message:
-      "Found the project a couple of days ago, love it 🥳 having trouble wrapping my head around state/memory/context - to get business logic into the flow.",
+      "I'm excited to see an innovative, well-designed typescript framework in the AI ecosystem. I hope it grows quickly with the community's support! I'm looking forward to seeing it in action within my project 🙌 .",
+    avatar: "", // User will add
+    url: "https://www.linkedin.com/feed/update/urn:li:activity:7320019207134273536?commentUrn=urn%3Ali%3Acomment%3A%28activity%3A7320019207134273536%2C7320029299711852546%29&dashCommentUrn=urn%3Ali%3Afsd_comment%3A%287320029299711852546%2Curn%3Ali%3Aactivity%3A7320019207134273536%29",
+  },
+  {
+    id: "linkedin-msg-2",
+    username: "Sarah Kim",
+    title: "Product Manager",
+    message:
+      "That looks fantastic! will try it with the ElevenLabs module in first opportunity.",
+    avatar: "", // User will add
+    url: "https://www.linkedin.com/feed/update/urn:li:activity:7320007310200770560?commentUrn=urn%3Ali%3Acomment%3A%28activity%3A7320007310200770560%2C7320424868326391809%29&dashCommentUrn=urn%3Ali%3Afsd_comment%3A%287320424868326391809%2Curn%3Ali%3Aactivity%3A7320007310200770560%29",
   },
 ];
 
@@ -237,9 +254,39 @@ export function Testimonials() {
     }
   }
 
+  // Create mixed Discord/LinkedIn messages content
+  const mixedDiscordContent = [];
+  const maxDiscordLength = Math.max(
+    discordMessages.length,
+    linkedInMessages.length,
+  );
+
+  for (let i = 0; i < maxDiscordLength; i++) {
+    // Add Discord message if available
+    if (i < discordMessages.length) {
+      mixedDiscordContent.push({
+        type: "discord" as const,
+        data: discordMessages[i],
+        key: `discord-${discordMessages[i].username}-${i}`,
+      });
+    }
+
+    // Add LinkedIn message if available
+    if (i < linkedInMessages.length) {
+      mixedDiscordContent.push({
+        type: "linkedinmsg" as const,
+        data: linkedInMessages[i],
+        key: `linkedinmsg-${linkedInMessages[i].id}`,
+      });
+    }
+  }
+
   // Duplicate the mixed content for continuous scrolling
   const duplicatedMixedContent = [...mixedContent, ...mixedContent];
-  const duplicatedDiscordMessages = [...discordMessages, ...discordMessages];
+  const duplicatedMixedDiscordContent = [
+    ...mixedDiscordContent,
+    ...mixedDiscordContent,
+  ];
   const duplicatedArticles = [...articles, ...articles];
 
   // Event handlers for tweets row (scrolling left)
@@ -449,19 +496,25 @@ export function Testimonials() {
               isDiscordRowPaused ? "animation-paused" : ""
             }`}
           >
-            {duplicatedDiscordMessages.map((message, index) => (
-              <div
-                key={`discord-${message.username}-${
-                  message.discriminator
-                }-${Math.floor(index / discordMessages.length)}`}
-                className="flex-shrink-0 w-80"
-              >
-                <DiscordMessage
-                  username={message.username}
-                  discriminator={message.discriminator}
-                  message={message.message}
-                  timestamp={message.timestamp}
-                />
+            {duplicatedMixedDiscordContent.map((item) => (
+              <div key={item.key} className="flex-shrink-0 w-80">
+                {item.type === "discord" ? (
+                  <DiscordMessage
+                    username={item.data.username}
+                    discriminator={item.data.discriminator}
+                    message={item.data.message}
+                    timestamp={item.data.timestamp}
+                  />
+                ) : (
+                  <LinkedInMessage
+                    username={item.data.username}
+                    title={item.data.title}
+                    message={item.data.message}
+                    timestamp={item.data.timestamp}
+                    avatar={item.data.avatar}
+                    url={item.data.url}
+                  />
+                )}
               </div>
             ))}
           </div>
