@@ -117,7 +117,7 @@ export const TweetHeader = ({ tweet }: { tweet: EnrichedTweet }) => (
       </div>
     </div>
     <a href={tweet.url} target="_blank" rel="noreferrer">
-      <XLogo className="w-5 h-5 text-main-emerald" />
+      <XLogo className="w-5 h-5 text-white" />
     </a>
   </div>
 );
