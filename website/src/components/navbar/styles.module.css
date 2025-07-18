@@ -59,7 +59,6 @@
   font-size: 14px;
   font-weight: 600;
   transition: color 0.2s;
-  font-family: "IBM Plex Mono", monospace;
 }
 
 .navLink:hover {

@@ -165,6 +165,22 @@ const config: Config = {
             to: "/docs/rag/overview/",
             from: "/docs/agents/retriever/",
           },
+          {
+            to: "/customers/",
+            from: "/showcase/",
+          },
+          {
+            to: "/customers/content-pipeline/",
+            from: "/showcase/4-agent-ai-team-blog-research/",
+          },
+          {
+            to: "/customers/devpotenciados/",
+            from: "/showcase/inventory-query-agent/",
+          },
+          {
+            to: "/customers/",
+            from: "/showcase/999-dev-ai-teammate/",
+          },
         ],
       },
     ],
@@ -185,13 +201,7 @@ const config: Config = {
         },
       },
     ],
-    [
-      "./plugins/docusaurus-plugin-content-showcase",
-      {
-        id: "showcase",
-        contentPath: "src/components/showcase",
-      },
-    ],
+
     "./plugins/gurubase/index.js",
     [
       "./plugins/docusaurus-plugin-content-mcp",
