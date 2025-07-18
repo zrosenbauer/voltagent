@@ -7,6 +7,7 @@ import {
   UsersIcon,
   GlobeAltIcon,
 } from "@heroicons/react/24/outline";
+import { BoltIcon } from "@heroicons/react/24/solid";
 import Layout from "@theme/Layout";
 import { motion } from "framer-motion";
 import React from "react";
@@ -37,6 +38,9 @@ interface CustomerProjectPageProps {
         company: string;
         linkedin?: string;
       };
+      useCases?: string[];
+      video?: string;
+      tech?: string[];
     };
   };
 }
@@ -638,6 +642,77 @@ export default function CustomerProjectPage({
                   })()}
                 </div>
               </div>
+
+              {/* Use Cases */}
+              {customer.case_study.useCases &&
+                customer.case_study.useCases.length > 0 && (
+                  <div
+                    className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-lg p-4 sm:p-6"
+                    style={{
+                      backdropFilter: "blur(4px)",
+                      WebkitBackdropFilter: "blur(4px)",
+                    }}
+                  >
+                    <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-[#00d992] mb-3 sm:mb-4 flex items-center">
+                      <BoltIcon className="w-6 h-6 mr-2 text-[#00d992]" />
+                      Key Use Cases
+                    </h3>
+                    <ul className="space-y-3 text-sm sm:text-base text-gray-300 mb-6">
+                      {customer.case_study.useCases.map((useCase) => (
+                        <li
+                          key={`use-case-${useCase
+                            .substring(0, 20)
+                            .replace(/\s+/g, "-")}`}
+                          className="flex items-start"
+                        >
+                          <span className="text-[#00d992] mr-2 mt-1">•</span>
+                          <span>{useCase}</span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    {/* Tech Stack inside Use Cases */}
+                    {customer.case_study.tech &&
+                      customer.case_study.tech.length > 0 && (
+                        <div className="border-t border-gray-600 pt-4">
+                          <h4 className="text-sm font-semibold text-gray-400 mb-3">
+                            Built with
+                          </h4>
+                          <div className="flex flex-wrap gap-2">
+                            {customer.case_study.tech.map((tech) => (
+                              <span
+                                key={`tech-${tech}`}
+                                className="px-3 py-1 bg-[#00d992]/10 border border-[#00d992]/20 rounded-full text-[#00d992] text-sm font-medium"
+                              >
+                                {tech}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                  </div>
+                )}
+
+              {/* Video */}
+              {customer.case_study.video && (
+                <div
+                  className="border-solid bg-white/5 border-[#1e293b]/40 border-2 rounded-lg p-4 sm:p-6"
+                  style={{
+                    backdropFilter: "blur(4px)",
+                    WebkitBackdropFilter: "blur(4px)",
+                  }}
+                >
+                  <div className="relative w-full pb-[56.25%] h-0 overflow-hidden rounded-lg bg-gray-900">
+                    <iframe
+                      src={customer.case_study.video}
+                      title="Customer Case Study Video"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="absolute top-0 left-0 w-full h-full border-0"
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* Call to Action */}
               <div

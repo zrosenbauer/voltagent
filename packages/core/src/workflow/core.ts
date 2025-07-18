@@ -2,9 +2,27 @@ import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type { z } from "zod";
 import { createWorkflowStateManager } from "./internal/state";
 import type { InternalBaseWorkflowInputSchema } from "./internal/types";
-import { convertWorkflowStateToParam } from "./internal/utils";
+import { convertWorkflowStateToParam, createStepExecutionContext } from "./internal/utils";
 import type { WorkflowStep } from "./steps";
-import type { Workflow, WorkflowConfig, WorkflowInput, WorkflowResult } from "./types";
+import type {
+  Workflow,
+  WorkflowConfig,
+  WorkflowInput,
+  WorkflowResult,
+  WorkflowRunOptions,
+  WorkflowStepHistoryEntry,
+} from "./types";
+import type { WorkflowExecutionContext } from "./context";
+import {
+  createWorkflowErrorEvent,
+  createWorkflowStartEvent,
+  createWorkflowSuccessEvent,
+  publishWorkflowEvent,
+} from "./event-utils";
+import { LibSQLStorage } from "../memory/libsql";
+import { WorkflowHistoryManager } from "./history-manager";
+import { devLogger } from "@voltagent/internal/dev";
+import { WorkflowRegistry } from "./registry";
 
 /**
  * Creates a workflow from multiple and* functions
@@ -540,49 +558,250 @@ export function createWorkflow<
   INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
   RESULT_SCHEMA extends z.ZodTypeAny,
 >(
-  { id, name, purpose, hooks }: WorkflowConfig<INPUT_SCHEMA, RESULT_SCHEMA>,
+  {
+    id,
+    name,
+    purpose,
+    hooks,
+    input,
+    memory: workflowMemory,
+  }: WorkflowConfig<INPUT_SCHEMA, RESULT_SCHEMA>,
   ...steps: ReadonlyArray<BaseStep>
 ) {
+  // ✅ Ensure every workflow has memory (like Agent system)
+  const effectiveMemory = workflowMemory || new LibSQLStorage({ url: "file:memory.db" });
+
   return {
     id,
     name,
     purpose: purpose ?? "No purpose provided",
     steps: steps as BaseStep[],
-    run: async (input: WorkflowInput<INPUT_SCHEMA>) => {
+    inputSchema: input,
+    // ✅ Always expose memory for registry access
+    memory: effectiveMemory,
+    run: async (input: WorkflowInput<INPUT_SCHEMA>, options?: WorkflowRunOptions) => {
+      const workflowRegistry = WorkflowRegistry.getInstance();
+
+      let historyEntry: any;
+      let executionId = crypto.randomUUID(); // fallback ID
+
+      try {
+        historyEntry = await workflowRegistry.createWorkflowExecution(id, name, input, {
+          userId: options?.userId,
+          conversationId: options?.conversationId,
+          userContext: options?.userContext,
+        });
+
+        if (historyEntry) {
+          executionId = historyEntry.id;
+        } else {
+          devLogger.warn(
+            "[Workflow] Failed to create execution via WorkflowRegistry, using fallback",
+          );
+        }
+      } catch (memoryError) {
+        devLogger.error("Failed to create execution with WorkflowRegistry:", memoryError);
+      }
+
+      // Get WorkflowMemoryManager for local operations
+      const workflowMemoryManager = workflowRegistry.getWorkflowMemoryManager(id);
+      if (!workflowMemoryManager) {
+        throw new Error(`No memory manager available for workflow: ${id}`);
+      }
+
+      // ✅ Initialize WorkflowHistoryManager (like Agent system)
+      const historyManager = new WorkflowHistoryManager(id, workflowMemoryManager);
+
+      // Initialize workflow execution context with the correct execution ID
+      const executionContext: WorkflowExecutionContext = {
+        workflowId: id,
+        executionId: executionId,
+        workflowName: name,
+        userContext: options?.userContext || new Map(),
+        isActive: true,
+        startTime: new Date(),
+        currentStepIndex: 0,
+        steps: [],
+        signal: undefined, // TODO: Extract signal from input if available
+        historyEntry: historyEntry,
+        // Store effective memory for use in steps if needed
+        memory: effectiveMemory,
+        // Initialize step data map for tracking inputs/outputs
+        stepData: new Map(),
+      };
+
+      // Workflow start event
+      const workflowStartEvent = createWorkflowStartEvent(executionContext, input);
+
+      try {
+        await publishWorkflowEvent(workflowStartEvent, executionContext);
+      } catch (eventError) {
+        console.warn("Failed to publish workflow start event:", eventError);
+      }
+
       const stateManager = createWorkflowStateManager<
         WorkflowInput<INPUT_SCHEMA>,
         WorkflowResult<RESULT_SCHEMA>
       >();
 
-      stateManager.start(input);
-      for (const step of steps as BaseStep[]) {
-        try {
+      // Enhanced state with workflow context
+      stateManager.start(input, options);
+
+      try {
+        for (const [index, step] of (steps as BaseStep[]).entries()) {
+          executionContext.currentStepIndex = index;
+
+          // ✅ NEW: Record step start (persistent step tracking)
+          let stepRecord: WorkflowStepHistoryEntry | null = null;
+          try {
+            stepRecord = await historyManager.recordStepStart(
+              executionId,
+              index,
+              step.type as "agent" | "func" | "conditional-when" | "parallel-all" | "parallel-race",
+              step.name || step.id || `Step ${index + 1}`, // ✅ FIX: Include step.id fallback
+              stateManager.state.data,
+              {
+                stepId: step.id,
+                metadata: {
+                  stepConfig: step,
+                  stepIndex: index,
+                },
+              },
+            );
+          } catch (stepError) {
+            console.warn(`Failed to record step start for step ${index}:`, stepError);
+          }
+
           await hooks?.onStepStart?.(stateManager.state);
-          const result = await step.execute(
-            stateManager.state.data,
-            convertWorkflowStateToParam(stateManager.state),
-          );
-          // Update the state with the result
-          stateManager.update({
-            data: result,
-            result: result,
+
+          // Store step input data before execution
+          executionContext.stepData.set(step.id, {
+            input: stateManager.state.data,
+            output: null,
           });
-          await hooks?.onStepEnd?.(stateManager.state);
-        } catch (error) {
-          stateManager.fail(error);
-          await hooks?.onEnd?.(stateManager.state);
-          throw error;
+
+          try {
+            // Create execution context for the step
+            const stepContext = createStepExecutionContext(
+              stateManager.state.data,
+              convertWorkflowStateToParam(stateManager.state, executionContext),
+              executionContext,
+            );
+            const result = await step.execute(stepContext);
+
+            // Update step output data after successful execution
+            const stepData = executionContext.stepData.get(step.id);
+            if (stepData) {
+              stepData.output = result;
+            }
+
+            stateManager.update({
+              data: result,
+              result: result,
+            });
+
+            // ✅ NEW: Record step completion (persistent step tracking)
+            if (stepRecord) {
+              try {
+                await historyManager.recordStepEnd(stepRecord.id, {
+                  status: "completed",
+                  output: result,
+                  metadata: {
+                    completedAt: new Date().toISOString(),
+                  },
+                });
+              } catch (stepEndError) {
+                console.warn(`Failed to record step completion for step ${index}:`, stepEndError);
+              }
+            }
+
+            await hooks?.onStepEnd?.(stateManager.state);
+          } catch (stepError) {
+            // ✅ NEW: Record step error (persistent step tracking)
+            if (stepRecord) {
+              try {
+                await historyManager.recordStepEnd(stepRecord.id, {
+                  status: "error",
+                  errorMessage: stepError instanceof Error ? stepError.message : String(stepError),
+                  metadata: {
+                    errorOccurredAt: new Date().toISOString(),
+                    errorDetails: stepError,
+                  },
+                });
+              } catch (stepEndError) {
+                console.warn(`Failed to record step error for step ${index}:`, stepEndError);
+              }
+            }
+            throw stepError; // Re-throw the original error
+          }
         }
+
+        const finalState = stateManager.finish();
+
+        // Workflow success event
+        const workflowSuccessEvent = createWorkflowSuccessEvent(
+          executionContext,
+          finalState.result,
+          workflowStartEvent.id,
+        );
+
+        try {
+          await publishWorkflowEvent(workflowSuccessEvent, executionContext);
+        } catch (eventError) {
+          console.warn("Failed to publish workflow success event:", eventError);
+        }
+
+        if (historyEntry) {
+          try {
+            await workflowRegistry.updateWorkflowExecution(id, executionContext.executionId, {
+              status: "completed",
+              endTime: new Date(),
+              output: finalState.result,
+            });
+          } catch (registrationError) {
+            console.warn("Failed to record workflow completion:", registrationError);
+          }
+        }
+
+        await hooks?.onEnd?.(stateManager.state);
+
+        return {
+          executionId: finalState.executionId,
+          startAt: finalState.startAt,
+          endAt: finalState.endAt,
+          status: finalState.status,
+          result: finalState.result as z.infer<RESULT_SCHEMA>,
+        };
+      } catch (error) {
+        // Workflow error event
+        const workflowErrorEvent = createWorkflowErrorEvent(
+          executionContext,
+          error,
+          workflowStartEvent.id,
+        );
+
+        try {
+          await publishWorkflowEvent(workflowErrorEvent, executionContext);
+        } catch (eventError) {
+          console.warn("Failed to publish workflow error event:", eventError);
+        }
+
+        if (historyEntry) {
+          try {
+            await workflowRegistry.updateWorkflowExecution(id, executionContext.executionId, {
+              status: "error",
+              endTime: new Date(),
+              output: error,
+            });
+          } catch (registrationError) {
+            console.warn("Failed to record workflow failure:", registrationError);
+          }
+        }
+
+        stateManager.fail(error);
+        await hooks?.onEnd?.(stateManager.state);
+        throw error;
       }
-      const finalState = stateManager.finish();
-      await hooks?.onEnd?.(stateManager.state);
-      return {
-        executionId: finalState.executionId,
-        startAt: finalState.startAt,
-        endAt: finalState.endAt,
-        status: finalState.status,
-        result: finalState.result as z.infer<RESULT_SCHEMA>,
-      };
     },
   } satisfies Workflow<INPUT_SCHEMA, RESULT_SCHEMA>;
 }

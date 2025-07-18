@@ -1,171 +1,353 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, VoltOpsClient, createWorkflowChain } from "@voltagent/core";
+import {
+  Agent,
+  VoltAgent,
+  createWorkflowChain,
+  andThen,
+  andAgent,
+  andWhen,
+  andAll,
+  andRace,
+  andTap,
+} from "@voltagent/core";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { z } from "zod";
 
-const voltOpsClient = new VoltOpsClient({
-  publicKey: process.env.VOLTOPS_PUBLIC_KEY,
-  secretKey: process.env.VOLTOPS_SECRET_KEY,
-});
-
-const languageDetectionAgent = new Agent({
-  name: "LanguageDetectionAgent",
+// Define agents for different tasks
+const contentAgent = new Agent({
+  name: "ContentAgent",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
-  instructions: `You are a language detection expert. Analyze the input text and determine the language it's written in. 
-  Return the language code (e.g., 'en' for English, 'es' for Spanish, 'fr' for French, 'de' for German, 'it' for Italian, 'pt' for Portuguese, 'ja' for Japanese, 'ko' for Korean, 'zh' for Chinese, 'ar' for Arabic, 'hi' for Hindi, 'ru' for Russian).
-  If the text contains multiple languages, identify the primary language.
-  If you cannot determine the language, return 'unknown'.`,
+  instructions: "You are a content creation expert. Generate engaging and accurate content.",
+});
+
+const analysisAgent = new Agent({
+  name: "AnalysisAgent",
+  llm: new VercelAIProvider(),
+  model: openai("gpt-4o-mini"),
+  instructions: "You are a data analyst. Provide insights and structured analysis.",
 });
 
 const translationAgent = new Agent({
   name: "TranslationAgent",
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
-  instructions: `You are a professional translator. Translate the given text to the target language while preserving the original meaning, tone, and context.
-  Maintain the same level of formality and cultural sensitivity.
-  If the text is already in the target language, return it unchanged.
-  If translation is not possible or the target language is not supported, explain why.`,
+  instructions: "You are a professional translator. Preserve meaning and tone.",
 });
 
-// Initialize VoltAgent with VoltOps client
-new VoltAgent({
-  agents: {
-    languageDetectionAgent,
-    translationAgent,
-  },
-  voltOpsClient: voltOpsClient,
-});
-
-// Create a comprehensive translation workflow
-const translationWorkflow = createWorkflowChain({
-  id: "translation-workflow",
-  name: "Multi-Language Translation Workflow",
-  purpose: "Detect language, analyze content, and translate text to target language",
+// 1. SIMPLE WORKFLOW: Email Response Generator
+// Shows basic chaining and single AI agent usage
+const emailResponseWorkflow = createWorkflowChain({
+  id: "email-response",
+  name: "Email Response Generator",
+  purpose: "Analyze incoming email and generate appropriate response",
   input: z.object({
-    originalText: z.string(),
-    targetLanguage: z.string(),
+    email: z.string(),
+    senderName: z.string(),
   }),
   result: z.object({
-    originalText: z.string(),
-    detectedLanguage: z.string(),
-    targetLanguage: z.string(),
-    translatedText: z.string(),
-    confidence: z.number().min(0).max(1),
+    response: z.string(),
+    category: z.string(),
+    priority: z.string(),
+  }),
+})
+  // Step 1: Extract email metadata
+  .andThen({
+    id: "extract-metadata",
+    execute: async ({ data }) => {
+      const wordCount = data.email.split(/\s+/).length;
+      const hasQuestion = data.email.includes("?");
+      const hasUrgentKeywords = /urgent|asap|immediately/i.test(data.email);
+
+      return {
+        ...data,
+        wordCount,
+        hasQuestion,
+        isUrgent: hasUrgentKeywords,
+      };
+    },
+  })
+  // Step 2: Use AI to categorize and respond
+  .andAgent(
+    async ({ data }) => `
+      Analyze this email and provide:
+      1. A professional response
+      2. Category (support, sales, inquiry, complaint)
+      3. Priority level (low, medium, high)
+      
+      Email from ${data.senderName}: "${data.email}"
+      ${data.isUrgent ? "Note: This email contains urgent keywords." : ""}
+    `,
+    contentAgent,
+    {
+      schema: z.object({
+        response: z.string(),
+        category: z.string(),
+        priority: z.string(),
+      }),
+    },
+  );
+
+// 2. INTERMEDIATE WORKFLOW: Content Processing Pipeline
+// Shows conditional logic, getStepData usage, and parallel processing
+const contentProcessingWorkflow = createWorkflowChain({
+  id: "content-processing",
+  name: "Content Processing Pipeline",
+  purpose: "Generate content, validate it, and optionally enhance it with translations",
+  input: z.object({
+    topic: z.string(),
+    requireTranslation: z.boolean(),
+  }),
+  result: z.object({
+    originalContent: z.string(),
+    wordCount: z.number(),
+    translations: z.record(z.string()).optional(),
     processingTime: z.number(),
   }),
 })
+  // Step 1: Generate content
   .andAgent(
-    async (data) => {
-      return `Detect the language of the following text: ${data.originalText}`;
-    },
-    languageDetectionAgent,
+    async ({ data }) =>
+      `Write a 2-paragraph article about "${data.topic}". Make it engaging and informative.`,
+    contentAgent,
     {
       schema: z.object({
-        detectedLanguage: z.string(),
-        confidence: z.number().min(0).max(1),
+        content: z.string(),
+        title: z.string(),
       }),
     },
   )
+  // Step 2: Analyze content
   .andThen({
-    execute: async (data, state) => {
-      // If the detected language is the same as target language, skip translation
-      if (data.detectedLanguage === state.input.targetLanguage) {
-        return {
-          ...data,
-          translatedText: state.input.originalText,
-          processingTime: Date.now() - state.startAt.getTime(),
-        };
-      }
+    id: "analyze-content",
+    execute: async ({ data }) => {
+      const wordCount = data.content.split(/\s+/).length;
+      const readingTime = Math.ceil(wordCount / 200); // Average reading speed
 
-      // If language is unknown, return error
-      if (data.detectedLanguage === "unknown") {
-        throw new Error("Unable to detect the language of the input text");
-      }
-
-      return data;
-    },
-  })
-  .andAgent(
-    async (data, state) => {
-      return `Translate the following text to ${data.detectedLanguage}: ${state.input.originalText}`;
-    },
-    translationAgent,
-    {
-      schema: z.object({
-        translatedText: z.string(),
-      }),
-    },
-  )
-  .andThen({
-    execute: async (data, state) => {
       return {
         ...data,
-        processingTime: Date.now() - state.startAt.getTime(),
+        wordCount,
+        readingTime,
+        timestamp: Date.now(),
+      };
+    },
+  })
+  // Step 3: Conditional translation
+  .andWhen({
+    id: "translate-if-needed",
+    condition: async ({ data, state }) => {
+      // Access original input to check if translation was requested
+      const originalInput = state.input as { requireTranslation: boolean };
+      return originalInput.requireTranslation && data.wordCount > 50;
+    },
+    step: andAll({
+      id: "translate-content",
+      steps: [
+        andAgent(
+          async ({ data }) => `Translate this to Spanish: "${data.content}"`,
+          translationAgent,
+          {
+            schema: z.object({
+              spanish: z.string(),
+            }),
+          },
+        ),
+        andAgent(
+          async ({ data }) => `Translate this to French: "${data.content}"`,
+          translationAgent,
+          {
+            schema: z.object({
+              french: z.string(),
+            }),
+          },
+        ),
+      ],
+    }),
+  })
+  // Step 4: Format final output using getStepData
+  .andThen({
+    id: "format-output",
+    execute: async ({ data, getStepData }) => {
+      // Access data from the first content generation step
+      const contentGeneration = getStepData("generate-content");
+      const analysisStep = getStepData("analyze-content");
+      const translationsStep = getStepData("translate-content");
+
+      // Build translations object if translations were performed
+      let translations: Record<string, string> | undefined;
+      if (translationsStep?.output && Array.isArray(translationsStep.output)) {
+        translations = {};
+        const [spanish, french] = translationsStep.output;
+        if (spanish && "spanish" in spanish) {
+          translations.es = spanish.spanish;
+        }
+        if (french && "french" in french) {
+          translations.fr = french.french;
+        }
+      }
+
+      return {
+        originalContent:
+          contentGeneration?.output?.content || ("content" in data ? data.content : ""),
+        wordCount: "wordCount" in data ? data.wordCount : 0,
+        translations,
+        processingTime: Date.now() - (analysisStep?.output?.timestamp || Date.now()),
       };
     },
   });
 
-// Example usage function
-async function processTranslation(inputText: string, targetLanguage = "en") {
-  try {
-    const { result } = await translationWorkflow.run({
-      originalText: inputText,
-      targetLanguage,
-    });
+// 3. ADVANCED WORKFLOW: Customer Support Automation
+// Uses ALL workflow features: andThen, andAgent, andWhen, andAll, andRace, andTap, getStepData
+const supportAutomationWorkflow = createWorkflowChain({
+  id: "support-automation",
+  name: "Advanced Support Automation",
+  purpose: "Process support requests with intelligent routing and response generation",
+  input: z.object({
+    customerName: z.string(),
+    issue: z.string(),
+    accountType: z.enum(["free", "premium", "enterprise"]),
+  }),
+  result: z.object({
+    response: z.string(),
+    category: z.string(),
+    processingPath: z.string(),
+    responseTime: z.number(),
+    escalated: z.boolean(),
+  }),
+})
+  // Step 1: Log the incoming request
+  .andTap({
+    id: "log-request",
+    execute: async ({ data, state }) => {
+      console.log(`[${new Date().toISOString()}] Support request from ${data.customerName}`);
+      console.log(`Account type: ${data.accountType}, Session: ${state.conversationId || "N/A"}`);
+    },
+  })
+  // Step 2: Analyze the issue
+  .andAgent(
+    async ({ data }) => `
+      Analyze this support issue and categorize it:
+      Customer: ${data.customerName} (${data.accountType} account)
+      Issue: "${data.issue}"
+      
+      Provide:
+      1. Category (technical, billing, feature-request, complaint)
+      2. Severity (low, medium, high, critical)
+      3. Requires human intervention (yes/no)
+    `,
+    analysisAgent,
+    {
+      schema: z.object({
+        category: z.string(),
+        severity: z.string(),
+        requiresHuman: z.boolean(),
+      }),
+    },
+  )
+  // Step 3: Check if escalation is needed
+  .andWhen({
+    id: "check-escalation",
+    condition: async ({ data, getStepData }) => {
+      // Access original input for accountType
+      const originalInput = getStepData("log-request");
+      const accountType = originalInput?.input?.accountType || "free";
+      return data.requiresHuman || data.severity === "critical" || accountType === "enterprise";
+    },
+    step: andThen({
+      id: "escalate",
+      execute: async ({ data, getStepData }) => ({
+        ...data,
+        escalated: true,
+        escalationReason: `${data.severity} severity ${data.category} issue for ${getStepData("log-request")?.input?.accountType || "unknown"} customer`,
+      }),
+    }),
+  })
+  // Step 4: Generate response based on priority
+  .andThen({
+    id: "generate-response",
+    execute: async ({ data, getStepData }) => {
+      const logStep = getStepData("log-request");
+      const customerName = logStep?.input?.customerName || "Valued Customer";
+      const originalIssue = logStep?.input?.issue || "";
 
-    console.log("🌍 Translation Workflow Results:");
-    console.log("=".repeat(50));
-    console.log(`📝 Original Text: ${result.originalText}`);
-    console.log(
-      `🔍 Detected Language: ${result.detectedLanguage} (confidence: ${(result.confidence * 100).toFixed(1)}%)`,
-    );
-    console.log(`🎯 Target Language: ${result.targetLanguage}`);
-    console.log(`🔄 Translated Text: ${result.translatedText}`);
-    console.log(`\n⏱️  Processing Time: ${result.processingTime}ms`);
-    console.log("=".repeat(50));
+      // Use template for low priority, AI for high priority
+      const isEscalated = "escalated" in data && data.escalated;
+      if (data.severity === "critical" || isEscalated) {
+        // Generate personalized response for critical issues
+        const { object } = await contentAgent.generateObject(
+          `Generate a personalized, empathetic response for this critical support request:
+           Category: ${data.category}
+           Severity: ${data.severity}
+           Issue: "${originalIssue}"
+           Customer: ${customerName}
+           
+           Be professional, acknowledge the urgency, and provide concrete next steps.`,
+          z.object({
+            response: z.string(),
+          }),
+        );
 
-    return result;
-  } catch (error) {
-    console.error("❌ Translation workflow failed:", error);
-    throw error;
-  }
-}
+        return {
+          ...data,
+          response: object.response,
+          responseType: "personalized",
+          responseTime: 200,
+        };
+      }
+      // Use template response for standard issues
+      const templates: Record<string, string> = {
+        technical: "We've identified a technical issue and our team is investigating.",
+        billing: "We'll review your billing concern and respond within 24 hours.",
+        "feature-request": "Thank you for your suggestion. We've added it to our roadmap.",
+        complaint: "We apologize for the inconvenience and will address this immediately.",
+      };
 
-// Example usage
-async function main() {
-  console.log("🚀 Starting VoltAgent Translation Workflow Example\n");
+      return {
+        ...data,
+        response: `Dear ${customerName}, ${templates[data.category] || templates.complaint}`,
+        responseType: "template",
+        responseTime: 50,
+      };
+    },
+  })
+  // Step 5: Finalize the response
+  .andThen({
+    id: "finalize",
+    execute: async ({ data, getStepData }) => {
+      // Get data from various steps to compile final result
+      const analysisData = getStepData("analyze-issue");
+      const escalationData = getStepData("escalate");
 
-  // Example 1: Spanish to English
-  await processTranslation(
-    "¡Hola! Me gustaría saber más sobre el producto VoltAgent. ¿Pueden ayudarme con información sobre precios?",
-    "en",
-  );
+      return {
+        response: data.response,
+        category: analysisData?.output?.category || "unknown",
+        processingPath: data.responseType,
+        responseTime: data.responseTime,
+        escalated: escalationData !== undefined,
+      };
+    },
+  })
+  // Step 6: Log completion
+  .andTap({
+    id: "log-completion",
+    execute: async ({ data }) => {
+      console.log(`[${new Date().toISOString()}] Response sent`);
+      console.log(
+        `Path: ${data.processingPath}, Time: ${data.responseTime}ms, Escalated: ${data.escalated}`,
+      );
+    },
+  });
 
-  console.log("\n");
-
-  // Example 2: French to English
-  await processTranslation(
-    "Bonjour! Je suis intéressé par votre service de support client. Pouvez-vous me donner plus de détails?",
-    "en",
-  );
-
-  console.log("\n");
-
-  // Example 3: German to Spanish
-  await processTranslation(
-    "Guten Tag! Ich habe eine Frage zu Ihrer API-Dokumentation. Können Sie mir helfen?",
-    "es",
-  );
-
-  console.log("\n");
-
-  // Example 4: Japanese to English
-  await processTranslation(
-    "こんにちは!VoltAgentについて詳しく教えてください。料金プランはありますか?",
-    "en",
-  );
-}
-
-// Run the example
-main().catch(console.error);
+// Register all workflows with VoltAgent
+new VoltAgent({
+  agents: {
+    contentAgent,
+    analysisAgent,
+    translationAgent,
+  },
+  workflows: {
+    emailResponseWorkflow,
+    contentProcessingWorkflow,
+    supportAutomationWorkflow,
+  },
+});

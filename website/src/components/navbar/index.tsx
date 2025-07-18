@@ -68,7 +68,7 @@ export default function Navbar() {
           >
             <div className={`${styles.navLink} group relative`}>
               <div className="flex items-center cursor-pointer">
-                PRODUCTS
+                Products
                 <ChevronDownIcon className="w-4 h-4 ml-1 text-inherit group-hover:text-emerald-400" />
               </div>
               <div className="absolute left-0 top-full mt-2 bg-gray-900 border border-solid border-gray-800 rounded-md shadow-xl  w-[280px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 before:content-[''] before:absolute before:top-[-8px] before:left-0 before:w-full before:h-[8px] before:bg-transparent">
@@ -122,149 +122,130 @@ export default function Navbar() {
                 </div>
               </div>
             </div>
+            <Link to="/docs/" className={`${styles.navLink}  `}>
+              Voltagent Docs
+            </Link>
+            <Link
+              to="/voltops-llm-observability-docs/"
+              className={`${styles.navLink}  `}
+            >
+              Voltops Docs
+            </Link>
+            <Link to="/customers/" className={`${styles.navLink}`}>
+              Customers
+            </Link>
             <Link
               to="/pricing/"
               className={`${styles.navLink}   ${
                 isActive("(launch-week-june-25/") ? styles.active : ""
               }`}
             >
-              PRICING
+              Pricing
             </Link>
             <div className={`${styles.navLink} group relative`}>
               <div className="flex items-center cursor-pointer">
-                RESOURCES
+                Resources
                 <ChevronDownIcon className="w-4 h-4 ml-1 text-inherit group-hover:text-emerald-400" />
               </div>
-              <div className="absolute left-0 top-full mt-2 bg-gray-900 border border-solid border-gray-800 rounded-md shadow-xl w-[380px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 before:content-[''] before:absolute before:top-[-8px] before:left-0 before:w-full before:h-[8px] before:bg-transparent">
-                <Link to="/docs/" className="no-underline">
-                  <div className="p-3 pl-8 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center rounded-t-md transition-colors duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
-                    <BookOpenIcon className="w-5 h-5 mr-3 flex-shrink-0 text-[#00d992]" />
-                    <div className="min-w-0 font-['Inter']">
-                      <div className="text-sm font-semibold whitespace-nowrap">
-                        VoltAgent Framework Docs
-                      </div>
-                      <div className="text-xs font-normal text-gray-400 whitespace-nowrap">
-                        Learn how to build AI agents
-                      </div>
+              <div className="absolute left-0 top-full mt-2 bg-gray-900 border border-solid border-gray-800 rounded-md shadow-xl w-[600px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 before:content-[''] before:absolute before:top-[-8px] before:left-0 before:w-full before:h-[8px] before:bg-transparent">
+                <div className="grid grid-cols-2 gap-0">
+                  {/* Left Column - LEARN */}
+                  <div className="p-4 border-r border-gray-800">
+                    <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 font-['Inter']">
+                      LEARN
                     </div>
+                    <Link to="/tutorial/introduction" className="no-underline">
+                      <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 rounded-md border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400 mb-2">
+                        <BookOpenIcon className="w-5 h-5 mr-3 flex-shrink-0 text-[#00d992]" />
+                        <div className="min-w-0 font-['Inter']">
+                          <div className="text-sm font-semibold whitespace-nowrap">
+                            5 Steps Tutorial
+                          </div>
+                          <div className="text-xs font-normal text-gray-400 whitespace-nowrap">
+                            Learn AI agent development in 5 steps
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                    <Link
+                      to="https://github.com/voltagent/voltagent/tree/main/examples/"
+                      className="no-underline"
+                    >
+                      <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 rounded-md border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400 mb-2">
+                        <CommandLineIcon className="w-5 h-5 mr-3 flex-shrink-0 text-[#00d992]" />
+                        <div className="min-w-0 font-['Inter']">
+                          <div className="text-sm font-semibold whitespace-nowrap">
+                            Examples
+                          </div>
+                          <div className="text-xs font-normal text-gray-400 whitespace-nowrap">
+                            Explore sample projects and code
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                    <Link to="/mcp/" className="no-underline">
+                      <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 rounded-md border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
+                        <ServerIcon className="w-5 h-5 mr-3 flex-shrink-0 text-[#00d992]" />
+                        <div className="min-w-0 font-['Inter']">
+                          <div className="text-sm font-semibold whitespace-nowrap">
+                            MCP Directory
+                          </div>
+                          <div className="text-xs font-normal text-gray-400 whitespace-nowrap">
+                            Browse Model Context Protocol services
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
                   </div>
-                </Link>
-                <Link
-                  to="/voltops-llm-observability-docs/"
-                  className="no-underline"
-                >
-                  <div className="p-3 pl-8 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
-                    <BookOpenIcon className="w-5 h-5 mr-3 flex-shrink-0 text-[#00d992]" />
-                    <div className="min-w-0 font-['Inter']">
-                      <div className="text-sm font-semibold whitespace-nowrap">
-                        VoltOps LLM Observability Docs
-                      </div>
-                      <div className="text-xs font-normal text-gray-400 whitespace-nowrap">
-                        Monitor and analyze AI agents
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-                <Link to="/blog/" className="no-underline">
-                  <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
-                    <PencilSquareIcon className="w-5 h-5 mr-3 flex-shrink-0 text-[#00d992]" />
-                    <div className="min-w-0 font-['Inter']">
-                      <div className="text-sm font-semibold whitespace-nowrap">
-                        Blog
-                      </div>
-                      <div className="text-xs font-normal text-gray-400 whitespace-nowrap">
-                        Read the technical blog
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-                <Link to="/about/" className="no-underline">
-                  <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
-                    <BoltIcon className="w-5 h-5 mr-3 flex-shrink-0 text-[#00d992]" />
-                    <div className="min-w-0 font-['Inter']">
-                      <div className="text-sm font-semibold whitespace-nowrap">
-                        About Us
-                      </div>
-                      <div className="text-xs font-normal text-gray-400 whitespace-nowrap">
-                        Learn more about VoltAgent
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-                <Link to="/launch-week-june-25/" className="no-underline">
-                  <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 rounded-b-md border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
-                    <BoltIcon className="w-5 h-5 mr-3 flex-shrink-0 text-[#00d992]" />
-                    <div className="min-w-0 font-['Inter']">
-                      <div className="text-sm font-semibold whitespace-nowrap">
-                        Launch Week #1
-                      </div>
-                      <div className="text-xs font-normal text-gray-400 whitespace-nowrap">
-                        Explore our product launch updates
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              </div>
-            </div>
-            <div className={`${styles.navLink} group relative`}>
-              <div className="flex items-center cursor-pointer">
-                DEVELOPERS
-                <ChevronDownIcon className="w-4 h-4 ml-1 text-inherit group-hover:text-emerald-400" />
-              </div>
-              <div className="absolute left-0 top-full mt-2 bg-gray-900 border border-solid border-gray-800 rounded-md shadow-xl w-[380px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 before:content-[''] before:absolute before:top-[-8px] before:left-0 before:w-full before:h-[8px] before:bg-transparent">
-                <Link
-                  to="https://github.com/voltagent/voltagent/tree/main/examples/"
-                  className="no-underline"
-                >
-                  <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 rounded-t-md border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
-                    <CommandLineIcon className="w-5 h-5 mr-3 flex-shrink-0 text-[#00d992]" />
-                    <div className="min-w-0 font-['Inter']">
-                      <div className="text-sm font-semibold whitespace-nowrap">
-                        Examples
-                      </div>
-                      <div className="text-xs font-normal text-gray-400 whitespace-nowrap">
-                        Explore sample projects and code
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-                <Link to="/mcp/" className="no-underline">
-                  <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
-                    <ServerIcon className="w-5 h-5 mr-3 flex-shrink-0 text-[#00d992]" />
-                    <div className="min-w-0 font-['Inter']">
-                      <div className="text-sm font-semibold whitespace-nowrap">
-                        MCP Directory
-                      </div>
-                      <div className="text-xs font-normal text-gray-400 whitespace-nowrap">
-                        Browse Model Context Protocol services
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-                <Link to="/showcase/" className="no-underline">
-                  <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 rounded-b-md border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
-                    <StarIcon className="w-5 h-5 mr-3 flex-shrink-0 text-[#00d992]" />
-                    <div className="min-w-0 font-['Inter']">
-                      <div className="text-sm font-semibold whitespace-nowrap">
-                        Showcases
-                      </div>
-                      <div className="text-xs font-normal text-gray-400 whitespace-nowrap">
-                        See what others have built
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              </div>
-            </div>
 
-            <Link
-              to="/tutorial/introduction"
-              className={`${styles.navLink}  !text-emerald-400 ${
-                isActive("(tutorial/introduction") ? styles.active : ""
-              }`}
-            >
-              5 STEPS
-            </Link>
+                  {/* Right Column - CONNECT */}
+                  <div className="p-4">
+                    <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 font-['Inter']">
+                      CONNECT
+                    </div>
+                    <Link to="/blog/" className="no-underline">
+                      <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 rounded-md border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400 mb-2">
+                        <PencilSquareIcon className="w-5 h-5 mr-3 flex-shrink-0 text-[#00d992]" />
+                        <div className="min-w-0 font-['Inter']">
+                          <div className="text-sm font-semibold whitespace-nowrap">
+                            Blog
+                          </div>
+                          <div className="text-xs font-normal text-gray-400 whitespace-nowrap">
+                            Read the technical blog
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                    <Link to="/about/" className="no-underline">
+                      <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 rounded-md border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400 mb-2">
+                        <BoltIcon className="w-5 h-5 mr-3 flex-shrink-0 text-[#00d992]" />
+                        <div className="min-w-0 font-['Inter']">
+                          <div className="text-sm font-semibold whitespace-nowrap">
+                            About Us
+                          </div>
+                          <div className="text-xs font-normal text-gray-400 whitespace-nowrap">
+                            Learn more about VoltAgent
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                    <Link to="/launch-week-june-25/" className="no-underline">
+                      <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 rounded-md border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
+                        <BoltIcon className="w-5 h-5 mr-3 flex-shrink-0 text-[#00d992]" />
+                        <div className="min-w-0 font-['Inter']">
+                          <div className="text-sm font-semibold whitespace-nowrap">
+                            Launch Week #1
+                          </div>
+                          <div className="text-xs font-normal text-gray-400 whitespace-nowrap">
+                            Explore our product launch updates
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         <div className={styles.navbarRight}>
@@ -379,7 +360,7 @@ export default function Navbar() {
               }}
             >
               <span className="font-['IBM_Plex_Mono'] font-semibold">
-                PRODUCTS
+                Products
               </span>
               <ChevronDownIcon className="w-5 h-5 ml-1" />
             </button>
@@ -426,13 +407,25 @@ export default function Navbar() {
               </div>
             </div>
           </div>
+          <Link to="/docs/" className={`${styles.mobileNavLink}`}>
+            Voltagent Docs
+          </Link>
+          <Link
+            to="/voltops-llm-observability-docs/"
+            className={`${styles.mobileNavLink}`}
+          >
+            Voltops Docs
+          </Link>
           <Link
             to="/pricing/"
             className={`${styles.mobileNavLink} ${
               isActive("/pricing/") ? styles.active : ""
             }`}
           >
-            PRICING
+            Pricing
+          </Link>
+          <Link to="/customers/" className={`${styles.mobileNavLink}`}>
+            Customers
           </Link>
           <div className={styles.mobileNavLink}>
             <button
@@ -446,36 +439,49 @@ export default function Navbar() {
               }}
             >
               <span className="font-['IBM_Plex_Mono'] font-semibold">
-                RESOURCES
+                Resources
               </span>
               <ChevronDownIcon className="w-5 h-5 ml-1" />
             </button>
             <div id="mobile-resources-menu" className="hidden mt-4 mb-2">
-              <Link to="/docs/" className="no-underline">
+              <Link to="/tutorial/introduction" className="no-underline">
                 <div className="p-3 pl-8 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center rounded-t-md transition-colors duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
                   <BookOpenIcon className="w-5 h-5 mr-2 flex-shrink-0 text-[#00d992]" />
                   <div className="min-w-0 font-['Inter']">
                     <div className="text-sm font-semibold whitespace-nowrap">
-                      VoltAgent Framework Docs
+                      5 Steps Tutorial
                     </div>
                     <div className="text-xs text-gray-400 whitespace-nowrap">
-                      Learn how to build AI agents
+                      Learn AI agent development in 5 steps
                     </div>
                   </div>
                 </div>
               </Link>
               <Link
-                to="/voltops-llm-observability-docs/"
+                to="https://github.com/voltagent/voltagent/tree/main/examples/"
                 className="no-underline"
               >
-                <div className="p-3 pl-8 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
-                  <BookOpenIcon className="w-5 h-5 mr-2 flex-shrink-0 text-[#00d992]" />
+                <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
+                  <CommandLineIcon className="w-5 h-5 mr-2 flex-shrink-0 text-[#00d992]" />
                   <div className="min-w-0 font-['Inter']">
                     <div className="text-sm font-semibold whitespace-nowrap">
-                      VoltOps LLM Observability Docs
+                      Examples
                     </div>
                     <div className="text-xs text-gray-400 whitespace-nowrap">
-                      Monitor and analyze AI agents
+                      Explore sample projects and code
+                    </div>
+                  </div>
+                </div>
+              </Link>
+              <Link to="/mcp/" className="no-underline">
+                <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
+                  <ServerIcon className="w-5 h-5 mr-2 flex-shrink-0 text-[#00d992]" />
+                  <div className="min-w-0 font-['Inter']">
+                    <div className="text-sm font-semibold whitespace-nowrap">
+                      MCP Directory
+                    </div>
+                    <div className="text-xs text-gray-400 whitespace-nowrap">
+                      Browse Model Context Protocol services
                     </div>
                   </div>
                 </div>
@@ -494,7 +500,7 @@ export default function Navbar() {
                 </div>
               </Link>
               <Link to="/about/" className="no-underline">
-                <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 rounded-b-md border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
+                <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
                   <BoltIcon className="w-5 h-5 mr-2 flex-shrink-0 text-[#00d992]" />
                   <div className="min-w-0 font-['Inter']">
                     <div className="text-sm font-semibold whitespace-nowrap">
@@ -521,75 +527,6 @@ export default function Navbar() {
               </Link>
             </div>
           </div>
-          <div className={styles.mobileNavLink}>
-            <button
-              type="button"
-              className="flex items-center px-0 w-full cursor-pointer bg-transparent border-none text-inherit"
-              onClick={() => {
-                const elem = document.getElementById("mobile-developers-menu");
-                if (elem) {
-                  elem.classList.toggle("hidden");
-                }
-              }}
-            >
-              <span className="font-['IBM_Plex_Mono'] font-semibold">
-                DEVELOPERS
-              </span>
-              <ChevronDownIcon className="w-5 h-5 ml-1" />
-            </button>
-            <div id="mobile-developers-menu" className="hidden mt-4 mb-2">
-              <Link
-                to="https://github.com/voltagent/voltagent/tree/main/examples/"
-                className="no-underline"
-              >
-                <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 rounded-t-md border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
-                  <CommandLineIcon className="w-5 h-5 mr-2 flex-shrink-0 text-[#00d992]" />
-                  <div className="min-w-0 font-['Inter']">
-                    <div className="text-sm font-semibold whitespace-nowrap">
-                      Examples
-                    </div>
-                    <div className="text-xs text-gray-400 whitespace-nowrap">
-                      Explore sample projects and code
-                    </div>
-                  </div>
-                </div>
-              </Link>
-              <Link to="/mcp/" className="no-underline">
-                <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
-                  <ServerIcon className="w-5 h-5 mr-2 flex-shrink-0 text-[#00d992]" />
-                  <div className="min-w-0 font-['Inter']">
-                    <div className="text-sm font-semibold whitespace-nowrap">
-                      MCP Directory
-                    </div>
-                    <div className="text-xs text-gray-400 whitespace-nowrap">
-                      Browse Model Context Protocol services
-                    </div>
-                  </div>
-                </div>
-              </Link>
-              <Link to="/showcase/" className="no-underline">
-                <div className="p-3 hover:bg-gray-800/50 cursor-pointer text-[#DCDCDC] hover:text-emerald-400 flex items-center transition-colors duration-200 rounded-b-md border-solid border-r-0 border-t-0 border-b-0 border-l-2 border-transparent hover:border-emerald-400">
-                  <StarIcon className="w-5 h-5 mr-2 flex-shrink-0 text-[#00d992]" />
-                  <div className="min-w-0 font-['Inter']">
-                    <div className="text-sm font-semibold whitespace-nowrap">
-                      Showcases
-                    </div>
-                    <div className="text-xs text-gray-400 whitespace-nowrap">
-                      See what others have built
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            </div>
-          </div>
-          <Link
-            to="/tutorial/introduction"
-            className={`${styles.mobileNavLink}  !text-emerald-400 ${
-              isActive("/tutorial/introduction") ? styles.active : ""
-            }`}
-          >
-            5 STEPS
-          </Link>
           <div className={styles.mobileButtons}>
             <Link
               to="https://console.voltagent.dev/demo"

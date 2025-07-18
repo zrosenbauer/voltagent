@@ -119,7 +119,7 @@ export function Footer() {
                 <FooterLink href="/about/">About us</FooterLink>
               </li>
               <li>
-                <FooterLink href="/showcase/">Showcase</FooterLink>
+                <FooterLink href="/customers/">Customers</FooterLink>
               </li>
               <li>
                 <FooterLink href="/oss-friends">OSS Friends</FooterLink>

@@ -3,6 +3,7 @@ import type * as TF from "type-fest";
 import type { z } from "zod";
 import type { BaseMessage } from "../../agent/providers";
 import type { WorkflowState } from "./state";
+import type { WorkflowExecutionContext } from "../context";
 
 /**
  * The base input type for the workflow
@@ -17,23 +18,36 @@ export type InternalBaseWorkflowInputSchema = z.ZodTypeAny | BaseMessage | BaseM
 export type InternalWorkflowStateParam<INPUT> = Omit<
   WorkflowState<INPUT, DangerouslyAllowAny>,
   "data" | "result"
->;
+> & {
+  /** Workflow execution context for event tracking */
+  workflowContext?: WorkflowExecutionContext;
+};
+
+/**
+ * Context object for new execute API with helper functions
+ * @private - INTERNAL USE ONLY
+ */
+export interface WorkflowExecuteContext<INPUT, DATA> {
+  data: InternalExtractWorkflowInputData<DATA>;
+  state: InternalWorkflowStateParam<INPUT>;
+  getStepData: (stepId: string) => { input: any; output: any } | undefined;
+}
 
 /**
  * A function that can be executed by the workflow
+ * Uses context-based API with data, state, and helper functions
  * @private - INTERNAL USE ONLY
  */
 export type InternalWorkflowFunc<INPUT, DATA, RESULT> = (
-  data: InternalExtractWorkflowInputData<DATA>,
-  state: InternalWorkflowStateParam<INPUT>,
+  context: WorkflowExecuteContext<INPUT, DATA>,
 ) => Promise<RESULT>;
 
 export type InternalWorkflowStepConfig<T extends PlainObject = PlainObject> = {
   /**
    * Unique identifier for the step
-   * @default uuidv4
+   * @required - Must be provided for proper step tracking
    */
-  id?: string;
+  id: string;
   /**
    * Human-readable name for the step
    */
@@ -66,15 +80,11 @@ export interface InternalBaseWorkflowStep<INPUT, DATA, RESULT> {
    */
   type: string;
   /**
-   * Execute the step with the given data
-   * @param data - The data to execute the step with
-   * @param state - The state of the workflow
+   * Execute the step with the given context
+   * @param context - The execution context containing data, state, and helpers
    * @returns The result of the step
    */
-  execute: (
-    data: InternalExtractWorkflowInputData<DATA>,
-    state: InternalWorkflowStateParam<INPUT>,
-  ) => Promise<RESULT>;
+  execute: (context: WorkflowExecuteContext<INPUT, DATA>) => Promise<RESULT>;
 }
 
 /**

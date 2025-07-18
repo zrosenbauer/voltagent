@@ -1,5 +1,5 @@
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
-import type { Agent } from "../../agent";
+import type { Agent } from "../../agent/agent";
 import type {
   InternalAnyWorkflowStep,
   InternalBaseWorkflowStep,
@@ -28,6 +28,15 @@ export type WorkflowStepFuncConfig<INPUT, DATA, RESULT> = InternalWorkflowStepCo
 export interface WorkflowStepFunc<INPUT, DATA, RESULT>
   extends InternalBaseWorkflowStep<INPUT, DATA, RESULT> {
   type: "func";
+}
+
+export type WorkflowStepTapConfig<INPUT, DATA, _RESULT> = InternalWorkflowStepConfig<{
+  execute: InternalWorkflowFunc<INPUT, DATA, DangerouslyAllowAny>;
+}>;
+
+export interface WorkflowStepTap<INPUT, DATA, _RESULT>
+  extends InternalBaseWorkflowStep<INPUT, DATA, DATA> {
+  type: "tap";
 }
 
 export type WorkflowStepConditionalWhenConfig<INPUT, DATA, RESULT> = InternalWorkflowStepConfig<{
@@ -68,4 +77,5 @@ export type WorkflowStep<INPUT, DATA, RESULT> =
   | WorkflowStepFunc<INPUT, DATA, RESULT>
   | WorkflowStepConditionalWhen<INPUT, DATA, RESULT>
   | WorkflowStepParallelAll<INPUT, DATA, RESULT>
+  | WorkflowStepTap<INPUT, DATA, RESULT>
   | WorkflowStepParallelRace<INPUT, DATA, RESULT>;
