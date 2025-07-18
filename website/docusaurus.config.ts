@@ -169,6 +169,18 @@ const config: Config = {
             to: "/customers/",
             from: "/showcase/",
           },
+          {
+            to: "/customers/content-pipeline/",
+            from: "/showcase/4-agent-ai-team-blog-research/",
+          },
+          {
+            to: "/customers/devpotenciados/",
+            from: "/showcase/inventory-query-agent/",
+          },
+          {
+            to: "/customers/",
+            from: "/showcase/999-dev-ai-teammate/",
+          },
         ],
       },
     ],
