@@ -12,6 +12,7 @@ import { Rag } from "../components/rag";
 import { SupervisorAgent } from "../components/supervisor-agent";
 import { DotPattern } from "../components/ui/dot-pattern";
 import { TwoBlocks } from "../components/two-blocks";
+import { Testimonials } from "../components/testimonials";
 export default function Home(): JSX.Element {
   const title = "VoltAgent - Open Source TypeScript AI Agent Framework";
   const description =
@@ -34,8 +35,11 @@ export default function Home(): JSX.Element {
           <Hero />
           <TwoBlocks />
           <LivePreview />
+
           <div className="relative">
             <AgentsDetail />
+            <Testimonials />
+
             <SupervisorAgent />
             <Rag />
             <Integrations />
