@@ -5,9 +5,9 @@ import { LinkedInMessage } from "./LinkedInMessage";
 import { ArticleCard } from "./ArticleCard";
 import { LinkedInPost } from "./LinkedInPost";
 
-// Add keyframes for the scrolling animations
+// Seamless infinite scroll CSS with calculated values
 const scrollAnimation = `
-  @keyframes scrollLeft {
+  @keyframes seamlessScrollLeft {
     0% {
       transform: translateX(0);
     }
@@ -16,7 +16,7 @@ const scrollAnimation = `
     }
   }
 
-  @keyframes scrollRight {
+  @keyframes seamlessScrollRight {
     0% {
       transform: translateX(-50%);
     }
@@ -25,44 +25,71 @@ const scrollAnimation = `
     }
   }
 
-  .scroll-left-animation-2 {
-    animation: scrollLeft 59s linear infinite;
+  .seamless-scroll-left {
+    animation: seamlessScrollLeft 80s linear infinite;
+    will-change: transform;
   }
 
-  .scroll-right-animation {
-    animation: scrollRight 500s linear infinite;
+  .seamless-scroll-right {
+    animation: seamlessScrollRight 100s linear infinite;
+    will-change: transform;
+  }
+
+  .seamless-scroll-articles {
+    animation: seamlessScrollLeft 60s linear infinite;
+    will-change: transform;
   }
 
   .animation-paused {
     animation-play-state: paused;
   }
 
+  /* Pause animations when not visible to save performance */
+  .animations-disabled .seamless-scroll-left,
+  .animations-disabled .seamless-scroll-right,
+  .animations-disabled .seamless-scroll-articles {
+    animation-play-state: paused;
+  }
+
   @media (pointer: coarse) {
-    .touch-device-scroll-left {
-      animation: scrollLeft 500s linear infinite;
+    .seamless-scroll-left {
+      animation-duration: 120s;
     }
     
-    .touch-device-scroll-right {
-      animation: scrollRight 500s linear infinite;
+    .seamless-scroll-right {
+      animation-duration: 140s;
+    }
+
+    .seamless-scroll-articles {
+      animation-duration: 100s;
+    }
+  }
+
+  /* Reduce animations on low-performance devices */
+  @media (prefers-reduced-motion: reduce) {
+    .seamless-scroll-left,
+    .seamless-scroll-right,
+    .seamless-scroll-articles {
+      animation-duration: 200s;
     }
   }
 `;
 
 const testimonialTweetIds = [
+  "1916955895709503681",
   "1930715579155202268",
   "1929706642851193172",
+  "1917264060225044707",
   "1927072927213596780",
   "1927054751666999592",
   "1924486274448306320",
   "1924303206794059823",
-  "1924058575485403362",
   "1923352273452671399",
   "1920502438215250259",
-  "1916955895709503681",
+  "1924058575485403362",
   "1916757463426302247",
   "1915200495461028321",
   "1924262217924653243",
-  "1920502438215250259",
 ];
 
 const linkedInPosts = [
@@ -230,18 +257,35 @@ export function Testimonials() {
   const [isTweetsRowPaused, setIsTweetsRowPaused] = useState(false);
   const [isDiscordRowPaused, setIsDiscordRowPaused] = useState(false);
   const [isArticlesRowPaused, setIsArticlesRowPaused] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
 
   // Refs for each scrolling row
   const tweetsRowRef = useRef<HTMLDivElement>(null);
   const discordRowRef = useRef<HTMLDivElement>(null);
   const articlesRowRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Intersection Observer to pause animations when not visible
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsVisible(entry.isIntersecting);
+      },
+      { threshold: 0.1 },
+    );
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
 
   // Create mixed content for seamless scrolling
   const mixedContent = [];
   const maxLength = Math.max(testimonialTweetIds.length, linkedInPosts.length);
 
   for (let i = 0; i < maxLength; i++) {
-    // Add tweet if available
     if (i < testimonialTweetIds.length) {
       mixedContent.push({
         type: "tweet" as const,
@@ -250,7 +294,6 @@ export function Testimonials() {
       });
     }
 
-    // Add LinkedIn post if available
     if (i < linkedInPosts.length) {
       mixedContent.push({
         type: "linkedin" as const,
@@ -268,7 +311,6 @@ export function Testimonials() {
   );
 
   for (let i = 0; i < maxDiscordLength; i++) {
-    // Add Discord message if available
     if (i < discordMessages.length) {
       mixedDiscordContent.push({
         type: "discord" as const,
@@ -277,7 +319,6 @@ export function Testimonials() {
       });
     }
 
-    // Add LinkedIn message if available
     if (i < linkedInMessages.length) {
       mixedDiscordContent.push({
         type: "linkedinmsg" as const,
@@ -287,13 +328,13 @@ export function Testimonials() {
     }
   }
 
-  // Duplicate the mixed content for continuous scrolling
-  const duplicatedMixedContent = [...mixedContent, ...mixedContent];
-  const duplicatedMixedDiscordContent = [
+  // Minimal duplication - just one copy for seamless effect
+  const seamlessMixedContent = [...mixedContent, ...mixedContent];
+  const seamlessMixedDiscordContent = [
     ...mixedDiscordContent,
     ...mixedDiscordContent,
   ];
-  const duplicatedArticles = [...articles, ...articles];
+  const seamlessArticles = [...articles, ...articles];
 
   // Event handlers for tweets row (scrolling left)
   const handleTweetsRowTouchStart = useCallback(
@@ -434,7 +475,12 @@ export function Testimonials() {
   ]);
 
   return (
-    <div className="relative max-w-9xl xs:px-4 lg:px-8 mx-auto landing-xs:mb-16 landing-md:mb-36">
+    <div
+      ref={containerRef}
+      className={`relative max-w-9xl xs:px-4 lg:px-8 mx-auto landing-xs:mb-16 landing-md:mb-36 ${
+        !isVisible ? "animations-disabled" : ""
+      }`}
+    >
       <div className="mb-8 text-left max-w-xl mx-4">
         <h2 className="landing-xs:text-sm landing-md:text-lg landing-xs:mb-2 landing-md:mb-4 font-semibold  text-main-emerald tracking-wide uppercase">
           Fast Growing Community
@@ -445,149 +491,159 @@ export function Testimonials() {
       </div>
       <style>{scrollAnimation}</style>
 
-      {/* Tweets Row - Scrolling Left */}
-      <div className="relative mb-1">
-        <div
-          ref={tweetsRowRef}
-          className="flex overflow-hidden"
-          style={{
-            maxWidth: "100%",
-            scrollbarWidth: "none",
-            msOverflowStyle: "none",
-            WebkitOverflowScrolling: "touch",
-            WebkitMaskImage:
-              "linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)",
-            maskImage:
-              "linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)",
-          }}
-          onMouseEnter={handleTweetsRowMouseEnter}
-          onMouseLeave={handleTweetsRowMouseLeave}
-        >
-          <div
-            className={`flex space-x-6 py-4 scroll-left-animation-2 ${
-              isTweetsRowPaused ? "animation-paused" : ""
-            }`}
-          >
-            {duplicatedMixedContent.map((item) => (
-              <div key={item.key} className="flex-shrink-0 w-80">
-                {item.type === "tweet" ? (
-                  <ClientTweetCard id={item.id} />
-                ) : (
-                  <LinkedInPost
-                    profileImage={item.data.profileImage}
-                    name={item.data.name}
-                    title={item.data.title}
-                    content={item.data.content}
-                    url={item.data.url}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Discord Messages Row - Scrolling Right */}
-      <div className="relative mb-1">
-        <div
-          ref={discordRowRef}
-          className="flex overflow-hidden"
-          style={{
-            maxWidth: "100%",
-            scrollbarWidth: "none",
-            msOverflowStyle: "none",
-            WebkitOverflowScrolling: "touch",
-            WebkitMaskImage:
-              "linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)",
-            maskImage:
-              "linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)",
-          }}
-          onMouseEnter={handleDiscordRowMouseEnter}
-          onMouseLeave={handleDiscordRowMouseLeave}
-        >
-          <div
-            className={`flex space-x-6 py-4 scroll-right-animation ${
-              isDiscordRowPaused ? "animation-paused" : ""
-            }`}
-          >
-            {duplicatedMixedDiscordContent.map((item) => (
-              <div key={item.key} className="flex-shrink-0 w-80">
-                {item.type === "discord" ? (
-                  <DiscordMessage
-                    username={item.data.username}
-                    discriminator={item.data.discriminator}
-                    message={item.data.message}
-                    timestamp={item.data.timestamp}
-                  />
-                ) : (
-                  <LinkedInMessage
-                    username={item.data.username}
-                    title={item.data.title}
-                    message={item.data.message}
-                    timestamp={item.data.timestamp}
-                    avatar={item.data.avatar}
-                    url={item.data.url}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Articles Section */}
-      <div className="mt-1">
-        {/* Articles Row - Scrolling Left */}
-        <div className="relative">
-          <div
-            ref={articlesRowRef}
-            className="flex overflow-hidden"
-            style={{
-              maxWidth: "100%",
-              scrollbarWidth: "none",
-              msOverflowStyle: "none",
-              WebkitOverflowScrolling: "touch",
-              WebkitMaskImage:
-                "linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)",
-              maskImage:
-                "linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)",
-            }}
-            onMouseEnter={handleArticlesRowMouseEnter}
-            onMouseLeave={handleArticlesRowMouseLeave}
-          >
+      {/* Only render animations if component is visible */}
+      {isVisible && (
+        <>
+          {/* Tweets Row - Scrolling Left */}
+          <div className="relative mb-1">
             <div
-              className={`flex space-x-6 py-4 scroll-left-animation ${
-                isArticlesRowPaused ? "animation-paused" : ""
-              }`}
+              ref={tweetsRowRef}
+              className="flex overflow-hidden"
+              style={{
+                maxWidth: "100%",
+                scrollbarWidth: "none",
+                msOverflowStyle: "none",
+                WebkitOverflowScrolling: "touch",
+                WebkitMaskImage:
+                  "linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)",
+                maskImage:
+                  "linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)",
+              }}
+              onMouseEnter={handleTweetsRowMouseEnter}
+              onMouseLeave={handleTweetsRowMouseLeave}
             >
-              {duplicatedArticles.map((article, index) => (
-                <div
-                  key={`article-${article.title
-                    .replace(/\s+/g, "-")
-                    .toLowerCase()}-${Math.floor(index / articles.length)}`}
-                  className="flex-shrink-0 w-80"
-                >
-                  <ArticleCard
-                    title={article.title}
-                    coverImage={article.coverImage}
-                    excerpt={article.excerpt}
-                    author={article.author}
-                    publication={article.publication}
-                    date={article.date}
-                    readTime={article.readTime}
-                    url={article.url}
-                    type={article.type}
-                    videoId={article.videoId}
-                    channel={article.channel}
-                    views={article.views}
-                    duration={article.duration}
-                  />
-                </div>
-              ))}
+              <div
+                className={`flex space-x-6 py-4 seamless-scroll-left ${
+                  isTweetsRowPaused ? "animation-paused" : ""
+                }`}
+              >
+                {seamlessMixedContent.map((item, index) => (
+                  <div
+                    key={`${item.key}-${index}`}
+                    className="flex-shrink-0 w-80"
+                  >
+                    {item.type === "tweet" ? (
+                      <ClientTweetCard id={item.id} />
+                    ) : (
+                      <LinkedInPost
+                        profileImage={item.data.profileImage}
+                        name={item.data.name}
+                        title={item.data.title}
+                        content={item.data.content}
+                        url={item.data.url}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+
+          {/* Discord Messages Row - Scrolling Right */}
+          <div className="relative mb-1">
+            <div
+              ref={discordRowRef}
+              className="flex overflow-hidden"
+              style={{
+                maxWidth: "100%",
+                scrollbarWidth: "none",
+                msOverflowStyle: "none",
+                WebkitOverflowScrolling: "touch",
+                WebkitMaskImage:
+                  "linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)",
+                maskImage:
+                  "linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)",
+              }}
+              onMouseEnter={handleDiscordRowMouseEnter}
+              onMouseLeave={handleDiscordRowMouseLeave}
+            >
+              <div
+                className={`flex space-x-6 py-4 seamless-scroll-right ${
+                  isDiscordRowPaused ? "animation-paused" : ""
+                }`}
+              >
+                {seamlessMixedDiscordContent.map((item, index) => (
+                  <div
+                    key={`${item.key}-${index}`}
+                    className="flex-shrink-0 w-80"
+                  >
+                    {item.type === "discord" ? (
+                      <DiscordMessage
+                        username={item.data.username}
+                        discriminator={item.data.discriminator}
+                        message={item.data.message}
+                        timestamp={item.data.timestamp}
+                      />
+                    ) : (
+                      <LinkedInMessage
+                        username={item.data.username}
+                        title={item.data.title}
+                        message={item.data.message}
+                        timestamp={item.data.timestamp}
+                        avatar={item.data.avatar}
+                        url={item.data.url}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Articles Section */}
+          <div className="mt-1">
+            <div className="relative">
+              <div
+                ref={articlesRowRef}
+                className="flex overflow-hidden"
+                style={{
+                  maxWidth: "100%",
+                  scrollbarWidth: "none",
+                  msOverflowStyle: "none",
+                  WebkitOverflowScrolling: "touch",
+                  WebkitMaskImage:
+                    "linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)",
+                  maskImage:
+                    "linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)",
+                }}
+                onMouseEnter={handleArticlesRowMouseEnter}
+                onMouseLeave={handleArticlesRowMouseLeave}
+              >
+                <div
+                  className={`flex space-x-6 py-4 seamless-scroll-articles ${
+                    isArticlesRowPaused ? "animation-paused" : ""
+                  }`}
+                >
+                  {seamlessArticles.map((article, index) => (
+                    <div
+                      key={`article-${article.title
+                        .replace(/\s+/g, "-")
+                        .toLowerCase()}-${index}`}
+                      className="flex-shrink-0 w-80"
+                    >
+                      <ArticleCard
+                        title={article.title}
+                        coverImage={article.coverImage}
+                        excerpt={article.excerpt}
+                        author={article.author}
+                        publication={(article as any).publication}
+                        date={(article as any).date}
+                        readTime={(article as any).readTime}
+                        url={article.url}
+                        type={article.type}
+                        videoId={article.videoId}
+                        channel={(article as any).channel}
+                        views={(article as any).views}
+                        duration={(article as any).duration}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

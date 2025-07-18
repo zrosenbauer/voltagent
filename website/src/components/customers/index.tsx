@@ -1,7 +1,7 @@
 import { CodeBracketIcon } from "@heroicons/react/24/outline";
 import { BoltIcon } from "@heroicons/react/24/solid";
 import { motion } from "framer-motion";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ProjectCard } from "./customerCard";
 
 interface CustomerListProps {
@@ -10,6 +10,10 @@ interface CustomerListProps {
 
 export const CustomerList = ({ customers = [] }: CustomerListProps) => {
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Extract testimonials from customers data
   const testimonials = customers.map((customer) => ({
@@ -20,18 +24,54 @@ export const CustomerList = ({ customers = [] }: CustomerListProps) => {
     avatar: customer.customer.logo_url,
   }));
 
-  // Auto-rotate testimonials every 5 seconds
+  // Intersection Observer to pause rotation when not visible
   useEffect(() => {
-    if (testimonials.length > 1) {
-      const interval = setInterval(() => {
-        setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
-      }, 5000);
-      return () => clearInterval(interval);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsVisible(entry.isIntersecting);
+      },
+      { threshold: 0.5 },
+    );
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
     }
-  }, [testimonials.length]);
+
+    return () => observer.disconnect();
+  }, []);
+
+  // Optimized testimonial rotation with visibility and pause controls
+  useEffect(() => {
+    if (testimonials.length > 1 && isVisible && !isPaused) {
+      intervalRef.current = setInterval(() => {
+        setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);
+      }, 8000); // Increased from 5s to 8s to reduce frequency
+
+      return () => {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+        }
+      };
+    }
+
+    // Clear interval when not visible or paused
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }, [testimonials.length, isVisible, isPaused]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, []);
 
   return (
-    <section className="relative py-20">
+    <section ref={containerRef} className="relative py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
         {/* Header with Testimonials */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 landing-sm:gap-12 mb-12 sm:mb-24">
@@ -61,7 +101,7 @@ export const CustomerList = ({ customers = [] }: CustomerListProps) => {
             </p>
           </div>
 
-          {/* Right Side - Simple Testimonial */}
+          {/* Right Side - Optimized Testimonial */}
           {testimonials.length > 0 && (
             <div className="relative flex items-center justify-center">
               <motion.div
@@ -70,6 +110,8 @@ export const CustomerList = ({ customers = [] }: CustomerListProps) => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8 }}
                 className="relative max-w-md w-full"
+                onMouseEnter={() => setIsPaused(true)}
+                onMouseLeave={() => setIsPaused(false)}
               >
                 <div
                   className="backdrop-blur-md bg-white/5 border-solid border-[#1e293b]/40 border-2 rounded-lg p-8 shadow-2xl h-64 flex flex-col justify-between"
@@ -99,23 +141,44 @@ export const CustomerList = ({ customers = [] }: CustomerListProps) => {
                       </div>
                     </div>
                   </div>
+
+                  {/* Progress indicators */}
+                  {testimonials.length > 1 && (
+                    <div className="flex justify-center space-x-2 mt-4">
+                      {testimonials.map((testimonial, index) => (
+                        <button
+                          key={`testimonial-${testimonial.author}-${index}`}
+                          type="button"
+                          onClick={() => setCurrentTestimonial(index)}
+                          className={`w-2 h-2 rounded-full transition-colors duration-300 ${
+                            index === currentTestimonial
+                              ? "bg-[#00d992]"
+                              : "bg-gray-600"
+                          }`}
+                          aria-label={`Go to testimonial ${index + 1}`}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               </motion.div>
             </div>
           )}
         </div>
 
-        {/* Customer Case Studies Grid */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        >
-          {customers.map((customer) => (
-            <ProjectCard key={customer.id} project={customer} />
-          ))}
-        </motion.div>
+        {/* Customer Case Studies Grid - Only render if visible */}
+        {isVisible && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
+            {customers.map((customer) => (
+              <ProjectCard key={customer.id} project={customer} />
+            ))}
+          </motion.div>
+        )}
       </div>
     </section>
   );

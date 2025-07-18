@@ -35,10 +35,11 @@ export default function Home(): JSX.Element {
           <Hero />
           <TwoBlocks />
           <LivePreview />
-          <Testimonials />
 
           <div className="relative">
             <AgentsDetail />
+            <Testimonials />
+
             <SupervisorAgent />
             <Rag />
             <Integrations />
