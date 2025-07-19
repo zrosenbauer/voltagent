@@ -39,6 +39,10 @@ import type { WorkflowStepConditionalWhen, WorkflowStepConditionalWhenConfig } f
 export function andWhen<INPUT, DATA, RESULT>({
   condition,
   step,
+  inputSchema,
+  outputSchema,
+  suspendSchema,
+  resumeSchema,
   ...config
 }: WorkflowStepConditionalWhenConfig<INPUT, DATA, RESULT>) {
   const finalStep = matchStep<INPUT, DATA, RESULT>(step);
@@ -47,6 +51,10 @@ export function andWhen<INPUT, DATA, RESULT>({
     type: "conditional-when",
     condition,
     originalCondition: condition, // ✅ Store original condition for serialization
+    inputSchema,
+    outputSchema,
+    suspendSchema,
+    resumeSchema,
     execute: async (context) => {
       const { data, state } = context;
       // No workflow context, execute without events
@@ -123,7 +131,14 @@ export function andWhen<INPUT, DATA, RESULT>({
 
         return result;
       } catch (error) {
-        // Publish step error event
+        // Check if this is a suspension, not an error
+        if (error instanceof Error && error.message === "WORKFLOW_SUSPENDED") {
+          // For suspension, we don't publish an error event
+          // The workflow core will handle publishing the suspend event
+          throw error;
+        }
+
+        // Publish step error event for actual errors
         const stepErrorEvent = createWorkflowStepErrorEvent(
           stepContext,
           state.workflowContext,
