@@ -5,7 +5,7 @@ import { Command } from "commander";
 import inquirer from "inquirer";
 import ora from "ora";
 import { createProject } from "./project-creator";
-import type { ProjectOptions } from "./types";
+import { AI_PROVIDER_CONFIG, type AIProvider, type ProjectOptions } from "./types";
 import { captureError, captureProjectCreation } from "./utils/analytics";
 import {
   colorTypewriter,
@@ -14,8 +14,10 @@ import {
   showWelcomeMessage,
   sleep,
 } from "./utils/animation";
+import { promptForApiKey } from "./utils/env-manager";
 import { downloadExample, existsInRepo } from "./utils/github";
 import logger from "./utils/logger";
+import { getDefaultPackageManager, getInstalledPackageManagers } from "./utils/package-manager";
 
 export const runCLI = async (): Promise<void> => {
   const program = new Command();
@@ -24,7 +26,7 @@ export const runCLI = async (): Promise<void> => {
   await showLogo(); // Voltagent logo
   showWelcomeMessage(); // Welcome box
   await colorTypewriter("Let's create your next AI application...");
-  await sleep(500); // Short wait
+  await sleep(100); // Very short wait
 
   program
     .name("create-voltagent-app")
@@ -41,6 +43,17 @@ export const runCLI = async (): Promise<void> => {
         return;
       }
 
+      // Check if directory exists when provided as argument
+      if (projectDirectory) {
+        const targetPath = path.resolve(process.cwd(), projectDirectory);
+        if (fs.existsSync(targetPath)) {
+          logger.error(
+            `Directory "${projectDirectory}" already exists. Please choose a different name.`,
+          );
+          process.exit(1);
+        }
+      }
+
       // If project directory not specified, ask for it
       const { projectName } = projectDirectory
         ? { projectName: projectDirectory }
@@ -50,10 +63,45 @@ export const runCLI = async (): Promise<void> => {
               name: "projectName",
               message: "What is your project named?",
               default: "my-voltagent-app",
+              validate: (input: string) => {
+                if (!input || input.trim().length === 0) {
+                  return "Project name cannot be empty";
+                }
+                // Check if directory already exists
+                const targetPath = path.resolve(process.cwd(), input);
+                if (fs.existsSync(targetPath)) {
+                  return `Directory "${input}" already exists. Please choose a different name.`;
+                }
+                return true;
+              },
             },
           ]);
 
-      // Select package manager
+      // Select AI provider
+      const { aiProvider } = await inquirer.prompt<{ aiProvider: AIProvider }>([
+        {
+          type: "list",
+          name: "aiProvider",
+          message: "Which AI provider would you like to use?",
+          choices: [
+            { name: `OpenAI (${AI_PROVIDER_CONFIG.openai.modelName})`, value: "openai" },
+            { name: `Anthropic (${AI_PROVIDER_CONFIG.anthropic.modelName})`, value: "anthropic" },
+            { name: `Google (${AI_PROVIDER_CONFIG.google.modelName})`, value: "google" },
+            { name: `Groq (${AI_PROVIDER_CONFIG.groq.modelName})`, value: "groq" },
+            { name: `Mistral (${AI_PROVIDER_CONFIG.mistral.modelName})`, value: "mistral" },
+            { name: `Ollama (${AI_PROVIDER_CONFIG.ollama.modelName} - Local)`, value: "ollama" },
+          ],
+          default: "openai",
+        },
+      ]);
+
+      // Prompt for API key if needed
+      const apiKey = await promptForApiKey(aiProvider);
+
+      // Select package manager (only show installed ones)
+      const installedManagers = getInstalledPackageManagers();
+      const defaultManager = getDefaultPackageManager();
+
       const { packageManager } = await inquirer.prompt<{
         packageManager: ProjectOptions["packageManager"];
       }>([
@@ -61,12 +109,11 @@ export const runCLI = async (): Promise<void> => {
           type: "list",
           name: "packageManager",
           message: "Which package manager do you want to use?",
-          choices: [
-            { name: "npm", value: "npm" },
-            { name: "yarn", value: "yarn" },
-            { name: "pnpm", value: "pnpm" },
-          ],
-          default: "npm",
+          choices: installedManagers.map((pm) => ({
+            name: pm.name,
+            value: pm.name,
+          })),
+          default: defaultManager,
         },
       ]);
 
@@ -79,12 +126,12 @@ export const runCLI = async (): Promise<void> => {
           name: "ide",
           message: "Which IDE are you using? (For MCP Docs Server configuration)",
           choices: [
+            { name: "None / I'll configure later", value: "none" },
             { name: "Cursor", value: "cursor" },
             { name: "Windsurf", value: "windsurf" },
             { name: "VS Code", value: "vscode" },
-            { name: "None / I'll configure later", value: "none" },
           ],
-          default: "cursor",
+          default: "none",
         },
       ]);
 
@@ -94,6 +141,8 @@ export const runCLI = async (): Promise<void> => {
         packageManager,
         features: [], // Features aren't used anymore
         ide,
+        aiProvider,
+        apiKey,
       };
 
       const targetDir = path.resolve(process.cwd(), projectName);
@@ -106,6 +155,7 @@ export const runCLI = async (): Promise<void> => {
           packageManager,
           typescript: projectOptions.typescript,
           ide: projectOptions.ide,
+          aiProvider: projectOptions.aiProvider,
         });
 
         await createProject(projectOptions, targetDir);
@@ -119,13 +169,10 @@ export const runCLI = async (): Promise<void> => {
         logger.info(`  ${chalk.cyan(`cd ${projectName}`)}`);
 
         if (packageManager === "npm") {
-          logger.info(`  ${chalk.cyan("npm install")}`);
           logger.info(`  ${chalk.cyan("npm run dev")}`);
         } else if (packageManager === "yarn") {
-          logger.info(`  ${chalk.cyan("yarn")}`);
           logger.info(`  ${chalk.cyan("yarn dev")}`);
         } else if (packageManager === "pnpm") {
-          logger.info(`  ${chalk.cyan("pnpm install")}`);
           logger.info(`  ${chalk.cyan("pnpm dev")}`);
         }
 
@@ -136,6 +183,21 @@ export const runCLI = async (): Promise<void> => {
           logger.info(`  ✓ Configured for ${chalk.cyan(ide)}`);
           logger.info(`  📁 Config files in ${chalk.dim(`.${ide.toLowerCase()}/`)}`);
           logger.info("  💡 Ask your AI assistant VoltAgent questions!");
+        }
+
+        // Show provider-specific setup info
+        if (aiProvider === "ollama") {
+          logger.blank();
+          logger.info(chalk.bold("🤖 Ollama Setup:"));
+          logger.info("  1. Install Ollama from https://ollama.com");
+          logger.info("  2. Run: " + chalk.cyan("ollama pull llama3.2"));
+          logger.info("  3. Start Ollama before running your app");
+        } else if (!apiKey && aiProvider !== "ollama") {
+          logger.blank();
+          logger.info(chalk.yellow("⚠️  Remember to add your API key:"));
+          logger.info(
+            `  Add ${chalk.cyan(AI_PROVIDER_CONFIG[aiProvider].envVar)} to your .env file`,
+          );
         }
 
         logger.blank();

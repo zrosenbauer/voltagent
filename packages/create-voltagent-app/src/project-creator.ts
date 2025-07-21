@@ -1,3 +1,4 @@
+import { execSync } from "node:child_process";
 import path from "node:path";
 import chalk from "chalk";
 import fs from "fs-extra";
@@ -5,6 +6,7 @@ import type { ProjectOptions } from "./types";
 import { createSpinner } from "./utils/animation";
 import fileManager from "./utils/file-manager";
 import { configureMcpForIde, showMcpConfigurationMessage } from "./utils/mcp-config";
+import { getInstalledPackageManagers } from "./utils/package-manager";
 import { getAllTemplates } from "./utils/templates";
 
 export const createProject = async (options: ProjectOptions, targetDir: string): Promise<void> => {
@@ -26,6 +28,7 @@ export const createProject = async (options: ProjectOptions, targetDir: string):
     spinner.text = "Creating directory structure...";
     await fileManager.ensureDir(path.join(targetDir, "src"));
     await fileManager.ensureDir(path.join(targetDir, "src/workflows")); // Workflows folder
+    await fileManager.ensureDir(path.join(targetDir, "src/tools")); // Tools folder
     await fileManager.ensureDir(path.join(targetDir, ".voltagent")); // VoltAgent folder
 
     // Try processing templates, use default content if error occurs
@@ -213,6 +216,54 @@ dist
     }
 
     spinner.succeed(chalk.green("VoltAgent project created successfully! 📁"));
+
+    // Initialize git repository
+    const gitSpinner = createSpinner("Initializing git repository...");
+    gitSpinner.start();
+
+    try {
+      execSync("git init", {
+        cwd: targetDir,
+        stdio: "ignore",
+      });
+
+      // Add initial commit
+      execSync("git add .", {
+        cwd: targetDir,
+        stdio: "ignore",
+      });
+
+      execSync('git commit -m "Initial commit from create-voltagent-app"', {
+        cwd: targetDir,
+        stdio: "ignore",
+      });
+
+      gitSpinner.succeed(chalk.green("Git repository initialized! 🎯"));
+    } catch (error) {
+      gitSpinner.warn(chalk.yellow("Git init skipped (git not installed or failed)"));
+    }
+
+    // Install dependencies
+    const installedManagers = getInstalledPackageManagers();
+    const selectedManager = installedManagers.find((pm) => pm.name === options.packageManager);
+
+    if (selectedManager) {
+      const installSpinner = createSpinner(
+        `Installing dependencies with ${options.packageManager}...`,
+      );
+      installSpinner.start();
+
+      try {
+        execSync(selectedManager.installCommand, {
+          cwd: targetDir,
+          stdio: "ignore",
+        });
+        installSpinner.succeed(chalk.green("Dependencies installed successfully! 📦"));
+      } catch (error) {
+        installSpinner.fail(chalk.yellow("Failed to install dependencies automatically"));
+        console.log(chalk.yellow("Please run the install command manually after setup."));
+      }
+    }
   } catch (error) {
     spinner.fail(
       chalk.red(
