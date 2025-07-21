@@ -1,10 +1,10 @@
 <div align="center">
   <h1>⚡ {{projectName}}</h1>
-  <p>AI Agent powered by <a href="https://voltagent.ai">VoltAgent</a></p>
+  <p>AI Agent powered by <a href="https://voltagent.dev">VoltAgent</a></p>
   
   <p>
     <a href="https://github.com/voltagent/voltagent"><img src="https://img.shields.io/badge/built%20with-VoltAgent-blue" alt="Built with VoltAgent" /></a>
-    <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-%3E%3D20-brightgreen" alt="Node Version" /></a>
+    <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-%3E%3D22-brightgreen" alt="Node Version" /></a>
   </p>
 </div>
 
@@ -229,7 +229,7 @@ export const myWorkflow = createWorkflowChain({
 - **Documentation**: [voltagent.dev/docs](https://voltagent.dev/docs/)
 - **Examples**: [github.com/VoltAgent/voltagent/tree/main/examples](https://github.com/VoltAgent/voltagent/tree/main/examples)
 - **Discord**: [Join our community](https://s.voltagent.dev/discord)
-- **Blog**: [blog.voltagent.ai](https://voltagent.dev/blog/)
+- **Blog**: [voltagent.dev/](https://voltagent.dev/blog/)
 
 ## 🤝 Contributing
 
@@ -242,5 +242,5 @@ MIT License - see LICENSE file for details
 ---
 
 <div align="center">
-  <p>Built with ❤️ using <a href="https://voltagent.ai">VoltAgent</a></p>
+  <p>Built with ❤️ using <a href="https://voltagent.dev">VoltAgent</a></p>
 </div>

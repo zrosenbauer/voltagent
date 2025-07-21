@@ -1191,12 +1191,6 @@ importers:
       '@voltagent/core':
         specifier: ^0.1.63
         version: link:../../packages/core
-      '@voltagent/postgres':
-        specifier: ^0.1.8
-        version: link:../../packages/postgres
-      '@voltagent/supabase':
-        specifier: ^0.1.13
-        version: link:../../packages/supabase
       '@voltagent/vercel-ai':
         specifier: ^0.1.14
         version: link:../../packages/vercel-ai
@@ -1412,9 +1406,6 @@ importers:
       hono:
         specifier: ^4.7.7
         version: 4.7.7
-      npm-check-updates:
-        specifier: ^17.1.18
-        version: 17.1.18
       ts-pattern:
         specifier: ^5.7.1
         version: 5.7.1
