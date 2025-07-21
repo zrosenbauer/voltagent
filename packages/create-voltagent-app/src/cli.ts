@@ -17,7 +17,7 @@ import {
 import { promptForApiKey } from "./utils/env-manager";
 import { downloadExample, existsInRepo } from "./utils/github";
 import logger from "./utils/logger";
-import { getDefaultPackageManager, getInstalledPackageManagers } from "./utils/package-manager";
+import { createBaseDependencyInstaller } from "./utils/dependency-installer";
 
 export const runCLI = async (): Promise<void> => {
   const program = new Command();
@@ -77,6 +77,14 @@ export const runCLI = async (): Promise<void> => {
             },
           ]);
 
+      const targetDir = path.resolve(process.cwd(), projectName);
+
+      // Start installing base dependencies immediately
+      const baseDependencyInstaller = await createBaseDependencyInstaller(targetDir, projectName);
+
+      // Wait for base dependencies to finish installing before asking more questions
+      await baseDependencyInstaller.waitForCompletion();
+
       // Select AI provider
       const { aiProvider } = await inquirer.prompt<{ aiProvider: AIProvider }>([
         {
@@ -97,25 +105,6 @@ export const runCLI = async (): Promise<void> => {
 
       // Prompt for API key if needed
       const apiKey = await promptForApiKey(aiProvider);
-
-      // Select package manager (only show installed ones)
-      const installedManagers = getInstalledPackageManagers();
-      const defaultManager = getDefaultPackageManager();
-
-      const { packageManager } = await inquirer.prompt<{
-        packageManager: ProjectOptions["packageManager"];
-      }>([
-        {
-          type: "list",
-          name: "packageManager",
-          message: "Which package manager do you want to use?",
-          choices: installedManagers.map((pm) => ({
-            name: pm.name,
-            value: pm.name,
-          })),
-          default: defaultManager,
-        },
-      ]);
 
       // Select IDE for MCP configuration
       const { ide } = await inquirer.prompt<{
@@ -138,21 +127,18 @@ export const runCLI = async (): Promise<void> => {
       const projectOptions: ProjectOptions = {
         projectName,
         typescript: true, // VoltAgent uses TypeScript by default
-        packageManager,
         features: [], // Features aren't used anymore
         ide,
         aiProvider,
         apiKey,
       };
 
-      const targetDir = path.resolve(process.cwd(), projectName);
-
       // Create the project
       try {
         // Capture project creation event
         captureProjectCreation({
           projectName,
-          packageManager,
+          packageManager: "npm",
           typescript: projectOptions.typescript,
           ide: projectOptions.ide,
           aiProvider: projectOptions.aiProvider,
@@ -167,14 +153,7 @@ export const runCLI = async (): Promise<void> => {
         logger.info("To start your application:");
         logger.blank();
         logger.info(`  ${chalk.cyan(`cd ${projectName}`)}`);
-
-        if (packageManager === "npm") {
-          logger.info(`  ${chalk.cyan("npm run dev")}`);
-        } else if (packageManager === "yarn") {
-          logger.info(`  ${chalk.cyan("yarn dev")}`);
-        } else if (packageManager === "pnpm") {
-          logger.info(`  ${chalk.cyan("pnpm dev")}`);
-        }
+        logger.info(`  ${chalk.cyan("npm run dev")}`);
 
         // Show MCP configuration info
         if (ide && ide !== "none") {
@@ -294,7 +273,7 @@ const handleExampleDownload = async (example: string, destination?: string): Pro
     logger.info("To start your application:");
     logger.blank();
     logger.info(`  ${chalk.cyan(`cd ${projectName}`)}`);
-    logger.info(`  ${chalk.cyan("npm install")} (or yarn, pnpm)`);
+    logger.info(`  ${chalk.cyan("npm install")}`);
     logger.info(`  ${chalk.cyan("npm run dev")}`);
     logger.blank();
     logger.info(chalk.bold("Happy coding! 🚀"));

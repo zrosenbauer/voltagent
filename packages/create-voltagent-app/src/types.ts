@@ -3,7 +3,6 @@ export type AIProvider = "openai" | "anthropic" | "google" | "groq" | "mistral" 
 export type ProjectOptions = {
   projectName: string;
   typescript: boolean;
-  packageManager: "npm" | "yarn" | "pnpm";
   features: Feature[];
   ide?: "cursor" | "windsurf" | "vscode" | "none";
   aiProvider?: AIProvider;
@@ -17,8 +16,6 @@ export type TemplateFile = {
   targetPath: string;
   transform?: (content: string, options: ProjectOptions) => string;
 };
-
-export type PackageManager = "npm" | "yarn" | "pnpm";
 
 export const AI_PROVIDER_CONFIG = {
   openai: {

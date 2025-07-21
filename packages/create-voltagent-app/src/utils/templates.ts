@@ -3,46 +3,11 @@ import { AI_PROVIDER_CONFIG, type ProjectOptions, type TemplateFile } from "../t
 import { generateEnvContent } from "./env-manager";
 
 // Determine the correct base path for templates.
-// Assumes the templates directory is either:
-// 1. At ../../templates relative to src/utils (local dev)
-// 2. Copied to ../../templates relative to dist/src/utils (build output)
+// In the built version, templates are at ../templates relative to dist/
 const TEMPLATES_DIR = path.resolve(__dirname, "..", "templates");
 
 export const getBaseTemplates = (): TemplateFile[] => {
   return [
-    {
-      sourcePath: path.join(TEMPLATES_DIR, "base/package.json.template"),
-      targetPath: "package.json",
-      transform: (content: string, options: ProjectOptions) => {
-        const pkg = JSON.parse(content);
-        pkg.name = options.projectName;
-
-        // Update dependencies based on selected provider
-        const provider = options.aiProvider || "openai";
-        const config = AI_PROVIDER_CONFIG[provider];
-
-        // Remove default OpenAI dependency if using different provider
-        if (provider !== "openai") {
-          delete pkg.dependencies["@ai-sdk/openai"];
-        }
-
-        // Add selected provider dependency with correct version
-        pkg.dependencies[config.package] = config.packageVersion;
-
-        // Sort dependencies alphabetically
-        pkg.dependencies = Object.keys(pkg.dependencies)
-          .sort()
-          .reduce(
-            (sorted, key) => {
-              sorted[key] = pkg.dependencies[key];
-              return sorted;
-            },
-            {} as Record<string, string>,
-          );
-
-        return JSON.stringify(pkg, null, 2);
-      },
-    },
     {
       sourcePath: path.join(TEMPLATES_DIR, "base/tsconfig.json.template"),
       targetPath: "tsconfig.json",
@@ -54,32 +19,14 @@ export const getBaseTemplates = (): TemplateFile[] => {
         const provider = options.aiProvider || "openai";
         const config = AI_PROVIDER_CONFIG[provider];
 
-        // Package manager commands
-        const pmCommands = {
-          npm: {
-            install: "npm install",
-            dev: "npm run dev",
-            build: "npm run build",
-            start: "npm start",
-            command: "npm run",
-          },
-          yarn: {
-            install: "yarn",
-            dev: "yarn dev",
-            build: "yarn build",
-            start: "yarn start",
-            command: "yarn",
-          },
-          pnpm: {
-            install: "pnpm install",
-            dev: "pnpm dev",
-            build: "pnpm build",
-            start: "pnpm start",
-            command: "pnpm",
-          },
+        // Always use npm commands
+        const pm = {
+          install: "npm install",
+          dev: "npm run dev",
+          build: "npm run build",
+          start: "npm start",
+          command: "npm run",
         };
-
-        const pm = pmCommands[options.packageManager];
 
         // Environment config preview
         let envConfig = "";
@@ -113,32 +60,34 @@ export const getBaseTemplates = (): TemplateFile[] => {
         const config = AI_PROVIDER_CONFIG[provider];
 
         // Replace project name
-        content = content.replace(/{{projectName}}/g, options.projectName);
+        let result = content.replace(/{{projectName}}/g, options.projectName);
 
         // Replace import statement
-        content = content.replace('import { openai } from "@ai-sdk/openai";', config.import);
+        result = result.replace('import { openai } from "@ai-sdk/openai";', config.import);
 
         // Add extra code after imports if needed (for Ollama)
         if ("extraCode" in config && config.extraCode) {
           // Find the position after all imports
           const importRegex = /^import\s+.+from\s+["'].+["'];?\s*$/gm;
           let lastImportIndex = -1;
-          let match;
+          let match: RegExpExecArray | null;
 
-          while ((match = importRegex.exec(content)) !== null) {
+          match = importRegex.exec(result);
+          while (match !== null) {
             lastImportIndex = match.index + match[0].length;
+            match = importRegex.exec(result);
           }
 
           if (lastImportIndex !== -1) {
-            content =
-              content.slice(0, lastImportIndex) + config.extraCode + content.slice(lastImportIndex);
+            result =
+              result.slice(0, lastImportIndex) + config.extraCode + result.slice(lastImportIndex);
           }
         }
 
         // Replace model instantiation
-        content = content.replace('openai("gpt-4o-mini")', config.model);
+        result = result.replace('openai("gpt-4o-mini")', config.model);
 
-        return content;
+        return result;
       },
     },
     {
