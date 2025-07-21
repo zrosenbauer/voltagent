@@ -1,7 +1,7 @@
 import { VoltAgent, Agent } from "@voltagent/core";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
-import { comprehensiveWorkflow } from "./workflows";
+import { expenseApprovalWorkflow } from "./workflows";
 
 const agent = new Agent({
   name: "{{projectName}}",
@@ -16,6 +16,6 @@ new VoltAgent({
     agent,
   },
   workflows: {
-    comprehensiveWorkflow,
+    expenseApprovalWorkflow,
   },
 });
