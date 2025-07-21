@@ -228,7 +228,9 @@ export class LibSQLStorage implements Memory {
           input TEXT,
           output TEXT,
           usage TEXT,
-          metadata TEXT
+          metadata TEXT,
+          userId TEXT,
+          conversationId TEXT
         )
       `);
 
@@ -2671,6 +2673,16 @@ export class LibSQLStorage implements Memory {
       // Check if columns already exist
       const hasUserIdColumn = tableInfo.rows.some((row) => row.name === "userId");
       const hasConversationIdColumn = tableInfo.rows.some((row) => row.name === "conversationId");
+
+      // If both columns already exist, skip migration
+      if (hasUserIdColumn && hasConversationIdColumn) {
+        this.debug("Both userId and conversationId columns already exist, skipping migration");
+
+        // Set migration flag
+        await this.setMigrationFlag("agent_history_schema_migration", 0);
+
+        return { success: true };
+      }
 
       // Add userId column if it doesn't exist
       if (!hasUserIdColumn) {
