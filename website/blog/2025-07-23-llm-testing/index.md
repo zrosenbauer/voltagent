@@ -8,8 +8,6 @@ authors: necatiozmen
 
 import ZoomableMermaid from '@site/src/components/blog-widgets/ZoomableMermaid';
 
-# LLM Testing - Beyond Traditional Methods
-
 ## Understanding the Unique Challenges of AI Application Testing
 
 Testing LLM applications isn't like testing regular software. When your "code" has AI agents making choices on their own, applying tools, and recalling discussions, regular testing just doesn't work. That's where specialized observability and testing approaches come in. They're made especially for the weird issues of LLM system testing.
