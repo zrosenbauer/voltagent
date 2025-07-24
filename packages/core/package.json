@@ -53,6 +53,12 @@
     "zod": "3.24.2"
   },
   "peerDependencies": {
+    "@voltagent/logger": "^0.1.0",
     "zod": "3.24.2"
+  },
+  "peerDependenciesMeta": {
+    "@voltagent/logger": {
+      "optional": true
+    }
   }
 }
