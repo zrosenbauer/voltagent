@@ -1,5 +1,6 @@
-import { z } from "zod";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
+import type { IterableElement } from "type-fest";
+import type { z } from "zod";
 import type { Agent } from "../agent/agent";
 import { createWorkflow } from "./core";
 import type {
@@ -25,9 +26,9 @@ import type { InternalWorkflow } from "./steps/types";
 import type {
   Workflow,
   WorkflowConfig,
+  WorkflowExecutionResult,
   WorkflowInput,
   WorkflowRunOptions,
-  WorkflowExecutionResult,
 } from "./types";
 
 /**
@@ -540,6 +541,7 @@ export class WorkflowChain<
     SUSPEND_SCHEMA,
     RESUME_SCHEMA
   > {
+    // @ts-expect-error - TODO: fix this
     this.steps.push(andAll({ steps, ...config }));
     return this as unknown as WorkflowChain<
       INPUT_SCHEMA,
@@ -587,7 +589,7 @@ export class WorkflowChain<
     STEPS extends ReadonlyArray<
       InternalAnyWorkflowStep<WorkflowInput<INPUT_SCHEMA>, CURRENT_DATA, NEW_DATA>
     >,
-    INFERRED_RESULT = InternalInferWorkflowStepsResult<STEPS>[number],
+    INFERRED_RESULT = IterableElement<InternalInferWorkflowStepsResult<STEPS>>,
   >({
     steps,
     ...config

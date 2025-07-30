@@ -1,16 +1,23 @@
-import type { InternalAnyWorkflowStep, InternalInferWorkflowStepsResult } from "../internal/types";
-import { defaultStepConfig } from "../internal/utils";
+import type { DangerouslyAllowAny } from "@voltagent/internal/types";
+import { isFunction } from "@voltagent/internal/utils";
+import { getGlobalLogger } from "../../logger";
 import {
+  createParallelSubStepContext,
+  createStepContext,
+  createWorkflowStepErrorEvent,
   createWorkflowStepStartEvent,
   createWorkflowStepSuccessEvent,
-  createWorkflowStepErrorEvent,
   publishWorkflowEvent,
-  createStepContext,
-  createParallelSubStepContext,
 } from "../event-utils";
+import type {
+  InternalAnyWorkflowStep,
+  InternalDynamicWorkflowSteps,
+  InternalInferWorkflowStepsResult,
+  InternalWorkflowFunc,
+} from "../internal/types";
+import { defaultStepConfig } from "../internal/utils";
 import { matchStep } from "./helpers";
 import type { WorkflowStepParallelAll, WorkflowStepParallelAllConfig } from "./types";
-import { getGlobalLogger } from "../../logger";
 
 /**
  * Creates a parallel execution step that runs multiple steps simultaneously and waits for all to complete
@@ -48,18 +55,50 @@ export function andAll<
   DATA,
   RESULT,
   STEPS extends ReadonlyArray<InternalAnyWorkflowStep<INPUT, DATA, RESULT>>,
-  INFERRED_RESULT = InternalInferWorkflowStepsResult<STEPS>,
->({ steps, ...config }: WorkflowStepParallelAllConfig<STEPS>) {
+>(steps: STEPS): WorkflowStepParallelAll<INPUT, DATA, InternalInferWorkflowStepsResult<STEPS>>;
+export function andAll<
+  INPUT,
+  DATA,
+  RESULT,
+  STEPS extends InternalWorkflowFunc<
+    INPUT,
+    DATA,
+    ReadonlyArray<InternalAnyWorkflowStep<INPUT, DATA, RESULT>>
+  >,
+>(steps: STEPS): WorkflowStepParallelAll<INPUT, DATA, InternalInferWorkflowStepsResult<STEPS>>;
+export function andAll<
+  INPUT,
+  DATA,
+  RESULT,
+  STEPS extends
+    | InternalDynamicWorkflowSteps<INPUT, DATA, RESULT>
+    | ReadonlyArray<InternalAnyWorkflowStep<INPUT, DATA, RESULT>>
+    | InternalWorkflowFunc<
+        INPUT,
+        DATA,
+        ReadonlyArray<InternalAnyWorkflowStep<INPUT, DATA, RESULT>>
+      >,
+>({
+  steps: inputSteps,
+  ...config
+}: WorkflowStepParallelAllConfig<STEPS>): WorkflowStepParallelAll<
+  INPUT,
+  DATA,
+  DangerouslyAllowAny
+> {
   return {
     ...defaultStepConfig(config),
     type: "parallel-all",
-    steps: steps as unknown as InternalAnyWorkflowStep<INPUT, DATA, INFERRED_RESULT>[],
+    // @ts-expect-error - TODO: fix this
+    steps: inputSteps,
     execute: async (context) => {
       const { data, state } = context;
+      const steps = await getStepsFunc<INPUT, DATA, RESULT, STEPS>(inputSteps)(context);
+
       // No workflow context, execute without events
       if (!state.workflowContext) {
         const promises = steps.map((step) => matchStep(step).execute(context));
-        return (await Promise.all(promises)) as INFERRED_RESULT;
+        return (await Promise.all(promises)) as DangerouslyAllowAny;
       }
 
       // Create step context and publish start event
@@ -227,7 +266,7 @@ export function andAll<
           throw firstError;
         }
 
-        const finalResults = results as INFERRED_RESULT;
+        const finalResults = results as DangerouslyAllowAny;
 
         // Publish step success event
         const stepSuccessEvent = createWorkflowStepSuccessEvent(
@@ -280,5 +319,29 @@ export function andAll<
         throw error;
       }
     },
-  } satisfies WorkflowStepParallelAll<INPUT, DATA, INFERRED_RESULT>;
+  };
+}
+
+function getStepsFunc<
+  INPUT,
+  DATA,
+  RESULT,
+  STEPS extends InternalDynamicWorkflowSteps<INPUT, DATA, RESULT>,
+>(steps: STEPS): InternalWorkflowFunc<INPUT, DATA, InternalAnyWorkflowStep<INPUT, DATA, RESULT>[]> {
+  if (isStepsFunction(steps)) {
+    return steps;
+  }
+  return (async () => {
+    return steps;
+  }) as unknown as InternalWorkflowFunc<
+    INPUT,
+    DATA,
+    InternalAnyWorkflowStep<INPUT, DATA, RESULT>[]
+  >;
+}
+
+function isStepsFunction<INPUT, DATA, RESULT>(
+  steps: InternalDynamicWorkflowSteps<INPUT, DATA, RESULT>,
+): steps is InternalWorkflowFunc<INPUT, DATA, InternalAnyWorkflowStep<INPUT, DATA, RESULT>[]> {
+  return isFunction(steps) && !Array.isArray(steps);
 }

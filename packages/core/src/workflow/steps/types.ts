@@ -1,9 +1,10 @@
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
-import { z } from "zod";
+import type { z } from "zod";
 import type { Agent } from "../../agent/agent";
 import type {
   InternalAnyWorkflowStep,
   InternalBaseWorkflowStep,
+  InternalDynamicWorkflowSteps,
   InternalExtractWorkflowInputData,
   InternalWorkflowFunc,
   InternalWorkflowStepConfig,
@@ -97,11 +98,10 @@ export interface WorkflowStepParallelRace<INPUT, DATA, RESULT>
   steps: ReadonlyArray<InternalAnyWorkflowStep<INPUT, DATA, RESULT>>;
 }
 
-export type WorkflowStepParallelAllConfig<
-  STEPS extends ReadonlyArray<InternalAnyWorkflowStep<DangerouslyAllowAny, DangerouslyAllowAny>>,
-> = InternalWorkflowStepConfig<{
-  steps: STEPS;
-}>;
+export type WorkflowStepParallelAllConfig<STEPS extends InternalDynamicWorkflowSteps> =
+  InternalWorkflowStepConfig<{
+    steps: STEPS;
+  }>;
 
 export interface WorkflowStepParallelAll<INPUT, DATA, RESULT>
   extends InternalBaseWorkflowStep<INPUT, DATA, RESULT, any, any> {

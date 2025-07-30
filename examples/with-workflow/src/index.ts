@@ -1,5 +1,12 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, createWorkflowChain, andThen } from "@voltagent/core";
+import {
+  Agent,
+  VoltAgent,
+  andAll,
+  andThen,
+  createWorkflow,
+  createWorkflowChain,
+} from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { z } from "zod";
@@ -18,6 +25,36 @@ const contentAgent = new Agent({
   model: openai("gpt-4o-mini"),
   instructions: "You are a content creator. Generate engaging and accurate content.",
 });
+
+const andAllWorkflow = createWorkflow(
+  {
+    id: "and-all",
+    name: "And All Workflow",
+    purpose: "And All Workflow",
+    input: z.object({
+      a: z.number(),
+      b: z.number(),
+    }),
+    result: z.array(z.number()),
+  },
+  andThen({
+    id: "a",
+    execute: async ({ data }) => {
+      return 3;
+    },
+  }),
+  andAll({
+    id: "and-all",
+    steps: async () => [
+      andThen({
+        id: "a",
+        execute: async ({ data }) => {
+          return 3;
+        },
+      }),
+    ],
+  }),
+);
 
 // ==============================================================================
 // Example 1: Basic Order Processing Workflow
