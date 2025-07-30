@@ -31,6 +31,50 @@ import type {
 
 /**
  * Creates a workflow from multiple and* functions
+ *
+ * @example
+ * ```ts
+ * const workflow = createWorkflow({
+ *   id: "user-processing",
+ *   name: "User Processing Workflow",
+ *   purpose: "Process user data and generate personalized content",
+ *   input: z.object({ userId: z.string(), userType: z.enum(["admin", "user"]) }),
+ *   result: z.object({ processed: z.boolean(), content: z.string() }),
+ *   memory: new LibSQLStorage({ url: "file:memory.db" }) // Optional workflow-specific memory
+ * },
+ *   andThen({
+ *     id: "fetch-user",
+ *     execute: async ({ data }) => {
+ *       const userInfo = await fetchUserInfo(data.userId);
+ *       return { ...data, userInfo };
+ *     }
+ *   }),
+ *   andWhen({
+ *     id: "admin-permissions",
+ *     condition: async ({ data }) => data.userType === "admin",
+ *     execute: async ({ data }) => ({ ...data, permissions: ["read", "write", "delete"] })
+ *   }),
+ *   andAgent(
+ *     ({ data }) => `Generate personalized content for ${data.userInfo.name}`,
+ *     agent,
+ *     { schema: z.object({ content: z.string() }) }
+ *   ),
+ *   andThen({
+ *     id: "finalize-result",
+ *     execute: async ({ data }) => ({
+ *       processed: true,
+ *       content: data.content
+ *     })
+ *   })
+ * );
+ *
+ * // Run with optional memory override
+ * const result = await workflow.run(
+ *   { userId: "123", userType: "admin" },
+ *   { memory: new LibSQLStorage({ url: "file:memory.db" }) }
+ * );
+ * ```
+ *
  * @param config - The workflow configuration
  * @param steps - Variable number of and* functions to execute
  * @returns A configured workflow instance
