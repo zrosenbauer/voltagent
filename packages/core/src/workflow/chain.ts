@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
+import type { z } from "zod";
 import type { Agent } from "../agent/agent";
 import { createWorkflow } from "./core";
 import type {
@@ -19,14 +20,10 @@ import {
   andTap,
   andThen,
   andWhen,
+  andWorkflow,
 } from "./steps";
-import type {
-  WorkflowConfig,
-  WorkflowInput,
-  WorkflowRunOptions,
-  Workflow,
-  WorkflowExecutionResult,
-} from "./types";
+import type { InternalWorkflow } from "./steps/types";
+import type { Workflow, WorkflowConfig, WorkflowInput, WorkflowRunOptions, WorkflowExecutionResult } from "./types";
 
 /**
  * Agent configuration for the chain
@@ -462,6 +459,34 @@ export class WorkflowChain<
     const finalStep = andTap(config) as WorkflowStep<WorkflowInput<INPUT_SCHEMA>, any, any, any>;
     this.steps.push(finalStep);
     return this;
+  }
+
+  /**
+   * Add a workflow step to the workflow
+   *
+   * @example
+   * ```ts
+   * import { myWorkflow } from "./my-workflow";
+   *
+   * const workflow = createWorkflowChain(config)
+   *   .andThen(async (data) => {
+   *     const userInfo = await fetchUserInfo(data.userId);
+   *     return { userInfo };
+   *   })
+   *   .andWorkflow(myWorkflow)
+   * ```
+   */
+  andWorkflow<NEW_DATA>(
+    workflow: InternalWorkflow<INPUT_SCHEMA, CURRENT_DATA, NEW_DATA>,
+  ): WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, NEW_DATA> {
+    this.steps.push(
+      andWorkflow(workflow) as unknown as WorkflowStep<
+        WorkflowInput<INPUT_SCHEMA>,
+        CURRENT_DATA,
+        NEW_DATA
+      >,
+    );
+    return this as unknown as WorkflowChain<INPUT_SCHEMA, RESULT_SCHEMA, NEW_DATA>;
   }
 
   /**
