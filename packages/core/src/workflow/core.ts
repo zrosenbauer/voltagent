@@ -1,145 +1,33 @@
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import { z } from "zod";
+import { LoggerProxy } from "../logger";
+import { LibSQLStorage } from "../memory/libsql";
+import type { WorkflowExecutionContext } from "./context";
+import {
+  createStepContext,
+  createWorkflowErrorEvent,
+  createWorkflowStartEvent,
+  createWorkflowStepSuspendEvent,
+  createWorkflowSuccessEvent,
+  createWorkflowSuspendEvent,
+  publishWorkflowEvent,
+} from "./event-utils";
+import { WorkflowHistoryManager } from "./history-manager";
 import { createWorkflowStateManager } from "./internal/state";
 import type { InternalBaseWorkflowInputSchema } from "./internal/types";
 import { convertWorkflowStateToParam, createStepExecutionContext } from "./internal/utils";
+import { WorkflowRegistry } from "./registry";
 import type { WorkflowStep } from "./steps";
 import type {
   Workflow,
   WorkflowConfig,
+  WorkflowExecutionResult,
   WorkflowInput,
   WorkflowResult,
   WorkflowRunOptions,
   WorkflowStepHistoryEntry,
-  WorkflowExecutionResult,
   WorkflowSuspensionMetadata,
 } from "./types";
-import type { WorkflowExecutionContext } from "./context";
-import {
-  createWorkflowErrorEvent,
-  createWorkflowStartEvent,
-  createWorkflowSuccessEvent,
-  createWorkflowSuspendEvent,
-  createWorkflowStepSuspendEvent,
-  publishWorkflowEvent,
-  createStepContext,
-} from "./event-utils";
-import { LibSQLStorage } from "../memory/libsql";
-import { WorkflowHistoryManager } from "./history-manager";
-import { WorkflowRegistry } from "./registry";
-import { LoggerProxy } from "../logger";
-
-/**
- * Helper function to create a WorkflowExecutionResult with resume capability
- */
-function createWorkflowExecutionResult<
-  RESULT_SCHEMA extends z.ZodTypeAny,
-  RESUME_SCHEMA extends z.ZodTypeAny = z.ZodAny,
->(
-  workflowId: string,
-  executionId: string,
-  startAt: Date,
-  endAt: Date,
-  status: "completed" | "suspended" | "error",
-  result: z.infer<RESULT_SCHEMA> | null,
-  suspension?: any,
-  error?: unknown,
-  resumeSchema?: RESUME_SCHEMA,
-): WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA> {
-  const resumeFn = async (input?: any, options?: { stepId?: string }) => {
-    // Use the registry to resume the workflow
-    const registry = WorkflowRegistry.getInstance();
-
-    if (status !== "suspended") {
-      throw new Error(`Cannot resume workflow in ${status} state`);
-    }
-
-    try {
-      const resumeResult = await registry.resumeSuspendedWorkflow(
-        workflowId,
-        executionId,
-        input,
-        options?.stepId,
-      );
-
-      if (!resumeResult) {
-        throw new Error("Failed to resume workflow");
-      }
-
-      // Convert registry result to WorkflowExecutionResult
-      return createWorkflowExecutionResult(
-        workflowId,
-        resumeResult.executionId,
-        resumeResult.startAt,
-        resumeResult.endAt,
-        resumeResult.status as "completed" | "suspended" | "error",
-        resumeResult.result,
-        resumeResult.suspension,
-        resumeResult.error,
-        resumeSchema,
-      );
-    } catch (error) {
-      throw new Error(
-        `Failed to resume workflow: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    }
-  };
-
-  return {
-    executionId,
-    workflowId,
-    startAt,
-    endAt,
-    status,
-    result,
-    suspension,
-    error,
-    resume: resumeFn as any, // Type is handled by the interface
-  };
-}
-
-/**
- * Executes a step with automatic signal checking for suspension
- * Monitors the signal during async operations and throws if suspension is requested
- */
-async function executeWithSignalCheck<T>(
-  fn: () => Promise<T>,
-  signal?: AbortSignal,
-  checkInterval: number = 100, // Check signal every 100ms
-): Promise<T> {
-  if (!signal) {
-    // No signal provided, just execute normally
-    return await fn();
-  }
-
-  // Create a promise that rejects when signal is aborted
-  const abortPromise = new Promise<never>((_, reject) => {
-    const checkSignal = () => {
-      if (signal.aborted) {
-        reject(new Error("WORKFLOW_SUSPENDED"));
-      }
-    };
-
-    // Check immediately
-    checkSignal();
-
-    // Set up periodic checking
-    const intervalId = setInterval(checkSignal, checkInterval);
-
-    // Clean up on signal abort
-    signal.addEventListener(
-      "abort",
-      () => {
-        clearInterval(intervalId);
-        reject(new Error("WORKFLOW_SUSPENDED"));
-      },
-      { once: true },
-    );
-  });
-
-  // Race between the actual function and abort signal
-  return Promise.race([fn(), abortPromise]);
-}
 
 /**
  * Creates a workflow from multiple and* functions
@@ -1401,6 +1289,118 @@ export function createWorkflow<
 | Internals
 |------------------
 */
+
+/**
+ * Helper function to create a WorkflowExecutionResult with resume capability
+ */
+function createWorkflowExecutionResult<
+  RESULT_SCHEMA extends z.ZodTypeAny,
+  RESUME_SCHEMA extends z.ZodTypeAny = z.ZodAny,
+>(
+  workflowId: string,
+  executionId: string,
+  startAt: Date,
+  endAt: Date,
+  status: "completed" | "suspended" | "error",
+  result: z.infer<RESULT_SCHEMA> | null,
+  suspension?: any,
+  error?: unknown,
+  resumeSchema?: RESUME_SCHEMA,
+): WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA> {
+  const resumeFn = async (input?: any, options?: { stepId?: string }) => {
+    // Use the registry to resume the workflow
+    const registry = WorkflowRegistry.getInstance();
+
+    if (status !== "suspended") {
+      throw new Error(`Cannot resume workflow in ${status} state`);
+    }
+
+    try {
+      const resumeResult = await registry.resumeSuspendedWorkflow(
+        workflowId,
+        executionId,
+        input,
+        options?.stepId,
+      );
+
+      if (!resumeResult) {
+        throw new Error("Failed to resume workflow");
+      }
+
+      // Convert registry result to WorkflowExecutionResult
+      return createWorkflowExecutionResult(
+        workflowId,
+        resumeResult.executionId,
+        resumeResult.startAt,
+        resumeResult.endAt,
+        resumeResult.status as "completed" | "suspended" | "error",
+        resumeResult.result,
+        resumeResult.suspension,
+        resumeResult.error,
+        resumeSchema,
+      );
+    } catch (error) {
+      throw new Error(
+        `Failed to resume workflow: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  };
+
+  return {
+    executionId,
+    workflowId,
+    startAt,
+    endAt,
+    status,
+    result,
+    suspension,
+    error,
+    resume: resumeFn as any, // Type is handled by the interface
+  };
+}
+
+/**
+ * Executes a step with automatic signal checking for suspension
+ * Monitors the signal during async operations and throws if suspension is requested
+ */
+async function executeWithSignalCheck<T>(
+  fn: () => Promise<T>,
+  signal?: AbortSignal,
+  checkInterval = 100, // Check signal every 100ms
+): Promise<T> {
+  if (!signal) {
+    // No signal provided, just execute normally
+    return await fn();
+  }
+
+  // Create a promise that rejects when signal is aborted
+  const abortPromise = new Promise<never>((_, reject) => {
+    const checkSignal = () => {
+      if (signal.aborted) {
+        reject(new Error("WORKFLOW_SUSPENDED"));
+      }
+    };
+
+    // Check immediately
+    checkSignal();
+
+    // Set up periodic checking
+    const intervalId = setInterval(checkSignal, checkInterval);
+
+    // Clean up on signal abort
+    signal.addEventListener(
+      "abort",
+      () => {
+        clearInterval(intervalId);
+        reject(new Error("WORKFLOW_SUSPENDED"));
+      },
+      { once: true },
+    );
+  });
+
+  // Race between the actual function and abort signal
+  return Promise.race([fn(), abortPromise]);
+}
 
 /**
  * Base type for workflow steps to avoid repetition

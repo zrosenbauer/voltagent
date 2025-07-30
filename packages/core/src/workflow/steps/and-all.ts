@@ -18,29 +18,41 @@ import { getGlobalLogger } from "../../logger";
  * @example
  * ```ts
  * const w = createWorkflow(
- *   andAll([
- *     andThen(async (data) => {
- *       const userInfo = await fetchUserInfo(data.userId);
- *       return { userInfo };
- *     }),
- *     andThen(async (data) => {
- *       const permissions = await fetchPermissions(data.userId);
- *       return { permissions };
- *     }),
- *     andAgent(
- *       (data) => `Generate recommendations for user ${data.userId}`,
- *       agent,
- *       { schema: z.object({ recommendations: z.array(z.string()) }) }
- *     )
- *   ]),
- *   andThen(async (data) => {
- *     // data is now an array: [{ userInfo }, { permissions }, { recommendations }]
- *     return { combined: data.flat() };
+ *   andAll({
+ *     id: "parallel-fetch",
+ *     steps: [
+ *       andThen({
+ *         id: "fetch-user",
+ *         execute: async ({ data }) => {
+ *           const userInfo = await fetchUserInfo(data.userId);
+ *           return { userInfo };
+ *         }
+ *       }),
+ *       andThen({
+ *         id: "fetch-permissions",
+ *         execute: async ({ data }) => {
+ *           const permissions = await fetchPermissions(data.userId);
+ *           return { permissions };
+ *         }
+ *       }),
+ *       andAgent(
+ *         ({ data }) => `Generate recommendations for user ${data.userId}`,
+ *         agent,
+ *         { schema: z.object({ recommendations: z.array(z.string()) }) }
+ *       )
+ *     ]
+ *   }),
+ *   andThen({
+ *     id: "combine-results",
+ *     execute: async ({ data }) => {
+ *       // data is now an array: [{ userInfo }, { permissions }, { recommendations }]
+ *       return { combined: data.flat() };
+ *     }
  *   })
  * );
  * ```
  *
- * @param steps - Array of workflow steps to execute in parallel
+ * @param config - Configuration object with steps array and metadata
  * @returns A workflow step that executes all steps simultaneously and returns their results as an array
  */
 export function andAll<
