@@ -1,6 +1,5 @@
 import { z } from "zod";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
-import type { z } from "zod";
 import type { Agent } from "../agent/agent";
 import { createWorkflow } from "./core";
 import type {
@@ -23,7 +22,13 @@ import {
   andWorkflow,
 } from "./steps";
 import type { InternalWorkflow } from "./steps/types";
-import type { Workflow, WorkflowConfig, WorkflowInput, WorkflowRunOptions, WorkflowExecutionResult } from "./types";
+import type {
+  Workflow,
+  WorkflowConfig,
+  WorkflowInput,
+  WorkflowRunOptions,
+  WorkflowExecutionResult,
+} from "./types";
 
 /**
  * Agent configuration for the chain

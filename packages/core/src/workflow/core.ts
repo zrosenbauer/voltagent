@@ -1405,4 +1405,9 @@ export function createWorkflow<
 /**
  * Base type for workflow steps to avoid repetition
  */
-type BaseStep = WorkflowStep<DangerouslyAllowAny, DangerouslyAllowAny, DangerouslyAllowAny>;
+type BaseStep = WorkflowStep<
+  DangerouslyAllowAny,
+  DangerouslyAllowAny,
+  DangerouslyAllowAny,
+  DangerouslyAllowAny
+>;

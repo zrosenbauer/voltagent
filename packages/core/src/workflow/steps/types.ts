@@ -42,8 +42,8 @@ export interface WorkflowStepFunc<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA
   type: "func";
 }
 
-export interface WorkflowStepWorkflow<INPUT, DATA, RESULT>
-  extends InternalBaseWorkflowStep<INPUT, DATA, RESULT> {
+export interface WorkflowStepWorkflow<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA = any>
+  extends InternalBaseWorkflowStep<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA> {
   type: "workflow";
   workflow: InternalWorkflow<INPUT, DATA, RESULT>;
 }
@@ -116,7 +116,7 @@ export type WorkflowStep<INPUT, DATA, RESULT, SUSPEND_DATA = any> =
   | WorkflowStepParallelAll<INPUT, DATA, RESULT>
   | WorkflowStepTap<INPUT, DATA, RESULT, SUSPEND_DATA>
   | WorkflowStepParallelRace<INPUT, DATA, RESULT>
-  | WorkflowStepWorkflow<INPUT, DATA, RESULT>;
+  | WorkflowStepWorkflow<INPUT, DATA, RESULT, SUSPEND_DATA>;
 
 /**
  * Internal type to allow overriding the run method for the workflow
@@ -136,4 +136,3 @@ export interface InternalWorkflow<_INPUT, DATA, RESULT>
 }
 
 export interface InternalWorkflowRunOptions extends WorkflowRunOptions {}
-
