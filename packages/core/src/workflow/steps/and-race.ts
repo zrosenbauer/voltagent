@@ -22,31 +22,43 @@ import { getGlobalLogger } from "../../logger";
  * @example
  * ```ts
  * const w = createWorkflow(
- *   andRace([
- *     andThen(async (data) => {
- *       // Fast operation
- *       const cacheResult = await checkCache(data.query);
- *       return { source: "cache", result: cacheResult };
- *     }),
- *     andThen(async (data) => {
- *       // Slower operation
- *       const dbResult = await queryDatabase(data.query);
- *       return { source: "database", result: dbResult };
- *     }),
- *     andAgent(
- *       (data) => `Generate fallback response for: ${data.query}`,
- *       agent,
- *       { schema: z.object({ source: z.literal("ai"), result: z.string() }) }
- *     )
- *   ]),
- *   andThen(async (data) => {
- *     // data is the result from whichever step completed first
- *     return { finalResult: data.result, source: data.source };
+ *   andRace({
+ *     id: "race-data-sources",
+ *     steps: [
+ *       andThen({
+ *         id: "check-cache",
+ *         execute: async ({ data }) => {
+ *           // Fast operation
+ *           const cacheResult = await checkCache(data.query);
+ *           return { source: "cache", result: cacheResult };
+ *         }
+ *       }),
+ *       andThen({
+ *         id: "query-database",
+ *         execute: async ({ data }) => {
+ *           // Slower operation
+ *           const dbResult = await queryDatabase(data.query);
+ *           return { source: "database", result: dbResult };
+ *         }
+ *       }),
+ *       andAgent(
+ *         ({ data }) => `Generate fallback response for: ${data.query}`,
+ *         agent,
+ *         { schema: z.object({ source: z.literal("ai"), result: z.string() }) }
+ *       )
+ *     ]
+ *   }),
+ *   andThen({
+ *     id: "process-result",
+ *     execute: async ({ data }) => {
+ *       // data is the result from whichever step completed first
+ *       return { finalResult: data.result, source: data.source };
+ *     }
  *   })
  * );
  * ```
  *
- * @param steps - Array of workflow steps to execute in parallel
+ * @param config - Configuration object with steps array and metadata
  * @returns A workflow step that executes all steps simultaneously and returns the result from the first step to complete
  */
 export function andRace<
