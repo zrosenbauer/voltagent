@@ -36,21 +36,6 @@ describe.sequential("workflow.run", () => {
           };
         },
       }),
-      andAll({
-        id: "step-2-add-surname",
-        name: "Add surname",
-        steps: [
-          andThen({
-            id: "step-2-add-surname",
-            name: "Add surname",
-            execute: async ({ data }) => {
-              return {
-                name: [data.name, "doe"].join(" "),
-              };
-            },
-          }),
-        ],
-      }),
       andThen({
         id: "step-2-add-surname",
         name: "Add surname",
