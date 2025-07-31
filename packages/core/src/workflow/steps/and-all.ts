@@ -1,16 +1,16 @@
-import type { InternalAnyWorkflowStep, InternalInferWorkflowStepsResult } from "../internal/types";
-import { defaultStepConfig } from "../internal/utils";
+import { getGlobalLogger } from "../../logger";
 import {
+  createParallelSubStepContext,
+  createStepContext,
+  createWorkflowStepErrorEvent,
   createWorkflowStepStartEvent,
   createWorkflowStepSuccessEvent,
-  createWorkflowStepErrorEvent,
   publishWorkflowEvent,
-  createStepContext,
-  createParallelSubStepContext,
 } from "../event-utils";
+import type { InternalAnyWorkflowStep, InternalInferWorkflowStepsResult } from "../internal/types";
+import { defaultStepConfig } from "../internal/utils";
 import { matchStep } from "./helpers";
 import type { WorkflowStepParallelAll, WorkflowStepParallelAllConfig } from "./types";
-import { getGlobalLogger } from "../../logger";
 
 /**
  * Creates a parallel execution step that runs multiple steps simultaneously and waits for all to complete
@@ -60,8 +60,9 @@ export function andAll<
   DATA,
   RESULT,
   STEPS extends ReadonlyArray<InternalAnyWorkflowStep<INPUT, DATA, RESULT>>,
-  INFERRED_RESULT = InternalInferWorkflowStepsResult<STEPS>,
 >({ steps, ...config }: WorkflowStepParallelAllConfig<STEPS>) {
+  type INFERRED_RESULT = InternalInferWorkflowStepsResult<STEPS>;
+
   return {
     ...defaultStepConfig(config),
     type: "parallel-all",
