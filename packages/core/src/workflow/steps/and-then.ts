@@ -1,15 +1,15 @@
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
-import { defaultStepConfig } from "../internal/utils";
+import { getGlobalLogger } from "../../logger";
 import {
+  createStepContext,
+  createWorkflowStepErrorEvent,
   createWorkflowStepStartEvent,
   createWorkflowStepSuccessEvent,
-  createWorkflowStepErrorEvent,
   publishWorkflowEvent,
-  createStepContext,
 } from "../event-utils";
-import type { WorkflowStepFunc, WorkflowStepFuncConfig } from "./types";
 import type { WorkflowExecuteContext } from "../internal/types";
-import { getGlobalLogger } from "../../logger";
+import { defaultStepConfig } from "../internal/utils";
+import type { WorkflowStepFunc, WorkflowStepFuncConfig } from "./types";
 
 /**
  * Creates an async function step for the workflow
@@ -36,20 +36,14 @@ import { getGlobalLogger } from "../../logger";
  * @param config - Configuration object with execute function and metadata
  * @returns A workflow step that executes the function and returns the result
  */
-export function andThen<
-  INPUT,
-  DATA,
-  RESULT,
-  SUSPEND_DATA = DangerouslyAllowAny,
-  RESUME_DATA = DangerouslyAllowAny,
->({
+export function andThen<INPUT, DATA, RESULT>({
   execute,
   inputSchema,
   outputSchema,
   suspendSchema,
   resumeSchema,
   ...config
-}: WorkflowStepFuncConfig<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA>) {
+}: WorkflowStepFuncConfig<INPUT, DATA, RESULT>) {
   return {
     ...defaultStepConfig(config),
     type: "func",
@@ -58,7 +52,7 @@ export function andThen<
     suspendSchema,
     resumeSchema,
     originalExecute: execute, // ✅ Store original function for serialization
-    execute: async (context: WorkflowExecuteContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA>) => {
+    execute: async (context: WorkflowExecuteContext<INPUT, DATA>) => {
       const { data, state } = context;
       // No workflow context, execute without events
       if (!state.workflowContext) {
@@ -147,5 +141,5 @@ export function andThen<
         throw error;
       }
     },
-  } as WorkflowStepFunc<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA>;
+  } as WorkflowStepFunc<INPUT, DATA, RESULT>;
 }

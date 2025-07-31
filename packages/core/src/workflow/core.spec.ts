@@ -1,11 +1,11 @@
-import { describe, expect, it, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
+import { createTestLibSQLStorage } from "../test-utils";
 import { createWorkflow } from "./core";
-import { andThen } from "./steps";
-import { createTestLibSQLStorage } from "../test-utils/libsql-test-helpers";
 import { WorkflowRegistry } from "./registry";
+import { andAll, andThen } from "./steps";
 
-describe.sequential("workflow.run", () => {
+describe("workflow.run", () => {
   beforeEach(() => {
     // Clear registry before each test
     const registry = WorkflowRegistry.getInstance();
@@ -14,7 +14,6 @@ describe.sequential("workflow.run", () => {
 
   it("should return the expected result", async () => {
     const memory = createTestLibSQLStorage("workflow_run");
-
     const workflow = createWorkflow(
       {
         id: "test",
@@ -50,6 +49,67 @@ describe.sequential("workflow.run", () => {
     // Register workflow to registry
     const registry = WorkflowRegistry.getInstance();
     registry.registerWorkflow(workflow);
+
+    const result = await workflow.run({
+      name: "Who is",
+    });
+
+    expect(result).toEqual({
+      executionId: expect.any(String),
+      workflowId: "test",
+      startAt: expect.any(Date),
+      endAt: expect.any(Date),
+      status: "completed",
+      result: {
+        name: "Who is john doe",
+      },
+      suspension: undefined,
+      error: undefined,
+      resume: expect.any(Function),
+    });
+  });
+
+  it("should handle types for andAll + other steps", async () => {
+    const memory = createTestLibSQLStorage("workflow_run");
+    const workflow = createWorkflow(
+      {
+        id: "test",
+        name: "test",
+        input: z.object({
+          name: z.string(),
+        }),
+        result: z.object({
+          name: z.string(),
+        }),
+        memory,
+      },
+      andThen({
+        id: "step-1-join-name",
+        name: "Join with john",
+        execute: async ({ data }) => {
+          return {
+            name: [data.name, "john"].join(" "),
+          };
+        },
+      }),
+      andAll({
+        id: "and-all",
+        steps: [
+          andThen({ id: "a", execute: async () => ({ a: "2" }) }),
+          andThen({ id: "b", execute: async () => ({ b: "3" }) }),
+        ],
+      }),
+      andThen({
+        id: "c",
+        execute: async ({ data }) => {
+          return {
+            name: [data.name, "doe"].join(" "),
+          };
+        },
+      }),
+    );
+
+    WorkflowRegistry.getInstance().registerWorkflow(workflow);
 
     const result = await workflow.run({
       name: "Who is",

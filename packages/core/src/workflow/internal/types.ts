@@ -1,10 +1,10 @@
+import type { Logger } from "@voltagent/internal";
 import type { DangerouslyAllowAny, PlainObject } from "@voltagent/internal/types";
 import type * as TF from "type-fest";
 import type { z } from "zod";
 import type { BaseMessage } from "../../agent/providers";
-import type { WorkflowState } from "./state";
 import type { WorkflowExecutionContext } from "../context";
-import type { Logger } from "@voltagent/internal";
+import type { WorkflowState } from "./state";
 
 /**
  * The base input type for the workflow
@@ -30,12 +30,12 @@ export type InternalWorkflowStateParam<INPUT> = Omit<
  * Context object for new execute API with helper functions
  * @private - INTERNAL USE ONLY
  */
-export interface WorkflowExecuteContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA> {
+export interface WorkflowExecuteContext<INPUT, DATA> {
   data: InternalExtractWorkflowInputData<DATA>;
   state: InternalWorkflowStateParam<INPUT>;
   getStepData: (stepId: string) => { input: any; output: any } | undefined;
-  suspend: (reason?: string, suspendData?: SUSPEND_DATA) => Promise<never>;
-  resumeData?: RESUME_DATA;
+  suspend: (reason?: string, suspendData?: any) => Promise<never>;
+  resumeData?: any;
   /**
    * Logger instance for this workflow execution.
    * Provides execution-scoped logging with full context (userId, conversationId, executionId).
@@ -48,8 +48,8 @@ export interface WorkflowExecuteContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA> 
  * Uses context-based API with data, state, and helper functions
  * @private - INTERNAL USE ONLY
  */
-export type InternalWorkflowFunc<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA> = (
-  context: WorkflowExecuteContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA>,
+export type InternalWorkflowFunc<INPUT, DATA, RESULT> = (
+  context: WorkflowExecuteContext<INPUT, DATA>,
 ) => Promise<RESULT>;
 
 export type InternalWorkflowStepConfig<T extends PlainObject = PlainObject> = {
@@ -72,7 +72,7 @@ export type InternalWorkflowStepConfig<T extends PlainObject = PlainObject> = {
  * Base step interface for building new steps
  * @private - INTERNAL USE ONLY
  */
-export interface InternalBaseWorkflowStep<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA> {
+export interface InternalBaseWorkflowStep<INPUT, DATA, RESULT> {
   /**
    * Unique identifier for the step
    */
@@ -110,9 +110,7 @@ export interface InternalBaseWorkflowStep<INPUT, DATA, RESULT, SUSPEND_DATA, RES
    * @param context - The execution context containing data, state, and helpers
    * @returns The result of the step
    */
-  execute: (
-    context: WorkflowExecuteContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA>,
-  ) => Promise<RESULT>;
+  execute: (context: WorkflowExecuteContext<INPUT, DATA>) => Promise<RESULT>;
 }
 
 /**
@@ -123,11 +121,9 @@ export type InternalAnyWorkflowStep<
   INPUT,
   DATA = DangerouslyAllowAny,
   RESULT = DangerouslyAllowAny,
-  SUSPEND_DATA = DangerouslyAllowAny,
-  RESUME_DATA = DangerouslyAllowAny,
 > =
-  | InternalBaseWorkflowStep<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA>
-  | Omit<InternalBaseWorkflowStep<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA>, "type">;
+  | InternalBaseWorkflowStep<INPUT, DATA, RESULT>
+  | Omit<InternalBaseWorkflowStep<INPUT, DATA, RESULT>, "type">;
 
 /**
  * Infer the result type from a list of steps

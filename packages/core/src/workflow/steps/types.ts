@@ -1,5 +1,5 @@
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
-import { z } from "zod";
+import type { z } from "zod";
 import type { Agent } from "../../agent/agent";
 import type {
   InternalAnyWorkflowStep,
@@ -18,56 +18,44 @@ export type WorkflowStepType =
   | "parallel-race";
 
 export interface WorkflowStepAgent<INPUT, DATA, RESULT>
-  extends InternalBaseWorkflowStep<INPUT, DATA, RESULT, any, any> {
+  extends InternalBaseWorkflowStep<INPUT, DATA, RESULT> {
   type: "agent";
   agent: Agent<{ llm: DangerouslyAllowAny }>;
 }
 
-export type WorkflowStepFuncConfig<
-  INPUT,
-  DATA,
-  RESULT,
-  SUSPEND_DATA,
-  RESUME_DATA = any,
-> = InternalWorkflowStepConfig<{
-  execute: InternalWorkflowFunc<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA>;
+export type WorkflowStepFuncConfig<INPUT, DATA, RESULT> = InternalWorkflowStepConfig<{
+  execute: InternalWorkflowFunc<INPUT, DATA, RESULT>;
   inputSchema?: z.ZodTypeAny;
   outputSchema?: z.ZodTypeAny;
   suspendSchema?: z.ZodTypeAny;
   resumeSchema?: z.ZodTypeAny;
 }>;
 
-export interface WorkflowStepFunc<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA = any>
-  extends InternalBaseWorkflowStep<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA> {
+export interface WorkflowStepFunc<INPUT, DATA, RESULT>
+  extends InternalBaseWorkflowStep<INPUT, DATA, RESULT> {
   type: "func";
 }
 
-export interface WorkflowStepWorkflow<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA = any>
-  extends InternalBaseWorkflowStep<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA> {
+export interface WorkflowStepWorkflow<INPUT, DATA, RESULT>
+  extends InternalBaseWorkflowStep<INPUT, DATA, RESULT> {
   type: "workflow";
   workflow: InternalWorkflow<INPUT, DATA, RESULT>;
 }
 
-export type WorkflowStepTapConfig<
-  INPUT,
-  DATA,
-  _RESULT,
-  SUSPEND_DATA,
-  RESUME_DATA = any,
-> = InternalWorkflowStepConfig<{
-  execute: InternalWorkflowFunc<INPUT, DATA, DangerouslyAllowAny, SUSPEND_DATA, RESUME_DATA>;
+export type WorkflowStepTapConfig<INPUT, DATA, _RESULT> = InternalWorkflowStepConfig<{
+  execute: InternalWorkflowFunc<INPUT, DATA, DangerouslyAllowAny>;
   inputSchema?: z.ZodTypeAny;
   suspendSchema?: z.ZodTypeAny;
   resumeSchema?: z.ZodTypeAny;
 }>;
 
-export interface WorkflowStepTap<INPUT, DATA, _RESULT, SUSPEND_DATA, RESUME_DATA = any>
-  extends InternalBaseWorkflowStep<INPUT, DATA, DATA, SUSPEND_DATA, RESUME_DATA> {
+export interface WorkflowStepTap<INPUT, DATA, _RESULT>
+  extends InternalBaseWorkflowStep<INPUT, DATA, DATA> {
   type: "tap";
 }
 
 export type WorkflowStepConditionalWhenConfig<INPUT, DATA, RESULT> = InternalWorkflowStepConfig<{
-  condition: InternalWorkflowFunc<INPUT, DATA, boolean, any, any>;
+  condition: InternalWorkflowFunc<INPUT, DATA, boolean>;
   step: InternalAnyWorkflowStep<INPUT, DATA, RESULT>;
   inputSchema?: z.ZodTypeAny;
   outputSchema?: z.ZodTypeAny;
@@ -76,15 +64,9 @@ export type WorkflowStepConditionalWhenConfig<INPUT, DATA, RESULT> = InternalWor
 }>;
 
 export interface WorkflowStepConditionalWhen<INPUT, DATA, RESULT>
-  extends InternalBaseWorkflowStep<
-    INPUT,
-    DATA,
-    InternalExtractWorkflowInputData<DATA> | RESULT,
-    any,
-    any
-  > {
+  extends InternalBaseWorkflowStep<INPUT, DATA, InternalExtractWorkflowInputData<DATA> | RESULT> {
   type: "conditional-when";
-  condition: InternalWorkflowFunc<INPUT, DATA, boolean, any, any>;
+  condition: InternalWorkflowFunc<INPUT, DATA, boolean>;
 }
 
 export type WorkflowStepParallelRaceConfig<INPUT, DATA, RESULT> = InternalWorkflowStepConfig<{
@@ -92,7 +74,7 @@ export type WorkflowStepParallelRaceConfig<INPUT, DATA, RESULT> = InternalWorkfl
 }>;
 
 export interface WorkflowStepParallelRace<INPUT, DATA, RESULT>
-  extends InternalBaseWorkflowStep<INPUT, DATA, RESULT, any, any> {
+  extends InternalBaseWorkflowStep<INPUT, DATA, RESULT> {
   type: "parallel-race";
   steps: ReadonlyArray<InternalAnyWorkflowStep<INPUT, DATA, RESULT>>;
 }
@@ -104,19 +86,19 @@ export type WorkflowStepParallelAllConfig<
 }>;
 
 export interface WorkflowStepParallelAll<INPUT, DATA, RESULT>
-  extends InternalBaseWorkflowStep<INPUT, DATA, RESULT, any, any> {
+  extends InternalBaseWorkflowStep<INPUT, DATA, RESULT> {
   type: "parallel-all";
   steps: ReadonlyArray<InternalAnyWorkflowStep<INPUT, DATA, RESULT>>;
 }
 
-export type WorkflowStep<INPUT, DATA, RESULT, SUSPEND_DATA = any> =
+export type WorkflowStep<INPUT, DATA, RESULT> =
   | WorkflowStepAgent<INPUT, DATA, RESULT>
-  | WorkflowStepFunc<INPUT, DATA, RESULT, SUSPEND_DATA>
+  | WorkflowStepFunc<INPUT, DATA, RESULT>
   | WorkflowStepConditionalWhen<INPUT, DATA, RESULT>
   | WorkflowStepParallelAll<INPUT, DATA, RESULT>
-  | WorkflowStepTap<INPUT, DATA, RESULT, SUSPEND_DATA>
-  | WorkflowStepParallelRace<INPUT, DATA, RESULT>
-  | WorkflowStepWorkflow<INPUT, DATA, RESULT, SUSPEND_DATA>;
+  // | WorkflowStepTap<INPUT, DATA, RESULT, SUSPEND_DATA>
+  | WorkflowStepParallelRace<INPUT, DATA, RESULT>;
+// | WorkflowStepWorkflow<INPUT, DATA, RESULT, SUSPEND_DATA>;
 
 /**
  * Internal type to allow overriding the run method for the workflow
