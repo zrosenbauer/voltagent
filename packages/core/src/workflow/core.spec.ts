@@ -5,7 +5,7 @@ import { andThen } from "./steps";
 import { createTestLibSQLStorage } from "../test-utils/libsql-test-helpers";
 import { WorkflowRegistry } from "./registry";
 
-describe("workflow.run", () => {
+describe.sequential("workflow.run", () => {
   beforeEach(() => {
     // Clear registry before each test
     const registry = WorkflowRegistry.getInstance();

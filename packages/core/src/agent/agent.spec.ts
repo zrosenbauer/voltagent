@@ -673,6 +673,7 @@ describe("Agent", () => {
         model: mockModel,
         llm: mockProvider,
         instructions: "A helpful AI assistant",
+        memory: mockMemory,
       });
 
       expect(defaultAgent.id).toBeDefined();
@@ -689,6 +690,7 @@ describe("Agent", () => {
         instructions: "Custom description",
         model: mockModel,
         llm: mockProvider,
+        memory: mockMemory,
       });
 
       expect(customAgent.id).toBe("custom-id");
@@ -703,6 +705,7 @@ describe("Agent", () => {
         description: "Uses provided description",
         model: mockModel,
         llm: mockProvider,
+        memory: mockMemory,
         // instructions property is intentionally omitted
       });
       expect(agentWithDesc.instructions).toBe("Uses provided description");
@@ -716,6 +719,7 @@ describe("Agent", () => {
         description: "This description should be ignored",
         model: mockModel,
         llm: mockProvider,
+        memory: mockMemory,
       });
       expect(agentWithBoth.instructions).toBe("Uses provided instructions");
       expect(agentWithBoth.description).toBe("Uses provided instructions");
@@ -728,6 +732,7 @@ describe("Agent", () => {
         llm: mockProvider,
         model: mockModel,
         maxSteps: 25,
+        memory: mockMemory,
       });
 
       expect(agentWithMaxSteps.name).toBe("MaxSteps Agent");
@@ -741,6 +746,7 @@ describe("Agent", () => {
         instructions: "Agent without maxSteps",
         llm: mockProvider,
         model: mockModel,
+        memory: mockMemory,
         // No maxSteps
       });
 
@@ -2245,6 +2251,7 @@ describe("Agent", () => {
         model: mockModel,
         llm: mockProvider,
         instructions: "A mock sub-agent for testing",
+        memory: mockMemory,
       });
 
       // Create an agent with sub-agents
@@ -2255,6 +2262,7 @@ describe("Agent", () => {
         model: mockModel,
         llm: mockProvider,
         instructions: "A parent agent with sub-agents",
+        memory: mockMemory,
       });
 
       // // Add the sub-agent
@@ -2296,6 +2304,7 @@ describe("Agent", () => {
         model: mockModel,
         llm: mockProvider,
         instructions: "No SubAgents Agent instructions",
+        memory: mockMemory,
       });
 
       const tools = agentWithoutSubAgents.getTools();
@@ -2397,6 +2406,7 @@ describe("Agent", () => {
         model: mockModel,
         llm: mockProvider,
         instructions: "A test sub agent",
+        memory: mockMemory,
       });
 
       const parentAgent = new TestAgent({
@@ -2405,6 +2415,7 @@ describe("Agent", () => {
         model: mockModel,
         llm: mockProvider,
         instructions: "A parent agent",
+        memory: mockMemory,
       });
 
       parentAgent.addSubAgent(mockSubAgent);
@@ -2512,6 +2523,7 @@ describe("Agent", () => {
         model: mockModel,
         llm: mockProvider,
         instructions: "Parent without fullStream",
+        memory: mockMemory,
       });
 
       parentAgent.addSubAgent(mockSubAgent);
