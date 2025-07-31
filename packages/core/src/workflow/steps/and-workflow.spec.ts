@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
-import { VoltAgent } from "../../voltagent";
 import { createWorkflow } from "../core";
 import { andThen } from "./and-then";
 import { andWorkflow } from "./and-workflow";
