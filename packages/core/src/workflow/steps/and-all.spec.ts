@@ -33,9 +33,11 @@ describe("andAll", () => {
   it("should provide the correct type for the result", async () => {
     type INPUT = string;
     type DATA = { name: string };
+    type SUSPEND = any;
+    type RESUME = any;
 
     const steps = [
-      andThen<INPUT, DATA, { a: number }>({
+      andThen<INPUT, DATA, { a: number }, SUSPEND, RESUME>({
         id: "a",
         execute: async () => {
           return {
@@ -43,7 +45,7 @@ describe("andAll", () => {
           };
         },
       }),
-      andThen<INPUT, DATA, { b: number }>({
+      andThen<INPUT, DATA, { b: number }, SUSPEND, RESUME>({
         id: "b",
         execute: async () => {
           return {
@@ -53,7 +55,7 @@ describe("andAll", () => {
       }),
     ] as const;
 
-    const step = andAll<string, { name: string }, { a: number } | { b: number }, typeof steps>({
+    const step = andAll<INPUT, DATA, unknown, SUSPEND, RESUME, typeof steps>({
       id: "and-all",
       steps,
     });

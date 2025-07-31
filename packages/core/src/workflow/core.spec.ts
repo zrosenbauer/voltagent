@@ -79,7 +79,7 @@ describe("workflow.run", () => {
           name: z.string(),
         }),
         result: z.object({
-          name: z.string(),
+          foo: z.string(),
         }),
         memory,
       },
@@ -95,15 +95,30 @@ describe("workflow.run", () => {
       andAll({
         id: "and-all",
         steps: [
-          andThen({ id: "a", execute: async () => ({ a: "2" }) }),
-          andThen({ id: "b", execute: async () => ({ b: "3" }) }),
-        ],
+          andThen({
+            id: "a",
+            execute: async () => {
+              return {
+                a: "a",
+              };
+            },
+          }),
+          andThen({
+            id: "b",
+            execute: async () => {
+              return {
+                b: 3,
+              };
+            },
+          }),
+        ] as const,
       }),
       andThen({
         id: "c",
         execute: async ({ data }) => {
+          const x = data[0];
           return {
-            name: [data.name, "doe"].join(" "),
+            foo: [x.a, "doe"].join(" "),
           };
         },
       }),
@@ -122,7 +137,7 @@ describe("workflow.run", () => {
       endAt: expect.any(Date),
       status: "completed",
       result: {
-        name: "Who is john doe",
+        foo: "a doe",
       },
       suspension: undefined,
       error: undefined,

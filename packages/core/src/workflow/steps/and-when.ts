@@ -1,14 +1,14 @@
-import { defaultStepConfig } from "../internal/utils";
+import { getGlobalLogger } from "../../logger";
 import {
+  createStepContext,
+  createWorkflowStepErrorEvent,
   createWorkflowStepStartEvent,
   createWorkflowStepSuccessEvent,
-  createWorkflowStepErrorEvent,
   publishWorkflowEvent,
-  createStepContext,
 } from "../event-utils";
+import { defaultStepConfig } from "../internal/utils";
 import { matchStep } from "./helpers";
 import type { WorkflowStepConditionalWhen, WorkflowStepConditionalWhenConfig } from "./types";
-import { getGlobalLogger } from "../../logger";
 
 /**
  * Creates a conditional step for the workflow that executes only when a condition is met
@@ -38,7 +38,7 @@ import { getGlobalLogger } from "../../logger";
  * @param config - Configuration object with condition, step/execute function, and metadata
  * @returns A conditional workflow step that executes the step only when the condition evaluates to true
  */
-export function andWhen<INPUT, DATA, RESULT>({
+export function andWhen<INPUT, DATA, RESULT, SUSPEND, RESUME>({
   condition,
   step,
   inputSchema,
@@ -46,7 +46,7 @@ export function andWhen<INPUT, DATA, RESULT>({
   suspendSchema,
   resumeSchema,
   ...config
-}: WorkflowStepConditionalWhenConfig<INPUT, DATA, RESULT>) {
+}: WorkflowStepConditionalWhenConfig<INPUT, DATA, RESULT, SUSPEND, RESUME>) {
   const finalStep = matchStep<INPUT, DATA, RESULT>(step);
   return {
     ...defaultStepConfig(config),
@@ -167,5 +167,5 @@ export function andWhen<INPUT, DATA, RESULT>({
         throw error;
       }
     },
-  } as WorkflowStepConditionalWhen<INPUT, DATA, RESULT>;
+  } satisfies WorkflowStepConditionalWhen<INPUT, DATA, RESULT, SUSPEND, RESUME>;
 }

@@ -30,12 +30,12 @@ export type InternalWorkflowStateParam<INPUT> = Omit<
  * Context object for new execute API with helper functions
  * @private - INTERNAL USE ONLY
  */
-export interface WorkflowExecuteContext<INPUT, DATA> {
+export interface WorkflowExecuteContext<INPUT, DATA, SUSPEND = undefined, RESUME = undefined> {
   data: InternalExtractWorkflowInputData<DATA>;
   state: InternalWorkflowStateParam<INPUT>;
   getStepData: (stepId: string) => { input: any; output: any } | undefined;
-  suspend: (reason?: string, suspendData?: any) => Promise<never>;
-  resumeData?: any;
+  suspend: (reason?: string, suspendData?: InferZodSchema<SUSPEND>) => Promise<void>;
+  resumeData?: InferZodSchema<RESUME>;
   /**
    * Logger instance for this workflow execution.
    * Provides execution-scoped logging with full context (userId, conversationId, executionId).
@@ -43,13 +43,17 @@ export interface WorkflowExecuteContext<INPUT, DATA> {
   logger: Logger;
 }
 
+export type InferZodSchema<SCHEMA = undefined> = SCHEMA extends z.ZodTypeAny
+  ? z.infer<SCHEMA>
+  : unknown;
+
 /**
  * A function that can be executed by the workflow
  * Uses context-based API with data, state, and helper functions
  * @private - INTERNAL USE ONLY
  */
-export type InternalWorkflowFunc<INPUT, DATA, RESULT> = (
-  context: WorkflowExecuteContext<INPUT, DATA>,
+export type InternalWorkflowFunc<INPUT, DATA, RESULT, SUSPEND, RESUME> = (
+  context: WorkflowExecuteContext<INPUT, DATA, SUSPEND, RESUME>,
 ) => Promise<RESULT>;
 
 export type InternalWorkflowStepConfig<T extends PlainObject = PlainObject> = {
@@ -61,18 +65,18 @@ export type InternalWorkflowStepConfig<T extends PlainObject = PlainObject> = {
   /**
    * Human-readable name for the step
    */
-  name?: string;
+  name?: string | null;
   /**
    * Description of what the step does
    */
-  purpose?: string;
+  purpose?: string | null;
 } & T;
 
 /**
  * Base step interface for building new steps
  * @private - INTERNAL USE ONLY
  */
-export interface InternalBaseWorkflowStep<INPUT, DATA, RESULT> {
+export interface InternalWorkflowStep<INPUT, DATA, RESULT, SUSPEND, RESUME> {
   /**
    * Unique identifier for the step
    */
@@ -80,11 +84,11 @@ export interface InternalBaseWorkflowStep<INPUT, DATA, RESULT> {
   /**
    * Human-readable name for the step
    */
-  name: string | null;
+  name?: string | null;
   /**
    * Description of what the step does
    */
-  purpose: string | null;
+  purpose?: string | null;
   /**
    * Type identifier for the step
    */
@@ -110,7 +114,7 @@ export interface InternalBaseWorkflowStep<INPUT, DATA, RESULT> {
    * @param context - The execution context containing data, state, and helpers
    * @returns The result of the step
    */
-  execute: (context: WorkflowExecuteContext<INPUT, DATA>) => Promise<RESULT>;
+  execute: (context: WorkflowExecuteContext<INPUT, DATA, SUSPEND, RESUME>) => Promise<RESULT>;
 }
 
 /**
@@ -118,26 +122,21 @@ export interface InternalBaseWorkflowStep<INPUT, DATA, RESULT> {
  * @private - INTERNAL USE ONLY
  */
 export type InternalAnyWorkflowStep<
-  INPUT,
+  INPUT = DangerouslyAllowAny,
   DATA = DangerouslyAllowAny,
   RESULT = DangerouslyAllowAny,
-> =
-  | InternalBaseWorkflowStep<INPUT, DATA, RESULT>
-  | Omit<InternalBaseWorkflowStep<INPUT, DATA, RESULT>, "type">;
+  SUSPEND = DangerouslyAllowAny,
+  RESUME = DangerouslyAllowAny,
+> = InternalWorkflowStep<INPUT, DATA, RESULT, SUSPEND, RESUME>;
 
 /**
  * Infer the result type from a list of steps
  * @private - INTERNAL USE ONLY
  */
-export type InternalInferWorkflowStepsResult<
-  STEPS extends ReadonlyArray<
-    InternalAnyWorkflowStep<DangerouslyAllowAny, DangerouslyAllowAny, DangerouslyAllowAny>
-  >,
-> = {
-  [K in keyof STEPS]: Awaited<ReturnType<STEPS[K]["execute"]>>;
-};
-
-// Awaited<ReturnType<GetFunc<STEPS[K]>>>
+export type InternalInferWorkflowStepsResult<STEPS extends ReadonlyArray<InternalAnyWorkflowStep>> =
+  {
+    [K in keyof STEPS]: ExtractExecuteResult<STEPS[K]>;
+  };
 
 export type InternalExtractWorkflowInputData<T> = TF.IsUnknown<T> extends true
   ? BaseMessage | BaseMessage[] | string
@@ -147,10 +146,15 @@ export type InternalExtractWorkflowInputData<T> = TF.IsUnknown<T> extends true
       ? z.infer<T>
       : T;
 
-// type GetFunc<T> = T extends InternalAnyWorkflowStep<
-//   DangerouslyAllowAny,
-//   DangerouslyAllowAny,
-//   DangerouslyAllowAny
-// >
-//   ? T["execute"]
-//   : never;
+/*
+|------------------
+| Internals
+|------------------
+*/
+
+// Type to extract the awaited return type from an execute function
+type ExtractExecuteResult<T> = T extends { execute: (...args: any[]) => infer R }
+  ? R extends Promise<infer U>
+    ? U
+    : R
+  : never;

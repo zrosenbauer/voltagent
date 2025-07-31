@@ -54,10 +54,7 @@ export interface WorkflowSuspendController {
 /**
  * Result returned from workflow execution with suspend/resume capabilities
  */
-export interface WorkflowExecutionResult<
-  RESULT_SCHEMA extends z.ZodTypeAny,
-  RESUME_SCHEMA extends z.ZodTypeAny = z.ZodAny,
-> {
+export interface WorkflowExecutionResult<RESULT_SCHEMA extends z.ZodTypeAny> {
   /**
    * Unique execution ID for this workflow run
    */
@@ -96,10 +93,10 @@ export interface WorkflowExecutionResult<
    * @param options - Optional options for resuming, including stepId to resume from a specific step
    * @returns A new execution result that can also be resumed if suspended again
    */
-  resume: (
-    input: z.infer<RESUME_SCHEMA>,
+  resume: <INPUT>(
+    input: INPUT,
     options?: { stepId?: string },
-  ) => Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>>;
+  ) => Promise<WorkflowExecutionResult<RESULT_SCHEMA>>;
 }
 
 export interface WorkflowRunOptions {
@@ -224,8 +221,6 @@ export type WorkflowResult<RESULT_SCHEMA extends z.ZodTypeAny> = RESULT_SCHEMA e
 export type WorkflowConfig<
   INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
   RESULT_SCHEMA extends z.ZodTypeAny,
-  SUSPEND_SCHEMA extends z.ZodTypeAny = z.ZodAny,
-  RESUME_SCHEMA extends z.ZodTypeAny = z.ZodAny,
 > = {
   /**
    * Unique identifier for the workflow
@@ -248,14 +243,6 @@ export type WorkflowConfig<
    */
   result: RESULT_SCHEMA;
   /**
-   * Schema for data passed when suspending (optional)
-   */
-  suspendSchema?: SUSPEND_SCHEMA;
-  /**
-   * Schema for data passed when resuming (optional)
-   */
-  resumeSchema?: RESUME_SCHEMA;
-  /**
    * Hooks for the workflow
    */
   hooks?: WorkflowHooks<WorkflowInput<INPUT_SCHEMA>, WorkflowResult<RESULT_SCHEMA>>;
@@ -277,8 +264,6 @@ export type WorkflowConfig<
 export type Workflow<
   INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
   RESULT_SCHEMA extends z.ZodTypeAny,
-  SUSPEND_SCHEMA extends z.ZodTypeAny = z.ZodAny,
-  RESUME_SCHEMA extends z.ZodTypeAny = z.ZodAny,
 > = {
   /**
    * Unique identifier for the workflow
@@ -302,14 +287,6 @@ export type Workflow<
    */
   inputSchema?: INPUT_SCHEMA;
   /**
-   * Suspend schema for the workflow (for API access)
-   */
-  suspendSchema?: SUSPEND_SCHEMA;
-  /**
-   * Resume schema for the workflow (for API access)
-   */
-  resumeSchema?: RESUME_SCHEMA;
-  /**
    * Memory storage for this workflow (exposed for registry access)
    */
   memory?: Memory;
@@ -321,7 +298,7 @@ export type Workflow<
   run: (
     input: WorkflowInput<INPUT_SCHEMA>,
     options?: WorkflowRunOptions,
-  ) => Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>>;
+  ) => Promise<WorkflowExecutionResult<RESULT_SCHEMA>>;
   /**
    * Create a WorkflowSuspendController that can be used to suspend the workflow
    * @returns A WorkflowSuspendController instance
@@ -346,22 +323,6 @@ export interface BaseWorkflowHistoryEntry {
   output?: unknown;
 }
 
-/**
- * Base workflow step history entry - common fields for all use cases
- */
-export interface BaseWorkflowStepHistoryEntry {
-  stepIndex: number;
-  stepType: "agent" | "func" | "conditional-when" | "parallel-all" | "parallel-race";
-  stepName: string;
-  status: "pending" | "running" | "completed" | "error" | "skipped"; // includes all possible statuses
-  startTime?: Date; // optional since pending steps might not have started
-  endTime?: Date;
-  input?: unknown;
-  output?: unknown;
-  agentExecutionId?: string; // Link to agent_history.id if step executes an agent
-  parallelIndex?: number; // For parallel steps
-}
-
 export interface WorkflowHistoryEntry extends BaseWorkflowHistoryEntry {
   workflowName: string;
   steps: WorkflowStepHistoryEntry[];
@@ -369,7 +330,6 @@ export interface WorkflowHistoryEntry extends BaseWorkflowHistoryEntry {
   userId?: string;
   conversationId?: string;
   metadata?: Record<string, unknown>;
-
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -377,7 +337,7 @@ export interface WorkflowHistoryEntry extends BaseWorkflowHistoryEntry {
 /**
  * Used consistently across memory storage and runtime
  */
-export interface WorkflowStepHistoryEntry extends BaseWorkflowStepHistoryEntry {
+export interface WorkflowStepHistoryEntry extends InternalWorkflowStepHistoryEntry {
   // Unique identifiers
   id: string;
   stepId?: string;
@@ -465,6 +425,33 @@ export interface UpdateWorkflowStepOptions {
   metadata?: Record<string, unknown>;
 }
 
+/*
+|------------------
+| Internals
+|------------------
+*/
+
 /**
- * Workflow memory storage interface - provides abstraction for different storage backends
+ * Base workflow step history entry - common fields for all use cases
  */
+interface InternalWorkflowStepHistoryEntry {
+  stepIndex: number;
+  stepType: "agent" | "func" | "conditional-when" | "parallel-all" | "parallel-race";
+  stepName: string;
+  status: "pending" | "running" | "completed" | "error" | "skipped"; // includes all possible statuses
+  /**
+   * Optional since pending steps might not have started
+   */
+  startTime?: Date;
+  endTime?: Date;
+  input?: unknown;
+  output?: unknown;
+  /**
+   * Link to agent_history.id if step executes an agent
+   */
+  agentExecutionId?: string;
+  /**
+   * For parallel steps
+   */
+  parallelIndex?: number;
+}

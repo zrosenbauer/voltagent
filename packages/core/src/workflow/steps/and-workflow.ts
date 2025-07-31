@@ -1,5 +1,4 @@
 import type { InternalWorkflow, WorkflowStepWorkflow } from "./types";
-import type { WorkflowExecuteContext } from "../internal/types";
 
 /**
  * Creates an async function step for the workflow
@@ -33,7 +32,7 @@ import type { WorkflowExecuteContext } from "../internal/types";
  * @param workflow - The workflow to execute as a step
  * @returns A workflow step that executes the function and returns the result
  */
-export function andWorkflow<INPUT, DATA, RESULT, SUSPEND_DATA = any, RESUME_DATA = any>(
+export function andWorkflow<INPUT, DATA, RESULT, SUSPEND, RESUME>(
   workflow: InternalWorkflow<INPUT, DATA, RESULT>,
 ) {
   return {
@@ -42,7 +41,7 @@ export function andWorkflow<INPUT, DATA, RESULT, SUSPEND_DATA = any, RESUME_DATA
     id: workflow.id,
     name: workflow.name,
     purpose: workflow.purpose,
-    execute: async (context: WorkflowExecuteContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA>) => {
+    execute: async (context) => {
       const { result } = await workflow.run(context.data, {
         active: context.state.active,
         executionId: context.state.executionId,
@@ -52,5 +51,5 @@ export function andWorkflow<INPUT, DATA, RESULT, SUSPEND_DATA = any, RESUME_DATA
       });
       return result;
     },
-  } as WorkflowStepWorkflow<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA>;
+  } satisfies WorkflowStepWorkflow<INPUT, DATA, RESULT, SUSPEND, RESUME>;
 }

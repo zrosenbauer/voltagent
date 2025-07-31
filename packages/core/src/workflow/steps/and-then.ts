@@ -1,4 +1,3 @@
-import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import { getGlobalLogger } from "../../logger";
 import {
   createStepContext,
@@ -7,7 +6,6 @@ import {
   createWorkflowStepSuccessEvent,
   publishWorkflowEvent,
 } from "../event-utils";
-import type { WorkflowExecuteContext } from "../internal/types";
 import { defaultStepConfig } from "../internal/utils";
 import type { WorkflowStepFunc, WorkflowStepFuncConfig } from "./types";
 
@@ -36,14 +34,14 @@ import type { WorkflowStepFunc, WorkflowStepFuncConfig } from "./types";
  * @param config - Configuration object with execute function and metadata
  * @returns A workflow step that executes the function and returns the result
  */
-export function andThen<INPUT, DATA, RESULT>({
+export function andThen<INPUT, DATA, RESULT, SUSPEND, RESUME>({
   execute,
   inputSchema,
   outputSchema,
   suspendSchema,
   resumeSchema,
   ...config
-}: WorkflowStepFuncConfig<INPUT, DATA, RESULT>) {
+}: WorkflowStepFuncConfig<INPUT, DATA, RESULT, SUSPEND, RESUME>) {
   return {
     ...defaultStepConfig(config),
     type: "func",
@@ -51,8 +49,8 @@ export function andThen<INPUT, DATA, RESULT>({
     outputSchema,
     suspendSchema,
     resumeSchema,
-    originalExecute: execute, // ✅ Store original function for serialization
-    execute: async (context: WorkflowExecuteContext<INPUT, DATA>) => {
+    // originalExecute: execute, // ✅ Store original function for serialization
+    execute: async (context) => {
       const { data, state } = context;
       // No workflow context, execute without events
       if (!state.workflowContext) {
@@ -141,5 +139,5 @@ export function andThen<INPUT, DATA, RESULT>({
         throw error;
       }
     },
-  } as WorkflowStepFunc<INPUT, DATA, RESULT>;
+  } satisfies WorkflowStepFunc<INPUT, DATA, RESULT, SUSPEND, RESUME>;
 }

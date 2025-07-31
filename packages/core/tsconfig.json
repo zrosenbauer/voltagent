@@ -23,6 +23,7 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
+    "noErrorTruncation": true,
     "types": ["vitest/globals", "node"]
   },
   "include": ["src/**/*.ts", "__tests__/**/*.ts"],

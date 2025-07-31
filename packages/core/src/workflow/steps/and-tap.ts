@@ -1,8 +1,7 @@
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
+import { getGlobalLogger } from "../../logger";
 import { defaultStepConfig } from "../internal/utils";
 import type { WorkflowStepTap, WorkflowStepTapConfig } from "./types";
-import type { WorkflowExecuteContext } from "../internal/types";
-import { getGlobalLogger } from "../../logger";
 
 /**
  * A safe way to tap into the workflow state without affecting the result.
@@ -29,26 +28,20 @@ import { getGlobalLogger } from "../../logger";
  * @param config - Configuration object with execute function and metadata
  * @returns A workflow step that executes the function
  */
-export function andTap<
-  INPUT,
-  DATA,
-  RESULT,
-  SUSPEND_DATA = DangerouslyAllowAny,
-  RESUME_DATA = DangerouslyAllowAny,
->({
+export function andTap<INPUT, DATA, RESULT, SUSPEND, RESUME>({
   execute,
   inputSchema,
   suspendSchema,
   resumeSchema,
   ...config
-}: WorkflowStepTapConfig<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA>) {
+}: WorkflowStepTapConfig<INPUT, DATA, RESULT, SUSPEND, RESUME>) {
   return {
     ...defaultStepConfig(config),
     type: "tap",
     inputSchema,
     suspendSchema,
     resumeSchema,
-    execute: async (context: WorkflowExecuteContext<INPUT, DATA, SUSPEND_DATA, RESUME_DATA>) => {
+    execute: async (context) => {
       try {
         await execute(context);
       } catch (error) {
@@ -58,5 +51,5 @@ export function andTap<
       }
       return context.data as DATA;
     },
-  } satisfies WorkflowStepTap<INPUT, DATA, RESULT, SUSPEND_DATA, RESUME_DATA>;
+  } satisfies WorkflowStepTap<INPUT, DATA, RESULT, SUSPEND, RESUME>;
 }
