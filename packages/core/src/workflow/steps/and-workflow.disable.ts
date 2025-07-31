@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, afterEach } from "vitest";
 import { z } from "zod";
 import { createWorkflow } from "../core";
 import { andThen } from "./and-then";
@@ -6,7 +6,20 @@ import { andWorkflow } from "./and-workflow";
 import { LibSQLStorage } from "../../memory";
 import { WorkflowRegistry } from "../registry";
 
-describe("andWorkflow", () => {
+describe.sequential("andWorkflow", () => {
+  const storageInstances: LibSQLStorage[] = [];
+
+  afterEach(() => {
+    // Close all storage instances
+    storageInstances.forEach((storage) => storage.close());
+    storageInstances.length = 0;
+
+    // Clear workflow registry
+    const registry = WorkflowRegistry.getInstance();
+    // @ts-ignore - accessing private property for cleanup
+    registry.workflows.clear();
+  });
+
   it("should run the nested workflow", async () => {
     const nestedWorkflow = createWorkflow(
       {
@@ -17,9 +30,13 @@ describe("andWorkflow", () => {
           workflow: z.string(),
           count: z.number(),
         }),
-        memory: new LibSQLStorage({
-          url: ":memory:",
-        }),
+        memory: (() => {
+          const storage = new LibSQLStorage({
+            url: ":memory:",
+          });
+          storageInstances.push(storage);
+          return storage;
+        })(),
       },
       andThen({
         id: "nested-step",
@@ -43,9 +60,13 @@ describe("andWorkflow", () => {
           processed: z.boolean(),
           workflow: z.string().nullable(),
         }),
-        memory: new LibSQLStorage({
-          url: ":memory:",
-        }),
+        memory: (() => {
+          const storage = new LibSQLStorage({
+            url: ":memory:",
+          });
+          storageInstances.push(storage);
+          return storage;
+        })(),
       },
       andThen({
         id: "root-step",
