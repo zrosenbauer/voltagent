@@ -55,6 +55,7 @@ describe("andWorkflow", () => {
         root: workflow,
         nested: nestedWorkflow,
       },
+      autoStart: false,
     });
 
     const result = await workflow.run({});
