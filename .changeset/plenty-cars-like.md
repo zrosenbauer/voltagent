@@ -2,14 +2,14 @@
 "@voltagent/core": patch
 ---
 
-feat: Allow for dynamic `andAll` steps in the standard workflow API (aka not the chaining API)
+feat: (experimental) Allow for dynamic `andAll` steps when using the `createWorkflow` API.
 
 ### Usage
 
 You can now provide a function to the `steps` property of `andAll` to dynamically generate the steps.
 
 > [!NOTE]
-> This is only supported for `andAll` steps in the non-chain API.
+> This is an experimental feature and may change in the future, its only supported for `andAll` steps in the `createWorkflow` API.
 
 ```typescript
 const workflow = createWorkflow(

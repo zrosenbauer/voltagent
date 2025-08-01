@@ -31,15 +31,18 @@ describe("andAll", () => {
   });
 
   it("should return the results in order for dynamic steps", async () => {
+    type DATA = { add: number };
+
     const step = andAll({
       id: "and-all",
-      steps: async () => {
+      // @ts-expect-error - We just need to test that the data is propagated
+      steps: async ({ data }: { data: DATA }) => {
         return [
           andThen({
             id: "a",
             execute: async () => {
               return {
-                a: 2,
+                a: 2 + data.add,
               };
             },
           }),
@@ -47,7 +50,7 @@ describe("andAll", () => {
             id: "b",
             execute: async () => {
               return {
-                b: 3,
+                b: 3 + data.add,
               };
             },
           }),
@@ -55,6 +58,12 @@ describe("andAll", () => {
       },
     });
 
-    expect(await step.execute(createMockWorkflowExecuteContext())).toEqual([{ a: 2 }, { b: 3 }]);
+    expect(
+      await step.execute(
+        createMockWorkflowExecuteContext({
+          data: { add: 4 },
+        }),
+      ),
+    ).toEqual([{ a: 6 }, { b: 7 }]);
   });
 });

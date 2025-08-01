@@ -357,39 +357,3 @@ function isStepsFunction<INPUT, DATA, RESULT>(
 > {
   return isFunction(steps) && !Array.isArray(steps);
 }
-
-// it.skip("should provide the correct type for the result for dynamic steps", async () => {
-//   type INPUT = string;
-//   type DATA = { name: string };
-//   type SUSPEND = any;
-//   type RESUME = any;
-
-//   const steps = [
-//     andThen<INPUT, DATA, { a: number }, SUSPEND, RESUME>({
-//       id: "a",
-//       execute: async () => {
-//         return {
-//           a: 2,
-//         };
-//       },
-//     }),
-//     andThen<INPUT, DATA, { b: number }, SUSPEND, RESUME>({
-//       id: "b",
-//       execute: async () => {
-//         return {
-//           b: 3,
-//           bar: "bar",
-//         };
-//       },
-//     }),
-//   ] as const;
-
-//   const step = andAll<INPUT, DATA, unknown, (context: any) => Promise<typeof steps>>({
-//     id: "and-all",
-//     steps: async () => steps,
-//   });
-
-//   // expectTypeOf(step.execute).toEqualTypeOf<
-//   //   (context: any) => Promise<readonly [{ a: number }, { b: number }]>
-//   // >();
-// });

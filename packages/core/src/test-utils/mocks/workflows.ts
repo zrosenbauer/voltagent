@@ -1,13 +1,16 @@
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import { vi } from "vitest";
+import type { BaseMessage } from "../../agent/providers";
 import type { WorkflowExecuteContext } from "../../workflow/internal/types";
 
-export type MockWorkflowExecuteContext = WorkflowExecuteContext<
-  DangerouslyAllowAny,
-  DangerouslyAllowAny,
-  DangerouslyAllowAny,
-  DangerouslyAllowAny
->;
+export type MockWorkflowInput = BaseMessage | BaseMessage[] | string | object;
+
+export type MockWorkflowExecuteContext<
+  INPUT = MockWorkflowInput,
+  DATA = MockWorkflowInput,
+  SUSPEND = DangerouslyAllowAny,
+  RESUME = DangerouslyAllowAny,
+> = WorkflowExecuteContext<INPUT, DATA, SUSPEND, RESUME>;
 
 /**
  * Get a mock execute context
@@ -15,7 +18,7 @@ export type MockWorkflowExecuteContext = WorkflowExecuteContext<
  */
 export function createMockWorkflowExecuteContext(
   overrides: Partial<MockWorkflowExecuteContext> = {},
-): MockWorkflowExecuteContext {
+) {
   return {
     data: overrides.data ?? ({} as DangerouslyAllowAny),
     state: overrides.state ?? ({} as DangerouslyAllowAny),
