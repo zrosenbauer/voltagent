@@ -153,6 +153,11 @@ const discordMessages = [
     message: "How do you guys have the energy to ship shit so fast",
   },
   {
+    username: "Bonjwa",
+    message:
+      "Whenever I'm feeling down I just know that no matter what, @Omer is always there for me 🤣",
+  },
+  {
     username: "bemijonathan",
     message:
       "Awesome job @Omer, this is impressive, also fact you started this just 2 weeks ago looking forward to pick a good first issue",
@@ -208,6 +213,13 @@ const articles = [
     author: "Yosuke Toyota",
     url: "https://qiita.com/youtoy/items/6990e175e92c54265580",
     type: "article" as const,
+  },
+  {
+    title: "How to use Voltagent Framework with Gaia AI",
+    type: "youtube" as const,
+    videoId: "SNxfQFHbYVE",
+    excerpt: "How to use Voltagent with Gaia AI",
+    url: "https://www.youtube.com/watch?v=SNxfQFHbYVE",
   },
   {
     title:
