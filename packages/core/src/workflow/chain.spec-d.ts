@@ -509,8 +509,6 @@ describe("workflow chain - type inference", () => {
           id: "log",
           execute: async ({ data }) => {
             expectTypeOf(data).toEqualTypeOf<{ id: string; timestamp: number }>();
-            // biome-ignore lint/suspicious/noConsoleLog: <explanation>
-            console.log("Processing:", data);
           },
         })
         .andThen({
