@@ -64,7 +64,7 @@
     "lint": "biome check .",
     "lint:fix": "biome check . --write",
     "publint": "publint --strict",
-    "test": "vitest",
+    "test": "vitest --reporter=hanging-process --reporter=default",
     "test:coverage": "vitest run --coverage",
     "test:single": "vitest run --reporter=verbose"
   },
