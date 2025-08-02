@@ -8,6 +8,7 @@ export {
   andAll,
   andRace,
   andTap,
+  andWorkflow,
 } from "./workflow";
 export type {
   WorkflowExecutionContext,
