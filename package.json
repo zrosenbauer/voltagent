@@ -31,7 +31,6 @@
     "prettier": "^3.5.3",
     "publint": "^0.3.8",
     "rimraf": "^5.0.5",
-    "sort-package-json": "^2.15.1",
     "syncpack": "^13.0.2",
     "tslib": "^2.3.0",
     "typescript": "^5.8.2",
@@ -86,7 +85,8 @@
     "test": "lerna run test --stream",
     "test:all": "lerna run test --stream --scope @voltagent/*",
     "test:all:coverage": "pnpm test:all -- -- --coverage",
-    "test:coverage": "pnpm test -- -- --coverage"
+    "test:coverage": "pnpm test -- -- --coverage",
+    "version-packages": "pnpm changeset version && pnpm i --ignore-scripts --lockfile-only --no-frozen-lockfile --reporter=ndjson --stream && git add pnpm-lock.yaml"
   },
   "workspaces": [
     "packages/*",
