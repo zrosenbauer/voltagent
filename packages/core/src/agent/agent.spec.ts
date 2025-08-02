@@ -615,13 +615,11 @@ describe("Agent", () => {
   });
 
   afterEach(async () => {
-    console.log("Cleaning up after test.1", { agent, createdStorages });
     // Unregister agent
     if (agent) {
       agent.unregister();
       agent = null;
     }
-    console.log("Cleaning up after test.2", { agent, createdStorages });
     // Close all storage instances (close method now waits for initialization)
     await Promise.all(
       createdStorages.map(async (storage) => {
@@ -632,13 +630,10 @@ describe("Agent", () => {
         }
       }),
     );
-    console.log("Cleaning up after test.3", { agent, createdStorages });
     createdStorages.length = 0;
     testStorage = null;
-    console.log("Cleaning up after test.4", { agent, createdStorages });
 
     vi.clearAllMocks();
-    console.log("Cleaning up after test.5", { agent, createdStorages });
   });
 
   describe("constructor", () => {
