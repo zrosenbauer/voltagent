@@ -106,8 +106,6 @@ function createTrackedStorage(): LibSQLStorage {
   return storage;
 }
 
-vi.mock("../utils/streams/stream-event-forwarder", { spy: true });
-
 // Mock Provider implementation for testing
 class MockProvider implements LLMProvider<MockModelType> {
   generateTextCalls = 0;
