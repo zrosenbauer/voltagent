@@ -110,5 +110,7 @@ export class BackgroundQueue {
         }
       }
     }
+
+    return undefined;
   }
 }

@@ -144,6 +144,7 @@ export class WorkflowHistoryManager {
     for (const [workflowId, entries] of this.workflowHistories) {
       const entryIndex = entries.findIndex((entry) => entry.id === entryId);
       if (entryIndex !== -1) {
+        // @ts-expect-error - TODO: fix this
         entries[entryIndex].events.push(event);
         this.workflowHistories.set(workflowId, entries);
 

@@ -109,11 +109,6 @@ export class LogStreamManager {
     return true;
   }
 
-  private filterLogsForClient(logs: LogEntry[], filter?: LogFilter): LogEntry[] {
-    if (!filter) return logs;
-    return logs.filter((log) => this.shouldSendToClient(log, filter));
-  }
-
   private getLevelPriority(level: string): number {
     const priorities: Record<string, number> = {
       trace: 10,

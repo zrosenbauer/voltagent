@@ -19,7 +19,6 @@ This example demonstrates how to use VoltAgent with [Qdrant](https://qdrant.tech
    ```
 
 2. Set up environment variables in `.env` (see `.env.example` for reference):
-
    - `QDRANT_URL`
    - `OPENAI_API_KEY` (required for embeddings)
 

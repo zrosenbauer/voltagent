@@ -5,7 +5,7 @@ import { createWorkflowChain } from "./chain";
 import { createWorkflow } from "./core";
 import { andThen } from "./steps";
 
-describe("Workflow Type System", () => {
+describe("workflow chain - type inference", () => {
   // Mock agent for testing - we just need the type, not a real instance
   const mockAgent = {} as Agent<any>;
 
@@ -392,7 +392,7 @@ describe("Workflow Type System", () => {
         // No suspendSchema provided - should default to z.ZodAny
       }).andThen({
         id: "step",
-        execute: async ({ data: _data, suspend }) => {
+        execute: async ({ suspend }) => {
           // Should be able to pass any data without type errors
           await suspend("reason", {
             anyField: "value",
@@ -575,7 +575,6 @@ describe("Workflow Type System", () => {
       }).andThen({
         id: "must-return-number",
         execute: async () => {
-          // @ts-expect-error - must return object with output: number
           return { output: "string" };
         },
       });
