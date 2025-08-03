@@ -1,7 +1,7 @@
 ---
 "@voltagent/core": patch
-"@voltagent/with-postgres": patch
-"@voltagent/with-supabase": patch
+"@voltagent/postgres": patch
+"@voltagent/supabase": patch
 ---
 
 feat: optimize agent event system and add pagination to agent history API
