@@ -312,14 +312,14 @@ export default function McpItemPage(props) {
   useEffect(() => {
     // Reset to default voltagent tab when provider changes
     setActiveServerConfigTab("voltagent");
-  }, []); // Sadece ilk render'da çalıştır
+  }, []);
 
   // Initially expand the first tool if available
   useEffect(() => {
     if (tools.length > 0) {
       setExpandedTools({ [tools[0].id]: true });
     }
-  }, [tools]); // tools değiştiğinde çalıştır
+  }, [tools]);
 
   return (
     <Layout title={`${mcp.name} MCP - ${siteConfig.title}`} description={mcp.description}>

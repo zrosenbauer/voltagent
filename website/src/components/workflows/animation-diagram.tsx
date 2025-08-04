@@ -132,7 +132,7 @@ export function WorkflowCodeExample({ isVisible }: WorkflowCodeExampleProps) {
     if (animationStep === totalSteps && !isAnimating) {
       const timer = setTimeout(() => {
         startAnimation();
-      }, 3000); // 3 saniye sonra otomatik olarak tekrar başlat
+      }, 3000);
 
       return () => clearTimeout(timer);
     }
