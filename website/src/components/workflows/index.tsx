@@ -17,7 +17,6 @@ export function Workflows() {
           </p>
         </div>
 
-        {/* Code Example - Full Width */}
         <div className="landing-xs:mb-12 landing-md:mb-16">
           <WorkflowCodeExample isVisible={true} />
         </div>
