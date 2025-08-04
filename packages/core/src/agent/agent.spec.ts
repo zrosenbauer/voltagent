@@ -69,7 +69,7 @@ describe("Agent", () => {
     vi.clearAllMocks();
     testProvider = new TestProvider();
 
-    // Create a mock logger
+    // Create a mock logger that returns itself when child is called
     mockLogger = {
       debug: vi.fn(),
       info: vi.fn(),
@@ -78,8 +78,11 @@ describe("Agent", () => {
       log: vi.fn(),
       trace: vi.fn(),
       fatal: vi.fn(),
-      child: vi.fn().mockReturnThis(),
+      child: vi.fn(),
     } as any;
+
+    // Make child() return the same mockLogger instance
+    (mockLogger.child as any).mockReturnValue(mockLogger);
 
     // Clear registry between tests
     // AgentRegistry doesn't have a clear method, we'll handle registration cleanup differently
@@ -1051,6 +1054,40 @@ describe("Agent", () => {
       // in the result
       const call = testProvider.generateText.mock.calls[0][0];
       expect(call).toBeDefined();
+    });
+
+    it("should include userContext in logger context", async () => {
+      const agent = new Agent({
+        name: "TestAgent",
+        instructions: "Test instructions",
+        llm: testProvider as any,
+        model: { model: "test-model" },
+        logger: mockLogger,
+        historyMemory: new LibSQLStorage({ url: ":memory:" }),
+      });
+
+      const userContext = new Map([
+        ["sessionId", "session-123"],
+        ["customKey", "customValue"],
+      ]);
+
+      await agent.generateText("Hello", { userContext, userId: "user-456" });
+
+      // Verify logger.child was called with userContext
+      expect(mockLogger.child).toHaveBeenCalled();
+
+      // Find the call that has userContext (may be nested calls)
+      const childCalls = (mockLogger.child as any).mock.calls;
+      const callWithUserContext = childCalls.find((call: any[]) => call[0]?.userContext);
+
+      expect(callWithUserContext).toBeDefined();
+      expect(callWithUserContext[0].userContext).toEqual({
+        sessionId: "session-123",
+        customKey: "customValue",
+      });
+
+      // Also verify userId was passed separately
+      expect(callWithUserContext[0].userId).toBe("user-456");
     });
 
     it("should handle provider callbacks", async () => {
