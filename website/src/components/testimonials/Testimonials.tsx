@@ -213,6 +213,13 @@ const articles = [
     url: "https://www.youtube.com/watch?v=SNxfQFHbYVE",
   },
   {
+    title: "Creamos un agente que verifica stock con VoltAgent",
+    type: "youtube" as const,
+    videoId: "HW_cqz_3Q38",
+    excerpt: "Creamos un agente que verifica stock con VoltAgent",
+    url: "https://www.youtube.com/watch?v=HW_cqz_3Q38",
+  },
+  {
     title:
       "VoltAgent: This Open-Source TypeScript Framework Makes Building Multi-Agent AI Systems Super Easy 🔥",
     type: "youtube" as const,
