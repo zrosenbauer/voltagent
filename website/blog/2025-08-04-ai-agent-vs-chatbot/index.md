@@ -1,7 +1,7 @@
 ---
 slug: ai-agent-vs-chatbot
 title: AI Agent vs Chatbot  What's the Difference?
-authors: necatiozmen
+authors: omeraplak
 tags: [ai-agents]
 description: Learn the key differences between AI agents and chatbots, when to use each, and how VoltAgent makes building AI agents easier.
 ---
