@@ -22,7 +22,7 @@ importers:
         version: 2.29.5
       '@commitlint/cli':
         specifier: ^18.2.0
-        version: 18.6.1(@types/node@24.1.0)(typescript@5.9.2)
+        version: 18.6.1(@types/node@24.2.0)(typescript@5.9.2)
       '@commitlint/config-conventional':
         specifier: ^18.2.0
         version: 18.6.3
@@ -34,16 +34,16 @@ importers:
         version: 21.3.11(nx@20.8.2)
       '@nx/js':
         specifier: 20.4.6
-        version: 20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.1.0)(nx@20.8.2)(typescript@5.9.2)
+        version: 20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.2.0)(nx@20.8.2)(typescript@5.9.2)
       '@nx/plugin':
         specifier: 20.4.6
-        version: 20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.1.0)(eslint@9.32.0)(nx@20.8.2)(typescript@5.9.2)
+        version: 20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.2.0)(eslint@9.32.0)(nx@20.8.2)(typescript@5.9.2)
       '@nx/vite':
         specifier: 20.4.6
-        version: 20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.1.0)(nx@20.8.2)(typescript@5.9.2)(vite@5.4.19)(vitest@3.2.4)
+        version: 20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.2.0)(nx@20.8.2)(typescript@5.9.2)(vite@5.4.19)(vitest@3.2.4)
       '@nx/web':
         specifier: 20.4.6
-        version: 20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.1.0)(nx@20.8.2)(typescript@5.9.2)
+        version: 20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.2.0)(nx@20.8.2)(typescript@5.9.2)
       '@swc-node/register':
         specifier: ~1.9.1
         version: 1.9.2(@swc/core@1.5.29)(@swc/types@0.1.23)(typescript@5.9.2)
@@ -58,7 +58,7 @@ importers:
         version: 0.5.17
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       '@vitest/coverage-v8':
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
@@ -100,10 +100,10 @@ importers:
         version: 5.9.2
       vite:
         specifier: ^5.0.0
-        version: 5.4.19(@types/node@24.1.0)
+        version: 5.4.19(@types/node@24.2.0)
       vitest:
         specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.1.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+        version: 3.2.4(@types/node@24.2.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
 
   examples/base:
     dependencies:
@@ -128,7 +128,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       tsx:
         specifier: ^4.19.3
         version: 4.20.3
@@ -159,7 +159,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       '@voltagent/cli':
         specifier: ^0.1.10
         version: link:../../packages/cli
@@ -181,7 +181,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       tsx:
         specifier: ^4.19.3
         version: 4.20.3
@@ -212,7 +212,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       tsx:
         specifier: ^4.19.3
         version: 4.20.3
@@ -255,7 +255,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       tsx:
         specifier: ^4.19.3
         version: 4.20.3
@@ -286,7 +286,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       tsx:
         specifier: ^4.19.3
         version: 4.20.3
@@ -317,7 +317,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       tsx:
         specifier: ^4.19.3
         version: 4.20.3
@@ -348,7 +348,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       tsx:
         specifier: ^4.19.3
         version: 4.20.3
@@ -379,7 +379,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       tsx:
         specifier: ^4.19.3
         version: 4.20.3
@@ -407,7 +407,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       tsx:
         specifier: ^4.19.3
         version: 4.20.3
@@ -456,7 +456,7 @@ importers:
         version: 5.7.3
       vite:
         specifier: ^6.3.1
-        version: 6.3.5(@types/node@24.1.0)
+        version: 6.3.5(@types/node@24.2.0)
 
   examples/with-google-drive-mcp/server:
     dependencies:
@@ -483,7 +483,7 @@ importers:
         version: link:../../../packages/vercel-ai
       composio-core:
         specifier: ^0.5.33
-        version: 0.5.39(@ai-sdk/openai@1.3.23)(@cloudflare/workers-types@4.20250803.0)(@langchain/core@0.3.66)(@langchain/openai@0.6.3)(ai@4.3.19)(langchain@0.3.30)(openai@4.104.0)
+        version: 0.5.39(@ai-sdk/openai@1.3.23)(@cloudflare/workers-types@4.20250805.0)(@langchain/core@0.3.66)(@langchain/openai@0.6.3)(ai@4.3.19)(langchain@0.3.30)(openai@4.104.0)
       hono:
         specifier: ^4.7.7
         version: 4.8.12
@@ -524,7 +524,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       tsx:
         specifier: ^4.19.3
         version: 4.20.3
@@ -552,7 +552,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       tsx:
         specifier: ^4.19.3
         version: 4.20.3
@@ -583,7 +583,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       tsx:
         specifier: ^4.19.3
         version: 4.20.3
@@ -617,7 +617,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       tsx:
         specifier: ^4.19.3
         version: 4.20.3
@@ -648,7 +648,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       tsx:
         specifier: ^4.19.3
         version: 4.20.3
@@ -712,7 +712,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       '@types/react':
         specifier: ^19
         version: 19.1.9
@@ -746,7 +746,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       tsx:
         specifier: ^4.19.3
         version: 4.20.3
@@ -783,7 +783,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       tsx:
         specifier: ^4.19.3
         version: 4.20.3
@@ -835,7 +835,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       '@types/uuid':
         specifier: ^10.0.0
         version: 10.0.0
@@ -872,7 +872,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       tsx:
         specifier: ^4.19.3
         version: 4.20.3
@@ -909,7 +909,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       tsx:
         specifier: ^4.19.3
         version: 4.20.3
@@ -940,7 +940,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       tsx:
         specifier: ^4.19.3
         version: 4.20.3
@@ -971,7 +971,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       tsx:
         specifier: ^4.19.3
         version: 4.20.3
@@ -1002,7 +1002,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       tsx:
         specifier: ^4.19.3
         version: 4.20.3
@@ -1039,7 +1039,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       tsx:
         specifier: ^4.19.3
         version: 4.20.3
@@ -1070,7 +1070,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       tsx:
         specifier: ^4.19.3
         version: 4.20.3
@@ -1101,7 +1101,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       tsx:
         specifier: ^4.19.3
         version: 4.20.3
@@ -1132,7 +1132,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       tsx:
         specifier: ^4.19.3
         version: 4.20.3
@@ -1163,7 +1163,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       tsx:
         specifier: ^4.19.3
         version: 4.20.3
@@ -1197,7 +1197,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       tsx:
         specifier: ^4.19.3
         version: 4.20.3
@@ -1237,7 +1237,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       tsx:
         specifier: ^4.19.3
         version: 4.20.3
@@ -1277,7 +1277,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       tsx:
         specifier: ^4.19.3
         version: 4.20.3
@@ -1308,7 +1308,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       tsx:
         specifier: ^4.19.3
         version: 4.20.3
@@ -1339,7 +1339,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       tsx:
         specifier: ^4.19.3
         version: 4.20.3
@@ -1367,7 +1367,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       tsx:
         specifier: ^4.19.3
         version: 4.20.3
@@ -1398,7 +1398,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       tsx:
         specifier: ^4.19.3
         version: 4.20.3
@@ -1417,7 +1417,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       '@vitest/coverage-v8':
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
@@ -1429,7 +1429,7 @@ importers:
         version: 5.9.2
       vitest:
         specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.1.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+        version: 3.2.4(@types/node@24.2.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -1490,7 +1490,7 @@ importers:
         version: 9.0.8
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       '@types/semver':
         specifier: ^7.5.6
         version: 7.7.0
@@ -1511,7 +1511,7 @@ importers:
         version: 5.9.2
       vitest:
         specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.1.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+        version: 3.2.4(@types/node@24.2.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
 
   packages/core:
     dependencies:
@@ -1569,7 +1569,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       '@types/uuid':
         specifier: ^10.0.0
         version: 10.0.0
@@ -1587,7 +1587,7 @@ importers:
         version: 5.9.2
       vitest:
         specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.1.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+        version: 3.2.4(@types/node@24.2.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -1651,7 +1651,7 @@ importers:
         version: 9.0.8
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       '@types/tar':
         specifier: ^6.1.10
         version: 6.1.13
@@ -1663,7 +1663,7 @@ importers:
         version: 3.2.4(vitest@3.2.4)
       jest:
         specifier: ^29.5.0
-        version: 29.7.0(@types/node@24.1.0)
+        version: 29.7.0(@types/node@24.2.0)
       ts-jest:
         specifier: ^29.1.0
         version: 29.4.1(@babel/core@7.28.0)(esbuild@0.25.8)(jest@29.7.0)(typescript@5.9.2)
@@ -1675,7 +1675,7 @@ importers:
         version: 5.9.2
       vitest:
         specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.1.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+        version: 3.2.4(@types/node@24.2.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
 
   packages/docs-mcp:
     dependencies:
@@ -1688,7 +1688,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       tsup:
         specifier: ^8.5.0
         version: 8.5.0(@swc/core@1.5.29)(typescript@5.9.2)
@@ -1697,7 +1697,7 @@ importers:
         version: 5.9.2
       vitest:
         specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.1.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+        version: 3.2.4(@types/node@24.2.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -1716,7 +1716,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       '@vitest/coverage-v8':
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
@@ -1728,7 +1728,7 @@ importers:
         version: 5.9.2
       vitest:
         specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.1.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+        version: 3.2.4(@types/node@24.2.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -1747,7 +1747,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       '@vitest/coverage-v8':
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
@@ -1759,7 +1759,7 @@ importers:
         version: 5.9.2
       vitest:
         specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.1.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+        version: 3.2.4(@types/node@24.2.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -1768,7 +1768,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       '@vitest/coverage-v8':
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
@@ -1783,7 +1783,7 @@ importers:
         version: 5.9.2
       vitest:
         specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.1.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+        version: 3.2.4(@types/node@24.2.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
 
   packages/langfuse-exporter:
     dependencies:
@@ -1802,7 +1802,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       '@vitest/coverage-v8':
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
@@ -1817,7 +1817,7 @@ importers:
         version: 5.9.2
       vitest:
         specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.1.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+        version: 3.2.4(@types/node@24.2.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
 
   packages/logger:
     dependencies:
@@ -1833,7 +1833,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       '@types/pino':
         specifier: ^7.0.5
         version: 7.0.5
@@ -1845,7 +1845,7 @@ importers:
         version: 5.9.2
       vitest:
         specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.1.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+        version: 3.2.4(@types/node@24.2.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
 
   packages/postgres:
     dependencies:
@@ -1855,7 +1855,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       '@types/pg':
         specifier: ^8.15.2
         version: 8.15.5
@@ -1873,7 +1873,7 @@ importers:
         version: 5.9.2
       vitest:
         specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.1.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+        version: 3.2.4(@types/node@24.2.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
 
   packages/sdk:
     dependencies:
@@ -1883,7 +1883,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       '@vitest/coverage-v8':
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
@@ -1895,7 +1895,7 @@ importers:
         version: 5.9.2
       vitest:
         specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.1.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+        version: 3.2.4(@types/node@24.2.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
 
   packages/supabase:
     dependencies:
@@ -1905,7 +1905,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       '@vitest/coverage-v8':
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
@@ -1920,7 +1920,7 @@ importers:
         version: 5.9.2
       vitest:
         specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.1.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+        version: 3.2.4(@types/node@24.2.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
 
   packages/vercel-ai:
     dependencies:
@@ -1939,7 +1939,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       '@vitest/coverage-v8':
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
@@ -1957,7 +1957,7 @@ importers:
         version: 5.9.2
       vitest:
         specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.1.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+        version: 3.2.4(@types/node@24.2.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -1979,7 +1979,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       '@voltagent/core':
         specifier: ^0.1.73
         version: link:../core
@@ -1991,7 +1991,7 @@ importers:
         version: 5.9.2
       vitest:
         specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.1.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+        version: 3.2.4(@types/node@24.2.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
 
   packages/vercel-ui:
     dependencies:
@@ -2022,7 +2022,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       '@vitest/coverage-v8':
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
@@ -2037,7 +2037,7 @@ importers:
         version: 5.9.2
       vitest:
         specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.1.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+        version: 3.2.4(@types/node@24.2.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
       zod:
         specifier: ^3.24.2
         version: 3.24.2
@@ -2059,7 +2059,7 @@ importers:
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       '@vitest/coverage-v8':
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
@@ -2074,20 +2074,29 @@ importers:
         version: 5.9.2
       vitest:
         specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.1.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+        version: 3.2.4(@types/node@24.2.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
 
   packages/xsai:
     dependencies:
       '@voltagent/core':
-        specifier: ^0.1.71
+        specifier: ^0.1.55
         version: link:../core
+      ts-pattern:
+        specifier: ^5.7.1
+        version: 5.8.0
+      type-fest:
+        specifier: ^4.41.0
+        version: 4.41.0
       xsai:
         specifier: ^0.3.3
-        version: 0.3.5(zod@3.24.2)
+        version: 0.3.3(zod@3.24.2)
+      zod:
+        specifier: ^3.24.2
+        version: 3.24.2
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
-        version: 24.1.0
+        version: 24.2.0
       '@vitest/coverage-v8':
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
@@ -2099,10 +2108,7 @@ importers:
         version: 5.9.2
       vitest:
         specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.1.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
-      zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        version: 3.2.4(@types/node@24.2.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
 
 packages:
 
@@ -3982,7 +3988,7 @@ packages:
       babel-plugin-polyfill-corejs2: 0.4.14(@babel/core@7.28.0)
       babel-plugin-polyfill-corejs3: 0.13.0(@babel/core@7.28.0)
       babel-plugin-polyfill-regenerator: 0.6.5(@babel/core@7.28.0)
-      core-js-compat: 3.44.0
+      core-js-compat: 3.45.0
       semver: 6.3.1
     transitivePeerDependencies:
       - supports-color
@@ -4401,8 +4407,8 @@ packages:
       - zod
     dev: false
 
-  /@cloudflare/workers-types@4.20250803.0:
-    resolution: {integrity: sha512-Zgfb9y971379/b0fDvSkH6l830dVDanO5kxUHbg2TI5kQDWMRtFPsAntRtEwRqOU7aFFDrDd4gp/bcs6+ZokUQ==}
+  /@cloudflare/workers-types@4.20250805.0:
+    resolution: {integrity: sha512-HOt0lqFiw5WzhvxH/IViMAWI/zwzokCSx33DlRnJqECT9khskK9X4Jrw/+IiAprJ5YloiFxK8Xn1oGbsabdUWg==}
     dev: false
 
   /@colors/colors@1.5.0:
@@ -4412,14 +4418,14 @@ packages:
     dev: true
     optional: true
 
-  /@commitlint/cli@18.6.1(@types/node@24.1.0)(typescript@5.9.2):
+  /@commitlint/cli@18.6.1(@types/node@24.2.0)(typescript@5.9.2):
     resolution: {integrity: sha512-5IDE0a+lWGdkOvKH892HHAZgbAjcj1mT5QrfA/SVbLJV/BbBMGyKN0W5mhgjekPJJwEQdVNvhl9PwUacY58Usw==}
     engines: {node: '>=v18'}
     hasBin: true
     dependencies:
       '@commitlint/format': 18.6.1
       '@commitlint/lint': 18.6.1
-      '@commitlint/load': 18.6.1(@types/node@24.1.0)(typescript@5.9.2)
+      '@commitlint/load': 18.6.1(@types/node@24.2.0)(typescript@5.9.2)
       '@commitlint/read': 18.6.1
       '@commitlint/types': 18.6.1
       execa: 5.1.1
@@ -4491,7 +4497,7 @@ packages:
       '@commitlint/types': 18.6.1
     dev: true
 
-  /@commitlint/load@18.6.1(@types/node@24.1.0)(typescript@5.9.2):
+  /@commitlint/load@18.6.1(@types/node@24.2.0)(typescript@5.9.2):
     resolution: {integrity: sha512-p26x8734tSXUHoAw0ERIiHyW4RaI4Bj99D8YgUlVV9SedLf8hlWAfyIFhHRIhfPngLlCe0QYOdRKYFt8gy56TA==}
     engines: {node: '>=v18'}
     dependencies:
@@ -4501,7 +4507,7 @@ packages:
       '@commitlint/types': 18.6.1
       chalk: 4.1.2
       cosmiconfig: 8.3.6(typescript@5.9.2)
-      cosmiconfig-typescript-loader: 5.1.0(@types/node@24.1.0)(cosmiconfig@8.3.6)(typescript@5.9.2)
+      cosmiconfig-typescript-loader: 5.1.0(@types/node@24.2.0)(cosmiconfig@8.3.6)(typescript@5.9.2)
       lodash.isplainobject: 4.0.6
       lodash.merge: 4.6.2
       lodash.uniq: 4.5.0
@@ -5664,7 +5670,7 @@ packages:
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
     dependencies:
       '@jest/types': 29.6.3
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
       chalk: 4.1.2
       jest-message-util: 29.7.0
       jest-util: 29.7.0
@@ -5685,14 +5691,14 @@ packages:
       '@jest/test-result': 29.7.0
       '@jest/transform': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
       ansi-escapes: 4.3.2
       chalk: 4.1.2
       ci-info: 3.9.0
       exit: 0.1.2
       graceful-fs: 4.2.11
       jest-changed-files: 29.7.0
-      jest-config: 29.7.0(@types/node@24.1.0)
+      jest-config: 29.7.0(@types/node@24.2.0)
       jest-haste-map: 29.7.0
       jest-message-util: 29.7.0
       jest-regex-util: 29.6.3
@@ -5720,7 +5726,7 @@ packages:
     dependencies:
       '@jest/fake-timers': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
       jest-mock: 29.7.0
     dev: true
 
@@ -5747,7 +5753,7 @@ packages:
     dependencies:
       '@jest/types': 29.6.3
       '@sinonjs/fake-timers': 10.3.0
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
       jest-message-util: 29.7.0
       jest-mock: 29.7.0
       jest-util: 29.7.0
@@ -5780,7 +5786,7 @@ packages:
       '@jest/transform': 29.7.0
       '@jest/types': 29.6.3
       '@jridgewell/trace-mapping': 0.3.29
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
       chalk: 4.1.2
       collect-v8-coverage: 1.0.2
       exit: 0.1.2
@@ -5868,7 +5874,7 @@ packages:
       '@jest/schemas': 29.6.3
       '@types/istanbul-lib-coverage': 2.0.6
       '@types/istanbul-reports': 3.0.4
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
       '@types/yargs': 17.0.33
       chalk: 4.1.2
     dev: true
@@ -5912,7 +5918,7 @@ packages:
       camelcase: 6.3.0
       decamelize: 1.2.0
       js-tiktoken: 1.0.20
-      langsmith: 0.3.50(openai@4.104.0)
+      langsmith: 0.3.51(openai@4.104.0)
       mustache: 4.2.0
       p-queue: 6.6.2
       p-retry: 4.6.2
@@ -6651,7 +6657,7 @@ packages:
       yargs-parser: 21.1.1
     dev: true
 
-  /@nx/eslint@20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.1.0)(eslint@9.32.0)(nx@20.8.2):
+  /@nx/eslint@20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.2.0)(eslint@9.32.0)(nx@20.8.2):
     resolution: {integrity: sha512-lPVvUrRYaQqkwY0kg4hO0B6GJt+zihmp+zNppbHllq/v5uHZRm0+3RrmJhAdmxlubuR7A49jdQe4fHOlFySpAw==}
     peerDependencies:
       '@zkochan/js-yaml': 0.0.7
@@ -6661,7 +6667,7 @@ packages:
         optional: true
     dependencies:
       '@nx/devkit': 20.4.6(nx@20.8.2)
-      '@nx/js': 20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.1.0)(nx@20.8.2)(typescript@5.7.3)
+      '@nx/js': 20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.2.0)(nx@20.8.2)(typescript@5.7.3)
       eslint: 9.32.0
       semver: 7.7.2
       tslib: 2.8.1
@@ -6678,16 +6684,16 @@ packages:
       - verdaccio
     dev: true
 
-  /@nx/jest@20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.1.0)(nx@20.8.2)(typescript@5.9.2):
+  /@nx/jest@20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.2.0)(nx@20.8.2)(typescript@5.9.2):
     resolution: {integrity: sha512-yZOZJOQFtpdY3Fu/WYNoDx81TwvF9yfwvalFpLD19bz+2YGl7B89l0S1ZrtSRXFfKXA/w7gb0gmKwthJtQhx9Q==}
     dependencies:
       '@jest/reporters': 29.7.0
       '@jest/test-result': 29.7.0
       '@nx/devkit': 20.4.6(nx@20.8.2)
-      '@nx/js': 20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.1.0)(nx@20.8.2)(typescript@5.9.2)
+      '@nx/js': 20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.2.0)(nx@20.8.2)(typescript@5.9.2)
       '@phenomnomnominal/tsquery': 5.0.1(typescript@5.9.2)
       identity-obj-proxy: 3.0.0
-      jest-config: 29.7.0(@types/node@24.1.0)
+      jest-config: 29.7.0(@types/node@24.2.0)
       jest-resolve: 29.7.0
       jest-util: 29.7.0
       minimatch: 9.0.3
@@ -6712,7 +6718,7 @@ packages:
       - verdaccio
     dev: true
 
-  /@nx/js@20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.1.0)(nx@20.8.2)(typescript@5.7.3):
+  /@nx/js@20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.2.0)(nx@20.8.2)(typescript@5.7.3):
     resolution: {integrity: sha512-wHO6tXJNVIW0Z9zKLL/g6qee7K92XJNS4D8irpJB9sOg25fqAzKjwgcK0bPtnRhYsIjLkjh0FsTKIcznxTGnkA==}
     peerDependencies:
       verdaccio: ^5.0.4
@@ -6747,7 +6753,7 @@ packages:
       semver: 7.7.2
       source-map-support: 0.5.19
       tinyglobby: 0.2.14
-      ts-node: 10.9.1(@swc/core@1.5.29)(@types/node@24.1.0)(typescript@5.7.3)
+      ts-node: 10.9.1(@swc/core@1.5.29)(@types/node@24.2.0)(typescript@5.7.3)
       tsconfig-paths: 4.2.0
       tslib: 2.8.1
     transitivePeerDependencies:
@@ -6762,7 +6768,7 @@ packages:
       - typescript
     dev: true
 
-  /@nx/js@20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.1.0)(nx@20.8.2)(typescript@5.9.2):
+  /@nx/js@20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.2.0)(nx@20.8.2)(typescript@5.9.2):
     resolution: {integrity: sha512-wHO6tXJNVIW0Z9zKLL/g6qee7K92XJNS4D8irpJB9sOg25fqAzKjwgcK0bPtnRhYsIjLkjh0FsTKIcznxTGnkA==}
     peerDependencies:
       verdaccio: ^5.0.4
@@ -6797,7 +6803,7 @@ packages:
       semver: 7.7.2
       source-map-support: 0.5.19
       tinyglobby: 0.2.14
-      ts-node: 10.9.1(@swc/core@1.5.29)(@types/node@24.1.0)(typescript@5.9.2)
+      ts-node: 10.9.1(@swc/core@1.5.29)(@types/node@24.2.0)(typescript@5.9.2)
       tsconfig-paths: 4.2.0
       tslib: 2.8.1
     transitivePeerDependencies:
@@ -7082,13 +7088,13 @@ packages:
     dev: true
     optional: true
 
-  /@nx/plugin@20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.1.0)(eslint@9.32.0)(nx@20.8.2)(typescript@5.9.2):
+  /@nx/plugin@20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.2.0)(eslint@9.32.0)(nx@20.8.2)(typescript@5.9.2):
     resolution: {integrity: sha512-7Jlv+BVqGoO0BolQN7P5Z87160phuE1i7H6C8xFwQnlQ3ZfwQCJzk2dkg1UyzxDkWl6lvVsqBjZPXD55gFQ3+w==}
     dependencies:
       '@nx/devkit': 20.4.6(nx@20.8.2)
-      '@nx/eslint': 20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.1.0)(eslint@9.32.0)(nx@20.8.2)
-      '@nx/jest': 20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.1.0)(nx@20.8.2)(typescript@5.9.2)
-      '@nx/js': 20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.1.0)(nx@20.8.2)(typescript@5.9.2)
+      '@nx/eslint': 20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.2.0)(eslint@9.32.0)(nx@20.8.2)
+      '@nx/jest': 20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.2.0)(nx@20.8.2)(typescript@5.9.2)
+      '@nx/js': 20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.2.0)(nx@20.8.2)(typescript@5.9.2)
       tslib: 2.8.1
     transitivePeerDependencies:
       - '@babel/traverse'
@@ -7108,21 +7114,21 @@ packages:
       - verdaccio
     dev: true
 
-  /@nx/vite@20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.1.0)(nx@20.8.2)(typescript@5.9.2)(vite@5.4.19)(vitest@3.2.4):
+  /@nx/vite@20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.2.0)(nx@20.8.2)(typescript@5.9.2)(vite@5.4.19)(vitest@3.2.4):
     resolution: {integrity: sha512-kYkPA6uK0mGfneEp4W063y/5uG+sJjINQBLUC/kSQmAJflnuqo29UIH1XNxA/PnN5VMomqEKiVTVUFnwyXSVug==}
     peerDependencies:
       vite: ^5.0.0
       vitest: ^1.3.1 || ^2.0.0
     dependencies:
       '@nx/devkit': 20.4.6(nx@20.8.2)
-      '@nx/js': 20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.1.0)(nx@20.8.2)(typescript@5.9.2)
+      '@nx/js': 20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.2.0)(nx@20.8.2)(typescript@5.9.2)
       '@phenomnomnominal/tsquery': 5.0.1(typescript@5.9.2)
       '@swc/helpers': 0.5.17
       enquirer: 2.3.6
       minimatch: 9.0.3
       tsconfig-paths: 4.2.0
-      vite: 5.4.19(@types/node@24.1.0)
-      vitest: 3.2.4(@types/node@24.1.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+      vite: 5.4.19(@types/node@24.2.0)
+      vitest: 3.2.4(@types/node@24.2.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
     transitivePeerDependencies:
       - '@babel/traverse'
       - '@swc-node/register'
@@ -7136,11 +7142,11 @@ packages:
       - verdaccio
     dev: true
 
-  /@nx/web@20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.1.0)(nx@20.8.2)(typescript@5.9.2):
+  /@nx/web@20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.2.0)(nx@20.8.2)(typescript@5.9.2):
     resolution: {integrity: sha512-MKV4f8MHoAwo6G0ambu9DqRRjcp0xiMtv1Ijj6GWkD7Xru4IEsHWrDUjTSdl3yKg8zKqMY2Bw+UArxa1Xborkg==}
     dependencies:
       '@nx/devkit': 20.4.6(nx@20.8.2)
-      '@nx/js': 20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.1.0)(nx@20.8.2)(typescript@5.9.2)
+      '@nx/js': 20.4.6(@swc-node/register@1.9.2)(@swc/core@1.5.29)(@types/node@24.2.0)(nx@20.8.2)(typescript@5.9.2)
       detect-port: 1.6.1
       http-server: 14.1.1
       picocolors: 1.1.1
@@ -8662,7 +8668,7 @@ packages:
       '@tailwindcss/node': 4.1.11
       '@tailwindcss/oxide': 4.1.11
       tailwindcss: 4.1.11
-      vite: 6.3.5(@types/node@24.1.0)
+      vite: 6.3.5(@types/node@24.2.0)
     dev: false
 
   /@tokenizer/token@0.3.0:
@@ -8750,7 +8756,7 @@ packages:
     dependencies:
       '@types/http-cache-semantics': 4.0.4
       '@types/keyv': 3.1.4
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
       '@types/responselike': 1.0.3
     dev: true
 
@@ -8781,7 +8787,7 @@ packages:
   /@types/docker-modem@3.0.6:
     resolution: {integrity: sha512-yKpAGEuKRSS8wwx0joknWxsmLha78wNMe9R2S3UNsVOkZded8UqOrV8KoeDXoXsjndxwyF3eIhyClGbO1SEhEg==}
     dependencies:
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
       '@types/ssh2': 1.15.5
     dev: false
 
@@ -8789,7 +8795,7 @@ packages:
     resolution: {integrity: sha512-U1jqHMShibMEWHdxYhj3rCMNCiLx5f35i4e3CEUuW+JSSszc/tVqc6WCAPdhwBymG5R/vgbcceagK0St7Cq6Eg==}
     dependencies:
       '@types/docker-modem': 3.0.6
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
       '@types/ssh2': 1.15.5
     dev: false
 
@@ -8810,13 +8816,13 @@ packages:
     resolution: {integrity: sha512-yTbItCNreRooED33qjunPthRcSjERP1r4MqCZc7wv0u2sUkzTFp45tgUfS5+r7FrZPdmCCNflLhVSP/o+SemsQ==}
     dependencies:
       '@types/jsonfile': 6.1.4
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
     dev: true
 
   /@types/graceful-fs@4.1.9:
     resolution: {integrity: sha512-olP3sd1qOEe5dXTSaFvQG+02VdRXcdytWLAZsAq1PecU8uqQAhkrnbli7DagjtXKW/Bl7YJbUsa8MPcuc8LHEQ==}
     dependencies:
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
     dev: true
 
   /@types/gradient-string@1.1.6:
@@ -8865,13 +8871,13 @@ packages:
   /@types/jsonfile@6.1.4:
     resolution: {integrity: sha512-D5qGUYwjvnNNextdU59/+fI+spnwtTFmyQP0h+PfIOSkNfpU6AOICUOkm4i0OnSk+NyjdPJrxCDro0sJsWlRpQ==}
     dependencies:
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
     dev: true
 
   /@types/keyv@3.1.4:
     resolution: {integrity: sha512-BQ5aZNSCpj7D6K2ksrRCTmKRLEpnPvWDiLPfoGyhZ++8YtiK9d/3DBKPJgry359X/P1PfruyYwvnvwFjuEiEIg==}
     dependencies:
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
 
   /@types/mdast@4.0.4:
     resolution: {integrity: sha512-kGaNbPh1k7AFzgpud/gMdvIm5xuECykRR+JnWKQno9TAXVa6WIVCGTPvYGekIDL4uwCZQSYbUxNBSb1aUo79oA==}
@@ -8894,13 +8900,13 @@ packages:
   /@types/mute-stream@0.0.4:
     resolution: {integrity: sha512-CPM9nzrCPPJHQNA9keH9CVkVI+WR5kMa+7XEs5jcGQ0VoAGnLv242w8lIVgwAEfmE4oufJRaTc9PNLQl0ioAow==}
     dependencies:
-      '@types/node': 22.17.0
+      '@types/node': 24.2.0
     dev: false
 
   /@types/node-fetch@2.6.13:
     resolution: {integrity: sha512-QGpRVpzSaUs30JBSGPjOg4Uveu384erbHBoT1zeONvyCfwQxIkUshLAOqN/k9EjGviPRmWTTe6aH2qySWKTVSw==}
     dependencies:
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
       form-data: 4.0.4
     dev: false
 
@@ -8919,10 +8925,10 @@ packages:
     dependencies:
       undici-types: 6.21.0
 
-  /@types/node@24.1.0:
-    resolution: {integrity: sha512-ut5FthK5moxFKH2T1CUOC6ctR67rQRvvHdFLCD2Ql6KXmMuCrjsSsRI9UsLCm9M18BMwClv4pn327UvB7eeO1w==}
+  /@types/node@24.2.0:
+    resolution: {integrity: sha512-3xyG3pMCq3oYCNg7/ZP+E1ooTaGB4cG8JWRsqqOYQdbWNY4zbaV0Ennrd7stjiJEFZCaybcIgpTjJWHRfBSIDw==}
     dependencies:
-      undici-types: 7.8.0
+      undici-types: 7.10.0
 
   /@types/normalize-package-data@2.4.4:
     resolution: {integrity: sha512-37i+OaWTh9qeK4LSHPsyRC7NahnGotNuZvjLSgcPzblpHB3rrCJxAOgI5gCdKm7coonsaX1Of0ILiTcnZjbfxA==}
@@ -8935,7 +8941,7 @@ packages:
   /@types/pg@8.15.5:
     resolution: {integrity: sha512-LF7lF6zWEKxuT3/OR8wAZGzkg4ENGXFNyiV/JeOt9z5B+0ZVwbql9McqX5c/WStFq1GaGso7H1AzP/qSzmlCKQ==}
     dependencies:
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
       pg-protocol: 1.10.3
       pg-types: 2.2.0
     dev: true
@@ -8971,7 +8977,7 @@ packages:
   /@types/responselike@1.0.3:
     resolution: {integrity: sha512-H/+L+UkTV33uf49PH5pCAUBVPNj2nDBXTN+qS1dOwyyg24l3CcicicCA7ca+HMvJBZcFgl5r8e+RR6elsb4Lyw==}
     dependencies:
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
 
   /@types/retry@0.12.0:
     resolution: {integrity: sha512-wWKOClTTiizcZhXnPY4wikVAwmdYHp8q6DmC+EJUzAMsycb7HB32Kh9RN4+0gExjmPmZSAQjgURXIGATPegAvA==}
@@ -8984,13 +8990,13 @@ packages:
   /@types/ssh2-streams@0.1.12:
     resolution: {integrity: sha512-Sy8tpEmCce4Tq0oSOYdfqaBpA3hDM8SoxoFh5vzFsu2oL+znzGz8oVWW7xb4K920yYMUY+PIG31qZnFMfPWNCg==}
     dependencies:
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
     dev: false
 
   /@types/ssh2@0.5.52:
     resolution: {integrity: sha512-lbLLlXxdCZOSJMCInKH2+9V/77ET2J6NPQHpFI0kda61Dd1KglJs+fPQBchizmzYSOJBgdTajhPqBO1xxLywvg==}
     dependencies:
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
       '@types/ssh2-streams': 0.1.12
     dev: false
 
@@ -9007,14 +9013,14 @@ packages:
   /@types/tar@6.1.13:
     resolution: {integrity: sha512-IznnlmU5f4WcGTh2ltRu/Ijpmk8wiWXfF0VA4s+HPjHZgvFggk1YaIkbo5krX/zUCzWF8N/l4+W/LNxnvAJ8nw==}
     dependencies:
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
       minipass: 4.2.8
     dev: true
 
   /@types/through@0.0.33:
     resolution: {integrity: sha512-HsJ+z3QuETzP3cswwtzt2vEIiHBk/dCcHGhbmG5X3ecnwFD/lPrMpliGXxSCg03L9AhrdwA4Oz/qfspkDW+xGQ==}
     dependencies:
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
     dev: true
 
   /@types/tinycolor2@1.4.6:
@@ -9045,7 +9051,7 @@ packages:
   /@types/ws@8.18.1:
     resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
     dependencies:
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
     dev: false
 
   /@types/yargs-parser@21.0.3:
@@ -9074,7 +9080,7 @@ packages:
       '@rolldown/pluginutils': 1.0.0-beta.27
       '@types/babel__core': 7.20.5
       react-refresh: 0.17.0
-      vite: 6.3.5(@types/node@24.1.0)
+      vite: 6.3.5(@types/node@24.2.0)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -9101,7 +9107,7 @@ packages:
       std-env: 3.9.0
       test-exclude: 7.0.1
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/node@24.1.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+      vitest: 3.2.4(@types/node@24.2.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -9130,7 +9136,7 @@ packages:
       '@vitest/spy': 3.2.4
       estree-walker: 3.0.3
       magic-string: 0.30.17
-      vite: 5.4.19(@types/node@24.1.0)
+      vite: 5.4.19(@types/node@24.2.0)
     dev: true
 
   /@vitest/pretty-format@3.2.4:
@@ -9173,7 +9179,7 @@ packages:
       pathe: 1.1.2
       picocolors: 1.1.1
       sirv: 2.0.4
-      vitest: 3.2.4(@types/node@24.1.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+      vitest: 3.2.4(@types/node@24.2.0)(@vitest/ui@1.6.1)(jsdom@22.1.0)
     dev: true
 
   /@vitest/utils@1.6.1:
@@ -9768,7 +9774,7 @@ packages:
     dependencies:
       '@babel/core': 7.28.0
       '@babel/helper-define-polyfill-provider': 0.6.5(@babel/core@7.28.0)
-      core-js-compat: 3.44.0
+      core-js-compat: 3.45.0
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -10004,7 +10010,7 @@ packages:
     dependencies:
       ansi-align: 3.0.1
       camelcase: 7.0.1
-      chalk: 5.4.1
+      chalk: 5.5.0
       cli-boxes: 3.0.0
       string-width: 5.1.2
       type-fest: 2.19.0
@@ -10037,7 +10043,7 @@ packages:
     hasBin: true
     dependencies:
       caniuse-lite: 1.0.30001731
-      electron-to-chromium: 1.5.194
+      electron-to-chromium: 1.5.195
       node-releases: 2.0.19
       update-browserslist-db: 1.1.3(browserslist@4.25.1)
 
@@ -10272,7 +10278,7 @@ packages:
     resolution: {integrity: sha512-T2VJbcDuZQ0Tb2EWwSotMPJjgpy1/tGee1BTpUNsGZ/qgNjV2t7Mvu+d4600U564nbLesN1x2dPL+xii174Ekg==}
     engines: {node: '>=14.16'}
     dependencies:
-      chalk: 5.4.1
+      chalk: 5.5.0
     dev: true
 
   /chalk@2.4.2:
@@ -10299,8 +10305,8 @@ packages:
       ansi-styles: 4.3.0
       supports-color: 7.2.0
 
-  /chalk@5.4.1:
-    resolution: {integrity: sha512-zgVZuo2WcZgfUEmsn6eO3kINexW8RAE4maiQ8QNs8CtpPCSyMiYsULR3HQYkm3w8FIA3SberyMJMSldGsW+U3w==}
+  /chalk@5.5.0:
+    resolution: {integrity: sha512-1tm8DTaJhPBG3bIkVeZt1iZM9GfSX2lzOeDVZH9R9ffRHpmHvxZ/QhgQH/aDTkswQVt+YHdXAdS/In/30OjCbg==}
     engines: {node: ^12.17.0 || ^14.13 || >=16.0.0}
 
   /char-regex@1.0.2:
@@ -10680,7 +10686,7 @@ packages:
       dot-prop: 5.3.0
     dev: true
 
-  /composio-core@0.5.39(@ai-sdk/openai@1.3.23)(@cloudflare/workers-types@4.20250803.0)(@langchain/core@0.3.66)(@langchain/openai@0.6.3)(ai@4.3.19)(langchain@0.3.30)(openai@4.104.0):
+  /composio-core@0.5.39(@ai-sdk/openai@1.3.23)(@cloudflare/workers-types@4.20250805.0)(@langchain/core@0.3.66)(@langchain/openai@0.6.3)(ai@4.3.19)(langchain@0.3.30)(openai@4.104.0):
     resolution: {integrity: sha512-7BeSFlfRzr1cbIfGYJW4jQ3BHwaObOaFKiRJIFuWOmvOrTABl1hbxGkWPA3C+uFw9CFXbZhrLWNyD7lhYy2Scg==}
     hasBin: true
     peerDependencies:
@@ -10693,7 +10699,7 @@ packages:
       openai: '>=4.50.0'
     dependencies:
       '@ai-sdk/openai': 1.3.23(zod@3.24.2)
-      '@cloudflare/workers-types': 4.20250803.0
+      '@cloudflare/workers-types': 4.20250805.0
       '@composio/mcp': 1.0.3-0
       '@hey-api/client-axios': 0.2.12(axios@1.11.0)
       '@langchain/core': 0.3.66(openai@4.104.0)
@@ -10919,8 +10925,8 @@ packages:
     engines: {node: '>=18'}
     dev: false
 
-  /core-js-compat@3.44.0:
-    resolution: {integrity: sha512-JepmAj2zfl6ogy34qfWtcE7nHKAJnKsQFRn++scjVS2bZFllwptzw61BZcZFYBPpUznLfAvh0LGhxKppk04ClA==}
+  /core-js-compat@3.45.0:
+    resolution: {integrity: sha512-gRoVMBawZg0OnxaVv3zpqLLxaHmsubEGyTnqdpI/CEBvX4JadI1dMSHxagThprYRtSVbuQxvi6iUatdPxohHpA==}
     dependencies:
       browserslist: 4.25.1
     dev: true
@@ -10941,7 +10947,7 @@ packages:
     engines: {node: '>= 0.4.0'}
     dev: true
 
-  /cosmiconfig-typescript-loader@5.1.0(@types/node@24.1.0)(cosmiconfig@8.3.6)(typescript@5.9.2):
+  /cosmiconfig-typescript-loader@5.1.0(@types/node@24.2.0)(cosmiconfig@8.3.6)(typescript@5.9.2):
     resolution: {integrity: sha512-7PtBB+6FdsOvZyJtlF3hEPpACq7RQX6BVGsgC7/lfVXnKMvNCu/XY3ykreqG5w/rBNdu2z8LCIKoF3kpHHdHlA==}
     engines: {node: '>=v16'}
     peerDependencies:
@@ -10949,7 +10955,7 @@ packages:
       cosmiconfig: '>=8.2'
       typescript: '>=4'
     dependencies:
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
       cosmiconfig: 8.3.6(typescript@5.9.2)
       jiti: 1.21.7
       typescript: 5.9.2
@@ -11022,7 +11028,7 @@ packages:
       readable-stream: 4.7.0
     dev: false
 
-  /create-jest@29.7.0(@types/node@24.1.0):
+  /create-jest@29.7.0(@types/node@24.2.0):
     resolution: {integrity: sha512-Adz2bdH0Vq3F53KEMJOoftQFutWCukm6J24wbPWRO4k1kMY7gS7ds/uoJkNuV8wDCtWWnuwGcJwpWcih+zEW1Q==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
     hasBin: true
@@ -11031,7 +11037,7 @@ packages:
       chalk: 4.1.2
       exit: 0.1.2
       graceful-fs: 4.2.11
-      jest-config: 29.7.0(@types/node@24.1.0)
+      jest-config: 29.7.0(@types/node@24.2.0)
       jest-util: 29.7.0
       prompts: 2.4.2
     transitivePeerDependencies:
@@ -11434,8 +11440,8 @@ packages:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
     dev: false
 
-  /effect@3.17.5:
-    resolution: {integrity: sha512-cz9XH+UyhHxlYvaQDkxGwuDOpFQwU58+bIWfOYDT+5rLjCfXOQ+SOFHpE7e/+xBtZemFm8b2uFN0zUVKk9MvYw==}
+  /effect@3.17.6:
+    resolution: {integrity: sha512-BDVr3TEI6JpTnsZwDzXlzxDtyMS0cwtfWmhqfL3nl7Be/443+geFYAlVpCy7SCkLCck0NbmFX86LtlCZtCgdxA==}
     dependencies:
       '@standard-schema/spec': 1.0.0
       fast-check: 3.23.2
@@ -11446,11 +11452,11 @@ packages:
     engines: {node: '>=0.10.0'}
     hasBin: true
     dependencies:
-      jake: 10.9.2
+      jake: 10.9.4
     dev: true
 
-  /electron-to-chromium@1.5.194:
-    resolution: {integrity: sha512-SdnWJwSUot04UR51I2oPD8kuP2VI37/CADR1OHsFOUzZIvfWJBO6q11k5P/uKNyTT3cdOsnyjkrZ+DDShqYqJA==}
+  /electron-to-chromium@1.5.195:
+    resolution: {integrity: sha512-URclP0iIaDUzqcAyV1v2PgduJ9N0IdXmWsnPzPfelvBmjmZzEy6xJcjb1cXj+TbYqXgtLrjHEoaSIdTYhw4ezg==}
 
   /elevenlabs@1.59.0:
     resolution: {integrity: sha512-OVKOd+lxNya8h4Rn5fcjv00Asd+DGWfTT6opGrQ16sTI+1HwdLn/kYtjl8tRMhDXbNmksD/9SBRKjb9neiUuVg==}
@@ -12593,7 +12599,7 @@ packages:
       fs.realpath: 1.0.0
       inflight: 1.0.6
       inherits: 2.0.4
-      minimatch: 3.0.5
+      minimatch: 3.1.2
       once: 1.4.0
       path-is-absolute: 1.0.1
     dev: true
@@ -13264,7 +13270,6 @@ packages:
 
   /is-arrayish@0.3.2:
     resolution: {integrity: sha512-eVRqCvVlZbuw3GrM63ovNSNAeA1K16kaR/LRY/92w0zxQ5/1YzwblUX652i4Xs9RwAGjW9d9y6X88t8OaAJfWQ==}
-    requiresBuild: true
     dev: false
 
   /is-ci@2.0.0:
@@ -13579,15 +13584,14 @@ packages:
     optionalDependencies:
       '@pkgjs/parseargs': 0.11.0
 
-  /jake@10.9.2:
-    resolution: {integrity: sha512-2P4SQ0HrLQ+fw6llpLnOaGAvN2Zu6778SJMrCUwns4fOoG9ayrTiZk3VV8sCPkVZF8ab0zksVpS8FDY5pRCNBA==}
+  /jake@10.9.4:
+    resolution: {integrity: sha512-wpHYzhxiVQL+IV05BLE2Xn34zW1S223hvjtqk0+gsPrwd/8JNLXJgZZM/iPFsYc1xyphF+6M6EvdE5E9MBGkDA==}
     engines: {node: '>=10'}
     hasBin: true
     dependencies:
       async: 3.2.6
-      chalk: 4.1.2
       filelist: 1.0.4
-      minimatch: 3.1.2
+      picocolors: 1.1.1
     dev: true
 
   /jest-changed-files@29.7.0:
@@ -13607,7 +13611,7 @@ packages:
       '@jest/expect': 29.7.0
       '@jest/test-result': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
       chalk: 4.1.2
       co: 4.6.0
       dedent: 1.6.0
@@ -13628,7 +13632,7 @@ packages:
       - supports-color
     dev: true
 
-  /jest-cli@29.7.0(@types/node@24.1.0):
+  /jest-cli@29.7.0(@types/node@24.2.0):
     resolution: {integrity: sha512-OVVobw2IubN/GSYsxETi+gOe7Ka59EFMR/twOU3Jb2GnKKeMGJB5SGUUrEz3SFVmJASUdZUzy83sLNNQ2gZslg==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
     hasBin: true
@@ -13642,10 +13646,10 @@ packages:
       '@jest/test-result': 29.7.0
       '@jest/types': 29.6.3
       chalk: 4.1.2
-      create-jest: 29.7.0(@types/node@24.1.0)
+      create-jest: 29.7.0(@types/node@24.2.0)
       exit: 0.1.2
       import-local: 3.2.0
-      jest-config: 29.7.0(@types/node@24.1.0)
+      jest-config: 29.7.0(@types/node@24.2.0)
       jest-util: 29.7.0
       jest-validate: 29.7.0
       yargs: 17.7.2
@@ -13656,7 +13660,7 @@ packages:
       - ts-node
     dev: true
 
-  /jest-config@29.7.0(@types/node@24.1.0):
+  /jest-config@29.7.0(@types/node@24.2.0):
     resolution: {integrity: sha512-uXbpfeQ7R6TZBqI3/TxCU4q4ttk3u0PJeC+E0zbfSoSjq6bJ7buBPxzQPL0ifrkY4DNu4JUdk0ImlBUYi840eQ==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
     peerDependencies:
@@ -13671,7 +13675,7 @@ packages:
       '@babel/core': 7.28.0
       '@jest/test-sequencer': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
       babel-jest: 29.7.0(@babel/core@7.28.0)
       chalk: 4.1.2
       ci-info: 3.9.0
@@ -13731,7 +13735,7 @@ packages:
       '@jest/environment': 29.7.0
       '@jest/fake-timers': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
       jest-mock: 29.7.0
       jest-util: 29.7.0
     dev: true
@@ -13747,7 +13751,7 @@ packages:
     dependencies:
       '@jest/types': 29.6.3
       '@types/graceful-fs': 4.1.9
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
       anymatch: 3.1.3
       fb-watchman: 2.0.2
       graceful-fs: 4.2.11
@@ -13798,7 +13802,7 @@ packages:
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
     dependencies:
       '@jest/types': 29.6.3
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
       jest-util: 29.7.0
     dev: true
 
@@ -13853,7 +13857,7 @@ packages:
       '@jest/test-result': 29.7.0
       '@jest/transform': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
       chalk: 4.1.2
       emittery: 0.13.1
       graceful-fs: 4.2.11
@@ -13884,7 +13888,7 @@ packages:
       '@jest/test-result': 29.7.0
       '@jest/transform': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
       chalk: 4.1.2
       cjs-module-lexer: 1.4.3
       collect-v8-coverage: 1.0.2
@@ -13936,7 +13940,7 @@ packages:
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
     dependencies:
       '@jest/types': 29.6.3
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
       chalk: 4.1.2
       ci-info: 3.9.0
       graceful-fs: 4.2.11
@@ -13961,7 +13965,7 @@ packages:
     dependencies:
       '@jest/test-result': 29.7.0
       '@jest/types': 29.6.3
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
       ansi-escapes: 4.3.2
       chalk: 4.1.2
       emittery: 0.13.1
@@ -13973,13 +13977,13 @@ packages:
     resolution: {integrity: sha512-eIz2msL/EzL9UFTFFx7jBTkeZfku0yUAyZZZmJ93H2TYEiroIx2PQjEXcwYtYl8zXCxb+PAmA2hLIt/6ZEkPHw==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
     dependencies:
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
       jest-util: 29.7.0
       merge-stream: 2.0.0
       supports-color: 8.1.1
     dev: true
 
-  /jest@29.7.0(@types/node@24.1.0):
+  /jest@29.7.0(@types/node@24.2.0):
     resolution: {integrity: sha512-NIy3oAFp9shda19hy4HK0HRTWKtPJmGdnvywu01nOqNC2vZg+Z+fvJDxpMQA88eb2I9EcafcdjYgsDthnYTvGw==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
     hasBin: true
@@ -13992,7 +13996,7 @@ packages:
       '@jest/core': 29.7.0
       '@jest/types': 29.6.3
       import-local: 3.2.0
-      jest-cli: 29.7.0(@types/node@24.1.0)
+      jest-cli: 29.7.0(@types/node@24.2.0)
     transitivePeerDependencies:
       - '@types/node'
       - babel-plugin-macros
@@ -14165,7 +14169,7 @@ packages:
     hasBin: true
     dependencies:
       '@types/diff-match-patch': 1.0.36
-      chalk: 5.4.1
+      chalk: 5.5.0
       diff-match-patch: 1.0.5
     dev: false
 
@@ -14312,7 +14316,7 @@ packages:
       js-tiktoken: 1.0.20
       js-yaml: 4.1.0
       jsonpointer: 5.0.1
-      langsmith: 0.3.50(openai@4.104.0)
+      langsmith: 0.3.51(openai@4.104.0)
       openapi-types: 12.1.3
       p-retry: 4.6.2
       uuid: 10.0.0
@@ -14340,8 +14344,8 @@ packages:
       langfuse-core: 3.38.4
     dev: false
 
-  /langsmith@0.3.50(openai@4.104.0):
-    resolution: {integrity: sha512-yosW6sR0EFnMnYKKyBmcqTNknDVOs+dUfcswWk80JoRxox6WEyel7hmSkSzabP/GmTs0hXbrtc+lZwpJWSnI0w==}
+  /langsmith@0.3.51(openai@4.104.0):
+    resolution: {integrity: sha512-QQ+S3LTo5ZVrBs8fL8tTij38gEaKbxj9w70OVYpNCDwS9BMv4ihAxF0PlYQFXx1FBoy1irf4k5ceDCb8+WX5gQ==}
     peerDependencies:
       '@opentelemetry/api': '*'
       '@opentelemetry/exporter-trace-otlp-proto': '*'
@@ -14660,7 +14664,7 @@ packages:
     engines: {node: '>=18.12.0'}
     hasBin: true
     dependencies:
-      chalk: 5.4.1
+      chalk: 5.5.0
       commander: 13.1.0
       debug: 4.4.1
       execa: 8.0.1
@@ -14810,7 +14814,7 @@ packages:
     resolution: {integrity: sha512-i24m8rpwhmPIS4zscNzK6MSEhk0DUWa/8iYQWxhffV8jkI4Phvs3F+quL5xvS0gdQR0FyTCMMH33Y78dDTzzIw==}
     engines: {node: '>=18'}
     dependencies:
-      chalk: 5.4.1
+      chalk: 5.5.0
       is-unicode-supported: 1.3.0
     dev: true
 
@@ -14990,7 +14994,7 @@ packages:
     dependencies:
       ansi-escapes: 7.0.0
       ansi-regex: 6.1.0
-      chalk: 5.4.1
+      chalk: 5.5.0
       cli-highlight: 2.1.11
       cli-table3: 0.6.5
       marked: 9.1.6
@@ -16366,7 +16370,7 @@ packages:
     resolution: {integrity: sha512-weP+BZ8MVNnlCm8c0Qdc1WSWq4Qn7I+9CJGm7Qali6g44e/PUzbjNqJX5NJ9ljlNMosfJvg1fKEGILklK9cwnw==}
     engines: {node: '>=18'}
     dependencies:
-      chalk: 5.4.1
+      chalk: 5.5.0
       cli-cursor: 5.0.0
       cli-spinners: 2.9.2
       is-interactive: 2.0.0
@@ -17151,7 +17155,7 @@ packages:
       '@protobufjs/path': 1.1.2
       '@protobufjs/pool': 1.1.0
       '@protobufjs/utf8': 1.1.0
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
       long: 5.3.2
     dev: false
 
@@ -18039,7 +18043,6 @@ packages:
 
   /simple-swizzle@0.2.2:
     resolution: {integrity: sha512-JA//kQgZtbuY83m+xT+tXJkmJncGMTFT+C+g2h2R9uxkYIrE2yy9sgmcLhCnw57/WSD+Eh3J97FPEDFnbXnDUg==}
-    requiresBuild: true
     dependencies:
       is-arrayish: 0.3.2
     dev: false
@@ -18566,11 +18569,11 @@ packages:
     engines: {node: '>=18.18.0'}
     hasBin: true
     dependencies:
-      chalk: 5.4.1
+      chalk: 5.5.0
       chalk-template: 1.1.0
       commander: 13.1.0
       cosmiconfig: 9.0.0(typescript@5.9.2)
-      effect: 3.17.5
+      effect: 3.17.6
       enquirer: 2.4.1
       fast-check: 3.23.2
       globby: 14.1.0
@@ -18953,7 +18956,7 @@ packages:
       esbuild: 0.25.8
       fast-json-stable-stringify: 2.1.0
       handlebars: 4.7.8
-      jest: 29.7.0(@types/node@24.1.0)
+      jest: 29.7.0(@types/node@24.2.0)
       json5: 2.2.3
       lodash.memoize: 4.1.2
       make-error: 1.3.6
@@ -18963,7 +18966,7 @@ packages:
       yargs-parser: 21.1.1
     dev: true
 
-  /ts-node@10.9.1(@swc/core@1.5.29)(@types/node@24.1.0)(typescript@5.7.3):
+  /ts-node@10.9.1(@swc/core@1.5.29)(@types/node@24.2.0)(typescript@5.7.3):
     resolution: {integrity: sha512-NtVysVPkxxrwFGUUxGYhfux8k78pQB3JqYBXlLRZgdGUqTO5wU/UyHop5p70iEbGhB7q5KmiZiU0Y3KlJrScEw==}
     hasBin: true
     peerDependencies:
@@ -18983,7 +18986,7 @@ packages:
       '@tsconfig/node12': 1.0.11
       '@tsconfig/node14': 1.0.3
       '@tsconfig/node16': 1.0.4
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
       acorn: 8.15.0
       acorn-walk: 8.3.4
       arg: 4.1.3
@@ -18995,7 +18998,7 @@ packages:
       yn: 3.1.1
     dev: true
 
-  /ts-node@10.9.1(@swc/core@1.5.29)(@types/node@24.1.0)(typescript@5.9.2):
+  /ts-node@10.9.1(@swc/core@1.5.29)(@types/node@24.2.0)(typescript@5.9.2):
     resolution: {integrity: sha512-NtVysVPkxxrwFGUUxGYhfux8k78pQB3JqYBXlLRZgdGUqTO5wU/UyHop5p70iEbGhB7q5KmiZiU0Y3KlJrScEw==}
     hasBin: true
     peerDependencies:
@@ -19015,7 +19018,7 @@ packages:
       '@tsconfig/node12': 1.0.11
       '@tsconfig/node14': 1.0.3
       '@tsconfig/node16': 1.0.4
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
       acorn: 8.15.0
       acorn-walk: 8.3.4
       arg: 4.1.3
@@ -19231,8 +19234,8 @@ packages:
   /undici-types@6.21.0:
     resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
 
-  /undici-types@7.8.0:
-    resolution: {integrity: sha512-9UJ2xGDvQ43tYyVMpuHlsgApydB8ZKfVYTsLDhXkFL/6gfkp+U8xTGdh8pMJv1SpZna0zxG1DwsKZsreLbXBxw==}
+  /undici-types@7.10.0:
+    resolution: {integrity: sha512-t5Fy/nfn+14LuOc2KNYg75vZqClpAiqscVvMygNnlsHBFpSXdJaYtXMcdNLpl/Qvc3P2cB3s6lOV51nqsFq4ag==}
 
   /undici@5.29.0:
     resolution: {integrity: sha512-raqeBD6NQK4SkWhQzeYKd1KmIG6dllBOTt55Rmkt4HtI9mwdWtJljnrXjAFUBLTSN67HWrOIZ3EPF4kjUw80Bg==}
@@ -19536,7 +19539,7 @@ packages:
       vfile-message: 4.0.3
     dev: false
 
-  /vite-node@3.2.4(@types/node@24.1.0):
+  /vite-node@3.2.4(@types/node@24.2.0):
     resolution: {integrity: sha512-EbKSKh+bh1E1IFxeO0pg1n4dvoOTt0UDiXMd/qn++r98+jPO1xtJilvXldeuQ8giIB5IkpjCgMleHMNEsGH6pg==}
     engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
     hasBin: true
@@ -19545,7 +19548,7 @@ packages:
       debug: 4.4.1
       es-module-lexer: 1.7.0
       pathe: 2.0.3
-      vite: 5.4.19(@types/node@24.1.0)
+      vite: 5.4.19(@types/node@24.2.0)
     transitivePeerDependencies:
       - '@types/node'
       - less
@@ -19558,7 +19561,7 @@ packages:
       - terser
     dev: true
 
-  /vite@5.4.19(@types/node@24.1.0):
+  /vite@5.4.19(@types/node@24.2.0):
     resolution: {integrity: sha512-qO3aKv3HoQC8QKiNSTuUM1l9o/XX3+c+VTgLHbJWHZGeTPVAg2XwazI9UWzoxjIJCGCV2zU60uqMzjeLZuULqA==}
     engines: {node: ^18.0.0 || >=20.0.0}
     hasBin: true
@@ -19589,7 +19592,7 @@ packages:
       terser:
         optional: true
     dependencies:
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
       esbuild: 0.21.5
       postcss: 8.5.6
       rollup: 4.46.2
@@ -19597,7 +19600,7 @@ packages:
       fsevents: 2.3.3
     dev: true
 
-  /vite@6.3.5(@types/node@24.1.0):
+  /vite@6.3.5(@types/node@24.2.0):
     resolution: {integrity: sha512-cZn6NDFE7wdTpINgs++ZJ4N49W2vRp8LCKrn3Ob1kYNtOo21vfDoaV5GzBfLU4MovSAB8uNRm4jgzVQZ+mBzPQ==}
     engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
     hasBin: true
@@ -19637,7 +19640,7 @@ packages:
       yaml:
         optional: true
     dependencies:
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
       esbuild: 0.25.8
       fdir: 6.4.6(picomatch@4.0.3)
       picomatch: 4.0.3
@@ -19647,7 +19650,7 @@ packages:
     optionalDependencies:
       fsevents: 2.3.3
 
-  /vitest@3.2.4(@types/node@24.1.0)(@vitest/ui@1.6.1)(jsdom@22.1.0):
+  /vitest@3.2.4(@types/node@24.2.0)(@vitest/ui@1.6.1)(jsdom@22.1.0):
     resolution: {integrity: sha512-LUCP5ev3GURDysTWiP47wRRUpLKMOfPh+yKTx3kVIEiu5KOMeqzpnYNsKyOoVrULivR8tLcks4+lga33Whn90A==}
     engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
     hasBin: true
@@ -19676,7 +19679,7 @@ packages:
         optional: true
     dependencies:
       '@types/chai': 5.2.2
-      '@types/node': 24.1.0
+      '@types/node': 24.2.0
       '@vitest/expect': 3.2.4
       '@vitest/mocker': 3.2.4(vite@5.4.19)
       '@vitest/pretty-format': 3.2.4
@@ -19698,8 +19701,8 @@ packages:
       tinyglobby: 0.2.14
       tinypool: 1.1.1
       tinyrainbow: 2.0.0
-      vite: 5.4.19(@types/node@24.1.0)
-      vite-node: 3.2.4(@types/node@24.1.0)
+      vite: 5.4.19(@types/node@24.2.0)
+      vite-node: 3.2.4(@types/node@24.2.0)
       why-is-node-running: 2.3.0
     transitivePeerDependencies:
       - less
@@ -19966,8 +19969,8 @@ packages:
     resolution: {integrity: sha512-JZnDKK8B0RCDw84FNdDAIpZK+JuJw+s7Lz8nksI7SIuU3UXJJslUthsi+uWBUYOwPFwW7W7PRLRfUKpxjtjFCw==}
     dev: true
 
-  /xsai@0.3.5(zod@3.24.2):
-    resolution: {integrity: sha512-TsLyjOQtn5H66s1aqTohcqHTkRI5sb6bT4Jv3nJurNjIPvpSdQCi1bFiMafcl81YenD69rk8hx1+FRB1o29FVQ==}
+  /xsai@0.3.3(zod@3.24.2):
+    resolution: {integrity: sha512-qK1176jWkbPR7pV5adx9oE7xrQIsCNTdij/aohRIDS1Lh6hzgsZfZYpX1GqMF5JVVdJK87VoH0+97Puy8qQOdw==}
     dependencies:
       '@xsai/embed': 0.3.5
       '@xsai/generate-image': 0.3.5
