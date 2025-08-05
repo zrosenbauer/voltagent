@@ -1,14 +1,14 @@
-import { defaultStepConfig } from "../internal/utils";
+import { getGlobalLogger } from "../../logger";
 import {
+  createStepContext,
+  createWorkflowStepErrorEvent,
   createWorkflowStepStartEvent,
   createWorkflowStepSuccessEvent,
-  createWorkflowStepErrorEvent,
   publishWorkflowEvent,
-  createStepContext,
 } from "../event-utils";
+import { defaultStepConfig } from "../internal/utils";
 import { matchStep } from "./helpers";
 import type { WorkflowStepConditionalWhen, WorkflowStepConditionalWhenConfig } from "./types";
-import { getGlobalLogger } from "../../logger";
 
 /**
  * Creates a conditional step for the workflow that executes only when a condition is met
@@ -17,24 +17,25 @@ import { getGlobalLogger } from "../../logger";
  * ```ts
  * const w = createWorkflow(
  *   andWhen({
- *     condition: (data) => data.userType === "admin",
- *     stepOrFunc: andThen(async (data) => {
+ *     id: "admin-permissions",
+ *     condition: async ({ data }) => data.userType === "admin",
+ *     execute: async ({ data }) => {
  *       return { ...data, permissions: ["read", "write", "delete"] };
- *     })
+ *     }
  *   }),
  *   andWhen({
- *       condition: (data) => data.value > 100,
- *     andAgent(
- *       (data) => `Process high value transaction: ${data.value}`,
+ *     id: "high-value-processing",
+ *     condition: async ({ data }) => data.value > 100,
+ *     step: andAgent(
+ *       ({ data }) => `Process high value transaction: ${data.value}`,
  *       agent,
  *       { schema: z.object({ processed: z.boolean() }) }
  *     )
- *   )
+ *   })
  * );
  * ```
  *
- * @param condition - Function that determines if the step should execute based on the input data
- * @param stepOrFunc - Either a workflow step or an agent to execute when the condition is true
+ * @param config - Configuration object with condition, step/execute function, and metadata
  * @returns A conditional workflow step that executes the step only when the condition evaluates to true
  */
 export function andWhen<INPUT, DATA, RESULT>({

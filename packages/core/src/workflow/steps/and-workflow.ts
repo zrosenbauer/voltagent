@@ -1,5 +1,5 @@
-import type { InternalWorkflow, WorkflowStepWorkflow } from "./types";
 import type { WorkflowExecuteContext } from "../internal/types";
+import type { InternalWorkflow, WorkflowStepWorkflow } from "./types";
 
 /**
  * Creates an async function step for the workflow
@@ -10,24 +10,27 @@ import type { WorkflowExecuteContext } from "../internal/types";
  * ```ts
  * const nestedWorkflow = createWorkflow(
  *   andThen({
- *     execute: async (data) => {
+ *     id: "nested-process",
+ *     execute: async ({ data }) => {
  *       const processed = await someAsyncOperation(data.value);
  *       return { ...data, processed };
- *     },
- *   }),
+ *     }
+ *   })
  * );
+ *
  * const w = createWorkflow(
  *   andThen({
- *     execute: async (data) => {
+ *     id: "main-process",
+ *     execute: async ({ data }) => {
  *       const processed = await someAsyncOperation(data.value);
  *       return { ...data, processed };
- *     },
+ *     }
  *   }),
  *   andWorkflow(nestedWorkflow)
  * );
  * ```
  *
- * @param fn - The async function to execute with the workflow data
+ * @param workflow - The workflow to execute as a step
  * @returns A workflow step that executes the function and returns the result
  */
 export function andWorkflow<INPUT, DATA, RESULT, SUSPEND_DATA = any, RESUME_DATA = any>(

@@ -19,9 +19,7 @@ export function Footer() {
               <div className="flex items-center border-solid border-1 border-main-emerald rounded-full p-1">
                 <BoltIcon className="w-4 h-4 text-main-emerald" />
               </div>
-              <span className="text-2xl md:text-2xl font-bold text-main-emerald">
-                voltagent
-              </span>
+              <span className="text-2xl md:text-2xl font-bold text-main-emerald">voltagent</span>
             </div>
 
             {/* Social links */}
@@ -73,9 +71,7 @@ export function Footer() {
             </div>
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 md:gap-y-2 list-none pl-0 text-center lg:text-left">
               <li>
-                <FooterLink href="/docs/quick-start/">
-                  Getting Started
-                </FooterLink>
+                <FooterLink href="/docs/quick-start/">Getting Started</FooterLink>
               </li>
               <li>
                 <FooterLink href="/blog/">Blog</FooterLink>
@@ -108,10 +104,7 @@ export function Footer() {
                 </FooterLink>
               </li>
               <li>
-                <FooterLink
-                  href="https://voltagent.dev/llms.txt"
-                  target="_blank"
-                >
+                <FooterLink href="https://voltagent.dev/llms.txt" target="_blank">
                   llms.txt
                 </FooterLink>
               </li>
@@ -132,9 +125,7 @@ export function Footer() {
             </div>
             <ul className="space-y-3 md:space-y-2 list-none pl-0 text-center lg:text-left">
               <li>
-                <FooterLink href="/docs/community/contributing/">
-                  Contributing
-                </FooterLink>
+                <FooterLink href="/docs/community/contributing/">Contributing</FooterLink>
               </li>
               <li>
                 <FooterLink href="/about/">About us</FooterLink>

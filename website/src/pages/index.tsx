@@ -10,13 +10,13 @@ import LivePreview from "../components/live-preview";
 import Ops from "../components/ops";
 import { Rag } from "../components/rag";
 import { SupervisorAgent } from "../components/supervisor-agent";
-import { DotPattern } from "../components/ui/dot-pattern";
-import { TwoBlocks } from "../components/two-blocks";
 import { Testimonials } from "../components/testimonials";
+import { TwoBlocks } from "../components/two-blocks";
+import { DotPattern } from "../components/ui/dot-pattern";
+import { Workflows } from "../components/workflows";
 export default function Home(): JSX.Element {
   const title = "VoltAgent - Open Source TypeScript AI Agent Framework";
-  const description =
-    "VoltAgent is an observability-first TypeScript AI Agent framework.";
+  const description = "VoltAgent is an observability-first TypeScript AI Agent framework.";
 
   return (
     <>
@@ -25,13 +25,12 @@ export default function Home(): JSX.Element {
         <meta property="og:title" content={title} />
 
         {description && <meta name="description" content={description} />}
-        {description && (
-          <meta property="og:description" content={description} />
-        )}
+        {description && <meta property="og:description" content={description} />}
       </Head>
       <Layout>
         <main className="flex-1">
           <DotPattern dotColor="#94a3b8" dotSize={1.2} spacing={20} />
+
           <Hero />
           <TwoBlocks />
           <LivePreview />
@@ -39,8 +38,8 @@ export default function Home(): JSX.Element {
           <div className="relative">
             <AgentsDetail />
             <Testimonials />
-
             <SupervisorAgent />
+            <Workflows />
             <Rag />
             <Integrations />
             <Ops />

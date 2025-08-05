@@ -1,8 +1,21 @@
 import { createTool } from "@voltagent/core";
 import { z } from "zod";
 
+// Define output schema for search results
+const searchResultSchema = z.object({
+  title: z.string(),
+  snippet: z.string(),
+  url: z.string(),
+});
+
+const searchOutputSchema = z.object({
+  results: z.array(searchResultSchema),
+  message: z.string(),
+});
+
 /**
  * A tool for performing web searches
+ * With output schema validation to ensure consistent response format
  */
 export const searchTool = createTool({
   name: "search",
@@ -10,6 +23,7 @@ export const searchTool = createTool({
   parameters: z.object({
     query: z.string().describe("The search query"),
   }),
+  outputSchema: searchOutputSchema,
   execute: async ({ query }) => {
     // In a real implementation, this would call a search API like Google
     // This is a mock implementation for demonstration purposes
@@ -19,17 +33,17 @@ export const searchTool = createTool({
       {
         title: `Information about "${query}"`,
         snippet: `This is the first search result about "${query}". It contains some relevant information that might be useful.`,
-        url: `https://example.com/result1`,
+        url: "https://example.com/result1",
       },
       {
         title: `More details on "${query}"`,
         snippet: `Another search result with additional details about "${query}". This source discusses related topics and provides deeper insights.`,
-        url: `https://example.org/result2`,
+        url: "https://example.org/result2",
       },
       {
         title: `"${query}" explained`,
         snippet: `An explanation of "${query}" with examples and illustrations to help understand the concept better.`,
-        url: `https://knowledge.com/result3`,
+        url: "https://knowledge.com/result3",
       },
     ];
 
