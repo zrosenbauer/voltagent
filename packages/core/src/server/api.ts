@@ -1540,14 +1540,22 @@ app.post("/setup-observability", async (c: ApiContext) => {
       const updatedLines = lines.map((line) => {
         const trimmedLine = line.trim();
 
-        // Update commented public key
-        if (trimmedLine.startsWith("# VOLTAGENT_PUBLIC_KEY=")) {
+        // Update existing or commented public key
+        if (
+          trimmedLine.startsWith("VOLTAGENT_PUBLIC_KEY=") ||
+          trimmedLine.startsWith("# VOLTAGENT_PUBLIC_KEY=") ||
+          trimmedLine.startsWith("#VOLTAGENT_PUBLIC_KEY=")
+        ) {
           publicKeyUpdated = true;
           return `VOLTAGENT_PUBLIC_KEY=${publicKey}`;
         }
 
-        // Update commented secret key
-        if (trimmedLine.startsWith("# VOLTAGENT_SECRET_KEY=")) {
+        // Update existing or commented secret key
+        if (
+          trimmedLine.startsWith("VOLTAGENT_SECRET_KEY=") ||
+          trimmedLine.startsWith("# VOLTAGENT_SECRET_KEY=") ||
+          trimmedLine.startsWith("#VOLTAGENT_SECRET_KEY=")
+        ) {
           secretKeyUpdated = true;
           return `VOLTAGENT_SECRET_KEY=${secretKey}`;
         }
