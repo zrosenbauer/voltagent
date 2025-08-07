@@ -7,8 +7,6 @@ description: Discover practical ways to make your AI applications safer and more
 image: https://cdn.voltagent.dev/2025-08-07-llm-guardrails/1.png
 ---
 
-import ZoomableMermaid from '@site/src/components/blog-widgets/ZoomableMermaid';
-
 ## Overview
 
 Large Language Models (LLMs) like GPT-4, Claude, and Gemini have transformed how we build applications. They can code, answer questions, and even chat. But with great power comes great responsibility. Without proper security, LLMs can be misused, reveal confidential information, or generate harmful content.
