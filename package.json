@@ -86,7 +86,8 @@
     "test:all": "lerna run test --stream --scope @voltagent/*",
     "test:all:coverage": "pnpm test:all -- -- --coverage",
     "test:coverage": "pnpm test -- -- --coverage",
-    "version-packages": "pnpm changeset version && pnpm i --ignore-scripts --lockfile-only --no-frozen-lockfile --reporter=ndjson --stream && git add pnpm-lock.yaml"
+    "version-packages": "pnpm changeset version && pnpm i --ignore-scripts --lockfile-only --no-frozen-lockfile --reporter=ndjson --stream && git add pnpm-lock.yaml",
+    "archive:deprecated": "node scripts/archive-deprecated.js"
   },
   "workspaces": [
     "packages/*",
