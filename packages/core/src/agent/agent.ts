@@ -1,5 +1,6 @@
 import type { Span } from "@opentelemetry/api";
 import type { Logger } from "@voltagent/internal";
+import { safeStringify } from "@voltagent/internal/utils";
 import { P, match } from "ts-pattern";
 import type { z } from "zod";
 import { AgentEventEmitter } from "../events";
@@ -2922,7 +2923,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       // Publish the agent:success event (background)
       this.publishTimelineEvent(operationContext, agentSuccessEvent);
 
-      const responseStr = JSON.stringify(response.object);
+      const responseStr = safeStringify(response.object);
       this.addAgentEvent(operationContext, "finished", "completed", {
         output: responseStr,
         usage: response.usage,
@@ -3298,7 +3299,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         // Publish the agent:success event (background)
         this.publishTimelineEvent(operationContext, agentSuccessEvent);
 
-        const responseStr = JSON.stringify(result.object);
+        const responseStr = safeStringify(result.object);
         this.addAgentEvent(operationContext, "finished", "completed", {
           input: messages,
           output: responseStr,
