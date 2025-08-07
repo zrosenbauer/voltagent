@@ -149,11 +149,25 @@ See [Bedrock documentation](https://docs.aws.amazon.com/bedrock/) for all availa
 
 ### AWS Authentication
 
-The example uses AWS SDK Credentials Chain which checks in order:
+The example uses `fromNodeProviderChain` from `@aws-sdk/credential-providers` for automatic credential detection:
+
+```typescript
+import { fromNodeProviderChain } from "@aws-sdk/credential-providers";
+
+const bedrock = createAmazonBedrock({
+  region: process.env.AWS_REGION || "us-east-1",
+  credentialProvider: fromNodeProviderChain(),
+});
+```
+
+This automatically checks for credentials in the following order:
 
 1. Environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`)
 2. AWS profiles (`AWS_PROFILE` environment variable)
-3. IAM roles (when running on AWS infrastructure)
+3. Shared credentials file (`~/.aws/credentials`)
+4. ECS container credentials
+5. EC2 instance metadata service
+6. IAM roles (when running on AWS infrastructure)
 
 ## Project Structure
 
