@@ -1,178 +1,195 @@
-# Amazon Bedrock Example
+<div align="center">
+<a href="https://voltagent.dev/">
+<img width="1800" alt="435380213-b6253409-8741-462b-a346-834cd18565a9" src="https://github.com/user-attachments/assets/452a03e7-eeda-4394-9ee7-0ffbcf37245c" />
+</a>
 
-This example demonstrates how to use VoltAgent with Amazon Bedrock through the Vercel AI SDK.
+<br/>
+<br/>
 
-## Prerequisites
+<div align="center">
+    <a href="https://voltagent.dev">Home Page</a> |
+    <a href="https://voltagent.dev/docs/">Documentation</a> |
+    <a href="https://github.com/voltagent/voltagent/tree/main/examples">Examples</a> |
+    <a href="https://s.voltagent.dev/discord">Discord</a> |
+    <a href="https://voltagent.dev/blog/">Blog</a>
+</div>
+</div>
 
-1. AWS Account with Amazon Bedrock access
-2. Bedrock models enabled in your AWS region
-3. AWS credentials configured
+<br/>
 
-## Setup
+<div align="center">
+    <strong>VoltAgent is an open source TypeScript framework for building and orchestrating AI agents.</strong><br>
+Escape the limitations of no-code builders and the complexity of starting from scratch.
+    <br />
+    <br />
+</div>
 
-### 1. Enable Bedrock Models
+<div align="center">
+    
+[![npm version](https://img.shields.io/npm/v/@voltagent/core.svg)](https://www.npmjs.com/package/@voltagent/core)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.0-4baaaa.svg)](CODE_OF_CONDUCT.md)
+[![Discord](https://img.shields.io/discord/1361559153780195478.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://s.voltagent.dev/discord)
+[![Twitter Follow](https://img.shields.io/twitter/follow/voltagent_dev?style=social)](https://twitter.com/voltagent_dev)
+    
+</div>
 
-First, ensure you have access to Amazon Bedrock models in your AWS account:
+<br/>
 
-1. Go to the AWS Console
-2. Navigate to Amazon Bedrock
-3. Go to "Model access" in the left menu
-4. Request access to the models you want to use (e.g., Claude, Llama, Titan)
-5. Wait for approval (usually instant for most models)
+<div align="center">
+<a href="https://voltagent.dev/">
+<img width="896" alt="VoltAgent Schema" src="https://github.com/user-attachments/assets/f0627868-6153-4f63-ba7f-bdfcc5dd603d" />
+</a>
 
-### 2. Configure AWS Credentials
+</div>
 
-The example uses AWS SDK Credentials Chain, which automatically checks for credentials in the following order:
+## VoltAgent: Build AI Agents Fast and Flexibly
 
-1. Environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`)
-2. AWS profiles (via `AWS_PROFILE` environment variable)
-3. Instance profiles, instance roles, ECS roles, EKS Service Accounts, etc.
+VoltAgent is an open-source TypeScript framework for creating and managing AI agents. It provides modular components to build, customize, and scale agents with ease. From connecting to APIs and memory management to supporting multiple LLMs, VoltAgent simplifies the process of creating sophisticated AI systems. It enables fast development, maintains clean code, and offers flexibility to switch between models and tools without vendor lock-in.
 
-Create a `.env` file based on `.env.example`:
+## Try Example
+
+```bash
+npm create voltagent-app@latest -- --example with-amazon-bedrock
+```
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js (v20 or newer)
+- npm, yarn, or pnpm
+- AWS Account with Amazon Bedrock access
+- AWS credentials configured
+
+### Installation
+
+1. Create a new VoltAgent app with Amazon Bedrock example:
+
+```bash
+npm create voltagent-app@latest -- --example with-amazon-bedrock
+```
+
+2. Navigate to the project directory:
+
+```bash
+cd with-amazon-bedrock
+```
+
+3. Configure AWS credentials:
 
 ```bash
 cp .env.example .env
 ```
 
-#### Option 1: Using IAM Access Key and Secret Key
+Edit `.env` with your AWS credentials:
 
 ```env
+AWS_REGION=us-east-1
+
+# Option 1: AWS Access Keys
 AWS_ACCESS_KEY_ID=your-access-key-id
 AWS_SECRET_ACCESS_KEY=your-secret-access-key
-AWS_REGION=us-east-1
-```
 
-#### Option 2: Using AWS Profile (Recommended for Local Development)
-
-First configure your AWS profile:
-
-```bash
-aws configure --profile your-profile-name
-```
-
-Then set the profile in your `.env`:
-
-```env
+# Option 2: AWS Profile (recommended)
 AWS_PROFILE=your-profile-name
-AWS_REGION=us-east-1
 ```
 
-#### Option 3: Using IAM Roles (AWS Infrastructure)
+### Enable Bedrock Models
 
-When running on AWS (EC2, Lambda, ECS, etc.), credentials are automatically obtained from the IAM role. Just set the region:
+1. Go to [AWS Console](https://console.aws.amazon.com/)
+2. Navigate to Amazon Bedrock → Model access
+3. Request access to models (e.g., Claude, Llama, Titan)
+4. Wait for approval (usually instant)
 
-```env
-AWS_REGION=us-east-1
-```
+### Development
 
-### 3. Install Dependencies
+Run the development server:
 
 ```bash
-pnpm install
-```
-
-## Running the Example
-
-### Development Mode
-
-```bash
+npm run dev
+# or
+yarn dev
+# or
 pnpm dev
 ```
 
-### Production Mode
-
-```bash
-pnpm build
-pnpm start
-```
-
-## Available Models
-
-The example is configured to use Claude 3.5 Sonnet by default, but you can use any model available in Amazon Bedrock:
-
-### Anthropic Claude Models
-
-- `anthropic.claude-3-5-sonnet-20240620-v1:0` (default)
-- `anthropic.claude-3-5-haiku-20241022-v1:0`
-- `anthropic.claude-3-opus-20240229-v1:0`
-- `anthropic.claude-3-sonnet-20240229-v1:0`
-- `anthropic.claude-3-haiku-20240307-v1:0`
-
-### Meta Llama Models
-
-- `meta.llama3-2-1b-instruct-v1:0`
-- `meta.llama3-2-3b-instruct-v1:0`
-- `meta.llama3-1-8b-instruct-v1:0`
-- `meta.llama3-1-70b-instruct-v1:0`
-
-### Mistral Models
-
-- `mistral.mistral-large-2407-v1:0`
-- `mistral.mistral-small-2402-v1:0`
-
-### Amazon Titan Models
-
-- `amazon.titan-text-premier-v1:0`
-- `amazon.titan-text-express-v1`
-- `amazon.titan-text-lite-v1`
-
 ## Features
 
-This example includes:
+This example demonstrates:
 
-- **Weather Tool**: Get current weather for any location
-- **Logging**: Structured logging with Pino
+- **Amazon Bedrock Integration** - Access to Claude, Llama, Mistral, and Titan models
+- **AWS Credential Chain** - Automatic credential detection (env vars, profiles, IAM roles)
+- **Vercel AI SDK** - Using `@ai-sdk/amazon-bedrock` provider
+- **Custom Tools** - Weather tool example for function calling
+- **Server Mode** - REST API server on port 4000
 
-## Customization
+## Configuration
 
-### Changing the Model
+### Available Models
 
-To use a different model, modify the `model` parameter in `src/index.ts`:
-
-```typescript
-model: bedrock("anthropic.claude-3-5-sonnet-20240620-v1:0"),
-```
-
-### Using Direct Credentials Instead of Credential Chain
-
-If you prefer to use direct credentials instead of the credential provider chain, modify the Bedrock provider configuration:
+The example uses Claude 3.5 Sonnet by default. You can change it in `src/index.ts`:
 
 ```typescript
-import { createAmazonBedrock } from "@ai-sdk/amazon-bedrock";
+// Claude models
+model: bedrock("anthropic.claude-3-5-sonnet-20240620-v1:0");
+model: bedrock("anthropic.claude-3-opus-20240229-v1:0");
 
-const bedrock = createAmazonBedrock({
-  region: "us-east-1",
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  sessionToken: process.env.AWS_SESSION_TOKEN, // optional
-});
+// Llama models
+model: bedrock("meta.llama3-2-3b-instruct-v1:0");
+model: bedrock("meta.llama3-1-70b-instruct-v1:0");
+
+// Mistral models
+model: bedrock("mistral.mistral-large-2407-v1:0");
+
+// Titan models
+model: bedrock("amazon.titan-text-premier-v1:0");
 ```
 
-To add more tools, create new tool definitions and add them to the agent's tools array.
+See [Bedrock documentation](https://docs.aws.amazon.com/bedrock/) for all available models.
+
+### AWS Authentication
+
+The example uses AWS SDK Credentials Chain which checks in order:
+
+1. Environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`)
+2. AWS profiles (`AWS_PROFILE` environment variable)
+3. IAM roles (when running on AWS infrastructure)
+
+## Project Structure
+
+```
+.
+├── src/
+│   └── index.ts       # Main application with Bedrock agent
+├── .env.example       # AWS configuration template
+├── .voltagent/        # Auto-generated folder for agent memory
+├── package.json
+├── tsconfig.json
+└── README.md
+```
 
 ## Troubleshooting
 
-### Model Access Denied
+### Access Denied
 
-If you get an access denied error, ensure:
-
-1. Your AWS credentials are properly configured
-2. The model is enabled in your AWS Bedrock console
-3. Your IAM user/role has the necessary Bedrock permissions
+- Ensure model access is enabled in Bedrock console
+- Verify IAM permissions include Bedrock access
 
 ### Region Issues
 
-Make sure the AWS_REGION in your .env file matches a region where:
-
-1. Amazon Bedrock is available
-2. The specific model you're using is available
+- Check AWS_REGION matches where Bedrock and your models are available
 
 ### Rate Limits
 
-Be aware of Bedrock's rate limits and quotas for your account. Consider implementing retry logic for production use.
+- Be aware of Bedrock quotas for your account
+- Consider implementing retry logic for production
 
 ## Learn More
 
 - [Amazon Bedrock Documentation](https://docs.aws.amazon.com/bedrock/)
-- [Vercel AI SDK - Amazon Bedrock Provider](https://sdk.vercel.ai/providers/ai-sdk-providers/amazon-bedrock)
-- [VoltAgent Documentation](https://voltagent.ai)
+- [Vercel AI SDK - Amazon Bedrock](https://sdk.vercel.ai/providers/ai-sdk-providers/amazon-bedrock)
+- [VoltAgent Documentation](https://voltagent.dev/docs)
+
+## License
+
+MIT
