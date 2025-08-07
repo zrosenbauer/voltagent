@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import safeStringify from "./safe-stringify.js";
+import { safeStringify } from "./safe-stringify";
 
 const options = {
   indentation: "\t",
