@@ -54,6 +54,7 @@
   "packageManager": "pnpm@8.10.5",
   "private": true,
   "scripts": {
+    "archive:deprecated": "node scripts/archive-deprecated.js",
     "attw": "lerna run attw --scope @voltagent/*",
     "attw:all": "lerna run attw --scope @voltagent/*",
     "biome": "biome",
@@ -86,8 +87,7 @@
     "test:all": "lerna run test --stream --scope @voltagent/*",
     "test:all:coverage": "pnpm test:all -- -- --coverage",
     "test:coverage": "pnpm test -- -- --coverage",
-    "version-packages": "pnpm changeset version && pnpm i --ignore-scripts --lockfile-only --no-frozen-lockfile --reporter=ndjson --stream && git add pnpm-lock.yaml",
-    "archive:deprecated": "node scripts/archive-deprecated.js"
+    "version-packages": "pnpm changeset version && pnpm i --ignore-scripts --lockfile-only --no-frozen-lockfile --reporter=ndjson --stream && git add pnpm-lock.yaml"
   },
   "workspaces": [
     "packages/*",
