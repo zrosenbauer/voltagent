@@ -1892,6 +1892,9 @@ importers:
       '@voltagent/logger':
         specifier: workspace:^
         version: link:../logger
+      ts-pattern:
+        specifier: ^5.7.1
+        version: 5.8.0
     devDependencies:
       '@types/node':
         specifier: ^24.0.3

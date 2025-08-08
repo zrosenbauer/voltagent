@@ -1,11 +1,10 @@
-import { type SupabaseClient, createClient } from "@supabase/supabase-js";
+import { SupabaseClient, createClient } from "@supabase/supabase-js";
 import {
   type Conversation,
   type ConversationQueryOptions,
   type CreateConversationInput,
   type Memory,
   type MemoryMessage,
-  type MemoryOptions,
   type MessageFilterOptions,
   type WorkflowHistoryEntry,
   type WorkflowStepHistoryEntry,
@@ -13,25 +12,10 @@ import {
 } from "@voltagent/core";
 import type { NewTimelineEvent } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
-
-/**
- * Workflow statistics interface
- */
-export interface WorkflowStats {
-  totalExecutions: number;
-  successfulExecutions: number;
-  failedExecutions: number;
-  averageExecutionTime: number;
-  lastExecutionTime?: Date;
-}
-
-export interface SupabaseMemoryOptions extends MemoryOptions {
-  supabaseUrl?: string;
-  supabaseKey?: string;
-  client?: SupabaseClient;
-  tableName?: string; // Base table name, defaults to "voltagent_memory"
-  debug?: boolean; // Whether to enable debug logging, defaults to false
-}
+import { type Logger, createPinoLogger } from "@voltagent/logger";
+import { P, match } from "ts-pattern";
+import type { SupabaseMemoryOptions, WorkflowStats } from "./types";
+import { safeParseError } from "./utils";
 
 /**
  * Supabase Storage for VoltAgent
@@ -44,6 +28,19 @@ export interface SupabaseMemoryOptions extends MemoryOptions {
  * - Storage limits for managing message history
  * - Workflow history, steps, and timeline events persistence
  *
+ * @example
+ * ```ts
+ * const memory = new SupabaseMemory({
+ *   supabaseUrl: "https://your-supabase-url.supabase.co",
+ *   supabaseKey: "your-supabase-key",
+ * });
+ *
+ * // OR
+ * const memory = new SupabaseMemory({
+ *   client: supabaseClient,
+ * });
+ * ```
+ *
  * @see {@link https://voltagent.dev/docs/agents/memory/supabase | Supabase Storage Documentation}
  */
 export class SupabaseMemory implements Memory {
@@ -52,6 +49,7 @@ export class SupabaseMemory implements Memory {
   private debug: boolean;
   private options: SupabaseMemoryOptions;
   private initialized: Promise<void>;
+  private logger: Logger;
 
   constructor(options: SupabaseMemoryOptions) {
     if (!options.client && (!options.supabaseUrl || !options.supabaseKey)) {
@@ -63,8 +61,17 @@ export class SupabaseMemory implements Memory {
         "Cannot provide both 'client' and 'supabaseUrl/supabaseKey'. Choose one approach.",
       );
     }
-    this.client =
-      options.client || createClient(options.supabaseUrl as string, options.supabaseKey as string);
+
+    this.client = match(options)
+      .returnType<SupabaseClient>()
+      .with({ client: P.instanceOf(SupabaseClient) }, (o) => o.client)
+      .with({ supabaseUrl: P.string, supabaseKey: P.string }, (options) =>
+        createClient(options.supabaseUrl, options.supabaseKey),
+      )
+      .otherwise(() => {
+        throw new Error("Invalid configuration");
+      });
+
     this.baseTableName = options.tableName || "voltagent_memory";
     this.debug = options.debug || false;
     this.options = {
@@ -74,16 +81,27 @@ export class SupabaseMemory implements Memory {
       debug: options.debug || false,
     };
 
+    // Initialize the logger
+    this.logger = match(options.logger)
+      .with(P.nullish, () => createPinoLogger({ name: "memory-supabase" }))
+      .otherwise((logger) => logger);
+
     // Initialize the database and run migration if needed
     this.initialized = this.initializeDatabase();
   }
 
   /*
-|------------------
-| 
-|------------------
-*/
+  |------------------
+  | Message Methods
+  |------------------
+  */
 
+  /**
+   * Add a message to the messages table
+   *
+   * @param message - The message to add
+   * @param conversationId - The ID of the conversation to add the message to
+   */
   public async addMessage(message: MemoryMessage, conversationId: string): Promise<void> {
     await this.initialized;
 
@@ -92,17 +110,18 @@ export class SupabaseMemory implements Memory {
       conversation_id: conversationId,
       message_id: message.id, // Assuming MemoryMessage has an ID
       role: message.role,
-      content:
-        typeof message.content === "string" ? message.content : safeStringify(message.content),
+      content: match(message.content)
+        .with(P.string, (content) => content)
+        .otherwise(() => safeStringify(message.content)),
       type: message.type,
       created_at: message.createdAt || new Date().toISOString(),
     };
 
     const { error } = await this.client.from(this.messagesTable).insert(record);
 
+    // Handle potential duplicate message_id errors if needed
     if (error) {
-      // Handle potential duplicate message_id errors if needed
-      console.error(`Error adding message ${message.id} to Supabase:`, error);
+      this.logger.error(`Error adding message ${message.id} to Supabase:`, error);
       throw new Error(`Failed to add message: ${error.message}`);
     }
 
@@ -115,64 +134,11 @@ export class SupabaseMemory implements Memory {
   }
 
   /**
-   * Prune old messages to respect storage limit
-   * @param conversationId Conversation ID to prune messages for
+   * Get messages from the messages table
+   *
+   * @param options - The options for the query to filter the messages
+   * @returns The messages
    */
-  private async pruneOldMessages(conversationId: string): Promise<void> {
-    const limit = this.options.storageLimit || 100;
-
-    try {
-      // Get the count of messages for this conversation
-      const { count, error: countError } = await this.client
-        .from(this.messagesTable)
-        .select("*", { count: "exact", head: true })
-        .eq("conversation_id", conversationId);
-
-      if (countError) {
-        this.debugLog("Error counting messages:", countError);
-        return;
-      }
-
-      const messageCount = count || 0;
-
-      if (messageCount > limit) {
-        // Get the oldest messages to delete
-        const deleteCount = messageCount - limit;
-
-        const { data: oldestMessages, error: selectError } = await this.client
-          .from(this.messagesTable)
-          .select("message_id")
-          .eq("conversation_id", conversationId)
-          .order("created_at", { ascending: true })
-          .limit(deleteCount);
-
-        if (selectError) {
-          this.debugLog("Error selecting oldest messages:", selectError);
-          return;
-        }
-
-        if (oldestMessages && oldestMessages.length > 0) {
-          const messageIds = oldestMessages.map((msg) => msg.message_id);
-
-          const { error: deleteError } = await this.client
-            .from(this.messagesTable)
-            .delete()
-            .eq("conversation_id", conversationId)
-            .in("message_id", messageIds);
-
-          if (deleteError) {
-            this.debugLog("Error deleting old messages:", deleteError);
-            return;
-          }
-
-          this.debugLog(`Pruned ${deleteCount} old messages for conversation ${conversationId}`);
-        }
-      }
-    } catch (error) {
-      this.debugLog("Error pruning old messages:", error);
-    }
-  }
-
   public async getMessages(options: MessageFilterOptions = {}): Promise<MemoryMessage[]> {
     const { conversationId, before, after, role, types } = options;
     // Handle the case where limit is explicitly set to 0 (unlimited)
@@ -212,7 +178,7 @@ export class SupabaseMemory implements Memory {
     const { data, error } = await query;
 
     if (error) {
-      console.error("Error fetching messages from Supabase:", error);
+      this.logger.error("Error fetching messages from Supabase:", error);
       throw new Error(`Failed to fetch messages: ${error.message}`);
     }
 
@@ -243,6 +209,11 @@ export class SupabaseMemory implements Memory {
     return messages;
   }
 
+  /**
+   * Clear messages from the messages table
+   *
+   * @param options - The options for the query to filter the messages to clear either by `conversationId` or `userId`
+   */
   public async clearMessages(options: { userId: string; conversationId?: string }): Promise<void> {
     const { conversationId } = options;
 
@@ -256,15 +227,27 @@ export class SupabaseMemory implements Memory {
       .eq("conversation_id", conversationId);
 
     if (error) {
-      console.error(
+      this.logger.error(
         `Error clearing messages for conversation ${conversationId} from Supabase:`,
         error,
       );
       throw new Error(`Failed to clear messages: ${error.message}`);
     }
-    // console.log(`Cleared messages for conversation ${conversationId}`);
+
+    this.debugLog(`Cleared messages for conversation ${conversationId}`);
   }
 
+  /*
+  |------------------
+  | Conversation Methods
+  |------------------
+  */
+
+  /**
+   * Create a new conversation
+   * @param conversation - The conversation to create
+   * @returns The created conversation
+   */
   public async createConversation(conversation: CreateConversationInput): Promise<Conversation> {
     const now = new Date().toISOString();
     const newConversation: Conversation = {
@@ -287,13 +270,19 @@ export class SupabaseMemory implements Memory {
     const { error } = await this.client.from(this.conversationsTable).insert(record);
 
     if (error) {
-      console.error("Error creating conversation in Supabase:", error);
+      this.logger.error("Error creating conversation in Supabase:", safeParseError(error));
       throw new Error(`Failed to create conversation: ${error.message}`);
     }
 
     return newConversation;
   }
 
+  /**
+   * Get a conversation by ID
+   *
+   * @param id - The ID of the conversation to get
+   * @returns The conversation
+   */
   public async getConversation(id: string): Promise<Conversation | null> {
     const { data, error } = await this.client
       .from(this.conversationsTable)
@@ -302,7 +291,7 @@ export class SupabaseMemory implements Memory {
       .maybeSingle(); // Returns one row or null
 
     if (error) {
-      console.error(`Error getting conversation ${id} from Supabase:`, error);
+      this.logger.error(`Error getting conversation ${id} from Supabase:`, safeParseError(error));
       throw new Error(`Failed to get conversation: ${error.message}`);
     }
 
@@ -322,6 +311,12 @@ export class SupabaseMemory implements Memory {
     };
   }
 
+  /**
+   * Get conversations by resource ID
+   *
+   * @param resourceId - The ID of the resource to get conversations for
+   * @returns The conversations
+   */
   public async getConversations(resourceId: string): Promise<Conversation[]> {
     const { data, error } = await this.client
       .from(this.conversationsTable)
@@ -330,7 +325,10 @@ export class SupabaseMemory implements Memory {
       .order("updated_at", { ascending: false }); // Order by most recently updated
 
     if (error) {
-      console.error(`Error getting conversations for resource ${resourceId} from Supabase:`, error);
+      this.logger.error(
+        `Error getting conversations for resource ${resourceId} from Supabase:`,
+        safeParseError(error),
+      );
       throw new Error(`Failed to get conversations: ${error.message}`);
     }
 
@@ -347,6 +345,13 @@ export class SupabaseMemory implements Memory {
     );
   }
 
+  /**
+   * Update a conversation
+   *
+   * @param id - The ID of the conversation to update
+   * @param updates - The updates to apply to the conversation
+   * @returns The updated conversation
+   */
   public async updateConversation(
     id: string,
     updates: Partial<Omit<Conversation, "id" | "createdAt" | "updatedAt">>,
@@ -377,7 +382,7 @@ export class SupabaseMemory implements Memory {
       .single(); // Expect exactly one row to be updated
 
     if (error) {
-      console.error(`Error updating conversation ${id} in Supabase:`, error);
+      this.logger.error(`Error updating conversation ${id} in Supabase:`, safeParseError(error));
       throw new Error(`Failed to update conversation: ${error.message}`);
     }
 
@@ -397,17 +402,421 @@ export class SupabaseMemory implements Memory {
     };
   }
 
+  /**
+   * Delete a conversation by ID
+   *
+   * @param id - The ID of the conversation to delete
+   */
   public async deleteConversation(id: string): Promise<void> {
     await this.initialized;
 
     const { error } = await this.client.from(this.conversationsTable).delete().eq("id", id);
 
     if (error) {
-      console.error("Error deleting conversation:", error);
+      this.logger.error("Error deleting conversation:", safeParseError(error));
       throw new Error("Failed to delete conversation");
     }
   }
 
+  /**
+   * Get conversations by user ID with query options
+   *
+   * @param userId - The ID of the user to get conversations for
+   * @param options - The options for the query
+   * @returns The conversations
+   */
+  public async getConversationsByUserId(
+    userId: string,
+    options: Omit<ConversationQueryOptions, "userId"> = {},
+  ): Promise<Conversation[]> {
+    await this.initialized;
+
+    const {
+      resourceId,
+      limit = 50,
+      offset = 0,
+      orderBy = "updated_at",
+      orderDirection = "DESC",
+    } = options;
+
+    try {
+      let query = this.client.from(this.conversationsTable).select("*").eq("user_id", userId);
+
+      if (resourceId) {
+        query = query.eq("resource_id", resourceId);
+      }
+
+      // Add ordering
+      query = query.order(orderBy, { ascending: orderDirection === "ASC" });
+
+      // Add pagination
+      if (limit > 0) {
+        query = query.range(offset, offset + limit - 1);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw new Error(`Failed to get conversations by user ID: ${error.message}`);
+      }
+
+      return (data || []).map((row: any) => ({
+        id: row.id,
+        resourceId: row.resource_id,
+        userId: row.user_id,
+        title: row.title,
+        metadata: row.metadata || {},
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      }));
+    } catch (error) {
+      this.logger.error("Error getting conversations by user ID:", safeParseError(error));
+      throw new Error("Failed to get conversations by user ID from Supabase database");
+    }
+  }
+
+  /**
+   * Query conversations with flexible filtering and pagination options
+   *
+   * This method provides a powerful way to search and filter conversations
+   * with support for user-based filtering, resource filtering, pagination,
+   * and custom sorting.
+   *
+   * @param options Query options for filtering and pagination
+   * @param options.userId Optional user ID to filter conversations by specific user
+   * @param options.resourceId Optional resource ID to filter conversations by specific resource
+   * @param options.limit Maximum number of conversations to return (default: 50)
+   * @param options.offset Number of conversations to skip for pagination (default: 0)
+   * @param options.orderBy Field to sort by: 'created_at', 'updated_at', or 'title' (default: 'updated_at')
+   * @param options.orderDirection Sort direction: 'ASC' or 'DESC' (default: 'DESC')
+   *
+   * @returns Promise that resolves to an array of conversations matching the criteria
+   *
+   * @example
+   * ```typescript
+   * // Get all conversations for a specific user
+   * const userConversations = await storage.queryConversations({
+   *   userId: 'user123',
+   *   limit: 20
+   * });
+   *
+   * // Get conversations for a resource with pagination
+   * const resourceConversations = await storage.queryConversations({
+   *   resourceId: 'chatbot-v1',
+   *   limit: 10,
+   *   offset: 20,
+   *   orderBy: 'created_at',
+   *   orderDirection: 'ASC'
+   * });
+   *
+   * // Get all conversations (admin view)
+   * const allConversations = await storage.queryConversations({
+   *   limit: 100,
+   *   orderBy: 'updated_at'
+   * });
+   * ```
+   */
+  public async queryConversations(options: ConversationQueryOptions): Promise<Conversation[]> {
+    await this.initialized;
+
+    const {
+      userId,
+      resourceId,
+      limit = 50,
+      offset = 0,
+      orderBy = "updated_at",
+      orderDirection = "DESC",
+    } = options;
+
+    try {
+      let query = this.client.from(this.conversationsTable).select("*");
+
+      // Add filters
+      if (userId) {
+        query = query.eq("user_id", userId);
+      }
+
+      if (resourceId) {
+        query = query.eq("resource_id", resourceId);
+      }
+
+      // Add ordering
+      query = query.order(orderBy, { ascending: orderDirection === "ASC" });
+
+      // Add pagination
+      if (limit > 0) {
+        query = query.range(offset, offset + limit - 1);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw new Error(`Failed to query conversations: ${error.message}`);
+      }
+
+      return (data || []).map((row: any) => ({
+        id: row.id,
+        resourceId: row.resource_id,
+        userId: row.user_id,
+        title: row.title,
+        metadata: row.metadata || {},
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      }));
+    } catch (error) {
+      this.logger.error("Error querying conversations:", safeParseError(error));
+      throw new Error("Failed to query conversations from Supabase database");
+    }
+  }
+
+  /**
+   * Get messages for a specific conversation with pagination support
+   *
+   * This method retrieves all messages within a conversation, ordered chronologically
+   * from oldest to newest. It supports pagination to handle large conversations
+   * efficiently and avoid memory issues.
+   *
+   * @param conversationId The unique identifier of the conversation to retrieve messages from
+   * @param options Optional pagination and filtering options
+   * @param options.limit Maximum number of messages to return (default: 100)
+   * @param options.offset Number of messages to skip for pagination (default: 0)
+   *
+   * @returns Promise that resolves to an array of messages in chronological order (oldest first)
+   *
+   * @example
+   * ```typescript
+   * // Get the first 50 messages in a conversation
+   * const messages = await storage.getConversationMessages('conv-123', {
+   *   limit: 50
+   * });
+   *
+   * // Get messages with pagination (skip first 20, get next 30)
+   * const olderMessages = await storage.getConversationMessages('conv-123', {
+   *   limit: 30,
+   *   offset: 20
+   * });
+   *
+   * // Get all messages (use with caution for large conversations)
+   * const allMessages = await storage.getConversationMessages('conv-123');
+   *
+   * // Process messages in batches
+   * const batchSize = 100;
+   * let offset = 0;
+   * let hasMore = true;
+   *
+   * while (hasMore) {
+   *   const batch = await storage.getConversationMessages('conv-123', {
+   *     limit: batchSize,
+   *     offset: offset
+   *   });
+   *
+   *   // Process batch
+   *   processBatch(batch);
+   *
+   *   hasMore = batch.length === batchSize;
+   *   offset += batchSize;
+   * }
+   * ```
+   *
+   * @throws {Error} If the conversation ID is invalid or operation fails
+   */
+  public async getConversationMessages(
+    conversationId: string,
+    options: { limit?: number; offset?: number } = {},
+  ): Promise<MemoryMessage[]> {
+    await this.initialized;
+
+    const { limit = 100, offset = 0 } = options;
+
+    try {
+      let query = this.client
+        .from(this.messagesTable)
+        .select("*")
+        .eq("conversation_id", conversationId)
+        .order("created_at", { ascending: true }); // Chronological order (oldest first)
+
+      // Add pagination
+      if (limit > 0) {
+        query = query.range(offset, offset + limit - 1);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw new Error(`Failed to get conversation messages: ${error.message}`);
+      }
+
+      return (data || []).map((row: any) => ({
+        id: row.message_id,
+        role: row.role,
+        content: row.content,
+        type: row.type,
+        createdAt: row.created_at,
+      }));
+    } catch (error) {
+      this.logger.error("Error getting conversation messages:", safeParseError(error));
+      throw new Error("Failed to get conversation messages from Supabase database");
+    }
+  }
+
+  /**
+   * Get conversations for a user with a fluent query builder interface
+   *
+   * @param userId User ID to filter by
+   * @returns Query builder object
+   */
+  public getUserConversations(userId: string) {
+    return {
+      /**
+       * Limit the number of results
+       * @param count Number of conversations to return
+       * @returns Query builder
+       */
+      limit: (count: number) => ({
+        /**
+         * Order results by a specific field
+         * @param field Field to order by
+         * @param direction Sort direction
+         * @returns Query builder
+         */
+        orderBy: (
+          field: "created_at" | "updated_at" | "title" = "updated_at",
+          direction: "ASC" | "DESC" = "DESC",
+        ) => ({
+          /**
+           * Execute the query and return results
+           * @returns Promise of conversations
+           */
+          execute: () =>
+            this.getConversationsByUserId(userId, {
+              limit: count,
+              orderBy: field,
+              orderDirection: direction,
+            }),
+        }),
+        /**
+         * Execute the query with default ordering
+         * @returns Promise of conversations
+         */
+        execute: () => this.getConversationsByUserId(userId, { limit: count }),
+      }),
+
+      /**
+       * Order results by a specific field
+       * @param field Field to order by
+       * @param direction Sort direction
+       * @returns Query builder
+       */
+      orderBy: (
+        field: "created_at" | "updated_at" | "title" = "updated_at",
+        direction: "ASC" | "DESC" = "DESC",
+      ) => ({
+        /**
+         * Limit the number of results
+         * @param count Number of conversations to return
+         * @returns Query builder
+         */
+        limit: (count: number) => ({
+          /**
+           * Execute the query and return results
+           * @returns Promise of conversations
+           */
+          execute: () =>
+            this.getConversationsByUserId(userId, {
+              limit: count,
+              orderBy: field,
+              orderDirection: direction,
+            }),
+        }),
+        /**
+         * Execute the query without limit
+         * @returns Promise of conversations
+         */
+        execute: () =>
+          this.getConversationsByUserId(userId, {
+            orderBy: field,
+            orderDirection: direction,
+          }),
+      }),
+
+      /**
+       * Execute the query with default options
+       * @returns Promise of conversations
+       */
+      execute: () => this.getConversationsByUserId(userId),
+    };
+  }
+
+  /**
+   * Get conversation by ID and ensure it belongs to the specified user
+   *
+   * @param conversationId Conversation ID
+   * @param userId User ID to validate ownership
+   * @returns Conversation or null
+   */
+  public async getUserConversation(
+    conversationId: string,
+    userId: string,
+  ): Promise<Conversation | null> {
+    const conversation = await this.getConversation(conversationId);
+    if (!conversation || conversation.userId !== userId) {
+      return null;
+    }
+    return conversation;
+  }
+
+  /**
+   * Get paginated conversations for a user
+   *
+   * @param userId User ID
+   * @param page Page number (1-based)
+   * @param pageSize Number of items per page
+   * @returns Object with conversations and pagination info
+   */
+  public async getPaginatedUserConversations(
+    userId: string,
+    page = 1,
+    pageSize = 10,
+  ): Promise<{
+    conversations: Conversation[];
+    page: number;
+    pageSize: number;
+    hasMore: boolean;
+  }> {
+    const offset = (page - 1) * pageSize;
+
+    // Get one extra to check if there are more pages
+    const conversations = await this.getConversationsByUserId(userId, {
+      limit: pageSize + 1,
+      offset,
+      orderBy: "updated_at",
+      orderDirection: "DESC",
+    });
+
+    const hasMore = conversations.length > pageSize;
+    const results = hasMore ? conversations.slice(0, pageSize) : conversations;
+
+    return {
+      conversations: results,
+      page,
+      pageSize,
+      hasMore,
+    };
+  }
+
+  /*
+  |------------------
+  | History Methods
+  |------------------
+  */
+
+  /**
+   * Add a history entry
+   *
+   * @param key - The key of the history entry
+   * @param value - The value of the history entry
+   * @param agentId - The ID of the agent
+   */
   public async addHistoryEntry(key: string, value: any, agentId: string): Promise<void> {
     // Wait for database initialization
     await this.initialized;
@@ -431,16 +840,33 @@ export class SupabaseMemory implements Memory {
     });
 
     if (error) {
-      console.error(`Error adding/updating history entry ${key} for agent ${agentId}:`, error);
+      this.logger.error(
+        `Error adding/updating history entry ${key} for agent ${agentId}:`,
+        safeParseError(error),
+      );
       throw new Error(`Failed to add/update history entry: ${error.message}`);
     }
   }
 
+  /**
+   * Update a history entry
+   *
+   * @param key - The key of the history entry
+   * @param value - The value of the history entry
+   * @param agentId - The ID of the agent
+   */
   public async updateHistoryEntry(key: string, value: any, agentId: string): Promise<void> {
-    // Implementation for updateHistoryEntry (can likely reuse addHistoryEntry)
     return this.addHistoryEntry(key, value, agentId);
   }
 
+  /**
+   * Add a history event
+   *
+   * @param key - The key of the history event
+   * @param value - The value of the history event
+   * @param historyId - The ID of the history
+   * @param agentId - The ID of the agent
+   */
   public async addHistoryEvent(
     key: string,
     value: any,
@@ -459,7 +885,7 @@ export class SupabaseMemory implements Memory {
     });
 
     if (error) {
-      console.error(
+      this.logger.error(
         `Error adding/updating history event ${key} for history ${historyId}, agent ${agentId}:`,
         error,
       );
@@ -467,16 +893,31 @@ export class SupabaseMemory implements Memory {
     }
   }
 
+  /**
+   * Update a history event
+   *
+   * @param key - The key of the history event
+   * @param value - The value of the history event
+   * @param historyId - The ID of the history
+   * @param agentId - The ID of the agent
+   */
   public async updateHistoryEvent(
     key: string,
     value: any,
     historyId: string,
     agentId: string,
   ): Promise<void> {
-    // Implementation for updateHistoryEvent (can likely reuse addHistoryEvent)
     return this.addHistoryEvent(key, value, historyId, agentId);
   }
 
+  /**
+   * Add a history step
+   *
+   * @param key - The key of the history step
+   * @param value - The value of the history step
+   * @param historyId - The ID of the history
+   * @param agentId - The ID of the agent
+   */
   public async addHistoryStep(
     key: string,
     value: any,
@@ -495,7 +936,7 @@ export class SupabaseMemory implements Memory {
     });
 
     if (error) {
-      console.error(
+      this.logger.error(
         `Error adding/updating history step ${key} for history ${historyId}, agent ${agentId}:`,
         error,
       );
@@ -503,16 +944,28 @@ export class SupabaseMemory implements Memory {
     }
   }
 
+  /**
+   * Update a history step
+   *
+   * @param key - The key of the history step
+   * @param value - The value of the history step
+   * @param historyId - The ID of the history
+   * @param agentId - The ID of the agent
+   */
   public async updateHistoryStep(
     key: string,
     value: any,
     historyId: string,
     agentId: string,
   ): Promise<void> {
-    // Implementation for updateHistoryStep (can likely reuse addHistoryStep)
     return this.addHistoryStep(key, value, historyId, agentId);
   }
 
+  /**
+   * Get a history entry
+   * @param key - The key of the history entry
+   * @returns The history entry
+   */
   public async getHistoryEntry(key: string): Promise<any | undefined> {
     // Wait for database initialization
     await this.initialized;
@@ -527,7 +980,7 @@ export class SupabaseMemory implements Memory {
       .maybeSingle();
 
     if (entryError) {
-      console.error(`Error getting history entry ${key}:`, entryError);
+      this.logger.warn(`Error getting history entry ${key}:`, safeParseError(entryError));
       return undefined;
     }
 
@@ -561,7 +1014,7 @@ export class SupabaseMemory implements Memory {
       .eq("agent_id", agentId);
 
     if (timelineEventsError) {
-      console.error(`Error getting timeline events for entry ${key}:`, timelineEventsError);
+      this.logger.error(`Error getting timeline events for entry ${key}:`, timelineEventsError);
       entry.events = [];
     } else {
       // Transform timeline events to match expected format
@@ -601,7 +1054,7 @@ export class SupabaseMemory implements Memory {
       .eq("agent_id", agentId);
 
     if (stepsError) {
-      console.error(`Error getting history steps for entry ${key}:`, stepsError);
+      this.logger.warn(`Error getting history steps for entry ${key}:`, safeParseError(stepsError));
       entry.steps = [];
     } else {
       entry.steps = (stepsData || []).map((row) => {
@@ -618,6 +1071,12 @@ export class SupabaseMemory implements Memory {
     return entry;
   }
 
+  /**
+   * Get a history event
+   *
+   * @param key - The key of the history event
+   * @returns The history event
+   */
   public async getHistoryEvent(key: string): Promise<any | undefined> {
     const { data, error } = await this.client
       .from(this.historyEventsTable)
@@ -626,13 +1085,19 @@ export class SupabaseMemory implements Memory {
       .maybeSingle();
 
     if (error) {
-      console.error(`Error getting history event ${key}:`, error);
+      this.logger.warn(`Error getting history event ${key}:`, safeParseError(error));
       return undefined;
     }
 
     return data ? data.value : undefined;
   }
 
+  /**
+   * Get a history step
+   *
+   * @param key - The key of the history step
+   * @returns The history step
+   */
   public async getHistoryStep(key: string): Promise<any | undefined> {
     const { data, error } = await this.client
       .from(this.historyStepsTable)
@@ -641,13 +1106,21 @@ export class SupabaseMemory implements Memory {
       .maybeSingle();
 
     if (error) {
-      console.error(`Error getting history step ${key}:`, error);
+      this.logger.warn(`Error getting history step ${key}:`, safeParseError(error));
       return undefined;
     }
 
     return data ? data.value : undefined;
   }
 
+  /**
+   * Get all history entries by agent
+   *
+   * @param agentId - The ID of the agent
+   * @param page - The page number
+   * @param limit - The number of entries per page
+   * @returns The history entries
+   */
   public async getAllHistoryEntriesByAgent(
     agentId: string,
     page: number,
@@ -663,7 +1136,7 @@ export class SupabaseMemory implements Memory {
       .eq("agent_id", agentId);
 
     if (countError) {
-      console.error(`Error getting count for agent ${agentId}:`, countError);
+      this.logger.warn(`Error getting count for agent ${agentId}:`, safeParseError(countError));
       return {
         entries: [],
         total: 0,
@@ -684,7 +1157,10 @@ export class SupabaseMemory implements Memory {
       .range(offset, offset + limit - 1);
 
     if (entriesError) {
-      console.error(`Error getting all history entries for agent ${agentId}:`, entriesError);
+      this.logger.warn(
+        `Error getting all history entries for agent ${agentId}:`,
+        safeParseError(entriesError),
+      );
       return {
         entries: [],
         total: 0,
@@ -727,7 +1203,10 @@ export class SupabaseMemory implements Memory {
           .eq("agent_id", agentId);
 
         if (timelineEventsError) {
-          console.error(`Error getting timeline events for entry ${key}:`, timelineEventsError);
+          this.logger.warn(
+            `Error getting timeline events for entry ${key}:`,
+            safeParseError(timelineEventsError),
+          );
           entry.events = [];
         } else {
           entry.events = (timelineEventsData || [])
@@ -766,7 +1245,10 @@ export class SupabaseMemory implements Memory {
           .eq("agent_id", agentId);
 
         if (stepsError) {
-          console.error(`Error getting history steps for entry ${key}:`, stepsError);
+          this.logger.warn(
+            `Error getting history steps for entry ${key}:`,
+            safeParseError(stepsError),
+          );
           entry.steps = [];
         } else {
           entry.steps = (stepsData || []).map((row) => {
@@ -793,6 +1275,13 @@ export class SupabaseMemory implements Memory {
     };
   }
 
+  /**
+   * Add a timeline event to the timeline events table
+   * @param key - The key of the timeline event
+   * @param value - The value of the timeline event
+   * @param historyId - The ID of the history
+   * @param agentId - The ID of the agent
+   */
   public async addTimelineEvent(
     key: string,
     value: NewTimelineEvent,
@@ -827,443 +1316,11 @@ export class SupabaseMemory implements Memory {
     });
 
     if (error) {
-      console.error(
+      this.logger.error(
         `Error adding/updating timeline event ${key} for history ${historyId}, agent ${agentId}:`,
         error,
       );
       throw new Error(`Failed to add/update timeline event: ${error.message}`);
-    }
-  }
-
-  /**
-   * Generate a unique ID for records
-   * @returns Unique ID
-   */
-  private generateId(): string {
-    return (
-      Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
-    );
-  }
-
-  /**
-   * Set migration flags for fresh installation to prevent future migrations
-   * @private
-   */
-  private async setFreshInstallationFlags(): Promise<void> {
-    try {
-      const migrationFlagTable = `${this.conversationsTable}_migration_flags`;
-
-      // Insert migration flags to mark fresh installation
-      const { error } = await this.client.from(migrationFlagTable).insert([
-        {
-          migration_type: "conversation_schema_migration",
-          completed_at: new Date().toISOString(),
-          migrated_count: 0,
-          metadata: { fresh_install: true },
-        },
-        {
-          migration_type: "agent_history_migration",
-          completed_at: new Date().toISOString(),
-          migrated_count: 0,
-          metadata: { fresh_install: true },
-        },
-      ]);
-
-      if (error) {
-        // If table doesn't exist, that's expected for fresh install
-        // The flags will be set via SQL when user runs the setup script
-        this.debugLog("Migration flags table not found (expected for fresh install)");
-      } else {
-        this.debugLog("✅ Fresh installation migration flags set successfully");
-      }
-    } catch (flagError) {
-      // Silent fail for fresh installation - flags will be set via SQL
-      this.debugLog(
-        "Could not set migration flags programmatically (will be set via SQL)",
-        flagError,
-      );
-    }
-  }
-
-  /**
-   * Migrate conversation schema to add user_id and update messages table
-   *
-   * ⚠️  **CRITICAL WARNING: DESTRUCTIVE OPERATION** ⚠️
-   *
-   * This method performs a DESTRUCTIVE schema migration that:
-   * - DROPS and recreates existing tables
-   * - Creates temporary tables during migration
-   * - Modifies the primary key structure of the messages table
-   * - Can cause DATA LOSS if interrupted or if errors occur
-   *
-   * **IMPORTANT SAFETY REQUIREMENTS:**
-   * - 🛑 STOP all application instances before running this migration
-   * - 🛑 Ensure NO concurrent database operations are running
-   * - 🛑 Take a full database backup before running (independent of built-in backup)
-   * - 🛑 Test the migration on a copy of production data first
-   * - 🛑 Plan for downtime during migration execution
-   *
-   * **What this migration does:**
-   * 1. Creates backup tables (if createBackup=true)
-   * 2. Creates temporary tables with new schema
-   * 3. Migrates data from old tables to new schema
-   * 4. DROPS original tables
-   * 5. Renames temporary tables to original names
-   * 6. All operations are wrapped in a transaction for atomicity
-   *
-   * @param options Migration configuration options
-   * @param options.createBackup Whether to create backup tables before migration (default: true, HIGHLY RECOMMENDED)
-   * @param options.restoreFromBackup Whether to restore from existing backup instead of migrating (default: false)
-   * @param options.deleteBackupAfterSuccess Whether to delete backup tables after successful migration (default: false)
-   *
-   * @returns Promise resolving to migration result with success status, migrated count, and backup info
-   *
-   * @throws {Error} If migration fails and transaction is rolled back
-   *
-   * @since This migration is typically only needed when upgrading from older schema versions
-   */
-  private async migrateConversationSchema(
-    options: {
-      createBackup?: boolean;
-      restoreFromBackup?: boolean;
-      deleteBackupAfterSuccess?: boolean;
-    } = {},
-  ): Promise<{
-    success: boolean;
-    migratedCount?: number;
-    error?: Error;
-    backupCreated?: boolean;
-  }> {
-    const {
-      createBackup = true,
-      restoreFromBackup = false,
-      deleteBackupAfterSuccess = false,
-    } = options;
-
-    const conversationsTableName = this.conversationsTable;
-    const messagesTableName = this.messagesTable;
-    const conversationsBackupName = `${conversationsTableName}_backup`;
-    const messagesBackupName = `${messagesTableName}_backup`;
-
-    try {
-      this.debugLog("Starting conversation schema migration...");
-      this.debugLog("");
-
-      // Note: deleteBackupAfterSuccess is not fully implemented in Supabase version
-      if (deleteBackupAfterSuccess) {
-        console.log("deleteBackupAfterSuccess option is noted but not implemented");
-      }
-
-      // Check if migration has already been completed by looking for a migration flag
-      this.debugLog("🔍 Checking for migration flags table...");
-      try {
-        // First, try to get any migration flag (without .single() to avoid multiple rows error)
-        const { data: migrationFlags, error: queryError } = await this.client
-          .from(`${this.conversationsTable}_migration_flags`)
-          .select("*")
-          .eq("migration_type", "conversation_schema_migration");
-
-        // Check if table doesn't exist
-        if (queryError) {
-          const isTableMissing =
-            queryError?.message?.includes("relation") ||
-            queryError?.code === "PGRST116" ||
-            queryError?.code === "42P01";
-
-          if (isTableMissing) {
-            console.log("⚠️  Migration flags table not found!");
-            console.log("");
-            console.log(
-              "🔧 RECOMMENDED: Create migration flags table to prevent duplicate migrations:",
-            );
-            console.log(
-              "This table tracks completed migrations and prevents them from running again.",
-            );
-            console.log("Copy and run this SQL in Supabase SQL Editor:");
-            console.log("═══════════════════════════════════════════════════════════");
-            console.log(`CREATE TABLE IF NOT EXISTS ${this.conversationsTable}_migration_flags (
-  id SERIAL PRIMARY KEY,
-  migration_type TEXT NOT NULL UNIQUE,
-  completed_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
-  migrated_count INTEGER DEFAULT 0,
-  metadata JSONB DEFAULT '{}'::jsonb
-);`);
-            console.log("═══════════════════════════════════════════════════════════");
-            console.log("");
-            console.log(
-              "🚀 Migration will continue without flags (migrations may run multiple times)",
-            );
-            console.log("");
-          } else {
-            // Some other error occurred
-            this.debugLog("Error checking migration flags:", queryError);
-            this.debugLog("Proceeding with migration check...");
-          }
-        } else if (migrationFlags && migrationFlags.length > 0) {
-          // Migration flag(s) found - take the first one
-          const migrationFlag = migrationFlags[0];
-          this.debugLog("✅ Migration flags table found!");
-          this.debugLog(
-            `🚀 Conversation schema migration already completed on ${migrationFlag.completed_at}`,
-          );
-          this.debugLog(`   Migrated ${migrationFlag.migrated_count || 0} records previously`);
-          this.debugLog("⏭️  Skipping migration...");
-          return { success: true, migratedCount: 0 };
-        } else {
-          this.debugLog("✅ Migration flags table found, but no migration flag exists yet");
-        }
-      } catch (unexpectedError: any) {
-        // Unexpected error occurred, log and continue
-        this.debugLog("Unexpected error while checking migration flags:", unexpectedError);
-        this.debugLog("Proceeding with migration check...");
-      }
-
-      // If restoreFromBackup option is active, restore from backup
-      if (restoreFromBackup) {
-        console.log("Starting restoration from backup...");
-
-        // Check if backup tables exist
-        const { data: convBackupCheck } = await this.client
-          .from("information_schema.tables")
-          .select("table_name")
-          .eq("table_name", conversationsBackupName)
-          .single();
-
-        const { data: msgBackupCheck } = await this.client
-          .from("information_schema.tables")
-          .select("table_name")
-          .eq("table_name", messagesBackupName)
-          .single();
-
-        if (!convBackupCheck || !msgBackupCheck) {
-          throw new Error("No backup found to restore");
-        }
-
-        // Restore tables from backup (Supabase doesn't support direct table rename, so we'd need to recreate)
-        // This is a simplified implementation for Supabase
-        console.log("Restoration from backup completed successfully");
-        return { success: true, backupCreated: false };
-      }
-
-      // Check current table structures by checking for user_id column
-      // Use direct table queries instead of information_schema which may have permission issues
-      let hasUserIdInConversations = false;
-      let hasUserIdInMessages = false;
-
-      try {
-        // Try to select user_id from conversations table
-        const { error: convError } = await this.client
-          .from(conversationsTableName)
-          .select("user_id")
-          .limit(1);
-
-        hasUserIdInConversations = !convError;
-      } catch (error) {
-        console.log("Conversations table doesn't have user_id column:", error);
-        hasUserIdInConversations = false;
-      }
-
-      try {
-        // Try to select user_id from messages table
-        const { error: msgError } = await this.client
-          .from(messagesTableName)
-          .select("user_id")
-          .limit(1);
-
-        hasUserIdInMessages = !msgError;
-      } catch (error) {
-        console.log("Messages table doesn't have user_id column:", error);
-        hasUserIdInMessages = false;
-      }
-
-      // If conversations already has user_id and messages doesn't have user_id, migration not needed
-      if (hasUserIdInConversations && !hasUserIdInMessages) {
-        return { success: true, migratedCount: 0 };
-      }
-
-      // Check if schema migration is needed
-      if (!hasUserIdInConversations && !hasUserIdInMessages) {
-        console.log(
-          "⚠️  Schema update required. Please run the following SQL in Supabase SQL Editor:",
-        );
-        console.log(
-          `ALTER TABLE ${conversationsTableName} ADD COLUMN IF NOT EXISTS user_id TEXT NOT NULL DEFAULT 'default';`,
-        );
-        console.log("Skipping migration until schema is updated.");
-        return {
-          success: false,
-          error: new Error(
-            "Schema update required. Please add user_id column to conversations table.",
-          ),
-        };
-      }
-
-      if (!hasUserIdInConversations && hasUserIdInMessages) {
-        console.log(
-          "⚠️  Schema update required. Please run the following SQL in Supabase SQL Editor:",
-        );
-        console.log(
-          `ALTER TABLE ${conversationsTableName} ADD COLUMN IF NOT EXISTS user_id TEXT NOT NULL DEFAULT 'default';`,
-        );
-        return {
-          success: true,
-        };
-      }
-
-      // Also check if tables are completely empty - no need to migrate empty tables
-      const { data: existingConversations } = await this.client
-        .from(conversationsTableName)
-        .select("id")
-        .limit(1);
-
-      const { data: existingMessages } = await this.client
-        .from(messagesTableName)
-        .select("message_id")
-        .limit(1);
-
-      if (
-        (!existingConversations || existingConversations.length === 0) &&
-        (!existingMessages || existingMessages.length === 0)
-      ) {
-        console.log("Tables are empty, no migration needed");
-        return { success: true, migratedCount: 0 };
-      }
-
-      // Get existing data
-      const { data: conversationDataResult } = await this.client
-        .from(conversationsTableName)
-        .select("*");
-
-      const { data: messageDataResult } = await this.client.from(messagesTableName).select("*");
-
-      const conversationData = conversationDataResult || [];
-      const messageData = messageDataResult || [];
-
-      // If no data to migrate
-      if (conversationData.length === 0 && messageData.length === 0) {
-        console.log("No data found to migrate");
-        return { success: true, migratedCount: 0 };
-      }
-
-      let migratedCount = 0;
-
-      // Simple approach: Go through each message and update the corresponding conversation
-      for (const message of messageData) {
-        if (hasUserIdInMessages && message.user_id && message.conversation_id) {
-          // Find the conversation
-          const conversation = conversationData.find((conv) => conv.id === message.conversation_id);
-
-          if (conversation) {
-            // If conversation has no user_id or it's "default", update it with user_id from message
-            if (!conversation.user_id || conversation.user_id === "default") {
-              await this.client
-                .from(conversationsTableName)
-                .update({ user_id: message.user_id })
-                .eq("id", message.conversation_id);
-
-              console.log(
-                `Updated conversation ${message.conversation_id} with user_id: ${message.user_id}`,
-              );
-
-              // Update the local data to avoid updating the same conversation multiple times
-              conversation.user_id = message.user_id;
-              migratedCount++;
-            }
-          } else {
-            // Conversation doesn't exist, create it
-            const newConversation = {
-              id: message.conversation_id,
-              resource_id: "default",
-              user_id: message.user_id,
-              title: "Migrated Conversation",
-              metadata: {},
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            };
-
-            await this.client.from(conversationsTableName).insert([newConversation]);
-            conversationData.push(newConversation); // Add to local data to avoid duplicates
-            console.log(
-              `Created missing conversation ${message.conversation_id} with user_id: ${message.user_id}`,
-            );
-            migratedCount++;
-          }
-        }
-      }
-
-      // Note: Conversation processing is now handled above in the main loop
-
-      console.log(
-        `Conversation schema migration completed successfully. Migrated ${migratedCount} conversations.`,
-      );
-
-      // If messages table still has user_id column, require removing it
-      if (hasUserIdInMessages) {
-        console.log("");
-        console.log("🔧 REQUIRED CLEANUP STEP:");
-        console.log(
-          "Migration is complete, but you MUST remove the user_id column from messages table to prevent errors:",
-        );
-        console.log(`ALTER TABLE ${messagesTableName} DROP COLUMN IF EXISTS user_id;`);
-        console.log(
-          "(This is REQUIRED now that user_id data has been moved to conversations table)",
-        );
-        console.log("❗ Run this SQL command to complete the migration properly.");
-        console.log("");
-      }
-
-      // Set migration flag to prevent future runs
-      try {
-        const migrationFlagTable = `${this.conversationsTable}_migration_flags`;
-
-        // First try to create the flag table if it doesn't exist
-        const { error: insertError } = await this.client.from(migrationFlagTable).insert([
-          {
-            migration_type: "conversation_schema_migration",
-            completed_at: new Date().toISOString(),
-            migrated_count: migratedCount,
-          },
-        ]);
-
-        if (!insertError) {
-          this.debugLog("✅ Migration flag set successfully - future migrations will be skipped");
-        } else {
-          // Check if error is due to missing table
-          const isTableMissing =
-            insertError?.message?.includes("relation") ||
-            insertError?.code === "PGRST116" ||
-            insertError?.code === "42P01";
-
-          if (isTableMissing) {
-            console.log("");
-            console.log(
-              "⚠️  WARNING: Could not set migration flag - migration flags table not found!",
-            );
-            console.log("❌ This migration may run again on next startup");
-            console.log(
-              "🔧 To prevent this, create the migration flags table using the SQL provided above",
-            );
-            console.log("");
-          }
-        }
-      } catch (flagError: any) {
-        // Unexpected error in flag setting process
-        this.debugLog("Unexpected error while setting migration flag:", flagError);
-      }
-
-      return {
-        success: true,
-        migratedCount,
-        backupCreated: createBackup,
-      };
-    } catch (error) {
-      console.error("Error during conversation schema migration:", error);
-
-      return {
-        success: false,
-        error: error as Error,
-        backupCreated: createBackup,
-      };
     }
   }
 
@@ -1277,6 +1334,12 @@ export class SupabaseMemory implements Memory {
    *   value JSONB NOT NULL,
    *   agent_id TEXT
    * );
+   *
+   * @param options - The options for the migration
+   * @param options.createBackup - Whether to create a backup of the old data
+   * @param options.restoreFromBackup - Whether to restore from the backup
+   * @param options.deleteBackupAfterSuccess - Whether to delete the backup after a successful migration
+   * @returns The result of the migration
    */
   public async migrateAgentHistoryData(
     options: {
@@ -1304,7 +1367,7 @@ export class SupabaseMemory implements Memory {
     try {
       // If restoreFromBackup option is active, restore from backup
       if (restoreFromBackup) {
-        console.log("Starting restoration from backup...");
+        this.debugLog("Starting restoration from backup...");
 
         // Check if backup table exists by trying to query it
         try {
@@ -1340,7 +1403,7 @@ export class SupabaseMemory implements Memory {
           }
         }
 
-        console.log("Restoration from backup completed successfully");
+        this.debugLog("Restoration from backup completed successfully");
 
         return {
           success: true,
@@ -1362,7 +1425,7 @@ export class SupabaseMemory implements Memory {
 
         if (sampleError) {
           // Table doesn"t exist or we can"t access it
-          console.log(`${oldTableName} table not found, migration not needed`);
+          this.debugLog(`${oldTableName} table not found, migration not needed`);
           return {
             success: true,
             migratedCount: 0,
@@ -1391,7 +1454,7 @@ export class SupabaseMemory implements Memory {
           }
         }
       } catch (error) {
-        console.log(`Error checking table structure: ${error}`);
+        this.debugLog(`Error checking table structure: ${error}`);
         return {
           success: true,
           migratedCount: 0,
@@ -1401,7 +1464,7 @@ export class SupabaseMemory implements Memory {
       // Check if migration is needed
       // If table doesn"t have value column, it"s already migrated
       if (!hasValueColumn) {
-        console.log("Table is already in new format, migration not needed");
+        this.debugLog("Table is already in new format, migration not needed");
         return {
           success: true,
           migratedCount: 0,
@@ -1410,7 +1473,9 @@ export class SupabaseMemory implements Memory {
 
       // If table has value column but no id column, structure needs to be updated first
       if (hasValueColumn && !hasIdColumn) {
-        console.log("⚠️  Table structure needs to be updated first. Please run the SQL migrations.");
+        this.debugLog(
+          "⚠️  Table structure needs to be updated first. Please run the SQL migrations.",
+        );
         return {
           success: false,
           error: new Error("Table structure not updated. Please run SQL migrations first."),
@@ -1428,14 +1493,14 @@ export class SupabaseMemory implements Memory {
           .limit(1);
 
         if (unmigratedError) {
-          console.log("Error checking for unmigrated data, proceeding with migration");
+          this.debugLog("Error checking for unmigrated data, proceeding with migration");
         } else if (!unmigrated || unmigrated.length === 0) {
           return {
             success: true,
             migratedCount: 0,
           };
         } else {
-          console.log(
+          this.debugLog(
             `Found ${unmigrated.length > 0 ? "unmigrated" : "no"} data, proceeding with migration`,
           );
         }
@@ -1443,7 +1508,7 @@ export class SupabaseMemory implements Memory {
 
       // Create backup if requested
       if (createBackup) {
-        console.log("Creating backup...");
+        this.debugLog("Creating backup...");
 
         // Delete previous backup if exists
         await this.client.from(oldTableBackup).delete().neq("key", ""); // Delete all
@@ -1460,7 +1525,7 @@ export class SupabaseMemory implements Memory {
         if (originalData && originalData.length > 0) {
           // Note: In a real scenario, you'd need to create the backup table first
           // This is a simplified version - you might need to handle table creation
-          console.log("Backup created successfully");
+          this.debugLog("Backup created successfully");
         }
       }
 
@@ -1474,7 +1539,7 @@ export class SupabaseMemory implements Memory {
       }
 
       if (!oldFormatData || oldFormatData.length === 0) {
-        console.log("No data found to migrate");
+        this.debugLog("No data found to migrate");
         return {
           success: true,
           migratedCount: 0,
@@ -1523,7 +1588,7 @@ export class SupabaseMemory implements Memory {
             .eq("key", key);
 
           if (updateError) {
-            console.error(`Error updating record ${key}:`, updateError);
+            this.debugLog(`Error updating record ${key}:`, updateError);
             continue;
           }
 
@@ -1609,7 +1674,10 @@ export class SupabaseMemory implements Memory {
                     .upsert(timelineEventRecord, { onConflict: "id" });
 
                   if (timelineError) {
-                    console.error(`Error adding timeline event ${eventId}:`, timelineError);
+                    this.logger.warn(
+                      `Error adding timeline event ${eventId}:`,
+                      safeParseError(timelineError),
+                    );
                   }
                 } else if (eventType === "memory") {
                   // memory:saveMessage -> memory:write_start and memory:write_success
@@ -1843,23 +1911,23 @@ export class SupabaseMemory implements Memory {
                     .upsert(otherEventRecord, { onConflict: "id" });
                 }
               } catch (error) {
-                console.error("Error processing event:", error);
+                this.logger.warn("Error processing event:", safeParseError(error));
                 // Skip problematic event but continue migration
               }
             }
           }
         } catch (error) {
-          console.error(`Error processing record with ID ${key}:`, error);
+          this.logger.warn(`Error processing record with ID ${key}:`, safeParseError(error));
           // Skip problematic records and continue
         }
       }
 
-      console.log(`Total ${migratedCount} records successfully migrated`);
+      this.debugLog(`Total ${migratedCount} records successfully migrated`);
 
       // Should we delete the backup after success?
       if (createBackup && deleteBackupAfterSuccess) {
         await this.client.from(oldTableBackup).delete().neq("key", ""); // Delete all backup data
-        console.log("Unnecessary backup deleted");
+        this.debugLog("Unnecessary backup deleted");
       }
 
       return {
@@ -1868,7 +1936,10 @@ export class SupabaseMemory implements Memory {
         backupCreated: createBackup && !deleteBackupAfterSuccess,
       };
     } catch (error) {
-      console.error("Error occurred while migrating agent history data:", error);
+      this.logger.error(
+        "Error occurred while migrating agent history data:",
+        safeParseError(error),
+      );
 
       return {
         success: false,
@@ -1878,390 +1949,692 @@ export class SupabaseMemory implements Memory {
     }
   }
 
+  /*
+  |------------------
+  | Workflow Methods
+  |------------------
+  */
+
   /**
-   * Get conversations by user ID with query options
+   * Store a workflow history entry
+   *
+   * @param entry - The workflow history entry to store
    */
-  public async getConversationsByUserId(
-    userId: string,
-    options: Omit<ConversationQueryOptions, "userId"> = {},
-  ): Promise<Conversation[]> {
+  public async storeWorkflowHistory(entry: WorkflowHistoryEntry): Promise<void> {
     await this.initialized;
 
-    const {
-      resourceId,
-      limit = 50,
-      offset = 0,
-      orderBy = "updated_at",
-      orderDirection = "DESC",
-    } = options;
-
-    try {
-      let query = this.client.from(this.conversationsTable).select("*").eq("user_id", userId);
-
-      if (resourceId) {
-        query = query.eq("resource_id", resourceId);
-      }
-
-      // Add ordering
-      query = query.order(orderBy, { ascending: orderDirection === "ASC" });
-
-      // Add pagination
-      if (limit > 0) {
-        query = query.range(offset, offset + limit - 1);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        throw new Error(`Failed to get conversations by user ID: ${error.message}`);
-      }
-
-      return (data || []).map((row: any) => ({
-        id: row.id,
-        resourceId: row.resource_id,
-        userId: row.user_id,
-        title: row.title,
-        metadata: row.metadata || {},
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-      }));
-    } catch (error) {
-      console.error("Error getting conversations by user ID:", error);
-      throw new Error("Failed to get conversations by user ID from Supabase database");
-    }
-  }
-
-  /**
-   * Query conversations with flexible filtering and pagination options
-   *
-   * This method provides a powerful way to search and filter conversations
-   * with support for user-based filtering, resource filtering, pagination,
-   * and custom sorting.
-   *
-   * @param options Query options for filtering and pagination
-   * @param options.userId Optional user ID to filter conversations by specific user
-   * @param options.resourceId Optional resource ID to filter conversations by specific resource
-   * @param options.limit Maximum number of conversations to return (default: 50)
-   * @param options.offset Number of conversations to skip for pagination (default: 0)
-   * @param options.orderBy Field to sort by: 'created_at', 'updated_at', or 'title' (default: 'updated_at')
-   * @param options.orderDirection Sort direction: 'ASC' or 'DESC' (default: 'DESC')
-   *
-   * @returns Promise that resolves to an array of conversations matching the criteria
-   *
-   * @example
-   * ```typescript
-   * // Get all conversations for a specific user
-   * const userConversations = await storage.queryConversations({
-   *   userId: 'user123',
-   *   limit: 20
-   * });
-   *
-   * // Get conversations for a resource with pagination
-   * const resourceConversations = await storage.queryConversations({
-   *   resourceId: 'chatbot-v1',
-   *   limit: 10,
-   *   offset: 20,
-   *   orderBy: 'created_at',
-   *   orderDirection: 'ASC'
-   * });
-   *
-   * // Get all conversations (admin view)
-   * const allConversations = await storage.queryConversations({
-   *   limit: 100,
-   *   orderBy: 'updated_at'
-   * });
-   * ```
-   *
-   * @note This is a placeholder implementation. Full user-centric schema support is pending.
-   */
-  public async queryConversations(options: ConversationQueryOptions): Promise<Conversation[]> {
-    await this.initialized;
-
-    const {
-      userId,
-      resourceId,
-      limit = 50,
-      offset = 0,
-      orderBy = "updated_at",
-      orderDirection = "DESC",
-    } = options;
-
-    try {
-      let query = this.client.from(this.conversationsTable).select("*");
-
-      // Add filters
-      if (userId) {
-        query = query.eq("user_id", userId);
-      }
-
-      if (resourceId) {
-        query = query.eq("resource_id", resourceId);
-      }
-
-      // Add ordering
-      query = query.order(orderBy, { ascending: orderDirection === "ASC" });
-
-      // Add pagination
-      if (limit > 0) {
-        query = query.range(offset, offset + limit - 1);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        throw new Error(`Failed to query conversations: ${error.message}`);
-      }
-
-      return (data || []).map((row: any) => ({
-        id: row.id,
-        resourceId: row.resource_id,
-        userId: row.user_id,
-        title: row.title,
-        metadata: row.metadata || {},
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-      }));
-    } catch (error) {
-      console.error("Error querying conversations:", error);
-      throw new Error("Failed to query conversations from Supabase database");
-    }
-  }
-
-  /**
-   * Get messages for a specific conversation with pagination support
-   *
-   * This method retrieves all messages within a conversation, ordered chronologically
-   * from oldest to newest. It supports pagination to handle large conversations
-   * efficiently and avoid memory issues.
-   *
-   * @param conversationId The unique identifier of the conversation to retrieve messages from
-   * @param options Optional pagination and filtering options
-   * @param options.limit Maximum number of messages to return (default: 100)
-   * @param options.offset Number of messages to skip for pagination (default: 0)
-   *
-   * @returns Promise that resolves to an array of messages in chronological order (oldest first)
-   *
-   * @example
-   * ```typescript
-   * // Get the first 50 messages in a conversation
-   * const messages = await storage.getConversationMessages('conv-123', {
-   *   limit: 50
-   * });
-   *
-   * // Get messages with pagination (skip first 20, get next 30)
-   * const olderMessages = await storage.getConversationMessages('conv-123', {
-   *   limit: 30,
-   *   offset: 20
-   * });
-   *
-   * // Get all messages (use with caution for large conversations)
-   * const allMessages = await storage.getConversationMessages('conv-123');
-   *
-   * // Process messages in batches
-   * const batchSize = 100;
-   * let offset = 0;
-   * let hasMore = true;
-   *
-   * while (hasMore) {
-   *   const batch = await storage.getConversationMessages('conv-123', {
-   *     limit: batchSize,
-   *     offset: offset
-   *   });
-   *
-   *   // Process batch
-   *   processBatch(batch);
-   *
-   *   hasMore = batch.length === batchSize;
-   *   offset += batchSize;
-   * }
-   * ```
-   *
-   * @throws {Error} If the conversation ID is invalid or operation fails
-   * @note This is a placeholder implementation. Full user-centric schema support is pending.
-   */
-  public async getConversationMessages(
-    conversationId: string,
-    options: { limit?: number; offset?: number } = {},
-  ): Promise<MemoryMessage[]> {
-    await this.initialized;
-
-    const { limit = 100, offset = 0 } = options;
-
-    try {
-      let query = this.client
-        .from(this.messagesTable)
-        .select("*")
-        .eq("conversation_id", conversationId)
-        .order("created_at", { ascending: true }); // Chronological order (oldest first)
-
-      // Add pagination
-      if (limit > 0) {
-        query = query.range(offset, offset + limit - 1);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        throw new Error(`Failed to get conversation messages: ${error.message}`);
-      }
-
-      return (data || []).map((row: any) => ({
-        id: row.message_id,
-        role: row.role,
-        content: row.content,
-        type: row.type,
-        createdAt: row.created_at,
-      }));
-    } catch (error) {
-      console.error("Error getting conversation messages:", error);
-      throw new Error("Failed to get conversation messages from Supabase database");
-    }
-  }
-
-  /**
-   * Get conversations for a user with a fluent query builder interface
-   * @param userId User ID to filter by
-   * @returns Query builder object
-   */
-  public getUserConversations(userId: string) {
-    return {
-      /**
-       * Limit the number of results
-       * @param count Number of conversations to return
-       * @returns Query builder
-       */
-      limit: (count: number) => ({
-        /**
-         * Order results by a specific field
-         * @param field Field to order by
-         * @param direction Sort direction
-         * @returns Query builder
-         */
-        orderBy: (
-          field: "created_at" | "updated_at" | "title" = "updated_at",
-          direction: "ASC" | "DESC" = "DESC",
-        ) => ({
-          /**
-           * Execute the query and return results
-           * @returns Promise of conversations
-           */
-          execute: () =>
-            this.getConversationsByUserId(userId, {
-              limit: count,
-              orderBy: field,
-              orderDirection: direction,
-            }),
-        }),
-        /**
-         * Execute the query with default ordering
-         * @returns Promise of conversations
-         */
-        execute: () => this.getConversationsByUserId(userId, { limit: count }),
-      }),
-
-      /**
-       * Order results by a specific field
-       * @param field Field to order by
-       * @param direction Sort direction
-       * @returns Query builder
-       */
-      orderBy: (
-        field: "created_at" | "updated_at" | "title" = "updated_at",
-        direction: "ASC" | "DESC" = "DESC",
-      ) => ({
-        /**
-         * Limit the number of results
-         * @param count Number of conversations to return
-         * @returns Query builder
-         */
-        limit: (count: number) => ({
-          /**
-           * Execute the query and return results
-           * @returns Promise of conversations
-           */
-          execute: () =>
-            this.getConversationsByUserId(userId, {
-              limit: count,
-              orderBy: field,
-              orderDirection: direction,
-            }),
-        }),
-        /**
-         * Execute the query without limit
-         * @returns Promise of conversations
-         */
-        execute: () =>
-          this.getConversationsByUserId(userId, {
-            orderBy: field,
-            orderDirection: direction,
-          }),
-      }),
-
-      /**
-       * Execute the query with default options
-       * @returns Promise of conversations
-       */
-      execute: () => this.getConversationsByUserId(userId),
-    };
-  }
-
-  /**
-   * Get conversation by ID and ensure it belongs to the specified user
-   * @param conversationId Conversation ID
-   * @param userId User ID to validate ownership
-   * @returns Conversation or null
-   */
-  public async getUserConversation(
-    conversationId: string,
-    userId: string,
-  ): Promise<Conversation | null> {
-    const conversation = await this.getConversation(conversationId);
-    if (!conversation || conversation.userId !== userId) {
-      return null;
-    }
-    return conversation;
-  }
-
-  /**
-   * Get paginated conversations for a user
-   * @param userId User ID
-   * @param page Page number (1-based)
-   * @param pageSize Number of items per page
-   * @returns Object with conversations and pagination info
-   */
-  public async getPaginatedUserConversations(
-    userId: string,
-    page = 1,
-    pageSize = 10,
-  ): Promise<{
-    conversations: Conversation[];
-    page: number;
-    pageSize: number;
-    hasMore: boolean;
-  }> {
-    const offset = (page - 1) * pageSize;
-
-    // Get one extra to check if there are more pages
-    const conversations = await this.getConversationsByUserId(userId, {
-      limit: pageSize + 1,
-      offset,
-      orderBy: "updated_at",
-      orderDirection: "DESC",
+    this.debugLog("Storing workflow history", {
+      id: entry.id,
+      workflowId: entry.workflowId,
+      userId: entry.userId,
+      conversationId: entry.conversationId,
     });
 
-    const hasMore = conversations.length > pageSize;
-    const results = hasMore ? conversations.slice(0, pageSize) : conversations;
+    const record = {
+      id: entry.id,
+      workflow_id: entry.workflowId,
+      name: entry.workflowName,
+      status: entry.status,
+      start_time: entry.startTime.toISOString(),
+      end_time: entry.endTime?.toISOString() || null,
+      input: entry.input ? safeStringify(entry.input) : null,
+      output: entry.output ? safeStringify(entry.output) : null,
+      user_id: entry.userId || null,
+      conversation_id: entry.conversationId || null,
+      metadata: entry.metadata ? safeStringify(entry.metadata) : null,
+      created_at: (entry.createdAt || new Date()).toISOString(),
+      updated_at: (entry.updatedAt || new Date()).toISOString(),
+    };
+
+    const { error } = await this.client
+      .from(this.workflowHistoryTable)
+      .upsert(record, { onConflict: "id" });
+
+    if (error) {
+      this.logger.error(`Error storing workflow history ${entry.id}:`, safeParseError(error));
+      throw new Error(`Failed to store workflow history: ${error.message}`);
+    }
+
+    this.debugLog(`Stored workflow history ${entry.id}`);
+  }
+
+  /**
+   * Get a workflow history entry by ID
+   *
+   * @param id - The ID of the workflow history entry to get
+   * @returns The workflow history entry
+   */
+  public async getWorkflowHistory(id: string): Promise<WorkflowHistoryEntry | null> {
+    await this.initialized;
+
+    const { data, error } = await this.client
+      .from(this.workflowHistoryTable)
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (error) {
+      this.logger.error(`Error getting workflow history ${id}:`, safeParseError(error));
+      throw new Error(`Failed to get workflow history: ${error.message}`);
+    }
+
+    if (!data) {
+      return null;
+    }
+
+    return this.parseWorkflowHistoryRow(data);
+  }
+
+  /**
+   * Get all workflow history entries for a specific workflow ID
+   *
+   * @param workflowId - The ID of the workflow to get history for
+   * @returns The workflow history entries
+   */
+  public async getWorkflowHistoryByWorkflowId(workflowId: string): Promise<WorkflowHistoryEntry[]> {
+    await this.initialized;
+
+    const { data, error } = await this.client
+      .from(this.workflowHistoryTable)
+      .select("*")
+      .eq("workflow_id", workflowId)
+      .order("start_time", { ascending: false });
+
+    if (error) {
+      this.logger.error(
+        `Error getting workflow history for workflow ${workflowId}:`,
+        safeParseError(error),
+      );
+      throw new Error(`Failed to get workflow history: ${error.message}`);
+    }
+
+    return (data || []).map((row) => this.parseWorkflowHistoryRow(row));
+  }
+
+  /**
+   * Update a workflow history entry
+   *
+   * @param id - The ID of the workflow history entry to update
+   * @param updates - The updates to apply to the workflow history entry
+   */
+  public async updateWorkflowHistory(
+    id: string,
+    updates: Partial<WorkflowHistoryEntry>,
+  ): Promise<void> {
+    await this.initialized;
+
+    this.debugLog(`Updating workflow history ${id}`, updates);
+
+    const updateData: Record<string, any> = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (updates.status !== undefined) {
+      updateData.status = updates.status;
+    }
+    if (updates.endTime !== undefined) {
+      updateData.end_time = updates.endTime ? updates.endTime.toISOString() : null;
+    }
+    if (updates.output !== undefined) {
+      updateData.output = updates.output ? safeStringify(updates.output) : null;
+    }
+    if (updates.userId !== undefined) {
+      updateData.user_id = updates.userId;
+    }
+    if (updates.conversationId !== undefined) {
+      updateData.conversation_id = updates.conversationId;
+    }
+    if (updates.metadata !== undefined) {
+      updateData.metadata = updates.metadata ? safeStringify(updates.metadata) : null;
+    }
+
+    const { error } = await this.client
+      .from(this.workflowHistoryTable)
+      .update(updateData)
+      .eq("id", id);
+
+    if (error) {
+      this.logger.error(`Error updating workflow history ${id}:`, safeParseError(error));
+      throw new Error(`Failed to update workflow history: ${error.message}`);
+    }
+
+    this.debugLog(`Updated workflow history ${id}`);
+  }
+
+  /**
+   * Delete a workflow history entry
+   *
+   * @param id - The ID of the workflow history entry to delete
+   */
+  public async deleteWorkflowHistory(id: string): Promise<void> {
+    await this.initialized;
+
+    this.debugLog(`Deleting workflow history ${id}`);
+
+    const { error } = await this.client.from(this.workflowHistoryTable).delete().eq("id", id);
+
+    if (error) {
+      this.logger.error(`Error deleting workflow history ${id}:`, safeParseError(error));
+      throw new Error(`Failed to delete workflow history: ${error.message}`);
+    }
+
+    this.debugLog(`Deleted workflow history ${id}`);
+  }
+
+  /**
+   * Store a workflow step entry
+   *
+   * @param step - The workflow step entry to store
+   */
+  public async storeWorkflowStep(step: WorkflowStepHistoryEntry): Promise<void> {
+    await this.initialized;
+
+    this.debugLog(
+      `Storing workflow step ${step.id} for workflow history ${step.workflowHistoryId}`,
+      step,
+    );
+
+    const record = {
+      id: step.id,
+      workflow_history_id: step.workflowHistoryId,
+      step_index: step.stepIndex,
+      step_type: step.stepType,
+      step_name: step.stepName,
+      status: step.status,
+      start_time: step.startTime.toISOString(),
+      end_time: step.endTime?.toISOString() || null,
+      input: step.input ? safeStringify(step.input) : null,
+      output: step.output ? safeStringify(step.output) : null,
+      error_message: step.error ? String(step.error) : null,
+      agent_execution_id: step.agentExecutionId || null,
+      created_at: (step.createdAt || new Date()).toISOString(),
+      updated_at: (step.updatedAt || new Date()).toISOString(),
+    };
+
+    const { error } = await this.client
+      .from(this.workflowStepsTable)
+      .upsert(record, { onConflict: "id" });
+
+    if (error) {
+      this.logger.error(`Error storing workflow step ${step.id}:`, safeParseError(error));
+      throw new Error(`Failed to store workflow step: ${error.message}`);
+    }
+
+    this.debugLog(`Stored workflow step ${step.id}`);
+  }
+
+  /**
+   * Get a workflow step by ID
+   *
+   * @param id - The ID of the workflow step to get
+   * @returns The workflow step
+   */
+  public async getWorkflowStep(id: string): Promise<WorkflowStepHistoryEntry | null> {
+    await this.initialized;
+
+    const { data, error } = await this.client
+      .from(this.workflowStepsTable)
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (error) {
+      this.logger.error(`Error getting workflow step ${id}:`, safeParseError(error));
+      throw new Error(`Failed to get workflow step: ${error.message}`);
+    }
+
+    if (!data) {
+      return null;
+    }
+
+    return this.parseWorkflowStepRow(data);
+  }
+
+  /**
+   * Get all workflow steps for a workflow history entry
+   *
+   * @param workflowHistoryId - The ID of the workflow history entry to get steps for
+   * @returns The workflow steps
+   */
+  public async getWorkflowSteps(workflowHistoryId: string): Promise<WorkflowStepHistoryEntry[]> {
+    await this.initialized;
+
+    const { data, error } = await this.client
+      .from(this.workflowStepsTable)
+      .select("*")
+      .eq("workflow_history_id", workflowHistoryId)
+      .order("step_index", { ascending: true });
+
+    if (error) {
+      this.logger.error(
+        `Error getting workflow steps for history ${workflowHistoryId}:`,
+        safeParseError(error),
+      );
+      throw new Error(`Failed to get workflow steps: ${error.message}`);
+    }
+
+    return (data || []).map((row) => this.parseWorkflowStepRow(row));
+  }
+
+  /**
+   * Update a workflow step
+   *
+   * @param id - The ID of the workflow step to update
+   * @param updates - The updates to apply to the workflow step
+   */
+  public async updateWorkflowStep(
+    id: string,
+    updates: Partial<WorkflowStepHistoryEntry>,
+  ): Promise<void> {
+    await this.initialized;
+
+    this.debugLog(`Updating workflow step ${id}`, updates);
+
+    const updateData: Record<string, any> = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (updates.status !== undefined) {
+      updateData.status = updates.status;
+    }
+    if (updates.endTime !== undefined) {
+      updateData.end_time = updates.endTime ? updates.endTime.toISOString() : null;
+    }
+    if (updates.output !== undefined) {
+      updateData.output = updates.output ? safeStringify(updates.output) : null;
+    }
+    if (updates.error !== undefined) {
+      updateData.error_message = updates.error ? String(updates.error) : null;
+    }
+    if (updates.agentExecutionId !== undefined) {
+      updateData.agent_execution_id = updates.agentExecutionId;
+    }
+
+    const { error } = await this.client
+      .from(this.workflowStepsTable)
+      .update(updateData)
+      .eq("id", id);
+
+    if (error) {
+      this.logger.error(`Error updating workflow step ${id}:`, safeParseError(error));
+      throw new Error(`Failed to update workflow step: ${error.message}`);
+    }
+
+    this.debugLog(`Updated workflow step ${id}`);
+  }
+
+  /**
+   * Delete a workflow step
+   *
+   * @param id - The ID of the workflow step to delete
+   */
+  public async deleteWorkflowStep(id: string): Promise<void> {
+    await this.initialized;
+
+    this.debugLog(`Deleting workflow step ${id}`);
+
+    const { error } = await this.client.from(this.workflowStepsTable).delete().eq("id", id);
+
+    if (error) {
+      this.logger.error(`Error deleting workflow step ${id}:`, safeParseError(error));
+      throw new Error(`Failed to delete workflow step: ${error.message}`);
+    }
+
+    this.debugLog(`Deleted workflow step ${id}`);
+  }
+
+  /**
+   * Store a workflow timeline event
+   *
+   * @param event - The workflow timeline event to store
+   */
+  public async storeWorkflowTimelineEvent(event: any): Promise<void> {
+    await this.initialized;
+
+    this.debugLog(
+      `Storing workflow timeline event ${event.id} for workflow history ${event.workflowHistoryId}`,
+      event,
+    );
+
+    const record = {
+      id: event.id,
+      workflow_history_id: event.workflowHistoryId,
+      event_id: event.eventId,
+      type: event.type,
+      name: event.name,
+      start_time: event.startTime,
+      end_time: event.endTime || null,
+      status: event.status || null,
+      level: event.level || "INFO",
+      input: event.input ? safeStringify(event.input) : null,
+      output: event.output ? safeStringify(event.output) : null,
+      metadata: event.metadata ? safeStringify(event.metadata) : null,
+      event_sequence: event.eventSequence || null,
+      trace_id: event.traceId || null,
+      parent_event_id: event.parentEventId || null,
+      status_message: event.statusMessage ? String(event.statusMessage) : null,
+      created_at: (event.createdAt || new Date()).toISOString(),
+    };
+
+    const { error } = await this.client
+      .from(this.workflowTimelineEventsTable)
+      .upsert(record, { onConflict: "id" });
+
+    if (error) {
+      this.logger.error(
+        `Error storing workflow timeline event ${event.id}:`,
+        safeParseError(error),
+      );
+      throw new Error(`Failed to store workflow timeline event: ${error.message}`);
+    }
+
+    this.debugLog(`Stored workflow timeline event ${event.id}`);
+  }
+
+  /**
+   * Get a workflow timeline event by ID
+   *
+   * @param id - The ID of the workflow timeline event to get
+   * @returns The workflow timeline event
+   */
+  public async getWorkflowTimelineEvent(id: string): Promise<any | null> {
+    await this.initialized;
+
+    const { data, error } = await this.client
+      .from(this.workflowTimelineEventsTable)
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (error) {
+      this.logger.error(`Error getting workflow timeline event ${id}:`, safeParseError(error));
+      throw new Error(`Failed to get workflow timeline event: ${error.message}`);
+    }
+
+    if (!data) {
+      return null;
+    }
+
+    return this.parseWorkflowTimelineEventRow(data);
+  }
+
+  /**
+   * Get all workflow timeline events for a workflow history entry
+   *
+   * @param workflowHistoryId - The ID of the workflow history entry to get timeline events for
+   * @returns The workflow timeline events
+   */
+  public async getWorkflowTimelineEvents(workflowHistoryId: string): Promise<any[]> {
+    await this.initialized;
+
+    const { data, error } = await this.client
+      .from(this.workflowTimelineEventsTable)
+      .select("*")
+      .eq("workflow_history_id", workflowHistoryId)
+      .order("start_time", { ascending: true });
+
+    if (error) {
+      this.logger.error(
+        `Error getting workflow timeline events for history ${workflowHistoryId}:`,
+        safeParseError(error),
+      );
+      throw new Error(`Failed to get workflow timeline events: ${error.message}`);
+    }
+
+    return (data || []).map((row) => this.parseWorkflowTimelineEventRow(row));
+  }
+
+  /**
+   * Delete a workflow timeline event
+   *
+   * @param id - The ID of the workflow timeline event to delete
+   */
+  public async deleteWorkflowTimelineEvent(id: string): Promise<void> {
+    await this.initialized;
+
+    this.debugLog(`Deleting workflow timeline event ${id}`);
+
+    const { error } = await this.client
+      .from(this.workflowTimelineEventsTable)
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      this.logger.error(`Error deleting workflow timeline event ${id}:`, safeParseError(error));
+      throw new Error(`Failed to delete workflow timeline event: ${error.message}`);
+    }
+
+    this.debugLog(`Deleted workflow timeline event ${id}`);
+  }
+
+  /**
+   * Get all workflow IDs that have history entries
+   *
+   * @returns The workflow IDs
+   */
+  public async getAllWorkflowIds(): Promise<string[]> {
+    await this.initialized;
+
+    const { data, error } = await this.client
+      .from(this.workflowHistoryTable)
+      .select("workflow_id")
+      .order("workflow_id", { ascending: true });
+
+    if (error) {
+      this.logger.error("Error getting all workflow IDs:", safeParseError(error));
+      throw new Error(`Failed to get workflow IDs: ${error.message}`);
+    }
+
+    // Extract unique workflow IDs
+    const workflowIds = [...new Set((data || []).map((row) => row.workflow_id))];
+    return workflowIds;
+  }
+
+  /**
+   * Get workflow statistics for a specific workflow
+   *
+   * @param workflowId - The ID of the workflow to get stats for
+   * @returns The workflow stats
+   */
+  public async getWorkflowStats(workflowId: string): Promise<WorkflowStats> {
+    await this.initialized;
+
+    this.debugLog(`Getting workflow stats for workflow ${workflowId}`);
+
+    const { data, error } = await this.client
+      .from(this.workflowHistoryTable)
+      .select("status, start_time, end_time")
+      .eq("workflow_id", workflowId);
+
+    if (error) {
+      this.logger.error(`Error getting workflow stats for ${workflowId}:`, safeParseError(error));
+      throw new Error(`Failed to get workflow stats: ${error.message}`);
+    }
+
+    const entries = data || [];
+    const totalExecutions = entries.length;
+    const successfulExecutions = entries.filter((e) => e.status === "completed").length;
+    const failedExecutions = entries.filter((e) => e.status === "error").length;
+
+    // Calculate average execution time for completed executions
+    const completedExecutions = entries.filter((e) => e.status === "completed" && e.end_time);
+    const averageExecutionTime =
+      completedExecutions.length > 0
+        ? completedExecutions.reduce((sum, e) => {
+            const duration = new Date(e.end_time).getTime() - new Date(e.start_time).getTime();
+            return sum + duration;
+          }, 0) / completedExecutions.length
+        : 0;
+
+    // Get last execution time
+    const lastExecutionTime =
+      entries.length > 0
+        ? entries.sort(
+            (a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime(),
+          )[0].start_time
+        : undefined;
 
     return {
-      conversations: results,
-      page,
-      pageSize,
-      hasMore,
+      totalExecutions,
+      successfulExecutions,
+      failedExecutions,
+      averageExecutionTime,
+      lastExecutionTime: lastExecutionTime ? new Date(lastExecutionTime) : undefined,
     };
   }
+
+  /**
+   * Get workflow history with steps and events in a single call
+   *
+   * @param id - The ID of the workflow history entry to get steps and events for
+   * @returns The workflow history entry with steps and events
+   */
+  public async getWorkflowHistoryWithStepsAndEvents(
+    id: string,
+  ): Promise<WorkflowHistoryEntry | null> {
+    await this.initialized;
+
+    this.debugLog(`Getting workflow history with steps and events for ${id}`);
+
+    // Get the main workflow history entry
+    const history = await this.getWorkflowHistory(id);
+    if (!history) {
+      return null;
+    }
+
+    // Get workflow steps
+    const steps = await this.getWorkflowSteps(id);
+
+    // Get workflow timeline events
+    const timelineEvents = await this.getWorkflowTimelineEvents(id);
+
+    // Convert WorkflowTimelineEvent[] to WorkflowTimelineEvent[] (they should be compatible)
+    const events = timelineEvents;
+
+    return {
+      ...history,
+      steps,
+      events,
+    };
+  }
+
+  /**
+   * Delete workflow history with all related data (steps and events)
+   *
+   * @param id - The ID of the workflow history entry to delete
+   */
+  public async deleteWorkflowHistoryWithRelated(id: string): Promise<void> {
+    await this.initialized;
+
+    this.debugLog(`Deleting workflow history with related data: ${id}`);
+
+    // Get all related timeline events
+    const { data: timelineEvents } = await this.client
+      .from(this.workflowTimelineEventsTable)
+      .select("id")
+      .eq("workflow_history_id", id);
+
+    // Get all related steps
+    const { data: steps } = await this.client
+      .from(this.workflowStepsTable)
+      .select("id")
+      .eq("workflow_history_id", id);
+
+    // Delete timeline events
+    if (timelineEvents && timelineEvents.length > 0) {
+      const { error: eventsError } = await this.client
+        .from(this.workflowTimelineEventsTable)
+        .delete()
+        .eq("workflow_history_id", id);
+
+      if (eventsError) {
+        this.logger.error(
+          `Error deleting workflow timeline events for ${id}:`,
+          safeParseError(eventsError),
+        );
+        throw new Error(`Failed to delete workflow timeline events: ${eventsError.message}`);
+      }
+    }
+
+    // Delete steps
+    if (steps && steps.length > 0) {
+      const { error: stepsError } = await this.client
+        .from(this.workflowStepsTable)
+        .delete()
+        .eq("workflow_history_id", id);
+
+      if (stepsError) {
+        this.logger.error(`Error deleting workflow steps for ${id}:`, safeParseError(stepsError));
+        throw new Error(`Failed to delete workflow steps: ${stepsError.message}`);
+      }
+    }
+
+    // Delete the main workflow history entry
+    await this.deleteWorkflowHistory(id);
+
+    this.debugLog(`Deleted workflow history with related data: ${id}`);
+  }
+
+  /**
+   * Cleanup old workflow histories for a specific workflow
+   *
+   * @param workflowId - The ID of the workflow to cleanup histories for
+   * @param maxEntries - The maximum number of entries to keep
+   * @returns The number of entries deleted
+   */
+  public async cleanupOldWorkflowHistories(
+    workflowId: string,
+    maxEntries: number,
+  ): Promise<number> {
+    await this.initialized;
+
+    this.debugLog(
+      `Cleaning up old workflow histories for ${workflowId}, keeping ${maxEntries} entries`,
+    );
+
+    // Get all workflow histories for this workflow, ordered by start time (newest first)
+    const { data, error } = await this.client
+      .from(this.workflowHistoryTable)
+      .select("id, start_time")
+      .eq("workflow_id", workflowId)
+      .order("start_time", { ascending: false });
+
+    if (error) {
+      this.logger.error(
+        `Error getting workflow histories for cleanup ${workflowId}:`,
+        safeParseError(error),
+      );
+      throw new Error(`Failed to get workflow histories for cleanup: ${error.message}`);
+    }
+
+    const entries = data || [];
+
+    if (entries.length <= maxEntries) {
+      return 0; // No cleanup needed
+    }
+
+    // Get the entries to delete (oldest ones beyond maxEntries)
+    const entriesToDelete = entries.slice(maxEntries);
+    const deletedCount = entriesToDelete.length;
+
+    // Delete old entries with their related data
+    for (const entry of entriesToDelete) {
+      await this.deleteWorkflowHistoryWithRelated(entry.id);
+    }
+
+    this.debugLog(`Cleaned up ${deletedCount} old workflow histories for ${workflowId}`);
+    return deletedCount;
+  }
+
+  /*
+  |------------------
+  | Private Methods
+  |------------------
+  */
 
   /**
    * Check and create migration flag table, return if migration already completed
+   *
    * @param migrationType Type of migration to check
    * @returns Object with completion status and details
    */
@@ -2306,6 +2679,7 @@ export class SupabaseMemory implements Memory {
 
   /**
    * Set migration flag after successful completion
+   *
    * @param migrationType Type of migration completed
    * @param migratedCount Number of records migrated
    */
@@ -2352,7 +2726,7 @@ export class SupabaseMemory implements Memory {
       const { error: tableError } = await this.client.from(this.historyTable).select("id").limit(1);
 
       if (tableError?.message?.includes("does not exist")) {
-        console.log("Agent history table doesn't exist, migration not needed");
+        this.debugLog("Agent history table doesn't exist, migration not needed");
         return { success: true };
       }
 
@@ -2382,19 +2756,19 @@ export class SupabaseMemory implements Memory {
 
       // If both columns already exist, migration not needed
       if (hasUserIdColumn && hasConversationIdColumn) {
-        console.log("Agent history table already has user_id and conversation_id columns");
+        this.debugLog("Agent history table already has user_id and conversation_id columns");
         await this.setMigrationFlag("agent_history_schema_migration", 0);
         return { success: true };
       }
 
       // Show SQL that needs to be run
-      console.log(`\n${"=".repeat(80)}`);
-      console.log("🔄 AGENT HISTORY SCHEMA MIGRATION REQUIRED");
-      console.log("=".repeat(80));
-      console.log("Please run the following SQL in your Supabase SQL Editor:");
-      console.log("(Copy and paste the entire block below)\n");
+      this.devLog(`\n${"=".repeat(80)}`);
+      this.devLog("🔄 AGENT HISTORY SCHEMA MIGRATION REQUIRED");
+      this.devLog("=".repeat(80));
+      this.devLog("Please run the following SQL in your Supabase SQL Editor:");
+      this.devLog("(Copy and paste the entire block below)\n");
 
-      console.log(`-- Agent History Schema Migration for ${this.historyTable}
+      this.devLog(`-- Agent History Schema Migration for ${this.historyTable}
 -- Add user_id and conversation_id columns if they don't exist
 
 -- Add user_id column
@@ -2418,632 +2792,22 @@ VALUES ('agent_history_schema_migration', 0, '{"manual_migration": true}'::jsonb
 ON CONFLICT (migration_type) DO NOTHING;
 `);
 
-      console.log(`\n${"=".repeat(80)}`);
-      console.log("📋 MIGRATION INSTRUCTIONS:");
-      console.log("1. Go to your Supabase Dashboard");
-      console.log('2. Click on "SQL Editor" in the left sidebar');
-      console.log('3. Click "New Query"');
-      console.log("4. Copy and paste the SQL above");
-      console.log('5. Click "Run" to execute');
-      console.log("6. Restart your application");
-      console.log(`${"=".repeat(80)}\n`);
+      this.devLog(`\n${"=".repeat(80)}`);
+      this.devLog("📋 MIGRATION INSTRUCTIONS:");
+      this.devLog("1. Go to your Supabase Dashboard");
+      this.devLog('2. Click on "SQL Editor" in the left sidebar');
+      this.devLog('3. Click "New Query"');
+      this.devLog("4. Copy and paste the SQL above");
+      this.devLog('5. Click "Run" to execute');
+      this.devLog("6. Restart your application");
+      this.devLog(`${"=".repeat(80)}\n`);
 
       return { success: true };
     } catch (error) {
-      console.error("Error during agent history schema migration:", error);
+      this.logger.error("Error during agent history schema migration:", safeParseError(error));
       return { success: false, error: error as Error };
     }
   }
-
-  // === WORKFLOW PERSISTENCE METHODS ===
-
-  /**
-   * Store a workflow history entry
-   */
-  public async storeWorkflowHistory(entry: WorkflowHistoryEntry): Promise<void> {
-    await this.initialized;
-
-    this.debugLog("Storing workflow history", {
-      id: entry.id,
-      workflowId: entry.workflowId,
-      userId: entry.userId,
-      conversationId: entry.conversationId,
-    });
-
-    const record = {
-      id: entry.id,
-      workflow_id: entry.workflowId,
-      name: entry.workflowName,
-      status: entry.status,
-      start_time: entry.startTime.toISOString(),
-      end_time: entry.endTime?.toISOString() || null,
-      input: entry.input ? safeStringify(entry.input) : null,
-      output: entry.output ? safeStringify(entry.output) : null,
-      user_id: entry.userId || null,
-      conversation_id: entry.conversationId || null,
-      metadata: entry.metadata ? safeStringify(entry.metadata) : null,
-      created_at: (entry.createdAt || new Date()).toISOString(),
-      updated_at: (entry.updatedAt || new Date()).toISOString(),
-    };
-
-    const { error } = await this.client
-      .from(this.workflowHistoryTable)
-      .upsert(record, { onConflict: "id" });
-
-    if (error) {
-      console.error(`Error storing workflow history ${entry.id}:`, error);
-      throw new Error(`Failed to store workflow history: ${error.message}`);
-    }
-
-    this.debugLog(`Stored workflow history ${entry.id}`);
-  }
-
-  /**
-   * Get a workflow history entry by ID
-   */
-  public async getWorkflowHistory(id: string): Promise<WorkflowHistoryEntry | null> {
-    await this.initialized;
-
-    const { data, error } = await this.client
-      .from(this.workflowHistoryTable)
-      .select("*")
-      .eq("id", id)
-      .maybeSingle();
-
-    if (error) {
-      console.error(`Error getting workflow history ${id}:`, error);
-      throw new Error(`Failed to get workflow history: ${error.message}`);
-    }
-
-    if (!data) {
-      return null;
-    }
-
-    return this.parseWorkflowHistoryRow(data);
-  }
-
-  /**
-   * Get all workflow history entries for a specific workflow ID
-   */
-  public async getWorkflowHistoryByWorkflowId(workflowId: string): Promise<WorkflowHistoryEntry[]> {
-    await this.initialized;
-
-    const { data, error } = await this.client
-      .from(this.workflowHistoryTable)
-      .select("*")
-      .eq("workflow_id", workflowId)
-      .order("start_time", { ascending: false });
-
-    if (error) {
-      console.error(`Error getting workflow history for workflow ${workflowId}:`, error);
-      throw new Error(`Failed to get workflow history: ${error.message}`);
-    }
-
-    return (data || []).map((row) => this.parseWorkflowHistoryRow(row));
-  }
-
-  /**
-   * Update a workflow history entry
-   */
-  public async updateWorkflowHistory(
-    id: string,
-    updates: Partial<WorkflowHistoryEntry>,
-  ): Promise<void> {
-    await this.initialized;
-
-    this.debugLog(`Updating workflow history ${id}`, updates);
-
-    const updateData: Record<string, any> = {
-      updated_at: new Date().toISOString(),
-    };
-
-    if (updates.status !== undefined) {
-      updateData.status = updates.status;
-    }
-    if (updates.endTime !== undefined) {
-      updateData.end_time = updates.endTime ? updates.endTime.toISOString() : null;
-    }
-    if (updates.output !== undefined) {
-      updateData.output = updates.output ? safeStringify(updates.output) : null;
-    }
-    if (updates.userId !== undefined) {
-      updateData.user_id = updates.userId;
-    }
-    if (updates.conversationId !== undefined) {
-      updateData.conversation_id = updates.conversationId;
-    }
-    if (updates.metadata !== undefined) {
-      updateData.metadata = updates.metadata ? safeStringify(updates.metadata) : null;
-    }
-
-    const { error } = await this.client
-      .from(this.workflowHistoryTable)
-      .update(updateData)
-      .eq("id", id);
-
-    if (error) {
-      console.error(`Error updating workflow history ${id}:`, error);
-      throw new Error(`Failed to update workflow history: ${error.message}`);
-    }
-
-    this.debugLog(`Updated workflow history ${id}`);
-  }
-
-  /**
-   * Delete a workflow history entry
-   */
-  public async deleteWorkflowHistory(id: string): Promise<void> {
-    await this.initialized;
-
-    this.debugLog(`Deleting workflow history ${id}`);
-
-    const { error } = await this.client.from(this.workflowHistoryTable).delete().eq("id", id);
-
-    if (error) {
-      console.error(`Error deleting workflow history ${id}:`, error);
-      throw new Error(`Failed to delete workflow history: ${error.message}`);
-    }
-
-    this.debugLog(`Deleted workflow history ${id}`);
-  }
-
-  /**
-   * Store a workflow step entry
-   */
-  public async storeWorkflowStep(step: WorkflowStepHistoryEntry): Promise<void> {
-    await this.initialized;
-
-    this.debugLog(
-      `Storing workflow step ${step.id} for workflow history ${step.workflowHistoryId}`,
-      step,
-    );
-
-    const record = {
-      id: step.id,
-      workflow_history_id: step.workflowHistoryId,
-      step_index: step.stepIndex,
-      step_type: step.stepType,
-      step_name: step.stepName,
-      status: step.status,
-      start_time: step.startTime.toISOString(),
-      end_time: step.endTime?.toISOString() || null,
-      input: step.input ? safeStringify(step.input) : null,
-      output: step.output ? safeStringify(step.output) : null,
-      error_message: step.error ? String(step.error) : null,
-      agent_execution_id: step.agentExecutionId || null,
-      created_at: (step.createdAt || new Date()).toISOString(),
-      updated_at: (step.updatedAt || new Date()).toISOString(),
-    };
-
-    const { error } = await this.client
-      .from(this.workflowStepsTable)
-      .upsert(record, { onConflict: "id" });
-
-    if (error) {
-      console.error(`Error storing workflow step ${step.id}:`, error);
-      throw new Error(`Failed to store workflow step: ${error.message}`);
-    }
-
-    this.debugLog(`Stored workflow step ${step.id}`);
-  }
-
-  /**
-   * Get a workflow step by ID
-   */
-  public async getWorkflowStep(id: string): Promise<WorkflowStepHistoryEntry | null> {
-    await this.initialized;
-
-    const { data, error } = await this.client
-      .from(this.workflowStepsTable)
-      .select("*")
-      .eq("id", id)
-      .maybeSingle();
-
-    if (error) {
-      console.error(`Error getting workflow step ${id}:`, error);
-      throw new Error(`Failed to get workflow step: ${error.message}`);
-    }
-
-    if (!data) {
-      return null;
-    }
-
-    return this.parseWorkflowStepRow(data);
-  }
-
-  /**
-   * Get all workflow steps for a workflow history entry
-   */
-  public async getWorkflowSteps(workflowHistoryId: string): Promise<WorkflowStepHistoryEntry[]> {
-    await this.initialized;
-
-    const { data, error } = await this.client
-      .from(this.workflowStepsTable)
-      .select("*")
-      .eq("workflow_history_id", workflowHistoryId)
-      .order("step_index", { ascending: true });
-
-    if (error) {
-      console.error(`Error getting workflow steps for history ${workflowHistoryId}:`, error);
-      throw new Error(`Failed to get workflow steps: ${error.message}`);
-    }
-
-    return (data || []).map((row) => this.parseWorkflowStepRow(row));
-  }
-
-  /**
-   * Update a workflow step
-   */
-  public async updateWorkflowStep(
-    id: string,
-    updates: Partial<WorkflowStepHistoryEntry>,
-  ): Promise<void> {
-    await this.initialized;
-
-    this.debugLog(`Updating workflow step ${id}`, updates);
-
-    const updateData: Record<string, any> = {
-      updated_at: new Date().toISOString(),
-    };
-
-    if (updates.status !== undefined) {
-      updateData.status = updates.status;
-    }
-    if (updates.endTime !== undefined) {
-      updateData.end_time = updates.endTime ? updates.endTime.toISOString() : null;
-    }
-    if (updates.output !== undefined) {
-      updateData.output = updates.output ? safeStringify(updates.output) : null;
-    }
-    if (updates.error !== undefined) {
-      updateData.error_message = updates.error ? String(updates.error) : null;
-    }
-    if (updates.agentExecutionId !== undefined) {
-      updateData.agent_execution_id = updates.agentExecutionId;
-    }
-
-    const { error } = await this.client
-      .from(this.workflowStepsTable)
-      .update(updateData)
-      .eq("id", id);
-
-    if (error) {
-      console.error(`Error updating workflow step ${id}:`, error);
-      throw new Error(`Failed to update workflow step: ${error.message}`);
-    }
-
-    this.debugLog(`Updated workflow step ${id}`);
-  }
-
-  /**
-   * Delete a workflow step
-   */
-  public async deleteWorkflowStep(id: string): Promise<void> {
-    await this.initialized;
-
-    this.debugLog(`Deleting workflow step ${id}`);
-
-    const { error } = await this.client.from(this.workflowStepsTable).delete().eq("id", id);
-
-    if (error) {
-      console.error(`Error deleting workflow step ${id}:`, error);
-      throw new Error(`Failed to delete workflow step: ${error.message}`);
-    }
-
-    this.debugLog(`Deleted workflow step ${id}`);
-  }
-
-  /**
-   * Store a workflow timeline event
-   */
-  public async storeWorkflowTimelineEvent(event: any): Promise<void> {
-    await this.initialized;
-
-    this.debugLog(
-      `Storing workflow timeline event ${event.id} for workflow history ${event.workflowHistoryId}`,
-      event,
-    );
-
-    const record = {
-      id: event.id,
-      workflow_history_id: event.workflowHistoryId,
-      event_id: event.eventId,
-      type: event.type,
-      name: event.name,
-      start_time: event.startTime,
-      end_time: event.endTime || null,
-      status: event.status || null,
-      level: event.level || "INFO",
-      input: event.input ? safeStringify(event.input) : null,
-      output: event.output ? safeStringify(event.output) : null,
-      metadata: event.metadata ? safeStringify(event.metadata) : null,
-      event_sequence: event.eventSequence || null,
-      trace_id: event.traceId || null,
-      parent_event_id: event.parentEventId || null,
-      status_message: event.statusMessage ? String(event.statusMessage) : null,
-      created_at: (event.createdAt || new Date()).toISOString(),
-    };
-
-    const { error } = await this.client
-      .from(this.workflowTimelineEventsTable)
-      .upsert(record, { onConflict: "id" });
-
-    if (error) {
-      console.error(`Error storing workflow timeline event ${event.id}:`, error);
-      throw new Error(`Failed to store workflow timeline event: ${error.message}`);
-    }
-
-    this.debugLog(`Stored workflow timeline event ${event.id}`);
-  }
-
-  /**
-   * Get a workflow timeline event by ID
-   */
-  public async getWorkflowTimelineEvent(id: string): Promise<any | null> {
-    await this.initialized;
-
-    const { data, error } = await this.client
-      .from(this.workflowTimelineEventsTable)
-      .select("*")
-      .eq("id", id)
-      .maybeSingle();
-
-    if (error) {
-      console.error(`Error getting workflow timeline event ${id}:`, error);
-      throw new Error(`Failed to get workflow timeline event: ${error.message}`);
-    }
-
-    if (!data) {
-      return null;
-    }
-
-    return this.parseWorkflowTimelineEventRow(data);
-  }
-
-  /**
-   * Get all workflow timeline events for a workflow history entry
-   */
-  public async getWorkflowTimelineEvents(workflowHistoryId: string): Promise<any[]> {
-    await this.initialized;
-
-    const { data, error } = await this.client
-      .from(this.workflowTimelineEventsTable)
-      .select("*")
-      .eq("workflow_history_id", workflowHistoryId)
-      .order("start_time", { ascending: true });
-
-    if (error) {
-      console.error(
-        `Error getting workflow timeline events for history ${workflowHistoryId}:`,
-        error,
-      );
-      throw new Error(`Failed to get workflow timeline events: ${error.message}`);
-    }
-
-    return (data || []).map((row) => this.parseWorkflowTimelineEventRow(row));
-  }
-
-  /**
-   * Delete a workflow timeline event
-   */
-  public async deleteWorkflowTimelineEvent(id: string): Promise<void> {
-    await this.initialized;
-
-    this.debugLog(`Deleting workflow timeline event ${id}`);
-
-    const { error } = await this.client
-      .from(this.workflowTimelineEventsTable)
-      .delete()
-      .eq("id", id);
-
-    if (error) {
-      console.error(`Error deleting workflow timeline event ${id}:`, error);
-      throw new Error(`Failed to delete workflow timeline event: ${error.message}`);
-    }
-
-    this.debugLog(`Deleted workflow timeline event ${id}`);
-  }
-
-  /**
-   * Get all workflow IDs that have history entries
-   */
-  public async getAllWorkflowIds(): Promise<string[]> {
-    await this.initialized;
-
-    const { data, error } = await this.client
-      .from(this.workflowHistoryTable)
-      .select("workflow_id")
-      .order("workflow_id", { ascending: true });
-
-    if (error) {
-      console.error("Error getting all workflow IDs:", error);
-      throw new Error(`Failed to get workflow IDs: ${error.message}`);
-    }
-
-    // Extract unique workflow IDs
-    const workflowIds = [...new Set((data || []).map((row) => row.workflow_id))];
-    return workflowIds;
-  }
-
-  /**
-   * Get workflow statistics for a specific workflow
-   */
-  public async getWorkflowStats(workflowId: string): Promise<WorkflowStats> {
-    await this.initialized;
-
-    this.debugLog(`Getting workflow stats for workflow ${workflowId}`);
-
-    const { data, error } = await this.client
-      .from(this.workflowHistoryTable)
-      .select("status, start_time, end_time")
-      .eq("workflow_id", workflowId);
-
-    if (error) {
-      console.error(`Error getting workflow stats for ${workflowId}:`, error);
-      throw new Error(`Failed to get workflow stats: ${error.message}`);
-    }
-
-    const entries = data || [];
-    const totalExecutions = entries.length;
-    const successfulExecutions = entries.filter((e) => e.status === "completed").length;
-    const failedExecutions = entries.filter((e) => e.status === "error").length;
-
-    // Calculate average execution time for completed executions
-    const completedExecutions = entries.filter((e) => e.status === "completed" && e.end_time);
-    const averageExecutionTime =
-      completedExecutions.length > 0
-        ? completedExecutions.reduce((sum, e) => {
-            const duration = new Date(e.end_time).getTime() - new Date(e.start_time).getTime();
-            return sum + duration;
-          }, 0) / completedExecutions.length
-        : 0;
-
-    // Get last execution time
-    const lastExecutionTime =
-      entries.length > 0
-        ? entries.sort(
-            (a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime(),
-          )[0].start_time
-        : undefined;
-
-    return {
-      totalExecutions,
-      successfulExecutions,
-      failedExecutions,
-      averageExecutionTime,
-      lastExecutionTime: lastExecutionTime ? new Date(lastExecutionTime) : undefined,
-    };
-  }
-
-  /**
-   * Get workflow history with steps and events in a single call
-   */
-  public async getWorkflowHistoryWithStepsAndEvents(
-    id: string,
-  ): Promise<WorkflowHistoryEntry | null> {
-    await this.initialized;
-
-    this.debugLog(`Getting workflow history with steps and events for ${id}`);
-
-    // Get the main workflow history entry
-    const history = await this.getWorkflowHistory(id);
-    if (!history) {
-      return null;
-    }
-
-    // Get workflow steps
-    const steps = await this.getWorkflowSteps(id);
-
-    // Get workflow timeline events
-    const timelineEvents = await this.getWorkflowTimelineEvents(id);
-
-    // Convert WorkflowTimelineEvent[] to WorkflowTimelineEvent[] (they should be compatible)
-    const events = timelineEvents;
-
-    return {
-      ...history,
-      steps,
-      events,
-    };
-  }
-
-  /**
-   * Delete workflow history with all related data (steps and events)
-   */
-  public async deleteWorkflowHistoryWithRelated(id: string): Promise<void> {
-    await this.initialized;
-
-    this.debugLog(`Deleting workflow history with related data: ${id}`);
-
-    // Get all related timeline events
-    const { data: timelineEvents } = await this.client
-      .from(this.workflowTimelineEventsTable)
-      .select("id")
-      .eq("workflow_history_id", id);
-
-    // Get all related steps
-    const { data: steps } = await this.client
-      .from(this.workflowStepsTable)
-      .select("id")
-      .eq("workflow_history_id", id);
-
-    // Delete timeline events
-    if (timelineEvents && timelineEvents.length > 0) {
-      const { error: eventsError } = await this.client
-        .from(this.workflowTimelineEventsTable)
-        .delete()
-        .eq("workflow_history_id", id);
-
-      if (eventsError) {
-        console.error(`Error deleting workflow timeline events for ${id}:`, eventsError);
-        throw new Error(`Failed to delete workflow timeline events: ${eventsError.message}`);
-      }
-    }
-
-    // Delete steps
-    if (steps && steps.length > 0) {
-      const { error: stepsError } = await this.client
-        .from(this.workflowStepsTable)
-        .delete()
-        .eq("workflow_history_id", id);
-
-      if (stepsError) {
-        console.error(`Error deleting workflow steps for ${id}:`, stepsError);
-        throw new Error(`Failed to delete workflow steps: ${stepsError.message}`);
-      }
-    }
-
-    // Delete the main workflow history entry
-    await this.deleteWorkflowHistory(id);
-
-    this.debugLog(`Deleted workflow history with related data: ${id}`);
-  }
-
-  /**
-   * Cleanup old workflow histories for a specific workflow
-   */
-  public async cleanupOldWorkflowHistories(
-    workflowId: string,
-    maxEntries: number,
-  ): Promise<number> {
-    await this.initialized;
-
-    this.debugLog(
-      `Cleaning up old workflow histories for ${workflowId}, keeping ${maxEntries} entries`,
-    );
-
-    // Get all workflow histories for this workflow, ordered by start time (newest first)
-    const { data, error } = await this.client
-      .from(this.workflowHistoryTable)
-      .select("id, start_time")
-      .eq("workflow_id", workflowId)
-      .order("start_time", { ascending: false });
-
-    if (error) {
-      console.error(`Error getting workflow histories for cleanup ${workflowId}:`, error);
-      throw new Error(`Failed to get workflow histories for cleanup: ${error.message}`);
-    }
-
-    const entries = data || [];
-
-    if (entries.length <= maxEntries) {
-      return 0; // No cleanup needed
-    }
-
-    // Get the entries to delete (oldest ones beyond maxEntries)
-    const entriesToDelete = entries.slice(maxEntries);
-    const deletedCount = entriesToDelete.length;
-
-    // Delete old entries with their related data
-    for (const entry of entriesToDelete) {
-      await this.deleteWorkflowHistoryWithRelated(entry.id);
-    }
-
-    this.debugLog(`Cleaned up ${deletedCount} old workflow histories for ${workflowId}`);
-    return deletedCount;
-  }
-
-  // === HELPER METHODS FOR PARSING DATABASE ROWS ===
 
   /**
    * Parse workflow history row from database
@@ -3097,6 +2861,18 @@ ON CONFLICT (migration_type) DO NOTHING;
    */
   private debugLog(message: string, data?: unknown): void {
     if (this.debug) {
+      this.logger.info(`[SupabaseMemory] ${message}`, data || "");
+    }
+  }
+
+  /**
+   * Log a message if debug mode is enabled or if the environment is development
+   * @param message Message to log
+   * @param data Additional data to log
+   */
+  private devLog(message: string, data?: unknown): void {
+    if (process.env.NODE_ENV === "development" || this.debug) {
+      // biome-ignore lint/suspicious/noConsole: We are allowing this for dev ONLY
       console.log(`[SupabaseMemory] ${message}`, data || "");
     }
   }
@@ -3128,15 +2904,15 @@ ON CONFLICT (migration_type) DO NOTHING;
 
         if (migrationResult.success) {
           if ((migrationResult.migratedCount || 0) > 0) {
-            console.log(
+            this.logger.info(
               `${migrationResult.migratedCount} conversation records successfully migrated`,
             );
           }
         } else {
-          console.error("Conversation migration error:", migrationResult.error);
+          this.logger.error("Conversation migration error:", migrationResult.error);
         }
       } catch (error) {
-        console.error("Error migrating conversation schema:", error);
+        this.logger.error("Error migrating conversation schema:", safeParseError(error));
       }
 
       // Run agent history schema migration
@@ -3144,10 +2920,10 @@ ON CONFLICT (migration_type) DO NOTHING;
         const migrationResult = await this.migrateAgentHistorySchema();
 
         if (!migrationResult.success) {
-          console.error("Agent history schema migration error:", migrationResult.error);
+          this.logger.error("Agent history schema migration error:", migrationResult.error);
         }
       } catch (error) {
-        console.error("Error migrating agent history schema:", error);
+        this.logger.error("Error migrating agent history schema:", safeParseError(error));
       }
 
       // Then run data migration if needed
@@ -3157,20 +2933,20 @@ ON CONFLICT (migration_type) DO NOTHING;
 
       if (result.success) {
         if ((result.migratedCount || 0) > 0) {
-          console.log(`${result.migratedCount} records successfully migrated`);
+          this.logger.info(`${result.migratedCount} records successfully migrated`);
         }
       } else {
-        console.error("Migration error:", result.error);
+        this.logger.error("Migration error:", result.error);
 
         // Restore from backup in case of error
         const restoreResult = await this.migrateAgentHistoryData({});
 
         if (restoreResult.success) {
-          console.log("Successfully restored from backup");
+          this.logger.info("Successfully restored from backup");
         }
       }
     } catch (error) {
-      console.error("Error initializing database:", error);
+      this.logger.error("Error initializing database:", safeParseError(error));
       // Don't throw here to allow the class to be instantiated
     }
   }
@@ -3199,7 +2975,7 @@ ON CONFLICT (migration_type) DO NOTHING;
       // If all basic tables are missing, it's a fresh installation
       return !!conversationsError && !!messagesError && !!historyError;
     } catch {
-      return true; // Fresh installation
+      return true;
     }
   }
 
@@ -3209,9 +2985,10 @@ ON CONFLICT (migration_type) DO NOTHING;
   private async checkTimelineEventsTable(): Promise<boolean> {
     try {
       const { error } = await this.client.from(this.timelineEventsTable).select("id").limit(1);
-      return !!error; // If there"s an error, table doesn"t exist
+      // If there's an error, table doesn't exist
+      return !!error;
     } catch {
-      return true; // Table doesn"t exist
+      return true;
     }
   }
 
@@ -3290,13 +3067,13 @@ ON CONFLICT (migration_type) DO NOTHING;
 
       if (isFreshInstallation) {
         // Fresh installation - show complete README SQL
-        console.log(`\n${"=".repeat(100)}`);
-        console.log("🚀 VOLTAGENT SUPABASE FRESH INSTALLATION");
-        console.log("=".repeat(100));
-        console.log("No tables detected. Please run the complete setup SQL:");
-        console.log("(Copy and paste the entire block below)\n");
+        this.devLog(`\n${"=".repeat(100)}`);
+        this.devLog("🚀 VOLTAGENT SUPABASE FRESH INSTALLATION");
+        this.devLog("=".repeat(100));
+        this.devLog("No tables detected. Please run the complete setup SQL:");
+        this.devLog("(Copy and paste the entire block below)\n");
 
-        console.log(`-- VoltAgent Supabase Complete Setup
+        this.devLog(`-- VoltAgent Supabase Complete Setup
 -- Run this entire script in your Supabase SQL Editor
 
 -- Conversations Table
@@ -3543,15 +3320,15 @@ VALUES
 ON CONFLICT (migration_type) DO NOTHING;
 `);
 
-        console.log(`\n${"=".repeat(100)}`);
-        console.log("📋 FRESH INSTALLATION INSTRUCTIONS:");
-        console.log("1. Go to your Supabase Dashboard");
-        console.log('2. Click on "SQL Editor" in the left sidebar');
-        console.log('3. Click "New Query"');
-        console.log("4. Copy and paste the SQL above");
-        console.log('5. Click "Run" to execute');
-        console.log("6. Restart your application");
-        console.log(`${"=".repeat(100)}\n`);
+        this.devLog(`\n${"=".repeat(100)}`);
+        this.devLog("📋 FRESH INSTALLATION INSTRUCTIONS:");
+        this.devLog("1. Go to your Supabase Dashboard");
+        this.devLog('2. Click on "SQL Editor" in the left sidebar');
+        this.devLog('3. Click "New Query"');
+        this.devLog("4. Copy and paste the SQL above");
+        this.devLog('5. Click "Run" to execute');
+        this.devLog("6. Restart your application");
+        this.devLog(`${"=".repeat(100)}\n`);
         return;
       }
 
@@ -3567,18 +3344,18 @@ ON CONFLICT (migration_type) DO NOTHING;
         workflowTableStatus.needsWorkflowSteps ||
         workflowTableStatus.needsWorkflowTimelineEvents
       ) {
-        console.log(`\n${"=".repeat(100)}`);
-        console.log("🚀 VOLTAGENT SUPABASE MIGRATION");
-        console.log("=".repeat(100));
-        console.log("Missing tables/columns detected. Please run the following SQL:");
-        console.log("(Copy and paste the entire block below)\n");
+        this.devLog(`\n${"=".repeat(100)}`);
+        this.devLog("🚀 VOLTAGENT SUPABASE MIGRATION");
+        this.devLog("=".repeat(100));
+        this.devLog("Missing tables/columns detected. Please run the following SQL:");
+        this.devLog("(Copy and paste the entire block below)\n");
 
-        console.log("-- VoltAgent Supabase Migration");
-        console.log("-- Run this entire script in your Supabase SQL Editor\n");
+        this.devLog("-- VoltAgent Supabase Migration");
+        this.devLog("-- Run this entire script in your Supabase SQL Editor\n");
 
         if (needsTimelineTable) {
-          console.log("-- 1. Create timeline events table");
-          console.log(`CREATE TABLE IF NOT EXISTS ${this.timelineEventsTable} (
+          this.devLog("-- 1. Create timeline events table");
+          this.devLog(`CREATE TABLE IF NOT EXISTS ${this.timelineEventsTable} (
   id TEXT PRIMARY KEY,
   history_id TEXT NOT NULL,
   agent_id TEXT,
@@ -3602,8 +3379,8 @@ ON CONFLICT (migration_type) DO NOTHING;
         }
 
         if (needsHistoryUpdate) {
-          console.log("-- 2. Update agent history table structure");
-          console.log(`ALTER TABLE ${this.historyTable} 
+          this.devLog("-- 2. Update agent history table structure");
+          this.devLog(`ALTER TABLE ${this.historyTable} 
 ADD COLUMN IF NOT EXISTS id TEXT,
 ADD COLUMN IF NOT EXISTS timestamp TEXT,
 ADD COLUMN IF NOT EXISTS status TEXT,
@@ -3616,8 +3393,8 @@ ADD COLUMN IF NOT EXISTS conversation_id TEXT;\n`);
         }
 
         if (workflowTableStatus.needsWorkflowHistory) {
-          console.log("-- 3. Create workflow history table");
-          console.log(`CREATE TABLE IF NOT EXISTS ${this.workflowHistoryTable} (
+          this.devLog("-- 3. Create workflow history table");
+          this.devLog(`CREATE TABLE IF NOT EXISTS ${this.workflowHistoryTable} (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   workflow_id TEXT NOT NULL,
@@ -3635,8 +3412,8 @@ ADD COLUMN IF NOT EXISTS conversation_id TEXT;\n`);
         }
 
         if (workflowTableStatus.needsWorkflowSteps) {
-          console.log("-- 4. Create workflow steps table");
-          console.log(`CREATE TABLE IF NOT EXISTS ${this.workflowStepsTable} (
+          this.devLog("-- 4. Create workflow steps table");
+          this.devLog(`CREATE TABLE IF NOT EXISTS ${this.workflowStepsTable} (
   id TEXT PRIMARY KEY,
   workflow_history_id TEXT NOT NULL REFERENCES ${this.workflowHistoryTable}(id) ON DELETE CASCADE,
   step_index INTEGER NOT NULL,
@@ -3655,8 +3432,8 @@ ADD COLUMN IF NOT EXISTS conversation_id TEXT;\n`);
         }
 
         if (workflowTableStatus.needsWorkflowTimelineEvents) {
-          console.log("-- 5. Create workflow timeline events table");
-          console.log(`CREATE TABLE IF NOT EXISTS ${this.workflowTimelineEventsTable} (
+          this.devLog("-- 5. Create workflow timeline events table");
+          this.devLog(`CREATE TABLE IF NOT EXISTS ${this.workflowTimelineEventsTable} (
   id TEXT PRIMARY KEY,
   workflow_history_id TEXT NOT NULL REFERENCES ${this.workflowHistoryTable}(id) ON DELETE CASCADE,
   event_id TEXT NOT NULL,
@@ -3677,9 +3454,9 @@ ADD COLUMN IF NOT EXISTS conversation_id TEXT;\n`);
 );\n`);
         }
 
-        console.log("-- 6. Create performance indexes");
+        this.devLog("-- 6. Create performance indexes");
         if (needsTimelineTable) {
-          console.log(`CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_timeline_events_history_id 
+          this.devLog(`CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_timeline_events_history_id 
 ON ${this.timelineEventsTable}(history_id);
 
 CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_timeline_events_agent_id 
@@ -3699,7 +3476,7 @@ ON ${this.timelineEventsTable}(status);`);
         }
 
         if (needsHistoryUpdate) {
-          console.log(`
+          this.devLog(`
 CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_agent_history_id 
 ON ${this.historyTable}(id);
 
@@ -3718,7 +3495,7 @@ ON ${this.historyTable}(conversation_id);`);
           workflowTableStatus.needsWorkflowSteps ||
           workflowTableStatus.needsWorkflowTimelineEvents
         ) {
-          console.log(`
+          this.devLog(`
 -- Workflow table indexes
 CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_workflow_history_workflow_id
 ON ${this.workflowHistoryTable}(workflow_id);
@@ -3754,18 +3531,18 @@ CREATE INDEX IF NOT EXISTS idx_${this.baseTableName}_workflow_timeline_events_se
 ON ${this.workflowTimelineEventsTable}(event_sequence);`);
         }
 
-        console.log(`\n${"=".repeat(100)}`);
-        console.log("📋 MIGRATION INSTRUCTIONS:");
-        console.log("1. Go to your Supabase Dashboard");
-        console.log('2. Click on "SQL Editor" in the left sidebar');
-        console.log('3. Click "New Query"');
-        console.log("4. Copy and paste the SQL above");
-        console.log('5. Click "Run" to execute');
-        console.log("6. Restart your application");
-        console.log(`${"=".repeat(100)}\n`);
+        this.devLog(`\n${"=".repeat(100)}`);
+        this.devLog("📋 MIGRATION INSTRUCTIONS:");
+        this.devLog("1. Go to your Supabase Dashboard");
+        this.devLog('2. Click on "SQL Editor" in the left sidebar');
+        this.devLog('3. Click "New Query"');
+        this.devLog("4. Copy and paste the SQL above");
+        this.devLog('5. Click "Run" to execute');
+        this.devLog("6. Restart your application");
+        this.devLog(`${"=".repeat(100)}\n`);
       }
     } catch (error) {
-      console.error("Error ensuring database structure:", error);
+      this.logger.error("Error ensuring database structure:", safeParseError(error));
       throw error;
     }
   }
@@ -3804,6 +3581,496 @@ ON ${this.workflowTimelineEventsTable}(event_sequence);`);
 
   private get workflowTimelineEventsTable(): string {
     return `${this.baseTableName}_workflow_timeline_events`;
+  }
+
+  /**
+   * Generate a unique ID for records
+   * @returns Unique ID
+   */
+  private generateId(): string {
+    return (
+      Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+    );
+  }
+
+  /**
+   * Set migration flags for fresh installation to prevent future migrations
+   * @private
+   */
+  private async setFreshInstallationFlags(): Promise<void> {
+    try {
+      const migrationFlagTable = `${this.conversationsTable}_migration_flags`;
+
+      // Insert migration flags to mark fresh installation
+      const { error } = await this.client.from(migrationFlagTable).insert([
+        {
+          migration_type: "conversation_schema_migration",
+          completed_at: new Date().toISOString(),
+          migrated_count: 0,
+          metadata: { fresh_install: true },
+        },
+        {
+          migration_type: "agent_history_migration",
+          completed_at: new Date().toISOString(),
+          migrated_count: 0,
+          metadata: { fresh_install: true },
+        },
+      ]);
+
+      if (error) {
+        // If table doesn't exist, that's expected for fresh install
+        // The flags will be set via SQL when user runs the setup script
+        this.debugLog("Migration flags table not found (expected for fresh install)");
+      } else {
+        this.debugLog("✅ Fresh installation migration flags set successfully");
+      }
+    } catch (flagError) {
+      // Silent fail for fresh installation - flags will be set via SQL
+      this.debugLog(
+        "Could not set migration flags programmatically (will be set via SQL)",
+        flagError,
+      );
+    }
+  }
+
+  /**
+   * Migrate conversation schema to add user_id and update messages table
+   *
+   * ⚠️  **CRITICAL WARNING: DESTRUCTIVE OPERATION** ⚠️
+   *
+   * This method performs a DESTRUCTIVE schema migration that:
+   * - DROPS and recreates existing tables
+   * - Creates temporary tables during migration
+   * - Modifies the primary key structure of the messages table
+   * - Can cause DATA LOSS if interrupted or if errors occur
+   *
+   * **IMPORTANT SAFETY REQUIREMENTS:**
+   * - 🛑 STOP all application instances before running this migration
+   * - 🛑 Ensure NO concurrent database operations are running
+   * - 🛑 Take a full database backup before running (independent of built-in backup)
+   * - 🛑 Test the migration on a copy of production data first
+   * - 🛑 Plan for downtime during migration execution
+   *
+   * **What this migration does:**
+   * 1. Creates backup tables (if createBackup=true)
+   * 2. Creates temporary tables with new schema
+   * 3. Migrates data from old tables to new schema
+   * 4. DROPS original tables
+   * 5. Renames temporary tables to original names
+   * 6. All operations are wrapped in a transaction for atomicity
+   *
+   * @param options Migration configuration options
+   * @param options.createBackup Whether to create backup tables before migration (default: true, HIGHLY RECOMMENDED)
+   * @param options.restoreFromBackup Whether to restore from existing backup instead of migrating (default: false)
+   * @param options.deleteBackupAfterSuccess Whether to delete backup tables after successful migration (default: false)
+   *
+   * @returns Promise resolving to migration result with success status, migrated count, and backup info
+   *
+   * @throws {Error} If migration fails and transaction is rolled back
+   *
+   * @since This migration is typically only needed when upgrading from older schema versions
+   */
+  private async migrateConversationSchema(
+    options: {
+      createBackup?: boolean;
+      restoreFromBackup?: boolean;
+      deleteBackupAfterSuccess?: boolean;
+    } = {},
+  ): Promise<{
+    success: boolean;
+    migratedCount?: number;
+    error?: Error;
+    backupCreated?: boolean;
+  }> {
+    const {
+      createBackup = true,
+      restoreFromBackup = false,
+      deleteBackupAfterSuccess = false,
+    } = options;
+
+    const conversationsTableName = this.conversationsTable;
+    const messagesTableName = this.messagesTable;
+    const conversationsBackupName = `${conversationsTableName}_backup`;
+    const messagesBackupName = `${messagesTableName}_backup`;
+
+    try {
+      this.debugLog("Starting conversation schema migration...");
+      this.debugLog("");
+
+      // Note: deleteBackupAfterSuccess is not fully implemented in Supabase version
+      if (deleteBackupAfterSuccess) {
+        this.debugLog("deleteBackupAfterSuccess option is noted but not implemented");
+      }
+
+      // Check if migration has already been completed by looking for a migration flag
+      this.debugLog("🔍 Checking for migration flags table...");
+      try {
+        // First, try to get any migration flag (without .single() to avoid multiple rows error)
+        const { data: migrationFlags, error: queryError } = await this.client
+          .from(`${this.conversationsTable}_migration_flags`)
+          .select("*")
+          .eq("migration_type", "conversation_schema_migration");
+
+        // Check if table doesn't exist
+        if (queryError) {
+          const isTableMissing =
+            queryError?.message?.includes("relation") ||
+            queryError?.code === "PGRST116" ||
+            queryError?.code === "42P01";
+
+          if (isTableMissing) {
+            this.devLog("⚠️  Migration flags table not found!");
+            this.devLog("");
+            this.devLog(
+              "🔧 RECOMMENDED: Create migration flags table to prevent duplicate migrations:",
+            );
+            this.devLog(
+              "This table tracks completed migrations and prevents them from running again.",
+            );
+            this.devLog("Copy and run this SQL in Supabase SQL Editor:");
+            this.devLog("═══════════════════════════════════════════════════════════");
+            this.devLog(`CREATE TABLE IF NOT EXISTS ${this.conversationsTable}_migration_flags (
+  id SERIAL PRIMARY KEY,
+  migration_type TEXT NOT NULL UNIQUE,
+  completed_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+  migrated_count INTEGER DEFAULT 0,
+  metadata JSONB DEFAULT '{}'::jsonb
+);`);
+            this.devLog("═══════════════════════════════════════════════════════════");
+            this.devLog("");
+            this.devLog(
+              "🚀 Migration will continue without flags (migrations may run multiple times)",
+            );
+            this.devLog("");
+          } else {
+            // Some other error occurred
+            this.debugLog("Error checking migration flags:", queryError);
+            this.debugLog("Proceeding with migration check...");
+          }
+        } else if (migrationFlags && migrationFlags.length > 0) {
+          // Migration flag(s) found - take the first one
+          const migrationFlag = migrationFlags[0];
+          this.debugLog("✅ Migration flags table found!");
+          this.debugLog(
+            `🚀 Conversation schema migration already completed on ${migrationFlag.completed_at}`,
+          );
+          this.debugLog(`   Migrated ${migrationFlag.migrated_count || 0} records previously`);
+          this.debugLog("⏭️  Skipping migration...");
+          return { success: true, migratedCount: 0 };
+        } else {
+          this.debugLog("✅ Migration flags table found, but no migration flag exists yet");
+        }
+      } catch (unexpectedError: any) {
+        // Unexpected error occurred, log and continue
+        this.debugLog("Unexpected error while checking migration flags:", unexpectedError);
+        this.debugLog("Proceeding with migration check...");
+      }
+
+      // If restoreFromBackup option is active, restore from backup
+      if (restoreFromBackup) {
+        this.debugLog("Starting restoration from backup...");
+
+        // Check if backup tables exist
+        const { data: convBackupCheck } = await this.client
+          .from("information_schema.tables")
+          .select("table_name")
+          .eq("table_name", conversationsBackupName)
+          .single();
+
+        const { data: msgBackupCheck } = await this.client
+          .from("information_schema.tables")
+          .select("table_name")
+          .eq("table_name", messagesBackupName)
+          .single();
+
+        if (!convBackupCheck || !msgBackupCheck) {
+          throw new Error("No backup found to restore");
+        }
+
+        // Restore tables from backup (Supabase doesn't support direct table rename, so we'd need to recreate)
+        // This is a simplified implementation for Supabase
+        this.debugLog("Restoration from backup completed successfully");
+        return { success: true, backupCreated: false };
+      }
+
+      // Check current table structures by checking for user_id column
+      // Use direct table queries instead of information_schema which may have permission issues
+      let hasUserIdInConversations = false;
+      let hasUserIdInMessages = false;
+
+      try {
+        // Try to select user_id from conversations table
+        const { error: convError } = await this.client
+          .from(conversationsTableName)
+          .select("user_id")
+          .limit(1);
+
+        hasUserIdInConversations = !convError;
+      } catch (error) {
+        this.debugLog("Conversations table doesn't have user_id column:", error);
+        hasUserIdInConversations = false;
+      }
+
+      try {
+        // Try to select user_id from messages table
+        const { error: msgError } = await this.client
+          .from(messagesTableName)
+          .select("user_id")
+          .limit(1);
+
+        hasUserIdInMessages = !msgError;
+      } catch (error) {
+        this.debugLog("Messages table doesn't have user_id column:", error);
+        hasUserIdInMessages = false;
+      }
+
+      // If conversations already has user_id and messages doesn't have user_id, migration not needed
+      if (hasUserIdInConversations && !hasUserIdInMessages) {
+        return { success: true, migratedCount: 0 };
+      }
+
+      // Check if schema migration is needed
+      if (!hasUserIdInConversations && !hasUserIdInMessages) {
+        this.devLog(
+          "⚠️  Schema update required. Please run the following SQL in Supabase SQL Editor:",
+        );
+        this.devLog(
+          `ALTER TABLE ${conversationsTableName} ADD COLUMN IF NOT EXISTS user_id TEXT NOT NULL DEFAULT 'default';`,
+        );
+        this.devLog("Skipping migration until schema is updated.");
+        return {
+          success: false,
+          error: new Error(
+            "Schema update required. Please add user_id column to conversations table.",
+          ),
+        };
+      }
+
+      if (!hasUserIdInConversations && hasUserIdInMessages) {
+        this.devLog(
+          "⚠️  Schema update required. Please run the following SQL in Supabase SQL Editor:",
+        );
+        this.devLog(
+          `ALTER TABLE ${conversationsTableName} ADD COLUMN IF NOT EXISTS user_id TEXT NOT NULL DEFAULT 'default';`,
+        );
+        return {
+          success: true,
+        };
+      }
+
+      // Also check if tables are completely empty - no need to migrate empty tables
+      const { data: existingConversations } = await this.client
+        .from(conversationsTableName)
+        .select("id")
+        .limit(1);
+
+      const { data: existingMessages } = await this.client
+        .from(messagesTableName)
+        .select("message_id")
+        .limit(1);
+
+      if (
+        (!existingConversations || existingConversations.length === 0) &&
+        (!existingMessages || existingMessages.length === 0)
+      ) {
+        this.debugLog("Tables are empty, no migration needed");
+        return { success: true, migratedCount: 0 };
+      }
+
+      // Get existing data
+      const { data: conversationDataResult } = await this.client
+        .from(conversationsTableName)
+        .select("*");
+
+      const { data: messageDataResult } = await this.client.from(messagesTableName).select("*");
+
+      const conversationData = conversationDataResult || [];
+      const messageData = messageDataResult || [];
+
+      // If no data to migrate
+      if (conversationData.length === 0 && messageData.length === 0) {
+        this.debugLog("No data found to migrate");
+        return { success: true, migratedCount: 0 };
+      }
+
+      let migratedCount = 0;
+
+      // Simple approach: Go through each message and update the corresponding conversation
+      for (const message of messageData) {
+        if (hasUserIdInMessages && message.user_id && message.conversation_id) {
+          // Find the conversation
+          const conversation = conversationData.find((conv) => conv.id === message.conversation_id);
+
+          if (conversation) {
+            // If conversation has no user_id or it's "default", update it with user_id from message
+            if (!conversation.user_id || conversation.user_id === "default") {
+              await this.client
+                .from(conversationsTableName)
+                .update({ user_id: message.user_id })
+                .eq("id", message.conversation_id);
+
+              this.debugLog(
+                `Updated conversation ${message.conversation_id} with user_id: ${message.user_id}`,
+              );
+
+              // Update the local data to avoid updating the same conversation multiple times
+              conversation.user_id = message.user_id;
+              migratedCount++;
+            }
+          } else {
+            // Conversation doesn't exist, create it
+            const newConversation = {
+              id: message.conversation_id,
+              resource_id: "default",
+              user_id: message.user_id,
+              title: "Migrated Conversation",
+              metadata: {},
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            };
+
+            await this.client.from(conversationsTableName).insert([newConversation]);
+            conversationData.push(newConversation); // Add to local data to avoid duplicates
+            this.debugLog(
+              `Created missing conversation ${message.conversation_id} with user_id: ${message.user_id}`,
+            );
+            migratedCount++;
+          }
+        }
+      }
+
+      // Note: Conversation processing is now handled above in the main loop
+
+      this.devLog(
+        `Conversation schema migration completed successfully. Migrated ${migratedCount} conversations.`,
+      );
+
+      // If messages table still has user_id column, require removing it
+      if (hasUserIdInMessages) {
+        this.devLog("");
+        this.devLog("🔧 REQUIRED CLEANUP STEP:");
+        this.devLog(
+          "Migration is complete, but you MUST remove the user_id column from messages table to prevent errors:",
+        );
+        this.devLog(`ALTER TABLE ${messagesTableName} DROP COLUMN IF EXISTS user_id;`);
+        this.devLog(
+          "(This is REQUIRED now that user_id data has been moved to conversations table)",
+        );
+        this.devLog("❗ Run this SQL command to complete the migration properly.");
+        this.devLog("");
+      }
+
+      // Set migration flag to prevent future runs
+      try {
+        const migrationFlagTable = `${this.conversationsTable}_migration_flags`;
+
+        // First try to create the flag table if it doesn't exist
+        const { error: insertError } = await this.client.from(migrationFlagTable).insert([
+          {
+            migration_type: "conversation_schema_migration",
+            completed_at: new Date().toISOString(),
+            migrated_count: migratedCount,
+          },
+        ]);
+
+        if (!insertError) {
+          this.debugLog("✅ Migration flag set successfully - future migrations will be skipped");
+        } else {
+          // Check if error is due to missing table
+          const isTableMissing =
+            insertError?.message?.includes("relation") ||
+            insertError?.code === "PGRST116" ||
+            insertError?.code === "42P01";
+
+          if (isTableMissing) {
+            this.devLog("");
+            this.devLog(
+              "⚠️  WARNING: Could not set migration flag - migration flags table not found!",
+            );
+            this.devLog("❌ This migration may run again on next startup");
+            this.devLog(
+              "🔧 To prevent this, create the migration flags table using the SQL provided above",
+            );
+            this.devLog("");
+          }
+        }
+      } catch (flagError: any) {
+        // Unexpected error in flag setting process
+        this.debugLog("Unexpected error while setting migration flag:", flagError);
+      }
+
+      return {
+        success: true,
+        migratedCount,
+        backupCreated: createBackup,
+      };
+    } catch (error) {
+      this.logger.error("Error during conversation schema migration:", safeParseError(error));
+      return {
+        success: false,
+        error: error as Error,
+        backupCreated: createBackup,
+      };
+    }
+  }
+
+  /**
+   * Prune old messages to respect storage limit
+   * @param conversationId Conversation ID to prune messages for
+   */
+  private async pruneOldMessages(conversationId: string): Promise<void> {
+    const limit = this.options.storageLimit || 100;
+
+    try {
+      // Get the count of messages for this conversation
+      const { count, error: countError } = await this.client
+        .from(this.messagesTable)
+        .select("*", { count: "exact", head: true })
+        .eq("conversation_id", conversationId);
+
+      if (countError) {
+        this.debugLog("Error counting messages:", countError);
+        return;
+      }
+
+      const messageCount = count || 0;
+
+      if (messageCount > limit) {
+        // Get the oldest messages to delete
+        const deleteCount = messageCount - limit;
+
+        const { data: oldestMessages, error: selectError } = await this.client
+          .from(this.messagesTable)
+          .select("message_id")
+          .eq("conversation_id", conversationId)
+          .order("created_at", { ascending: true })
+          .limit(deleteCount);
+
+        if (selectError) {
+          this.debugLog("Error selecting oldest messages:", selectError);
+          return;
+        }
+
+        if (oldestMessages && oldestMessages.length > 0) {
+          const messageIds = oldestMessages.map((msg) => msg.message_id);
+
+          const { error: deleteError } = await this.client
+            .from(this.messagesTable)
+            .delete()
+            .eq("conversation_id", conversationId)
+            .in("message_id", messageIds);
+
+          if (deleteError) {
+            this.debugLog("Error deleting old messages:", deleteError);
+            return;
+          }
+
+          this.debugLog(`Pruned ${deleteCount} old messages for conversation ${conversationId}`);
+        }
+      }
+    } catch (error) {
+      this.debugLog("Error pruning old messages:", error);
+    }
   }
 
   /**
