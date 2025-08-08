@@ -78,6 +78,12 @@ export class SupabaseMemory implements Memory {
     this.initialized = this.initializeDatabase();
   }
 
+  /*
+|------------------
+| 
+|------------------
+*/
+
   public async addMessage(message: MemoryMessage, conversationId: string): Promise<void> {
     await this.initialized;
 

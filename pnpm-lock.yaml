@@ -1889,6 +1889,9 @@ importers:
       '@voltagent/internal':
         specifier: ^0.0.8
         version: link:../internal
+      '@voltagent/logger':
+        specifier: workspace:^
+        version: link:../logger
     devDependencies:
       '@types/node':
         specifier: ^24.0.3
