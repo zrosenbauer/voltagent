@@ -4,7 +4,7 @@
   "version": "0.1.16",
   "dependencies": {
     "@supabase/supabase-js": "^2.49.4",
-    "@voltagent/internal": "workspace:^0.0.8"
+    "@voltagent/internal": "^0.0.8"
   },
   "devDependencies": {
     "@types/node": "^24.0.3",
