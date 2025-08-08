@@ -12,6 +12,7 @@ import type {
   StreamTextOptions,
   UsageInfo,
 } from "@voltagent/core";
+import { safeStringify } from "@voltagent/internal/utils";
 import type {
   CallWarning,
   CoreMessage,
@@ -268,7 +269,7 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
             type: "text",
             text: match(result.object)
               .with(P.string, (s) => s)
-              .otherwise((o) => JSON.stringify(o)),
+              .otherwise((o) => safeStringify(o)),
             usage: result.usage,
           });
 
@@ -323,7 +324,7 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
       .returnType<StreamObjectOnFinishCallback<z.infer<TSchema>> | null>()
       .with({ onStepFinish: P.not(P.nullish) }, (o) => {
         return async (event) => {
-          const jsonResult = event.object ? JSON.stringify(event.object) : "";
+          const jsonResult = event.object ? safeStringify(event.object) : "";
           const step = createStepFromChunk({
             type: "text", // Simulate as a text step containing the final JSON
             text: jsonResult,
