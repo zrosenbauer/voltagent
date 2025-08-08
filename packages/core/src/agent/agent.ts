@@ -1533,6 +1533,23 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       messages = [...systemMessages, ...contextMessages];
       messages = await this.formatInputMessages(messages, input);
 
+      // Call onPrepareMessages hook if defined
+      try {
+        const prepareResult = await this.getMergedHooks(internalOptions).onPrepareMessages?.({
+          messages: [...messages], // Pass a copy to prevent direct mutation
+          agent: this,
+          context: operationContext,
+        });
+
+        // Use transformed messages if provided
+        if (prepareResult?.messages && Array.isArray(prepareResult.messages)) {
+          messages = prepareResult.messages;
+        }
+      } catch (error) {
+        this.logger.error("Error preparing messages", { error, agentId: this.id });
+        // Continue with original messages if hook fails
+      }
+
       // [NEW EVENT SYSTEM] Create an agent:start event
       const agentStartTime = new Date().toISOString(); // Capture agent start time once
       const agentStartEvent: AgentStartEvent = {
@@ -2150,6 +2167,23 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       : [systemMessageResponse.systemMessages];
     let messages = [...systemMessages, ...contextMessages];
     messages = await this.formatInputMessages(messages, input);
+
+    // Call onPrepareMessages hook if defined
+    try {
+      const prepareResult = await this.getMergedHooks(internalOptions).onPrepareMessages?.({
+        messages: [...messages], // Pass a copy to prevent direct mutation
+        agent: this,
+        context: operationContext,
+      });
+
+      // Use transformed messages if provided
+      if (prepareResult?.messages && Array.isArray(prepareResult.messages)) {
+        messages = prepareResult.messages;
+      }
+    } catch (error) {
+      this.logger.error("Error preparing messages", { error, agentId: this.id });
+      // Continue with original messages if hook fails
+    }
 
     // [NEW EVENT SYSTEM] Create an agent:start event
     const agentStartTime = new Date().toISOString(); // Capture agent start time once
@@ -2786,6 +2820,23 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       messages = [...systemMessages, ...contextMessages];
       messages = await this.formatInputMessages(messages, input);
 
+      // Call onPrepareMessages hook if defined
+      try {
+        const prepareResult = await this.getMergedHooks(internalOptions).onPrepareMessages?.({
+          messages: [...messages], // Pass a copy to prevent direct mutation
+          agent: this,
+          context: operationContext,
+        });
+
+        // Use transformed messages if provided
+        if (prepareResult?.messages && Array.isArray(prepareResult.messages)) {
+          messages = prepareResult.messages;
+        }
+      } catch (error) {
+        this.logger.error("Error preparing messages", { error, agentId: this.id });
+        // Continue with original messages if hook fails
+      }
+
       // [NEW EVENT SYSTEM] Create an agent:start event
       const agentStartTime = new Date().toISOString(); // Capture agent start time once
       const agentStartEvent: AgentStartEvent = {
@@ -3160,6 +3211,23 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
       : [systemMessageResponse.systemMessages];
     let messages = [...systemMessages, ...contextMessages];
     messages = await this.formatInputMessages(messages, input);
+
+    // Call onPrepareMessages hook if defined
+    try {
+      const prepareResult = await this.getMergedHooks(internalOptions).onPrepareMessages?.({
+        messages: [...messages], // Pass a copy to prevent direct mutation
+        agent: this,
+        context: operationContext,
+      });
+
+      // Use transformed messages if provided
+      if (prepareResult?.messages && Array.isArray(prepareResult.messages)) {
+        messages = prepareResult.messages;
+      }
+    } catch (error) {
+      this.logger.error("Error preparing messages", { error, agentId: this.id });
+      // Continue with original messages if hook fails
+    }
 
     // [NEW EVENT SYSTEM] Create an agent:start event
     const agentStartTime = new Date().toISOString(); // Capture agent start time once
@@ -3607,6 +3675,7 @@ export class Agent<TProvider extends { llm: LLMProvider<unknown> }> {
         await options.hooks?.onToolEnd?.(...args);
         await this.hooks.onToolEnd?.(...args);
       },
+      onPrepareMessages: options.hooks?.onPrepareMessages || this.hooks.onPrepareMessages,
     };
   }
 

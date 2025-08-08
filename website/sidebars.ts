@@ -90,7 +90,7 @@ const sidebars: SidebarsConfig = {
     {
       type: "category",
       label: "Utils",
-      items: ["utils/create-prompt"],
+      items: ["utils/create-prompt", "utils/message-helpers"],
     },
     {
       type: "category",

@@ -498,13 +498,11 @@ Feedback loops are crucial for continuously improving your guardrails. They help
 ### Types of Feedback
 
 1. **User Feedback**
-
    - False positive reports
    - Blocked legitimate requests
    - User satisfaction metrics
 
 2. **System Feedback**
-
    - Attack pattern detection
    - Performance metrics
    - Model behavior analysis
@@ -585,19 +583,16 @@ class GuardrailFeedbackSystem:
 ### Best Practices for Feedback Loops
 
 1. **Regular Review Cycles**
-
    - Weekly security reviews
    - Monthly pattern analysis
    - Quarterly policy updates
 
 2. **Automated Adjustments**
-
    - Dynamic threshold updates
    - Rule strength modification
    - Pattern learning
 
 3. **Documentation**
-
    - Keep track of all adjustments
    - Document reasoning behind changes
    - Maintain change history
