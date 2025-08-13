@@ -91,7 +91,7 @@
     "prerelease:enter": "pnpm changeset pre enter next",
     "prerelease:exit": "pnpm changeset pre exit",
     "prerelease:version": "pnpm changeset version",
-    "prerelease:publish": "pnpm build && pnpm changeset publish --tag next"
+    "prerelease:publish": "pnpm build && pnpm changeset publish"
   },
   "workspaces": [
     "packages/*",

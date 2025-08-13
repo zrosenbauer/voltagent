@@ -43,12 +43,12 @@ jobs:
         with:
           # This will run pnpm changeset version and create a PR
           version: pnpm changeset version
-          # This will run pnpm changeset publish --tag next
-          publish: pnpm changeset publish --tag next
+          # This will run pnpm changeset publish
+          publish: pnpm changeset publish
           title: '[Prerelease] Version Packages (next)'
           commit: 'chore: version packages (prerelease)'
           createGithubReleases: true
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.VOLTAGENT_BOT }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
