@@ -41,8 +41,8 @@ jobs:
         id: changesets
         uses: changesets/action@v1
         with:
-          # This will run pnpm changeset version and create a PR
-          version: pnpm changeset version
+          # This will run pnpm prerelease:version-packages and create a PR
+          version: pnpm prerelease:version-packages
           # This will run pnpm changeset publish
           publish: pnpm changeset publish
           title: '[Prerelease] Version Packages (next)'
