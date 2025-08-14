@@ -36,6 +36,9 @@
   "peerDependencies": {
     "@voltagent/core": "^0.1.71"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "attw": "attw --pack",
     "build": "tsup",
