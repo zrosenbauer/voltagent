@@ -1914,8 +1914,8 @@ importers:
         specifier: ^0.15.0
         version: 0.15.10
       '@voltagent/internal':
-        specifier: ^0.0.8
-        version: 0.0.8
+        specifier: ^0.0.9
+        version: link:../internal
       '@voltagent/logger':
         specifier: ^0.1.4
         version: link:../logger
