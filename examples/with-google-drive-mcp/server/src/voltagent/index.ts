@@ -1,7 +1,14 @@
 import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent } from "@voltagent/core";
+import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
+
+// Create logger
+const logger = createPinoLogger({
+  name: "google-drive-mcp-server",
+  level: "info",
+});
 
 export const agent = new Agent({
   name: "Base Agent",
@@ -9,12 +16,10 @@ export const agent = new Agent({
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   markdown: true,
-});
-
-// Create logger
-const logger = createPinoLogger({
-  name: "google-drive-mcp-server",
-  level: "info",
+  memory: new LibSQLStorage({
+    url: "file:./.voltagent/memory.db",
+    logger: logger.child({ component: "libsql" }),
+  }),
 });
 
 new VoltAgent({

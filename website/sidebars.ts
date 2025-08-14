@@ -38,6 +38,7 @@ const sidebars: SidebarsConfig = {
         "agents/overview",
         "agents/prompts",
         "agents/tools",
+        "agents/memory",
         "agents/mcp",
         "agents/hooks",
         "agents/multi-modal",
@@ -90,8 +91,13 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
-      label: "Utils",
-      items: ["utils/create-prompt", "utils/message-helpers"],
+      label: "API",
+      items: ["api/overview"],
+    },
+    {
+      type: "category",
+      label: "Migration Guide",
+      items: ["migration-guide/0.1.x-to-1.0.0"],
     },
     {
       type: "category",
@@ -108,6 +114,11 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
+      label: "Utils",
+      items: ["utils/create-prompt", "utils/message-helpers"],
+    },
+    {
+      type: "category",
       label: "Observability",
       items: [
         "observability/overview",
@@ -121,11 +132,7 @@ const sidebars: SidebarsConfig = {
       label: "Integrations",
       items: ["integrations/overview", "integrations/nextjs", "integrations/vercel-ai"],
     },
-    {
-      type: "category",
-      label: "API",
-      items: ["api/overview"],
-    },
+
     {
       type: "category",
       label: "Community",

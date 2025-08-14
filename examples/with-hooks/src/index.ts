@@ -1,5 +1,6 @@
 import { openai } from "@ai-sdk/openai";
 import { Agent, Tool, VoltAgent, messageHelpers } from "@voltagent/core";
+import { LibSQLStorage } from "@voltagent/libsql";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { z } from "zod";
 
@@ -27,6 +28,9 @@ const agent = new Agent({
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   tools: [weatherTool],
+  memory: new LibSQLStorage({
+    url: "file:./.voltagent/memory.db",
+  }),
 
   hooks: {
     // Called when the agent starts processing

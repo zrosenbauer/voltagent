@@ -2,7 +2,7 @@ import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import { z } from "zod";
 import type { UsageInfo } from "../agent/providers";
 import { LoggerProxy } from "../logger";
-import { LibSQLStorage } from "../memory/libsql";
+import { InMemoryStorage } from "../memory/in-memory";
 import type { WorkflowExecutionContext } from "./context";
 import {
   createStepContext,
@@ -47,7 +47,7 @@ import type {
  *   purpose: "Process user data and generate personalized content",
  *   input: z.object({ userId: z.string(), userType: z.enum(["admin", "user"]) }),
  *   result: z.object({ processed: z.boolean(), content: z.string() }),
- *   memory: new LibSQLStorage({ url: "file:memory.db" }) // Optional workflow-specific memory
+ *   memory: new InMemoryStorage() // Optional workflow-specific memory
  * },
  *   andThen({
  *     id: "fetch-user",
@@ -78,7 +78,7 @@ import type {
  * // Run with optional memory override
  * const result = await workflow.run(
  *   { userId: "123", userType: "admin" },
- *   { memory: new LibSQLStorage({ url: "file:memory.db" }) }
+ *   { memory: new InMemoryStorage() }
  * );
  * ```
  *
@@ -629,7 +629,7 @@ export function createWorkflow<
   ...steps: ReadonlyArray<BaseStep>
 ) {
   // ✅ Ensure every workflow has memory (like Agent system)
-  const effectiveMemory = workflowMemory || new LibSQLStorage({ url: "file:memory.db" });
+  const effectiveMemory = workflowMemory || new InMemoryStorage();
 
   // Create logger for this workflow with LoggerProxy for lazy evaluation
   const logger = new LoggerProxy({

@@ -1,10 +1,16 @@
 import { openai } from "@ai-sdk/openai";
 import { Agent, MCPConfiguration, VoltAgent } from "@voltagent/core";
+import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 
 (async () => {
   try {
+    const logger = createPinoLogger({
+      name: "with-composio-mcp",
+      level: "info",
+    });
+
     const mcpConfig = new MCPConfiguration({
       servers: {
         composio: {
@@ -20,12 +26,10 @@ import { VercelAIProvider } from "@voltagent/vercel-ai";
       tools: await mcpConfig.getTools(),
       llm: new VercelAIProvider(),
       model: openai("gpt-4o-mini"),
-    });
-
-    // Create logger
-    const logger = createPinoLogger({
-      name: "with-composio-mcp",
-      level: "info",
+      memory: new LibSQLStorage({
+        url: "file:./.voltagent/memory.db",
+        logger: logger.child({ component: "libsql" }),
+      }),
     });
 
     new VoltAgent({

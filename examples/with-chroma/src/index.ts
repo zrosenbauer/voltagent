@@ -1,9 +1,22 @@
 import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent } from "@voltagent/core";
+import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 
 import { retriever } from "./retriever/index.js";
+
+// Create logger
+const logger = createPinoLogger({
+  name: "with-chroma",
+  level: "info",
+});
+
+// Create LibSQL storage for persistent memory (shared between agents)
+const memory = new LibSQLStorage({
+  url: "file:./.voltagent/memory.db",
+  logger: logger.child({ component: "libsql" }),
+});
 
 // Agent 1: Using retriever directly
 const agentWithRetriever = new Agent({
@@ -13,6 +26,7 @@ const agentWithRetriever = new Agent({
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   retriever: retriever,
+  memory,
 });
 
 // Agent 2: Using retriever as tool
@@ -23,16 +37,10 @@ const agentWithTools = new Agent({
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   tools: [retriever.tool],
+  memory,
 });
 
 // Initialize VoltAgent with both agents
-
-// Create logger
-const logger = createPinoLogger({
-  name: "with-chroma",
-  level: "info",
-});
-
 new VoltAgent({
   agents: {
     agentWithRetriever,

@@ -1,7 +1,14 @@
 import { openai } from "@ai-sdk/openai";
 import { Agent, type Toolkit, VoltAgent, createReasoningTools } from "@voltagent/core";
+import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
+
+// Create logger
+const logger = createPinoLogger({
+  name: "with-thinking-tool",
+  level: "info",
+});
 
 const reasoningToolkit: Toolkit = createReasoningTools({
   addInstructions: true,
@@ -24,12 +31,10 @@ const agent = new Agent({
   model: openai("gpt-4o-mini"),
   tools: [reasoningToolkit],
   markdown: true,
-});
-
-// Create logger
-const logger = createPinoLogger({
-  name: "with-thinking-tool",
-  level: "info",
+  memory: new LibSQLStorage({
+    url: "file:./.voltagent/memory.db",
+    logger: logger.child({ component: "libsql" }),
+  }),
 });
 
 new VoltAgent({

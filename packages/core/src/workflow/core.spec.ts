@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
-import { createTestLibSQLStorage } from "../test-utils/libsql-test-helpers";
+import { InMemoryStorage } from "../memory/in-memory";
 import { createWorkflow } from "./core";
 import { WorkflowRegistry } from "./registry";
 import { andThen } from "./steps";
@@ -13,7 +13,7 @@ describe.sequential("workflow.run", () => {
   });
 
   it("should return the expected result", async () => {
-    const memory = createTestLibSQLStorage("workflow_run");
+    const memory = new InMemoryStorage();
 
     const workflow = createWorkflow(
       {
@@ -84,7 +84,7 @@ describe.sequential("workflow streaming", () => {
   });
 
   it("should provide stream method for streaming execution", async () => {
-    const memory = createTestLibSQLStorage("core_stream_test");
+    const memory = new InMemoryStorage();
     const workflow = createWorkflow(
       {
         id: "stream-test",
@@ -125,7 +125,7 @@ describe.sequential("workflow streaming", () => {
   });
 
   it("should have usage with default values", async () => {
-    const memory = createTestLibSQLStorage("core_usage_test");
+    const memory = new InMemoryStorage();
     const workflow = createWorkflow(
       {
         id: "usage-test",

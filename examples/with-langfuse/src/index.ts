@@ -1,11 +1,17 @@
+import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent } from "@voltagent/core";
 import { LangfuseExporter } from "@voltagent/langfuse-exporter";
+import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 
-import { openai } from "@ai-sdk/openai";
-
 import { addCalendarEventTool, checkCalendarTool, searchTool, weatherTool } from "./tools";
+
+// Create logger
+const logger = createPinoLogger({
+  name: "with-langfuse",
+  level: "info",
+});
 
 const agent = new Agent({
   name: "Base Agent",
@@ -13,12 +19,10 @@ const agent = new Agent({
   llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   tools: [weatherTool, searchTool, checkCalendarTool, addCalendarEventTool],
-});
-
-// Create logger
-const logger = createPinoLogger({
-  name: "with-langfuse",
-  level: "info",
+  memory: new LibSQLStorage({
+    url: "file:./.voltagent/memory.db",
+    logger: logger.child({ component: "libsql" }),
+  }),
 });
 
 new VoltAgent({

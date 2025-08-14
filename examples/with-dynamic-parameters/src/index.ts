@@ -1,5 +1,6 @@
 import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent, createTool } from "@voltagent/core";
+import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { z } from "zod";
@@ -25,6 +26,12 @@ const adminTool = createTool({
   execute: async ({ action }: { action: string }) => {
     return `Admin action performed: ${action}`;
   },
+});
+
+// Create logger
+const logger = createPinoLogger({
+  name: "with-dynamic-parameters",
+  level: "info",
 });
 
 const dynamicAgent = new Agent({
@@ -53,12 +60,10 @@ const dynamicAgent = new Agent({
     return [greetingTool];
   },
   llm: new VercelAIProvider(),
-});
-
-// Create logger
-const logger = createPinoLogger({
-  name: "with-dynamic-parameters",
-  level: "info",
+  memory: new LibSQLStorage({
+    url: "file:./.voltagent/memory.db",
+    logger: logger.child({ component: "libsql" }),
+  }),
 });
 
 new VoltAgent({

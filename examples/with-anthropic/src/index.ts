@@ -1,8 +1,15 @@
 import { anthropic } from "@ai-sdk/anthropic";
 import { Agent, VoltAgent, createTool } from "@voltagent/core";
+import { LibSQLStorage } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { z } from "zod";
+
+// Create logger
+const logger = createPinoLogger({
+  name: "with-anthropic",
+  level: "info",
+});
 
 const weatherTool = createTool({
   name: "get_current_weather",
@@ -24,12 +31,10 @@ const agent = new Agent({
   llm: new VercelAIProvider(),
   model: anthropic("claude-opus-4-1"),
   tools: [weatherTool],
-});
-
-// Create logger
-const logger = createPinoLogger({
-  name: "with-anthropic",
-  level: "info",
+  memory: new LibSQLStorage({
+    url: "file:./.voltagent/memory.db",
+    logger: logger.child({ component: "libsql" }),
+  }),
 });
 
 new VoltAgent({
