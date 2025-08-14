@@ -141,7 +141,7 @@ jobs:
           version: pnpm version-packages
           # This will run pnpm changeset publish with the next tag
           publish: pnpm changeset publish --tag next
-          title: '[Prerelease] Version Packages (next)'
+          title: '[Prerelease] Version Packages'
           commit: 'chore: version packages (prerelease)'
           createGithubReleases: false
         env:
