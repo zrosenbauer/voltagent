@@ -12,7 +12,7 @@
     "@voltagent/core": "0.1.82",
     "create-voltagent-app": "0.2.7",
     "@voltagent/docs-mcp": "0.2.2",
-    "@voltagent/internal": "0.0.8",
+    "@voltagent/internal": "0.0.9",
     "@voltagent/langfuse-exporter": "0.1.5",
     "@voltagent/libsql": "0.1.0",
     "@voltagent/logger": "0.1.3",
