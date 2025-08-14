@@ -139,8 +139,8 @@ jobs:
         with:
           # This will run pnpm version-packages which handles prerelease mode
           version: pnpm version-packages
-          # This will run pnpm changeset publish with the next tag
-          publish: pnpm changeset publish --tag next
+          # This will run pnpm changeset publish (tag is handled by pre mode)
+          publish: pnpm changeset publish
           title: '[Prerelease] Version Packages'
           commit: 'chore: version packages (prerelease)'
           createGithubReleases: false
