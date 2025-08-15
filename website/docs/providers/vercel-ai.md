@@ -335,7 +335,7 @@ The `@voltagent/vercel-ai` package now uses Vercel AI SDK v5 internally. Here's 
 Update the following packages:
 
 ```bash
-npm install @voltagent/vercel-ai@latest zod@^3.25.0
+npm install @voltagent/core@latest @voltagent/vercel-ai@latest zod@^3.25.0
 ```
 
 If you're using any `@ai-sdk/*` packages (like `@ai-sdk/openai`, `@ai-sdk/anthropic`), update them to latest version:
