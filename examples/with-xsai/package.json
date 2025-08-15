@@ -6,7 +6,7 @@
     "@voltagent/core": "^0.1.83",
     "@voltagent/logger": "^0.1.4",
     "@voltagent/xsai": "^0.3.3",
-    "zod": "^3.24.2"
+    "zod": "^3.25.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.3",

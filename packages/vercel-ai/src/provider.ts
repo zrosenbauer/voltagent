@@ -15,21 +15,20 @@ import type {
 import { safeStringify } from "@voltagent/internal/utils";
 import type {
   CallWarning,
-  CoreMessage,
   FinishReason,
   GenerateObjectResult,
   GenerateTextResult,
   LanguageModelRequestMetadata,
   LanguageModelResponseMetadata,
   LanguageModelUsage,
-  LanguageModelV1,
+  ModelMessage,
   ProviderMetadata,
   StepResult,
   StreamObjectOnFinishCallback,
   StreamObjectResult,
   StreamTextResult,
 } from "ai";
-import { generateObject, generateText, streamObject, streamText } from "ai";
+import { generateObject, generateText, stepCountIs, streamObject, streamText } from "ai";
 import { P, match } from "ts-pattern";
 import type { SetRequired } from "type-fest";
 import type { z } from "zod";
@@ -40,14 +39,18 @@ import {
   createVoltagentErrorFromSdkError,
 } from "./utils";
 
-export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
+// Type definitions for AI SDK v5
+type AIGenerateTextParams = Parameters<typeof generateText>[0];
+type AIModel = AIGenerateTextParams["model"];
+
+export class VercelAIProvider implements LLMProvider<AIModel> {
   /**
    * Provider `generateText` implementation
    * @param options - The options for the generate text operation
    * @returns A standardized response for VoltAgent
    */
   public async generateText(
-    options: GenerateTextOptions<LanguageModelV1>,
+    options: GenerateTextOptions<AIModel>,
   ): Promise<ProviderTextResponse<GenerateTextResult<Record<string, any>, never>>> {
     const vercelMessages = options.messages.map(this.toMessage);
     const vercelTools = options.tools ? convertToolsForSDK(options.tools) : undefined;
@@ -73,7 +76,7 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
                   type: "tool-call",
                   toolCallId: toolCall.toolCallId,
                   toolName: toolCall.toolName,
-                  args: toolCall.args,
+                  input: toolCall.input,
                   usage: result.usage,
                 });
                 if (step) await options.onStepFinish(step);
@@ -87,7 +90,7 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
                   type: "tool-result",
                   toolCallId: toolResult.toolCallId,
                   toolName: toolResult.toolName,
-                  result: toolResult.result,
+                  output: toolResult.output,
                   usage: result.usage,
                 });
                 if (step) await options.onStepFinish(step);
@@ -103,7 +106,12 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
         messages: vercelMessages,
         model: options.model,
         tools: vercelTools,
-        maxSteps: options.maxSteps,
+        ...match(options.maxSteps)
+          .with(P.number, (maxSteps) => ({ stopWhen: stepCountIs(maxSteps) }))
+          .otherwise(() => ({})),
+        ...match(options.provider?.maxTokens)
+          .with(P.number, (maxTokens) => ({ maxOutputTokens: maxTokens }))
+          .otherwise(() => ({})),
         abortSignal: options.signal,
         onStepFinish,
       });
@@ -116,7 +124,9 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
         toolCalls: result.toolCalls,
         toolResults: result.toolResults,
         finishReason: result.finishReason,
-        reasoning: result.reasoning,
+        reasoning: Array.isArray(result.reasoning)
+          ? result.reasoning.map((r) => r.text || "").join("\n")
+          : result.reasoning,
         warnings: result.warnings,
       };
     } catch (sdkError) {
@@ -131,7 +141,7 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
    * @returns A standardized response for VoltAgent
    */
   public async streamText(
-    options: StreamTextOptions<LanguageModelV1>,
+    options: StreamTextOptions<AIModel>,
   ): Promise<
     SetRequired<
       ProviderTextStreamResponse<StreamTextResult<Record<string, any>, never>>,
@@ -163,7 +173,7 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
                     type: "tool-call",
                     toolCallId: toolCall.toolCallId,
                     toolName: toolCall.toolName,
-                    args: toolCall.args,
+                    input: toolCall.input,
                     usage: result.usage,
                   });
                   if (step) await options.onStepFinish(step);
@@ -177,7 +187,7 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
                     type: "tool-result",
                     toolCallId: toolResult.toolCallId,
                     toolName: toolResult.toolName,
-                    result: toolResult.result,
+                    output: toolResult.output,
                     usage: result.usage,
                   });
                   if (step) await options.onStepFinish(step);
@@ -192,7 +202,12 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
         messages: vercelMessages,
         model: options.model,
         tools: vercelTools,
-        maxSteps: options.maxSteps,
+        ...match(options.maxSteps)
+          .with(P.number, (maxSteps) => ({ stopWhen: stepCountIs(maxSteps) }))
+          .otherwise(() => ({})),
+        ...match(options.provider?.maxTokens)
+          .with(P.number, (maxTokens) => ({ maxOutputTokens: maxTokens }))
+          .otherwise(() => ({})),
         abortSignal: options.signal,
         onStepFinish,
         onChunk: async ({ chunk }) => {
@@ -210,7 +225,7 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
             ) => {
               options.onFinish?.({
                 text: result.text,
-                usage: result.usage,
+                usage: getUsageInfo(result.usage),
                 finishReason: result.finishReason,
                 warnings: result.warnings,
                 providerResponse: result,
@@ -234,8 +249,12 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
         fullStream: createMappedFullStream(result.fullStream),
         text: result.text,
         finishReason: result.finishReason,
-        usage: result.usage,
-        reasoning: result.reasoning,
+        usage: result.usage as any, // fix me
+        reasoning: result.reasoning.then
+          ? result.reasoning.then((r) =>
+              Array.isArray(r) ? r.map((p) => p.text || "").join("\n") : undefined,
+            )
+          : Promise.resolve(undefined),
       };
     } catch (error) {
       throw createVoltagentErrorFromSdkError(error, "llm_stream");
@@ -248,7 +267,7 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
    * @returns A standardized response for VoltAgent
    */
   public async generateObject<TSchema extends z.ZodType>(
-    options: GenerateObjectOptions<LanguageModelV1, TSchema>,
+    options: GenerateObjectOptions<AIModel, TSchema>,
   ): Promise<ProviderObjectResponse<GenerateObjectResult<z.infer<TSchema>>, z.infer<TSchema>>> {
     const vercelMessages = options.messages.map(this.toMessage);
 
@@ -285,17 +304,20 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
         ...options.provider,
         messages: vercelMessages,
         model: options.model,
-        schema: options.schema,
+        schema: options.schema as any,
+        ...match(options.provider?.maxTokens)
+          .with(P.number, (maxTokens) => ({ maxOutputTokens: maxTokens }))
+          .otherwise(() => ({})),
         abortSignal: options.signal,
       });
 
       // Call the custom onFinish handler if defined
-      await onFinish?.(result);
+      await onFinish?.({ ...result, logprobs: undefined });
 
       // Return standardized response
       return {
         provider: result,
-        object: result.object,
+        object: result.object as z.infer<TSchema>,
         usage: getUsageInfo(result.usage),
         finishReason: result.finishReason,
         warnings: result.warnings,
@@ -312,7 +334,7 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
    * @returns The streamed object
    */
   public async streamObject<TSchema extends z.ZodType>(
-    options: StreamObjectOptions<LanguageModelV1, TSchema>,
+    options: StreamObjectOptions<AIModel, TSchema>,
   ): Promise<
     ProviderObjectStreamResponse<
       StreamObjectResult<z.infer<TSchema>, unknown, never>,
@@ -353,9 +375,14 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
       ...options.provider,
       messages: vercelMessages,
       model: options.model,
-      schema: options.schema,
+      schema: options.schema as any,
       abortSignal: options.signal,
-      ...(onFinish ? { onFinish } : {}),
+      ...match(options.provider?.maxTokens)
+        .with(P.number, (maxTokens) => ({ maxOutputTokens: maxTokens }))
+        .otherwise(() => ({})),
+      ...match(onFinish)
+        .with(P.not(P.nullish), (handler) => ({ onFinish: handler }))
+        .otherwise(() => ({})),
       onError: (sdkError) => {
         // Create the error using the helper
         const voltagentErr = createVoltagentErrorFromSdkError(sdkError, "object_stream");
@@ -370,10 +397,12 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
     const partialObjectStream = result.partialObjectStream;
     // Return provider, objectStream, and Promise properties
     return {
-      provider: { ...result, partialObjectStream },
-      objectStream: partialObjectStream,
-      object: result.object,
-      usage: result.usage,
+      provider: { ...result, partialObjectStream } as any,
+      objectStream: partialObjectStream as any,
+      object: result.object as Promise<z.infer<TSchema>>,
+      usage: result.usage.then(
+        (u) => getUsageInfo(u) || { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+      ),
       warnings: result.warnings,
     };
   }
@@ -383,8 +412,8 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
    * @param model - The model to get the identifier for
    * @returns The model identifier
    */
-  public getModelIdentifier(model: LanguageModelV1): string {
-    return model.modelId;
+  public getModelIdentifier(model: AIModel): string {
+    return typeof model === "string" ? model : model.modelId;
   }
 
   /**
@@ -392,17 +421,19 @@ export class VercelAIProvider implements LLMProvider<LanguageModelV1> {
    * @param message - The VoltAgent message to convert
    * @returns The Vercel AI message
    */
-  public toMessage(message: BaseMessage): CoreMessage {
-    return message as CoreMessage;
+  public toMessage(message: BaseMessage): ModelMessage {
+    return message as ModelMessage;
   }
 }
 
 function getUsageInfo(usage?: LanguageModelUsage): UsageInfo | undefined {
   return match(usage)
-    .with({ promptTokens: P.number, completionTokens: P.number, totalTokens: P.number }, (u) => ({
-      promptTokens: u.promptTokens,
-      completionTokens: u.completionTokens,
+    .with({ inputTokens: P.number, outputTokens: P.number, totalTokens: P.number }, (u) => ({
+      promptTokens: u.inputTokens,
+      completionTokens: u.outputTokens,
       totalTokens: u.totalTokens,
+      cachedInputTokens: u.cachedInputTokens,
+      reasoningTokens: u.reasoningTokens,
     }))
     .otherwise(() => undefined);
 }
