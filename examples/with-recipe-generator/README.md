@@ -49,5 +49,77 @@ VoltAgent is an open-source TypeScript framework for creating and managing AI ag
 ## Try Example
 
 ```bash
-npm create voltagent-app@latest -- --example base
+npm create voltagent-app@latest -- --example with-recipe-generator
 ```
+
+This example demonstrates how to integrate VoltAgent with Exa's Model Context Protocol (MCP) server to create an intelligent recipe generator agent that can search for recipes, suggest meal ideas, and provide comprehensive culinary guidance.
+
+## Features
+
+- **Exa MCP Integration:** Shows how to configure `MCPConfiguration` for Exa's search capabilities via MCP server.
+- **Intelligent Recipe Search:** Leverage Exa's powerful search API to find relevant recipes based on ingredients, dietary restrictions, and preferences.
+- **Comprehensive Culinary Guidance:** The agent provides detailed recipe information including preparation steps, nutritional data, and cooking tips.
+- **Customizable Food Preferences:** Handles dietary restrictions, allergies, and personal taste preferences.
+
+## Prerequisites
+
+- Node.js (v20 or later recommended)
+- pnpm (or npm/yarn)
+- An OpenAI API key (or setup for another supported LLM provider)
+- An Exa API key (sign up at [https://exa.ai/](https://exa.ai/))
+
+## Setup
+
+1. **Create Environment File:**
+   Create a `.env` file in the `examples/with-recipe-generator` directory:
+
+   ```env
+   # .env
+   OPENAI_API_KEY=your_openai_api_key_here
+   EXA_API_KEY=your_exa_api_key_here
+   ```
+
+   Replace `your_openai_api_key_here` with your actual OpenAI API key and `your_exa_api_key_here` with your Exa API key.
+
+2. **Get an Exa API Key:**
+   - Visit [https://exa.ai/](https://exa.ai/)
+   - Sign up for an account
+   - Navigate to your dashboard to obtain your API key
+   - Copy the API key for use in your configuration
+
+3. **Configure the Exa MCP Server:**
+   Update the `src/index.ts` file with your Exa API key:
+
+   ```typescript
+   const mcpConfig = new MCPConfiguration({
+     servers: {
+       exa: {
+         type: "stdio",
+         command: "npx",
+         args: ["-y", "mcp-remote", "https://mcp.exa.ai/mcp?exaApiKey=YOUR_EXA_API_KEY"],
+       },
+     },
+   });
+   ```
+
+## Running the Agent
+
+Start the agent in development mode:
+
+```bash
+ npm run dev
+# or pnpm dev / yarn dev
+```
+
+You should see logs indicating the MCP connection and tool fetching, followed by the standard VoltAgent startup message.
+
+## Interacting with the Agent
+
+1. Open the VoltAgent VoltOps Platform: [`https://console.voltagent.dev`](https://console.voltagent.dev)
+2. Find the agent named `MCP Example Agent`
+3. Click on the agent name, then click the chat icon
+4. Try asking the agent for recipe suggestions:
+   - "I have chicken, tomatoes, and basil. What can I make?"
+   - "Find me a quick vegan dinner recipe under 30 minutes"
+   - "Suggest a gluten-free dessert recipe"
+   - "What's a good meal prep recipe for the week?"
