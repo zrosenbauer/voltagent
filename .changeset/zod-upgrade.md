@@ -1,8 +1,5 @@
 ---
 "@voltagent/core": patch
-"@voltagent/anthropic-ai": patch
-"@voltagent/google-ai": patch
-"@voltagent/groq-ai": patch
 "@voltagent/xsai": patch
 "@voltagent/vercel-ai": patch
 "@voltagent/vercel-ui": patch
