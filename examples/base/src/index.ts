@@ -27,3 +27,9 @@ new VoltAgent({
   },
   logger,
 });
+
+() => {
+  agent.generateText("selam", {
+    provider: {},
+  });
+};

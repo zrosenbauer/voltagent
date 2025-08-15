@@ -59,5 +59,5 @@ new VoltAgent({
   agents: {
     agent,
   },
-  logger,
+  /* logger, */
 });
