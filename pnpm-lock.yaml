@@ -1022,6 +1022,37 @@ importers:
         specifier: ^5.8.2
         version: 5.9.2
 
+  examples/with-recipe-generator:
+    dependencies:
+      '@ai-sdk/openai':
+        specifier: ^2.0.2
+        version: 2.0.12(zod@3.25.76)
+      '@voltagent/cli':
+        specifier: ^0.1.10
+        version: link:../../packages/cli
+      '@voltagent/core':
+        specifier: ^0.1.84
+        version: link:../../packages/core
+      '@voltagent/logger':
+        specifier: ^0.1.4
+        version: link:../../packages/logger
+      '@voltagent/vercel-ai':
+        specifier: ^1.0.0
+        version: link:../../packages/vercel-ai
+      zod:
+        specifier: ^3.25.0
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^24.0.3
+        version: 24.2.1
+      tsx:
+        specifier: ^4.19.3
+        version: 4.20.4
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.2
+
   examples/with-retrieval:
     dependencies:
       '@ai-sdk/openai':
@@ -8960,7 +8991,7 @@ packages:
   /@types/mute-stream@0.0.4:
     resolution: {integrity: sha512-CPM9nzrCPPJHQNA9keH9CVkVI+WR5kMa+7XEs5jcGQ0VoAGnLv242w8lIVgwAEfmE4oufJRaTc9PNLQl0ioAow==}
     dependencies:
-      '@types/node': 22.17.1
+      '@types/node': 24.2.1
     dev: false
 
   /@types/node-fetch@2.6.13:
