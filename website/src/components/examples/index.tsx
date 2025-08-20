@@ -21,7 +21,7 @@ export const ExampleList = ({ examples = [] }: ExampleListProps) => {
               <span className="text-3xl sm:text-4xl font-bold text-[#00d992]">voltagent</span>
               <div className="relative">
                 <span className="ml-2 text-xl sm:text-2xl font-medium text-gray-400">
-                  Examples & Tutorials
+                  Examples & Templates
                 </span>
               </div>
             </div>

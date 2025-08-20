@@ -6,6 +6,7 @@ import Layout from "@theme/Layout";
 import { motion } from "framer-motion";
 import React from "react";
 import ReactMarkdown from "react-markdown";
+import YouTubeEmbed from "../../components/blog-widgets/YouTubeEmbed";
 import { DotPattern } from "../../components/ui/dot-pattern";
 
 interface ExampleProjectPageProps {
@@ -122,9 +123,19 @@ export default function ExampleProjectPage({ example }: ExampleProjectPageProps)
                     h3: ({ children }) => (
                       <h3 className="text-xl font-bold text-white mt-6 mb-3">{children}</h3>
                     ),
-                    p: ({ children }) => (
-                      <p className="text-gray-300 mb-4 leading-relaxed">{children}</p>
-                    ),
+                    p: ({ children }) => {
+                      // Check if this paragraph contains a YouTube embed directive
+                      if (typeof children === "string") {
+                        const youtubeMatch = children.match(
+                          /::youtube\{url="([^"]+)"(?:\s+title="([^"]+)")?\}/,
+                        );
+                        if (youtubeMatch) {
+                          const [, url, title] = youtubeMatch;
+                          return <YouTubeEmbed url={url} title={title} />;
+                        }
+                      }
+                      return <p className="text-gray-300 mb-4 leading-relaxed">{children}</p>;
+                    },
                     a: ({ href, children }) => (
                       <a
                         href={href}
