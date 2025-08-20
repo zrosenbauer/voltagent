@@ -118,6 +118,11 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
+      label: "Evals",
+      items: ["evals/overview", "evals/quick-start"],
+    },
+    {
+      type: "category",
       label: "Integrations",
       items: ["integrations/overview", "integrations/nextjs", "integrations/vercel-ai"],
     },
