@@ -1282,10 +1282,10 @@ importers:
         specifier: ^2.0.17
         version: 2.0.17(zod@3.25.76)
       '@voltagent/core':
-        specifier: workspace:*
+        specifier: ^0.1.84
         version: link:../../packages/core
       '@voltagent/vercel-ai':
-        specifier: workspace:*
+        specifier: ^1.0.0
         version: link:../../packages/vercel-ai
       ai:
         specifier: ^5.0.19

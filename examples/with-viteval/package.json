@@ -3,8 +3,8 @@
   "author": "VoltAgent",
   "dependencies": {
     "@ai-sdk/openai": "^2.0.17",
-    "@voltagent/core": "workspace:*",
-    "@voltagent/vercel-ai": "workspace:*",
+    "@voltagent/core": "^0.1.84",
+    "@voltagent/vercel-ai": "^1.0.0",
     "ai": "^5.0.19",
     "consola": "^3.4.2",
     "envalid": "^8.1.0",
