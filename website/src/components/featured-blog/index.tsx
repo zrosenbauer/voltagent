@@ -36,39 +36,39 @@ type BlogPost = {
 const REAL_POSTS: BlogPost[] = [
   {
     id: "1",
-    title: "GitHub Repo Analyzer Agent: From Zero to Deployment",
+    title: "Building Google Drive Chatbot with Composio MCP",
     excerpt:
-      "Build a practical AI agent that analyzes GitHub repositories, identifies dependencies, and suggests improvements – all deployable on Vercel.",
-    date: getDateFromSlugDir("2025-04-21-first-ai-agent-github-repo-analyzer"), // Extracted from directory name
+      "Learn how to build a powerful Google Drive chatbot using Composio MCP for seamless document interaction and AI-powered search.",
+    date: getDateFromSlugDir("2025-04-28-building-google-drive-chatbot"),
     author: {
-      name: "Necati Ozmen", // From authors.yml
-      avatar: "https://avatars.githubusercontent.com/u/18739364?v=4", // From authors.yml
+      name: "Necati Ozmen",
+      avatar: "https://avatars.githubusercontent.com/u/18739364?v=4",
     },
-    slug: "building-first-agent-github-analyzer", // From index.md frontmatter
+    slug: "building-google-drive-chatbot-with-composio-mcp",
   },
   {
     id: "2",
-    title: "Escape the 'console.log': VoltOps LLM Observability",
+    title: "Vercel AI LLM Observability",
     excerpt:
-      "Stop drowning in console logs. VoltOps LLM Observability offers unprecedented visual clarity for building, debugging, and deploying complex AI agents.",
-    date: getDateFromSlugDir("2025-04-21-introducing-developer-console"), // Extracted from directory name
+      "Deep dive into LLM observability tools for Vercel AI applications, monitoring performance and debugging complex AI workflows.",
+    date: getDateFromSlugDir("2025-06-03-vercel-ai-observability"),
     author: {
-      name: "Omer Aplak", // From authors.yml
-      avatar: "https://avatars.githubusercontent.com/u/1110414?v=4", // From authors.yml
+      name: "Omer Aplak",
+      avatar: "https://avatars.githubusercontent.com/u/1110414?v=4",
     },
-    slug: "voltagent-developer-console", // From index.md frontmatter
+    slug: "vercel-ai-llm-observability",
   },
   {
     id: "3",
-    title: "VoltAgent v0.1: AI Development Reimagined for JavaScript/TypeScript",
+    title: "TypeScript AI Agent Framework",
     excerpt:
-      "VoltAgent is here! Build, debug, and deploy AI agents with unprecedented clarity and developer experience, built specifically for the JS/TS ecosystem.",
-    date: getDateFromSlugDir("2025-04-21-introducing-voltagent"), // Extracted from directory name
+      "Build powerful AI agents with TypeScript using our comprehensive framework designed for modern development workflows.",
+    date: getDateFromSlugDir("2025-07-29-ts-ai-agent"),
     author: {
-      name: "VoltAgent Team", // From authors.yml
-      avatar: "https://avatars.githubusercontent.com/u/201282378?s=200&v=4", // From authors.yml
+      name: "VoltAgent Team",
+      avatar: "https://avatars.githubusercontent.com/u/201282378?s=200&v=4",
     },
-    slug: "introducing-voltagent", // From index.md frontmatter
+    slug: "typescript-ai-agent-framework",
   },
 ];
 

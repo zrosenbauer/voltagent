@@ -132,13 +132,13 @@ const linkedInPosts = [
     url: "https://www.linkedin.com/feed/update/urn:li:activity:7341479739112509441/",
   },
   {
-    id: "linkedin-5",
-    profileImage: "https://cdn.voltagent.dev/website/testimonials/linkedin-user/outshift.jpeg",
-    name: "Outshift by Cisco",
-    title: "60,028 followers",
+    id: "linkedin-6",
+    profileImage: "https://cdn.voltagent.dev/website/testimonials/linkedin-user/voltagent.jpeg",
+    name: "VoltAgent",
+    title: "Open Source AI Agent Framework",
     content:
-      "See what Omer Aplak of VoltAgent and Tatyana Mamut, PhD of Wayfound say about joining AGNTCY Collective, the open source collective building the foundational technologies and standards for the Internet of Agents.",
-    url: "https://www.linkedin.com/feed/update/urn:li:activity:7341139122268393475/",
+      "VoltAgent is an open-source framework for building and orchestrating AI agents with TypeScript. It's designed to be flexible, extensible, and easy to use.",
+    url: "https://www.linkedin.com/company/volt-agent/",
   },
 ];
 
@@ -166,6 +166,11 @@ const discordMessages = [
     username: "power_of_zero",
     message:
       "Hi, firstly, I really like what you've done with VoltAgent. I've gave it a spin with Cline/DeepSeek which has done a pretty good job of spinning me up a basic Supervisor + 3 agent setup using Ragie MCP server for retrievals.",
+  },
+  {
+    username: "Eric Muir",
+    message:
+      "Previously I was building it all with Langchain JS and their observability platform but yours makes tinkering a lot easier.",
   },
 ];
 
@@ -260,6 +265,13 @@ const articles = [
     videoId: "Om03tXjDfJs",
     excerpt: "¿Agentes de IA sin Complicaciones? ¡Este Framework es la Clave!",
     url: "https://www.youtube.com/watch?v=Om03tXjDfJs",
+  },
+  {
+    title: "0からTypeScriptでAIエージェントを開発する実践チュートリアル【React/VoltAgent】",
+    type: "youtube" as const,
+    videoId: "Jw3AqIYNLbs",
+    excerpt: "0からTypeScriptでAIエージェントを開発する実践チュートリアル【React/VoltAgent】",
+    url: "https://www.youtube.com/watch?v=Jw3AqIYNLbs",
   },
 ];
 
