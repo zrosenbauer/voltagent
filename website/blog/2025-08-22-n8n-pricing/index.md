@@ -1,8 +1,8 @@
 ---
 title: n8n's New Pricing Model and the Vendor Lock-in Problem
-slug: n8n-pricing-vendor-lock-in
+slug: n8n-pricing
 authors: necatiozmen
-tags: [automation, pricing, vendor-lock-in, open-source]
+tags: [open-source]
 description: An analysis of n8n's controversial new pricing model and how it creates vendor lock-in even for self-hosted users. Learn about alternatives and migration strategies.
 image: https://cdn.voltagent.dev/2025-08-22-n8n-pricing/social.png
 ---
@@ -60,22 +60,6 @@ But somehow n8n wants a cut? That's like Toyota charging you per mile on a car y
 Here's the visualized:
 
 ![n8n pricing](https://cdn.voltagent.dev/2025-08-22-n8n-pricing/1.png)
-
-```mermaid
-sequenceDiagram
-    participant YourServer
-    participant YourCPU
-    participant n8n
-    participant n8nCloud
-
-    YourServer->>YourCPU: Run workflow
-    YourCPU->>YourCPU: Process all data
-    YourServer->>YourServer: Store results
-    YourServer->>n8nCloud: Report execution count
-    n8nCloud->>YourServer: LIMIT REACHED! Pay up!
-    YourServer->>YourServer: But... I did all the work?
-    Note over YourServer: Your resources, their profit
-```
 
 ## Let's Do Some Quick Math
 
@@ -198,28 +182,3 @@ The future is going to be:
 1. **Actually open source tools**: Run by communities, not VCs
 2. **Frameworks over platforms**: Tools that help you build, not trap you
 3. **You own your stuff**: Your server, your rules, period
-
-## What We Can Learn
-
-**If you're building a tool**: Don't charge people for using their own computers. Find a business model that makes sense.
-
-**If you're choosing a tool**: Think about what happens in 2 years when you have 100 workflows and they double the price.
-
-**If you're a developer**: Maybe it's time to stop trusting platforms and start building on frameworks.
-
-## Time to Take Back Control
-
-Look, the n8n pricing thing isn't just about money. It's about ownership. When you can't run software on your own server without someone else's permission (via execution limits), you don't really own anything.
-
-We don't have to accept this. There are better options. There are tools that respect that your server means your rules. And if there aren't? Well, maybe it's time we built them.
-
-Your automations are your business logic. They're what makes your company efficient. Don't let them become someone else's monthly revenue.
-
-**What to do today**:
-
-1. Check how many executions you're actually using
-2. Calculate what you're really paying (including the lock-in tax)
-3. Look at framework alternatives
-4. Start taking back control
-
-The best time to switch was before you built 50 workflows. The second best time is right now.
