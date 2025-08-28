@@ -5,7 +5,7 @@ title: AI Research Assistant Agent
 description: Learn how to build a multi-agent research workflow with VoltAgent.
 ---
 
-## Introduction
+::youtube{url="https://youtu.be/j6KAUaoZMy4" title="AI Research Agent Demo"}
 
 In this example, we'll build an AI research assistant agent using VoltAgent's workflow system. We'll create a multi-agent system where different AI agents collaborate to research topics and generate comprehensive reports. This demonstrates the power of workflow orchestration in building AI applications.
 
