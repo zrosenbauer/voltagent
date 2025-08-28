@@ -1,29 +1,33 @@
-import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import { safeStringify } from "@voltagent/internal/utils";
-import type { MergeDeep } from "type-fest";
+import type { UIMessage } from "ai";
 import { z } from "zod";
 import { getGlobalLogger } from "../../logger";
-import { AgentRegistry } from "../../server/registry";
+import { AgentRegistry } from "../../registries/agent-registry";
 import { createTool } from "../../tool";
-import type {
-  StreamEventReasoning,
-  StreamEventSource,
-  StreamEventTextDelta,
-  StreamEventToolCall,
-  StreamEventToolResult,
-} from "../../utils/streams";
-import { streamEventForwarder } from "../../utils/streams";
-import type { StreamEvent, StreamEventError } from "../../utils/streams/types";
+import type { Tool } from "../../tool";
 import type { Agent } from "../agent";
-import type { BaseMessage } from "../providers";
-import type { BaseTool } from "../providers";
 import type {
-  AgentHandoffOptions,
-  AgentHandoffResult,
-  OperationContext,
-  SupervisorConfig,
-} from "../types";
-import type { SubAgentConfig, SubAgentConfigObject } from "./types";
+  GenerateObjectOptions,
+  GenerateTextOptions,
+  StreamObjectOptions,
+  StreamTextOptions,
+} from "../agent";
+import type { OperationContext, SupervisorConfig } from "../types";
+import type { SubAgentStateData } from "../types";
+import type {
+  GenerateObjectSubAgentConfig,
+  GenerateTextSubAgentConfig,
+  StreamObjectSubAgentConfig,
+  StreamTextSubAgentConfig,
+  SubAgentConfig,
+} from "./types";
+
+// Export helper function for creating subagent configs
+export { createSubagent } from "./types";
+
+// Import stream utilities
+import { createMetadataEnrichedStream } from "./stream-metadata-enricher";
+
 /**
  * SubAgentManager - Manages sub-agents and delegation functionality for an Agent
  */
@@ -35,7 +39,6 @@ export class SubAgentManager {
 
   /**
    * Sub-agent configurations that the parent agent can delegate tasks to
-   * Can be either direct Agent instances or SubAgentConfigObject instances
    */
   private subAgentConfigs: SubAgentConfig[] = [];
 
@@ -107,52 +110,76 @@ export class SubAgentManager {
    * Helper method to extract agent ID from SubAgentConfig
    */
   private extractAgentId(agentConfig: SubAgentConfig): string {
-    if (this.isSubAgentConfigObject(agentConfig)) {
-      return agentConfig.agent.id;
+    if (this.isDirectAgent(agentConfig)) {
+      return agentConfig.id;
     }
-    return agentConfig.id;
+    return agentConfig.agent.id;
   }
 
   /**
    * Helper method to extract agent instance from SubAgentConfig
    */
-  private extractAgent(agentConfig: SubAgentConfig): Agent<any> {
-    if (this.isSubAgentConfigObject(agentConfig)) {
-      return agentConfig.agent;
+  private extractAgent(agentConfig: SubAgentConfig): Agent {
+    if (this.isDirectAgent(agentConfig)) {
+      return agentConfig;
     }
-    return agentConfig;
+    return agentConfig.agent;
   }
 
   /**
    * Helper method to extract agent name from SubAgentConfig
    */
   private extractAgentName(agentConfig: SubAgentConfig): string {
-    if (this.isSubAgentConfigObject(agentConfig)) {
-      return agentConfig.agent.name;
+    if (this.isDirectAgent(agentConfig)) {
+      return agentConfig.name;
     }
-    return agentConfig.name;
+    return agentConfig.agent.name;
   }
 
   /**
    * Helper method to extract agent purpose/instructions from SubAgentConfig
    */
   private extractAgentPurpose(agentConfig: SubAgentConfig): string {
-    if (this.isSubAgentConfigObject(agentConfig)) {
-      return agentConfig.agent.purpose ?? agentConfig.agent.instructions;
+    const agent = this.extractAgent(agentConfig);
+    if (typeof agent.instructions === "string") {
+      return agent.purpose ?? agent.instructions;
     }
-    return agentConfig.purpose ?? agentConfig.instructions;
+    return agent.purpose ?? "Dynamic instructions";
   }
 
   /**
-   * Type guard to check if a SubAgentConfig is a SubAgentConfigObject
+   * Type guard to check if a SubAgentConfig is a direct AgentV2 instance
    */
-  private isSubAgentConfigObject(agentConfig: SubAgentConfig): agentConfig is SubAgentConfigObject {
-    return (
-      agentConfig &&
-      typeof agentConfig === "object" &&
-      "agent" in agentConfig &&
-      "method" in agentConfig
-    );
+  private isDirectAgent(agentConfig: SubAgentConfig): agentConfig is Agent {
+    return !("method" in agentConfig);
+  }
+
+  /**
+   * Type guard for StreamTextSubAgentConfig
+   */
+  private isStreamTextConfig(config: SubAgentConfig): config is StreamTextSubAgentConfig {
+    return "method" in config && config.method === "streamText";
+  }
+
+  /**
+   * Type guard for GenerateTextSubAgentConfig
+   */
+  private isGenerateTextConfig(config: SubAgentConfig): config is GenerateTextSubAgentConfig {
+    return "method" in config && config.method === "generateText";
+  }
+
+  /**
+   * Type guard for StreamObjectSubAgentConfig
+   */
+  private isStreamObjectConfig(config: SubAgentConfig): config is StreamObjectSubAgentConfig {
+    return "method" in config && config.method === "streamObject";
+  }
+
+  /**
+   * Type guard for GenerateObjectSubAgentConfig
+   */
+  private isGenerateObjectConfig(config: SubAgentConfig): config is GenerateObjectSubAgentConfig {
+    return "method" in config && config.method === "generateObject";
   }
 
   /**
@@ -263,289 +290,258 @@ ${guidelinesText}
   }
 
   /**
-   * Hand off a task to another agent
+   * Hand off a task to another agent using AgentV2
    */
-  public async handoffTask(options: AgentHandoffOptions): Promise<AgentHandoffResult> {
+  public async handoffTask(options: {
+    task: string;
+    targetAgent: SubAgentConfig;
+    sourceAgent?: Agent;
+    userId?: string;
+    conversationId?: string;
+    parentAgentId?: string;
+    parentHistoryEntryId?: string;
+    parentOperationContext?: OperationContext;
+    maxSteps?: number;
+    context?: Map<string | symbol, unknown>;
+    sharedContext?: UIMessage[];
+  }): Promise<{
+    result: string;
+    messages: UIMessage[];
+    usage?: any;
+  }> {
     const {
       task,
-      conversationId,
+      targetAgent: targetAgentConfig,
+      sourceAgent,
       userId,
+      conversationId,
       parentAgentId,
       parentHistoryEntryId,
       parentOperationContext,
       maxSteps,
+      context,
+      sharedContext = [],
     } = options;
-    // TODO: Fix the types here
-    const context = options.context as OperationContext | undefined;
-    const sourceAgent = options.sourceAgent as Agent<DangerouslyAllowAny>;
-    const targetAgentConfig = options.targetAgent as SubAgentConfig;
 
-    // Extract the actual agent and method configuration
+    // Extract the actual agent
     const targetAgent = this.extractAgent(targetAgentConfig);
-    const method = this.isSubAgentConfigObject(targetAgentConfig)
-      ? targetAgentConfig.method
-      : "streamText";
-    const schema = this.isSubAgentConfigObject(targetAgentConfig)
-      ? targetAgentConfig.schema
-      : undefined;
-    const methodOptions = this.isSubAgentConfigObject(targetAgentConfig)
-      ? targetAgentConfig.options
-      : undefined;
 
     // Use the provided conversationId or generate a new one
     const handoffConversationId = conversationId || crypto.randomUUID();
 
     try {
       // Call onHandoff hook if source agent is provided
-      if (sourceAgent && targetAgent.hooks) {
-        await targetAgent.hooks.onHandoff?.({ agent: targetAgent, source: sourceAgent });
-      }
-
-      // Get relevant context from memory (to be passed from Agent class)
-      const sharedContext: BaseMessage[] = options.sharedContext || [];
-
-      // Get the real-time event forwarder from options (passed from delegate tool)
-      const forwardEvent = options.forwardEvent;
+      // Note: AgentV2 hooks have different signature, this needs to be updated
+      // if (sourceAgent && targetAgent.hooks) {
+      //   await targetAgent.hooks.onHandoff?.(context || new Map());
+      // }
 
       // Include context information if available
       let taskContent = task;
-      if (context && Object.keys(context).length > 0) {
+      if (context && context.size > 0) {
+        const contextObj = Object.fromEntries(context.entries());
         taskContent = `Task handed off from ${sourceAgent?.name || this.agentName} to ${targetAgent.name}:
-${task}\n\nContext: ${safeStringify(context, { indentation: 2 })}`;
+${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
       }
 
-      const taskMessage: BaseMessage = {
+      const taskMessage: UIMessage = {
+        id: crypto.randomUUID(),
         role: "user",
-        content: taskContent,
+        parts: [{ type: "text", text: taskContent }],
       };
 
-      const callOptions = {
+      // Combine shared context with the new task message
+      const messages = [...sharedContext, taskMessage];
+
+      // Execute the appropriate method based on configuration
+      let finalResult: string;
+      let finalMessages: UIMessage[];
+      let usage: any;
+
+      // Prepare base options for all methods
+      const baseOptions = {
         conversationId: handoffConversationId,
         userId,
         parentAgentId: sourceAgent?.id || parentAgentId,
         parentHistoryEntryId,
         parentOperationContext,
-        // Pass the abort controller from parent's operation context to subagent
+        context,
         abortController: parentOperationContext?.abortController,
-        // Keep signal for backward compatibility
         signal: parentOperationContext?.signal,
-        // Pass maxSteps from parent to subagent (inherits parent's effective maxSteps)
         maxSteps,
-        // Add method-specific options if provided
-        provider: methodOptions,
       };
 
-      // Execute the appropriate method based on configuration
-      let finalResult: string;
-      let finalMessages: BaseMessage[];
+      if (this.isDirectAgent(targetAgentConfig)) {
+        // Direct agent - use streamText by default
+        const response = await targetAgent.streamText(messages, baseOptions);
 
-      if (method === "generateText") {
-        const response = await targetAgent.generateText(
-          [...sharedContext, taskMessage],
-          callOptions,
-        );
+        // Get the UI stream writer from operationContext if available
+        const uiStreamWriter = parentOperationContext?.systemContext?.get("uiStreamWriter");
+
+        // If we have a writer, merge the subagent's stream with metadata
+        if (uiStreamWriter && response.fullStream) {
+          // Convert the subagent's fullStream to UI message stream
+          // Don't use messageMetadata as it only works at message level
+          const subagentUIStream = response.toUIMessageStream({
+            sendStart: false,
+            originalMessages: messages,
+          });
+
+          // Wrap the stream with metadata enricher to add metadata to all parts
+          // Apply type filters from supervisor config
+          const enrichedStream = createMetadataEnrichedStream(
+            subagentUIStream,
+            {
+              subAgentId: targetAgent.id,
+              subAgentName: targetAgent.name,
+            },
+            this.supervisorConfig?.fullStreamEventForwarding?.types || ["tool-call", "tool-result"],
+          );
+
+          // Use the writer to merge the enriched stream
+          // This handles promise tracking and error handling automatically
+          uiStreamWriter.merge(enrichedStream);
+        }
+
+        // Get the final result
+        finalResult = await response.text;
+        usage = await response.usage;
+
+        const assistantMessage: UIMessage = {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          parts: [{ type: "text", text: finalResult }],
+        };
+        finalMessages = [taskMessage, assistantMessage];
+      } else if (this.isStreamTextConfig(targetAgentConfig)) {
+        // StreamText configuration
+        const options: StreamTextOptions = { ...baseOptions, ...targetAgentConfig.options };
+        const response = await targetAgent.streamText(messages, options);
+
+        // Get the UI stream writer from operationContext if available
+        const uiStreamWriter = parentOperationContext?.systemContext?.get("uiStreamWriter");
+
+        // If we have a writer, merge the subagent's stream with metadata
+        if (uiStreamWriter && response.fullStream) {
+          // Convert the subagent's fullStream to UI message stream
+          // Don't use messageMetadata as it only works at message level
+          const subagentUIStream = response.toUIMessageStream();
+
+          // Wrap the stream with metadata enricher to add metadata to all parts
+          // Apply type filters from supervisor config
+          const enrichedStream = createMetadataEnrichedStream(
+            subagentUIStream,
+            {
+              subAgentId: targetAgent.id,
+              subAgentName: targetAgent.name,
+            },
+            this.supervisorConfig?.fullStreamEventForwarding?.types || ["tool-call", "tool-result"],
+          );
+
+          // Use the writer to merge the enriched stream
+          // This handles promise tracking and error handling automatically
+          uiStreamWriter.merge(enrichedStream);
+        }
+
+        // Get the final result
+        finalResult = await response.text;
+        usage = await response.usage;
+
+        const assistantMessage: UIMessage = {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          parts: [{ type: "text", text: finalResult }],
+        };
+        finalMessages = [taskMessage, assistantMessage];
+      } else if (this.isGenerateTextConfig(targetAgentConfig)) {
+        // GenerateText configuration
+        const options: GenerateTextOptions = { ...baseOptions, ...targetAgentConfig.options };
+        const response = await targetAgent.generateText(messages, options);
         finalResult = response.text;
-        finalMessages = [taskMessage, { role: "assistant", content: response.text }];
-      } else if (method === "generateObject") {
-        if (!schema) {
-          throw new Error(
-            `Schema is required for generateObject method in subagent ${targetAgent.name}`,
-          );
-        }
-        const response = await targetAgent.generateObject(
-          [...sharedContext, taskMessage],
-          schema,
-          callOptions,
-        );
-        finalResult = safeStringify(response.object);
-        finalMessages = [taskMessage, { role: "assistant", content: finalResult }];
-      } else if (method === "streamObject") {
-        if (!schema) {
-          throw new Error(
-            `Schema is required for streamObject method in subagent ${targetAgent.name}`,
-          );
-        }
-        const streamResponse = await targetAgent.streamObject(
-          [...sharedContext, taskMessage],
-          schema,
-          callOptions,
-        );
+        usage = response.usage;
 
-        // Handle streamObject response
-        let finalObject: any;
-        if (streamResponse.objectStream) {
-          for await (const part of streamResponse.objectStream) {
-            finalObject = part;
-          }
-        }
-
+        const assistantMessage: UIMessage = {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          parts: [{ type: "text", text: finalResult }],
+        };
+        finalMessages = [taskMessage, assistantMessage];
+      } else if (this.isStreamObjectConfig(targetAgentConfig)) {
+        // StreamObject configuration
+        const options: StreamObjectOptions = { ...baseOptions, ...targetAgentConfig.options };
+        const response = await targetAgent.streamObject(
+          messages,
+          targetAgentConfig.schema,
+          options,
+        );
+        const finalObject = await response.object;
         finalResult = safeStringify(finalObject);
-        finalMessages = [taskMessage, { role: "assistant", content: finalResult }];
-      } else {
-        // Default to streamText for backward compatibility
-        const streamResponse = await targetAgent.streamText(
-          [...sharedContext, taskMessage],
-          callOptions,
+
+        const assistantMessage: UIMessage = {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          parts: [{ type: "text", text: finalResult }],
+        };
+        finalMessages = [taskMessage, assistantMessage];
+      } else if (this.isGenerateObjectConfig(targetAgentConfig)) {
+        // GenerateObject configuration
+        const options: GenerateObjectOptions = { ...baseOptions, ...targetAgentConfig.options };
+        const response = await targetAgent.generateObject(
+          messages,
+          targetAgentConfig.schema,
+          options,
         );
+        finalResult = safeStringify(response);
+        usage = (response as any).usage;
 
-        // Collect all stream chunks for final result
-        finalResult = "";
-
-        if (streamResponse.fullStream && forwardEvent) {
-          // Get event forwarding configuration
-          const eventForwardingConfig = {
-            forwarder: forwardEvent,
-            types: this.supervisorConfig?.fullStreamEventForwarding?.types || [
-              "tool-call",
-              "tool-result",
-            ],
-            addSubAgentPrefix:
-              this.supervisorConfig?.fullStreamEventForwarding?.addSubAgentPrefix ?? true,
-          };
-
-          // Consume the full stream to capture all events
-          for await (const part of streamResponse.fullStream) {
-            const timestamp = new Date().toISOString();
-
-            switch (part.type) {
-              case "text-delta": {
-                finalResult += part.textDelta;
-
-                const eventData = {
-                  type: "text-delta",
-                  data: {
-                    textDelta: part.textDelta,
-                  },
-                  timestamp,
-                  subAgentId: targetAgent.id,
-                  subAgentName: targetAgent.name,
-                } satisfies StreamEventTextDelta;
-
-                // Forward event using configuration
-                await streamEventForwarder(eventData, eventForwardingConfig);
-                break;
-              }
-              case "reasoning": {
-                const eventData = {
-                  type: "reasoning",
-                  data: {
-                    reasoning: part.reasoning,
-                  },
-                  timestamp,
-                  subAgentId: targetAgent.id,
-                  subAgentName: targetAgent.name,
-                } satisfies StreamEventReasoning;
-
-                // Forward event using configuration
-                await streamEventForwarder(eventData, eventForwardingConfig);
-                break;
-              }
-              case "source": {
-                const eventData = {
-                  type: "source",
-                  data: {
-                    source: part.source,
-                  },
-                  timestamp,
-                  subAgentId: targetAgent.id,
-                  subAgentName: targetAgent.name,
-                } satisfies StreamEventSource;
-
-                // Forward event using configuration
-                await streamEventForwarder(eventData, eventForwardingConfig);
-                break;
-              }
-              case "tool-call": {
-                const eventData = {
-                  type: "tool-call",
-                  data: {
-                    toolCallId: part.toolCallId,
-                    toolName: part.toolName,
-                    args: part.args,
-                  },
-                  timestamp,
-                  subAgentId: targetAgent.id,
-                  subAgentName: targetAgent.name,
-                } satisfies StreamEventToolCall;
-
-                // Forward event using configuration
-                await streamEventForwarder(eventData, eventForwardingConfig);
-                break;
-              }
-              case "tool-result": {
-                const eventData = {
-                  type: "tool-result",
-                  data: {
-                    toolCallId: part.toolCallId,
-                    toolName: part.toolName,
-                    result: part.result,
-                  },
-                  timestamp,
-                  subAgentId: targetAgent.id,
-                  subAgentName: targetAgent.name,
-                } satisfies StreamEventToolResult;
-
-                // Forward event using configuration
-                await streamEventForwarder(eventData, eventForwardingConfig);
-                break;
-              }
-
-              case "error": {
-                const eventData = {
-                  type: "error",
-                  data: {
-                    // @ts-expect-error - fix bad type
-                    error: part.error?.message || "Stream error occurred",
-                    code: "STREAM_ERROR",
-                  },
-                  timestamp,
-                  subAgentId: targetAgent.id,
-                  subAgentName: targetAgent.name,
-                } satisfies StreamEventError;
-
-                // Forward event using configuration
-                // @ts-expect-error - fix bad type
-                await streamEventForwarder(eventData, eventForwardingConfig);
-                break;
-              }
-            }
-          }
-        } else {
-          for await (const part of streamResponse.textStream) {
-            finalResult += part;
-          }
-        }
-
-        finalMessages = [taskMessage, { role: "assistant", content: finalResult }];
+        const assistantMessage: UIMessage = {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          parts: [{ type: "text", text: finalResult }],
+        };
+        finalMessages = [taskMessage, assistantMessage];
+      } else {
+        // This should never happen due to exhaustive type checking
+        throw new Error("Unknown subagent configuration type");
       }
 
       return {
         result: finalResult,
-        conversationId: handoffConversationId,
         messages: finalMessages,
-        status: "success",
+        usage,
       };
     } catch (error) {
       const logger =
-        options.parentOperationContext?.logger ||
+        parentOperationContext?.logger ||
         getGlobalLogger().child({ component: "subagent-manager" });
       logger.error(`Error in handoffTask to ${targetAgent.name}`, { error });
 
       // Get error message safely whether error is Error object or string
       const errorMessage = error instanceof Error ? error.message : String(error);
 
-      // Return a structured error result
-      return {
-        result: `Error in delegating task to ${targetAgent.name}: ${errorMessage}`,
-        conversationId: handoffConversationId,
-        messages: [
+      // Create error message
+      const errorUIMessage: UIMessage = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        parts: [
           {
-            role: "system" as const,
-            content: `Error occurred during task handoff: ${errorMessage}`,
+            type: "text",
+            text: `Error in delegating task to ${targetAgent.name}: ${errorMessage}`,
           },
         ],
-        status: "error",
-        error: error instanceof Error ? error : String(error),
+      };
+
+      // Create a simple task message for error reporting
+      const errorTaskMessage: UIMessage = {
+        id: crypto.randomUUID(),
+        role: "user",
+        parts: [{ type: "text", text: task }],
+      };
+
+      return {
+        result: `Error in delegating task to ${targetAgent.name}: ${errorMessage}`,
+        messages: [errorTaskMessage, errorUIMessage],
+        usage: undefined,
       };
     }
   }
@@ -554,19 +550,20 @@ ${task}\n\nContext: ${safeStringify(context, { indentation: 2 })}`;
    * Hand off a task to multiple agents in parallel
    */
   public async handoffToMultiple(
-    options: Omit<AgentHandoffOptions, "targetAgent"> & {
+    options: Omit<
+      typeof SubAgentManager.prototype.handoffTask extends (opts: infer P) => any ? P : never,
+      "targetAgent"
+    > & {
       targetAgents: SubAgentConfig[];
     },
-  ): Promise<AgentHandoffResult[]> {
-    const {
-      targetAgents,
-      conversationId,
-      parentAgentId,
-      parentHistoryEntryId,
-      parentOperationContext,
-      maxSteps,
-      ...restOptions
-    } = options;
+  ): Promise<
+    Array<{
+      result: string;
+      messages: UIMessage[];
+      usage?: any;
+    }>
+  > {
+    const { targetAgents, conversationId, ...restOptions } = options;
 
     // Use the same conversationId for all handoffs to maintain context
     const handoffConversationId = conversationId || crypto.randomUUID();
@@ -574,40 +571,11 @@ ${task}\n\nContext: ${safeStringify(context, { indentation: 2 })}`;
     // Execute handoffs in parallel and handle errors individually
     const results = await Promise.all(
       targetAgents.map(async (agentConfig) => {
-        try {
-          return await this.handoffTask({
-            ...restOptions,
-            targetAgent: agentConfig,
-            conversationId: handoffConversationId,
-            parentAgentId,
-            parentHistoryEntryId,
-            parentOperationContext,
-            maxSteps,
-          });
-        } catch (error) {
-          const agentName = this.extractAgentName(agentConfig);
-          const logger =
-            options.parentOperationContext?.logger ||
-            getGlobalLogger().child({ component: "subagent-manager" });
-          logger.error(`Error in handoffToMultiple for agent ${agentName}`, { error });
-
-          // Get error message safely whether error is Error object or string
-          const errorMessage = error instanceof Error ? error.message : String(error);
-
-          // Return structured error result with properly typed role
-          return {
-            result: `Error in delegating task to ${agentName}: ${errorMessage}`,
-            conversationId: handoffConversationId,
-            messages: [
-              {
-                role: "system" as const,
-                content: `Error occurred during task handoff: ${errorMessage}`,
-              },
-            ],
-            status: "error",
-            error: error instanceof Error ? error : String(error),
-          } as AgentHandoffResult;
-        }
+        return await this.handoffTask({
+          ...restOptions,
+          targetAgent: agentConfig,
+          conversationId: handoffConversationId,
+        });
       }),
     );
 
@@ -618,25 +586,21 @@ ${task}\n\nContext: ${safeStringify(context, { indentation: 2 })}`;
    * Creates a tool that allows the supervisor agent to delegate a
    * task to one or more specialized agents
    */
-  public createDelegateTool(
-    options: MergeDeep<
-      {
-        sourceAgent: Agent<any>;
-        currentHistoryEntryId?: string;
-        operationContext?: OperationContext;
-        forwardEvent?: (event: StreamEvent) => Promise<void>;
-        maxSteps?: number;
-      },
-      Record<string, any>
-    >,
-  ): BaseTool {
+  public createDelegateTool(options: {
+    sourceAgent: Agent;
+    currentHistoryEntryId?: string;
+    operationContext?: OperationContext;
+    maxSteps?: number;
+    conversationId?: string;
+    userId?: string;
+  }): Tool<any, any> {
     const {
       sourceAgent,
-      forwardEvent,
       operationContext,
       currentHistoryEntryId,
       maxSteps,
-      ...restOptions
+      conversationId,
+      userId,
     } = options;
     return createTool({
       id: "delegate_task",
@@ -684,42 +648,33 @@ ${task}\n\nContext: ${safeStringify(context, { indentation: 2 })}`;
             );
           }
 
+          // Convert context from record to Map
+          const contextMap = new Map(Object.entries(context));
+
           // Wait for all agent tasks to complete using Promise.all
           const results = await this.handoffToMultiple({
             task,
             targetAgents: agents,
-            context,
+            context: contextMap,
             sourceAgent,
             // Pass parent context for event propagation
             parentAgentId: sourceAgent?.id,
+            conversationId,
+            userId,
             // Get current history entry ID for parent context
             // This is passed from the Agent class via options when the tool is called
             parentHistoryEntryId: currentHistoryEntryId,
             parentOperationContext: operationContext,
-            // Pass the real-time event forwarder
-            forwardEvent,
             // Pass maxSteps from parent to subagents
             maxSteps,
-            ...restOptions,
           });
 
-          // Return structured results with agent names, their responses, and status
+          // Return structured results with agent names and their responses
           const structuredResults = results.map((result, index) => {
-            // Get status and error in a type-safe way
-            const status = result.status || "success";
-            const errorInfo =
-              status === "error" && result.error
-                ? typeof result.error === "string"
-                  ? result.error
-                  : result.error.message
-                : undefined;
-
             return {
               agentName: this.extractAgentName(agents[index]),
               response: result.result,
-              conversationId: result.conversationId,
-              status,
-              error: errorInfo,
+              usage: result.usage,
             };
           });
 
@@ -740,40 +695,42 @@ ${task}\n\nContext: ${safeStringify(context, { indentation: 2 })}`;
   /**
    * Get sub-agent details for API exposure
    */
-  public getSubAgentDetails(): Array<Record<string, any>> {
+  public getSubAgentDetails(): SubAgentStateData[] {
     return this.subAgentConfigs.map((subAgentConfig: SubAgentConfig) => {
       const subAgent = this.extractAgent(subAgentConfig);
+      const agentState = subAgent.getFullState();
 
-      // Get the full state from the sub-agent
-      const fullState: Record<string, any> = {
-        ...subAgent.getFullState(),
+      // Build properly typed SubAgentStateData
+      const subAgentData: SubAgentStateData = {
+        id: agentState.id,
+        name: agentState.name,
+        instructions: agentState.instructions,
+        status: agentState.status,
+        model: agentState.model,
         tools: subAgent.getToolsForApi(),
+        memory: agentState.memory,
+        node_id: agentState.node_id,
       };
 
-      // Add method configuration if it's a SubAgentConfigObject
-      if (this.isSubAgentConfigObject(subAgentConfig)) {
-        fullState.methodConfig = {
+      // Add method configuration if it's not a direct agent
+      if (!this.isDirectAgent(subAgentConfig)) {
+        subAgentData.methodConfig = {
           method: subAgentConfig.method,
-          schema: subAgentConfig.schema ? "defined" : undefined,
+          schema: "schema" in subAgentConfig && subAgentConfig.schema ? "defined" : undefined,
           options: subAgentConfig.options ? Object.keys(subAgentConfig.options) : undefined,
         };
       }
 
-      // Prevent circular references by limiting nested sub-agents to one level
-      if (fullState.subAgents && fullState.subAgents.length > 0) {
-        fullState.subAgents = fullState.subAgents.map(
-          (nestedAgent: Record<string, any> & { node_id: string }) => {
-            // For nested agents, we keep their sub-agents array empty
-            if (nestedAgent.subAgents) {
-              nestedAgent.subAgents = [];
-            }
-
-            return nestedAgent;
-          },
-        );
+      // Handle nested sub-agents to prevent circular references
+      if (agentState.subAgents && agentState.subAgents.length > 0) {
+        // For nested agents, we keep their sub-agents array empty
+        subAgentData.subAgents = agentState.subAgents.map((nestedAgent) => ({
+          ...nestedAgent,
+          subAgents: [], // Prevent circular references
+        }));
       }
 
-      return fullState;
+      return subAgentData;
     });
   }
 }

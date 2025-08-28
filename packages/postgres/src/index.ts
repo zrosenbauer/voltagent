@@ -2,16 +2,16 @@ import {
   type Conversation,
   type ConversationQueryOptions,
   type CreateConversationInput,
-  type Memory,
-  type MemoryMessage,
+  type InternalMemory,
   type MemoryOptions,
-  type MessageFilterOptions,
   type NewTimelineEvent,
   type WorkflowHistoryEntry,
   type WorkflowStepHistoryEntry,
   type WorkflowTimelineEvent,
   safeJsonParse,
 } from "@voltagent/core";
+import { safeStringify } from "@voltagent/internal/utils";
+import type { UIMessage } from "ai";
 import { Pool } from "pg";
 
 /**
@@ -86,7 +86,7 @@ export interface PostgresStorageOptions extends MemoryOptions {
  * A PostgreSQL storage implementation of the Memory and WorkflowMemory interfaces
  * Uses node-postgres to store and retrieve conversation history and workflow data
  */
-export class PostgresStorage implements Memory {
+export class PostgresStorage implements InternalMemory {
   private pool: Pool;
   private options: PostgresStorageOptions;
   private initialized: Promise<void>;
@@ -234,14 +234,18 @@ export class PostgresStorage implements Memory {
         )
       `);
 
-      // Create messages table without user_id
+      // Create messages table with UIMessage support
       await client.query(`
         CREATE TABLE IF NOT EXISTS ${this.options.tablePrefix}_messages (
           conversation_id TEXT NOT NULL REFERENCES ${this.options.tablePrefix}_conversations(id) ON DELETE CASCADE,
           message_id TEXT NOT NULL,
+          user_id TEXT NOT NULL DEFAULT 'default',
           role TEXT NOT NULL,
-          content TEXT NOT NULL,
-          type TEXT NOT NULL,
+          parts JSONB,
+          metadata JSONB,
+          format_version INTEGER DEFAULT 2,
+          content TEXT,
+          type TEXT,
           created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
           PRIMARY KEY (conversation_id, message_id)
         )
@@ -524,25 +528,6 @@ export class PostgresStorage implements Memory {
       await client.query("COMMIT");
       this.debug("Database initialized successfully with workflow tables");
 
-      // Run conversation schema migration
-      try {
-        const migrationResult = await this.migrateConversationSchema({
-          createBackup: true,
-        });
-
-        if (migrationResult.success) {
-          if ((migrationResult.migratedCount || 0) > 0) {
-            console.log(
-              `${migrationResult.migratedCount} conversation records successfully migrated`,
-            );
-          }
-        } else {
-          console.error("Conversation migration error:", migrationResult.error);
-        }
-      } catch (error) {
-        this.debug("Error migrating conversation schema:", error);
-      }
-
       // Run agent history schema migration
       try {
         const migrationResult = await this.migrateAgentHistorySchema();
@@ -553,10 +538,131 @@ export class PostgresStorage implements Memory {
       } catch (error) {
         this.debug("Error migrating agent history schema:", error);
       }
+
+      // Run UIMessage format migration for existing tables
+      try {
+        await this.addUIMessageColumnsToMessagesTable();
+      } catch (error) {
+        this.debug("Error adding UIMessage columns (non-critical):", error);
+      }
     } catch (error) {
       await client.query("ROLLBACK");
       this.debug("Error initializing database:", error);
       throw new Error("Failed to initialize PostgreSQL database");
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Add new columns to messages table for UIMessage format if they don't exist
+   * This allows existing tables to support both old and new message formats
+   */
+  private async addUIMessageColumnsToMessagesTable(): Promise<void> {
+    const messagesTableName = `${this.options.tablePrefix}_messages`;
+    const client = await this.pool.connect();
+
+    try {
+      // Check which columns exist
+      const columnCheck = await client.query(
+        `
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = $1
+        `,
+        [messagesTableName],
+      );
+
+      const existingColumns = columnCheck.rows.map((row) => row.column_name);
+
+      // Add new columns if they don't exist
+      if (!existingColumns.includes("parts")) {
+        try {
+          await client.query(`ALTER TABLE ${messagesTableName} ADD COLUMN parts JSONB`);
+          this.debug("Added 'parts' column to messages table");
+        } catch (_e) {
+          // Column might already exist
+        }
+      }
+
+      if (!existingColumns.includes("metadata")) {
+        try {
+          await client.query(`ALTER TABLE ${messagesTableName} ADD COLUMN metadata JSONB`);
+          this.debug("Added 'metadata' column to messages table");
+        } catch (_e) {
+          // Column might already exist
+        }
+      }
+
+      if (!existingColumns.includes("format_version")) {
+        try {
+          await client.query(
+            `ALTER TABLE ${messagesTableName} ADD COLUMN format_version INTEGER DEFAULT 2`,
+          );
+          this.debug("Added 'format_version' column to messages table");
+        } catch (_e) {
+          // Column might already exist
+        }
+      }
+
+      if (!existingColumns.includes("user_id")) {
+        try {
+          await client.query(
+            `ALTER TABLE ${messagesTableName} ADD COLUMN user_id TEXT NOT NULL DEFAULT 'default'`,
+          );
+          this.debug("Added 'user_id' column to messages table");
+        } catch (_e) {
+          // Column might already exist
+        }
+      }
+
+      // Make content and type nullable for new format
+      if (existingColumns.includes("content")) {
+        const contentInfo = await client.query(
+          `
+          SELECT is_nullable
+          FROM information_schema.columns
+          WHERE table_name = $1 AND column_name = 'content'
+          `,
+          [messagesTableName],
+        );
+
+        if (contentInfo.rows[0]?.is_nullable === "NO") {
+          try {
+            await client.query(
+              `ALTER TABLE ${messagesTableName} ALTER COLUMN content DROP NOT NULL`,
+            );
+            this.debug("Made 'content' column nullable");
+          } catch (e) {
+            this.debug("Error making content nullable:", e);
+          }
+        }
+      }
+
+      if (existingColumns.includes("type")) {
+        const typeInfo = await client.query(
+          `
+          SELECT is_nullable
+          FROM information_schema.columns
+          WHERE table_name = $1 AND column_name = 'type'
+          `,
+          [messagesTableName],
+        );
+
+        if (typeInfo.rows[0]?.is_nullable === "NO") {
+          try {
+            await client.query(`ALTER TABLE ${messagesTableName} ALTER COLUMN type DROP NOT NULL`);
+            this.debug("Made 'type' column nullable");
+          } catch (e) {
+            this.debug("Error making type nullable:", e);
+          }
+        }
+      }
+
+      this.debug("UIMessage columns migration completed for messages table");
+    } catch (error) {
+      this.debug("Error in UIMessage columns migration (non-critical):", error);
+      // Don't throw - this is not critical for new installations
     } finally {
       client.release();
     }
@@ -573,447 +679,41 @@ export class PostgresStorage implements Memory {
   }
 
   /**
-   * Migrate conversation schema to add user_id and update messages table
-   *
-   * ⚠️  **CRITICAL WARNING: DESTRUCTIVE OPERATION** ⚠️
-   *
-   * This method performs a DESTRUCTIVE schema migration that:
-   * - DROPS and recreates existing tables
-   * - Creates temporary tables during migration
-   * - Modifies the primary key structure of the messages table
-   * - Can cause DATA LOSS if interrupted or if errors occur
-   *
-   * **IMPORTANT SAFETY REQUIREMENTS:**
-   * - 🛑 STOP all application instances before running this migration
-   * - 🛑 Ensure NO concurrent database operations are running
-   * - 🛑 Take a full database backup before running (independent of built-in backup)
-   * - 🛑 Test the migration on a copy of production data first
-   * - 🛑 Plan for downtime during migration execution
-   *
-   * **What this migration does:**
-   * 1. Creates backup tables (if createBackup=true)
-   * 2. Creates temporary tables with new schema
-   * 3. Migrates data from old tables to new schema
-   * 4. DROPS original tables
-   * 5. Renames temporary tables to original names
-   * 6. All operations are wrapped in a transaction for atomicity
-   *
-   * @param options Migration configuration options
-   * @param options.createBackup Whether to create backup tables before migration (default: true, HIGHLY RECOMMENDED)
-   * @param options.restoreFromBackup Whether to restore from existing backup instead of migrating (default: false)
-   * @param options.deleteBackupAfterSuccess Whether to delete backup tables after successful migration (default: false)
-   *
-   * @returns Promise resolving to migration result with success status, migrated count, and backup info
-   *
-   * @example
-   * ```typescript
-   * // RECOMMENDED: Run with backup creation (default)
-   * const result = await storage.migrateConversationSchema({
-   *   createBackup: true,
-   *   deleteBackupAfterSuccess: false // Keep backup for safety
-   * });
-   *
-   * if (result.success) {
-   *   console.log(`Migrated ${result.migratedCount} conversations successfully`);
-   * } else {
-   *   console.error('Migration failed:', result.error);
-   *   // Consider restoring from backup
-   * }
-   *
-   * // If migration fails, restore from backup:
-   * const restoreResult = await storage.migrateConversationSchema({
-   *   restoreFromBackup: true
-   * });
-   * ```
-   *
-   * @throws {Error} If migration fails and transaction is rolled back
-   *
-   * @since This migration is typically only needed when upgrading from older schema versions
-   */
-  private async migrateConversationSchema(
-    options: {
-      createBackup?: boolean;
-      restoreFromBackup?: boolean;
-      deleteBackupAfterSuccess?: boolean;
-    } = {},
-  ): Promise<{
-    success: boolean;
-    migratedCount?: number;
-    error?: Error;
-    backupCreated?: boolean;
-  }> {
-    const {
-      createBackup = true,
-      restoreFromBackup = false,
-      deleteBackupAfterSuccess = false,
-    } = options;
-
-    const conversationsTableName = `${this.options.tablePrefix}_conversations`;
-    const messagesTableName = `${this.options.tablePrefix}_messages`;
-    const conversationsBackupName = `${conversationsTableName}_backup`;
-    const messagesBackupName = `${messagesTableName}_backup`;
-
-    const client = await this.pool.connect();
-    try {
-      this.debug("Starting conversation schema migration...");
-
-      // Check if migration has already been completed
-      const flagCheck = await this.checkMigrationFlag("conversation_schema_migration");
-      if (flagCheck.alreadyCompleted) {
-        return { success: true, migratedCount: 0 };
-      }
-
-      // If restoreFromBackup option is active, restore from backup
-      if (restoreFromBackup) {
-        this.debug("Starting restoration from backup...");
-
-        await client.query("BEGIN");
-
-        // Check if backup tables exist
-        const convBackupCheck = await client.query(
-          "SELECT tablename FROM pg_tables WHERE tablename = $1",
-          [conversationsBackupName],
-        );
-
-        const msgBackupCheck = await client.query(
-          "SELECT tablename FROM pg_tables WHERE tablename = $1",
-          [messagesBackupName],
-        );
-
-        if (convBackupCheck.rows.length === 0 || msgBackupCheck.rows.length === 0) {
-          throw new Error("No backup found to restore");
-        }
-
-        // Restore tables from backup
-        await client.query(`DROP TABLE IF EXISTS ${conversationsTableName} CASCADE`);
-        await client.query(`DROP TABLE IF EXISTS ${messagesTableName} CASCADE`);
-        await client.query(
-          `ALTER TABLE ${conversationsBackupName} RENAME TO ${conversationsTableName}`,
-        );
-        await client.query(`ALTER TABLE ${messagesBackupName} RENAME TO ${messagesTableName}`);
-
-        await client.query("COMMIT");
-
-        this.debug("Restoration from backup completed successfully");
-        return { success: true, backupCreated: false };
-      }
-
-      // Check current table structures
-      const convColumnCheck = await client.query(
-        `
-        SELECT column_name 
-        FROM information_schema.columns 
-        WHERE table_name = $1 AND column_name = 'user_id'
-      `,
-        [conversationsTableName],
-      );
-
-      const msgColumnCheck = await client.query(
-        `
-        SELECT column_name 
-        FROM information_schema.columns 
-        WHERE table_name = $1 AND column_name = 'user_id'
-      `,
-        [messagesTableName],
-      );
-
-      const hasUserIdInConversations = convColumnCheck.rows.length > 0;
-      const hasUserIdInMessages = msgColumnCheck.rows.length > 0;
-
-      // If conversations already has user_id and messages doesn't have user_id, migration not needed
-      if (hasUserIdInConversations && !hasUserIdInMessages) {
-        this.debug("Tables are already in new format, migration not needed");
-        return { success: true, migratedCount: 0 };
-      }
-
-      // Check if tables exist at all
-      const convTableCheck = await client.query(
-        "SELECT tablename FROM pg_tables WHERE tablename = $1",
-        [conversationsTableName],
-      );
-
-      const msgTableCheck = await client.query(
-        "SELECT tablename FROM pg_tables WHERE tablename = $1",
-        [messagesTableName],
-      );
-
-      // If neither table exists, no migration needed
-      if (convTableCheck.rows.length === 0 && msgTableCheck.rows.length === 0) {
-        this.debug("Tables don't exist, migration not needed");
-        return { success: true, migratedCount: 0 };
-      }
-
-      // Create backups if requested
-      if (createBackup) {
-        this.debug("Creating backups...");
-
-        // Remove existing backups
-        await client.query(`DROP TABLE IF EXISTS ${conversationsBackupName} CASCADE`);
-        await client.query(`DROP TABLE IF EXISTS ${messagesBackupName} CASCADE`);
-
-        // Create backups
-        if (convTableCheck.rows.length > 0) {
-          await client.query(
-            `CREATE TABLE ${conversationsBackupName} AS SELECT * FROM ${conversationsTableName}`,
-          );
-        }
-
-        if (msgTableCheck.rows.length > 0) {
-          await client.query(
-            `CREATE TABLE ${messagesBackupName} AS SELECT * FROM ${messagesTableName}`,
-          );
-        }
-
-        this.debug("Backups created successfully");
-      }
-
-      // Get existing data
-      let conversationData: any[] = [];
-      let messageData: any[] = [];
-
-      if (convTableCheck.rows.length > 0) {
-        const convResult = await client.query(`SELECT * FROM ${conversationsTableName}`);
-        conversationData = convResult.rows;
-      }
-
-      if (msgTableCheck.rows.length > 0) {
-        const msgResult = await client.query(`SELECT * FROM ${messagesTableName}`);
-        messageData = msgResult.rows;
-      }
-
-      // Start transaction for migration
-      await client.query("BEGIN");
-
-      // Create temporary tables with new schemas
-      const tempConversationsTable = `${conversationsTableName}_temp`;
-      const tempMessagesTable = `${messagesTableName}_temp`;
-
-      await client.query(`
-        CREATE TABLE ${tempConversationsTable} (
-          id TEXT PRIMARY KEY,
-          resource_id TEXT NOT NULL,
-          user_id TEXT NOT NULL,
-          title TEXT,
-          metadata JSONB,
-          created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
-          updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
-        )
-      `);
-
-      await client.query(`
-        CREATE TABLE ${tempMessagesTable} (
-          conversation_id TEXT NOT NULL,
-          message_id TEXT NOT NULL,
-          role TEXT NOT NULL,
-          content TEXT NOT NULL,
-          type TEXT NOT NULL,
-          created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
-          PRIMARY KEY (conversation_id, message_id)
-        )
-      `);
-
-      let migratedCount = 0;
-      const createdConversations = new Set<string>();
-
-      // Process each message and create conversation if needed
-      for (const row of messageData) {
-        const conversationId = row.conversation_id;
-        let userId = "default";
-
-        // Get user_id from message if old schema has it
-        if (hasUserIdInMessages && row.user_id) {
-          userId = row.user_id;
-        }
-
-        // Check if conversation already exists (either migrated or auto-created)
-        if (!createdConversations.has(conversationId)) {
-          // Check if conversation exists in original conversations data
-          const existingConversation = conversationData.find((conv) => conv.id === conversationId);
-
-          if (existingConversation) {
-            // Migrate existing conversation
-            let convUserId = userId; // Use user_id from message
-
-            // If conversation already has user_id, use it instead
-            if (hasUserIdInConversations && existingConversation.user_id) {
-              convUserId = existingConversation.user_id;
-            }
-
-            await client.query(
-              `INSERT INTO ${tempConversationsTable} 
-               (id, resource_id, user_id, title, metadata, created_at, updated_at) 
-               VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-              [
-                existingConversation.id,
-                existingConversation.resource_id,
-                convUserId,
-                existingConversation.title,
-                existingConversation.metadata,
-                existingConversation.created_at,
-                existingConversation.updated_at,
-              ],
-            );
-          } else {
-            // Create new conversation from message data
-            const now = new Date().toISOString();
-
-            await client.query(
-              `INSERT INTO ${tempConversationsTable} 
-               (id, resource_id, user_id, title, metadata, created_at, updated_at) 
-               VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-              [
-                conversationId,
-                "default", // Default resource_id for auto-created conversations
-                userId,
-                "Migrated Conversation", // Default title
-                JSON.stringify({}), // Empty metadata
-                now,
-                now,
-              ],
-            );
-          }
-
-          createdConversations.add(conversationId);
-          migratedCount++;
-        }
-
-        // Migrate the message (without user_id column)
-        await client.query(
-          `INSERT INTO ${tempMessagesTable} 
-           (conversation_id, message_id, role, content, type, created_at) 
-           VALUES ($1, $2, $3, $4, $5, $6)`,
-          [row.conversation_id, row.message_id, row.role, row.content, row.type, row.created_at],
-        );
-      }
-
-      // Handle any conversations that exist but have no messages
-      for (const row of conversationData) {
-        const conversationId = row.id;
-
-        if (!createdConversations.has(conversationId)) {
-          let userId = "default";
-
-          // If conversation already has user_id, use it
-          if (hasUserIdInConversations && row.user_id) {
-            userId = row.user_id;
-          }
-
-          await client.query(
-            `INSERT INTO ${tempConversationsTable} 
-             (id, resource_id, user_id, title, metadata, created_at, updated_at) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-            [
-              row.id,
-              row.resource_id,
-              userId,
-              row.title,
-              row.metadata,
-              row.created_at,
-              row.updated_at,
-            ],
-          );
-          migratedCount++;
-        }
-      }
-
-      // Replace old tables with new ones
-      await client.query(`DROP TABLE IF EXISTS ${conversationsTableName} CASCADE`);
-      await client.query(`DROP TABLE IF EXISTS ${messagesTableName} CASCADE`);
-      await client.query(
-        `ALTER TABLE ${tempConversationsTable} RENAME TO ${conversationsTableName}`,
-      );
-      await client.query(`ALTER TABLE ${tempMessagesTable} RENAME TO ${messagesTableName}`);
-
-      // Recreate foreign key constraint
-      await client.query(`
-        ALTER TABLE ${messagesTableName} 
-        ADD CONSTRAINT ${messagesTableName}_conversation_id_fkey 
-        FOREIGN KEY (conversation_id) 
-        REFERENCES ${conversationsTableName}(id) 
-        ON DELETE CASCADE
-      `);
-
-      // Create indexes for the new schema
-      await client.query(`
-        CREATE INDEX IF NOT EXISTS idx_${this.options.tablePrefix}_conversations_resource
-        ON ${conversationsTableName}(resource_id)
-      `);
-
-      await client.query(`
-        CREATE INDEX IF NOT EXISTS idx_${this.options.tablePrefix}_conversations_user
-        ON ${conversationsTableName}(user_id)
-      `);
-
-      await client.query(`
-        CREATE INDEX IF NOT EXISTS idx_${this.options.tablePrefix}_messages_lookup
-        ON ${messagesTableName}(conversation_id, created_at)
-      `);
-
-      // Commit transaction
-      await client.query("COMMIT");
-
-      // Delete backups if requested
-      if (deleteBackupAfterSuccess) {
-        await client.query(`DROP TABLE IF EXISTS ${conversationsBackupName} CASCADE`);
-        await client.query(`DROP TABLE IF EXISTS ${messagesBackupName} CASCADE`);
-      }
-
-      // Set migration flag to prevent future runs
-      await this.setMigrationFlag("conversation_schema_migration", migratedCount);
-
-      this.debug(
-        `Conversation schema migration completed successfully. Migrated ${migratedCount} conversations.`,
-      );
-
-      return {
-        success: true,
-        migratedCount,
-        backupCreated: createBackup,
-      };
-    } catch (error) {
-      this.debug("Error during conversation schema migration:", error);
-
-      // Rollback transaction if still active
-      try {
-        await client.query("ROLLBACK");
-      } catch (rollbackError) {
-        this.debug("Error rolling back transaction:", rollbackError);
-      }
-
-      return {
-        success: false,
-        error: error as Error,
-        backupCreated: createBackup,
-      };
-    } finally {
-      client.release();
-    }
-  }
-
-  /**
    * Add a message to the conversation history
+   * @param message UIMessage to add
+   * @param userId User identifier
+   * @param conversationId Conversation identifier
    */
-  public async addMessage(message: MemoryMessage, conversationId = "default"): Promise<void> {
+  public async addMessage(
+    message: UIMessage,
+    userId: string,
+    conversationId: string,
+  ): Promise<void> {
     await this.initialized;
 
     const client = await this.pool.connect();
     try {
       await client.query("BEGIN");
 
-      // Insert the message without user_id (userId parameter is kept for compatibility but not used)
+      const partsString = safeStringify(message.parts || []);
+      const metadataString = safeStringify(message.metadata || {});
+
+      // Insert the message with UIMessage format
       await client.query(
         `
         INSERT INTO ${this.options.tablePrefix}_messages 
-        (conversation_id, message_id, role, content, type, created_at)
-        VALUES ($1, $2, $3, $4, $5, $6)
+        (conversation_id, message_id, user_id, role, parts, metadata, format_version, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         `,
         [
           conversationId,
           message.id || this.generateId(),
+          userId,
           message.role,
-          typeof message.content === "string" ? message.content : JSON.stringify(message.content),
-          message.type,
-          message.createdAt,
+          partsString,
+          metadataString,
+          2, // format_version for new UIMessage format
+          new Date().toISOString(),
         ],
       );
 
@@ -1062,72 +762,76 @@ export class PostgresStorage implements Memory {
   }
 
   /**
-   * Get messages with filtering options
+   * Add multiple UIMessages to the conversation history
+   * @param messages Array of UIMessages to add
+   * @param userId User identifier
+   * @param conversationId Conversation identifier
    */
-  public async getMessages(options: MessageFilterOptions = {}): Promise<MemoryMessage[]> {
+  public async addMessages(
+    messages: UIMessage[],
+    userId: string,
+    conversationId: string,
+  ): Promise<void> {
+    for (const message of messages) {
+      await this.addMessage(message, userId, conversationId);
+    }
+  }
+
+  /**
+   * Get messages with filtering options
+   * @param userId User identifier
+   * @param conversationId Conversation identifier
+   * @param options Optional filtering options
+   * @returns Array of UIMessages
+   */
+  public async getMessages(
+    userId: string,
+    conversationId: string,
+    options?: { limit?: number; before?: Date; after?: Date; roles?: string[] },
+  ): Promise<UIMessage[]> {
     await this.initialized;
 
-    const {
-      userId = "default",
-      conversationId = "default",
-      limit = this.options.storageLimit,
-      before,
-      after,
-      role,
-      types,
-    } = options;
+    const { limit = this.options.storageLimit, before, after, roles } = options || {};
 
     const client = await this.pool.connect();
     try {
+      // Select all columns to handle both old and new schemas
       let sql = `
-        SELECT m.message_id, m.role, m.content, m.type, m.created_at
+        SELECT m.*
         FROM ${this.options.tablePrefix}_messages m
       `;
       const params: any[] = [];
       const conditions: string[] = [];
       let paramCount = 1;
 
-      // If userId is specified, we need to join with conversations table
-      if (userId !== "default") {
-        sql += ` INNER JOIN ${this.options.tablePrefix}_conversations c ON m.conversation_id = c.id`;
-        conditions.push(`c.user_id = $${paramCount}`);
-        params.push(userId);
-        paramCount++;
-      }
+      // Add user_id filter
+      conditions.push(`m.user_id = $${paramCount}`);
+      params.push(userId);
+      paramCount++;
 
       // Add conversation_id filter
-      if (conversationId !== "default") {
-        conditions.push(`m.conversation_id = $${paramCount}`);
-        params.push(conversationId);
-        paramCount++;
-      }
+      conditions.push(`m.conversation_id = $${paramCount}`);
+      params.push(conversationId);
+      paramCount++;
 
       // Add time-based filters
       if (before) {
         conditions.push(`m.created_at < $${paramCount}`);
-        params.push(new Date(before).toISOString());
+        params.push(before.toISOString());
         paramCount++;
       }
 
       if (after) {
         conditions.push(`m.created_at > $${paramCount}`);
-        params.push(new Date(after).toISOString());
+        params.push(after.toISOString());
         paramCount++;
       }
 
       // Add role filter
-      if (role) {
-        conditions.push(`m.role = $${paramCount}`);
-        params.push(role);
-        paramCount++;
-      }
-
-      // Add types filter
-      if (types) {
-        const placeholders = types.map((_, index) => `$${paramCount + index}`).join(", ");
-        conditions.push(`m.type IN (${placeholders})`);
-        params.push(...types);
-        paramCount += types.length;
+      if (roles && roles.length > 0) {
+        const placeholders = roles.map(() => `$${paramCount++}`).join(", ");
+        conditions.push(`m.role IN (${placeholders})`);
+        params.push(...roles);
       }
 
       // Add WHERE clause if we have conditions
@@ -1146,22 +850,69 @@ export class PostgresStorage implements Memory {
 
       const result = await client.query(sql, params);
 
-      // Map the results
+      // Map the results to UIMessage format
       const messages = result.rows.map((row: any) => {
-        // Try to parse content if it's JSON, otherwise use as-is
+        const formatVersion = row.format_version as number;
+
+        // If format_version is 2, parse the new format
+        if (formatVersion === 2 || row.parts) {
+          const parts = row.parts || [];
+          const metadata = row.metadata || {};
+
+          return {
+            id: row.message_id,
+            role: row.role as "user" | "assistant" | "system",
+            parts,
+            metadata,
+          } as UIMessage;
+        }
+
+        // Legacy format - convert to UIMessage
         let content = row.content;
         const parsedContent = safeJsonParse(content);
         if (parsedContent !== null) {
           content = parsedContent;
         }
 
+        // Convert legacy format to UIMessage parts
+        const messageType = row.type as string;
+        const parts = [];
+
+        if (messageType === "text") {
+          parts.push({
+            type: "text",
+            text: typeof content === "string" ? content : JSON.stringify(content),
+          });
+        } else if (messageType === "tool-call") {
+          parts.push({
+            type: "tool-call",
+            toolCallId: row.message_id,
+            toolName:
+              typeof content === "object" && content !== null && "name" in content
+                ? (content as any).name
+                : "unknown",
+            args: typeof content === "object" ? content : {},
+          });
+        } else if (messageType === "tool-result") {
+          parts.push({
+            type: "tool-result",
+            toolCallId: row.message_id,
+            result: content,
+          });
+        } else {
+          // Default to text part
+          parts.push({
+            type: "text",
+            text: typeof content === "string" ? content : JSON.stringify(content),
+          });
+        }
+
         return {
           id: row.message_id,
-          role: row.role,
-          content,
-          type: row.type,
-          createdAt: row.created_at,
-        };
+          role: row.role as "user" | "assistant" | "system",
+          parts,
+          metadata: {},
+        } as UIMessage;
       });
 
       // If we used DESC order with limit, reverse to get chronological order
@@ -1181,10 +932,8 @@ export class PostgresStorage implements Memory {
   /**
    * Clear messages from memory
    */
-  public async clearMessages(options: { userId: string; conversationId?: string }): Promise<void> {
+  public async clearMessages(userId: string, conversationId?: string): Promise<void> {
     await this.initialized;
-
-    const { userId, conversationId } = options;
     const client = await this.pool.connect();
 
     try {
@@ -1196,21 +945,17 @@ export class PostgresStorage implements Memory {
           `
           DELETE FROM ${this.options.tablePrefix}_messages 
           WHERE conversation_id = $1 
-          AND conversation_id IN (
-            SELECT id FROM ${this.options.tablePrefix}_conversations WHERE user_id = $2
-          )
+          AND user_id = $2
           `,
           [conversationId, userId],
         );
         this.debug(`Cleared messages for conversation ${conversationId} for user ${userId}`);
       } else {
-        // Clear all messages for the user across all their conversations
+        // Clear all messages for the user
         await client.query(
           `
           DELETE FROM ${this.options.tablePrefix}_messages 
-          WHERE conversation_id IN (
-            SELECT id FROM ${this.options.tablePrefix}_conversations WHERE user_id = $1
-          )
+          WHERE user_id = $1
           `,
           [userId],
         );
@@ -1478,13 +1223,13 @@ export class PostgresStorage implements Memory {
    *
    * @param conversationId The unique identifier of the conversation to retrieve messages from
    * @param options Optional pagination and filtering options
-   * @returns Promise that resolves to an array of messages in chronological order (oldest first)
+   * @returns Promise that resolves to an array of UIMessages in chronological order (oldest first)
    * @see {@link https://voltagent.dev/docs/agents/memory/postgres#conversation-messages | Getting Conversation Messages}
    */
   public async getConversationMessages(
     conversationId: string,
     options: { limit?: number; offset?: number } = {},
-  ): Promise<MemoryMessage[]> {
+  ): Promise<UIMessage[]> {
     await this.initialized;
 
     const { limit = 100, offset = 0 } = options;
@@ -1492,8 +1237,7 @@ export class PostgresStorage implements Memory {
 
     try {
       let sql = `
-        SELECT message_id, role, content, type, created_at
-        FROM ${this.options.tablePrefix}_messages
+        SELECT * FROM ${this.options.tablePrefix}_messages
         WHERE conversation_id = $1
         ORDER BY created_at ASC
       `;
@@ -1507,20 +1251,67 @@ export class PostgresStorage implements Memory {
       const result = await client.query(sql, params);
 
       return result.rows.map((row: any) => {
-        // Try to parse content if it's JSON, otherwise use as-is
+        const formatVersion = row.format_version as number;
+
+        // If format_version is 2, parse the new format
+        if (formatVersion === 2 || row.parts) {
+          const parts = row.parts || [];
+          const metadata = row.metadata || {};
+
+          return {
+            id: row.message_id,
+            role: row.role as "user" | "assistant" | "system",
+            parts,
+            metadata,
+          } as UIMessage;
+        }
+
+        // Legacy format - convert to UIMessage
         let content = row.content;
         const parsedContent = safeJsonParse(content);
         if (parsedContent !== null) {
           content = parsedContent;
         }
 
+        // Convert legacy format to UIMessage parts
+        const messageType = row.type as string;
+        const parts = [];
+
+        if (messageType === "text") {
+          parts.push({
+            type: "text",
+            text: typeof content === "string" ? content : JSON.stringify(content),
+          });
+        } else if (messageType === "tool-call") {
+          parts.push({
+            type: "tool-call",
+            toolCallId: row.message_id,
+            toolName:
+              typeof content === "object" && content !== null && "name" in content
+                ? (content as any).name
+                : "unknown",
+            args: typeof content === "object" ? content : {},
+          });
+        } else if (messageType === "tool-result") {
+          parts.push({
+            type: "tool-result",
+            toolCallId: row.message_id,
+            result: content,
+          });
+        } else {
+          // Default to text part
+          parts.push({
+            type: "text",
+            text: typeof content === "string" ? content : JSON.stringify(content),
+          });
+        }
+
         return {
           id: row.message_id,
-          role: row.role,
-          content,
-          type: row.type,
-          createdAt: row.created_at,
-        };
+          role: row.role as "user" | "assistant" | "system",
+          parts,
+          metadata: {},
+        } as UIMessage;
       });
     } catch (error) {
       this.debug("Error getting conversation messages:", error);
