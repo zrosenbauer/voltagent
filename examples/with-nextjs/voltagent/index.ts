@@ -1,8 +1,8 @@
 import { openai } from "@ai-sdk/openai";
 import { Agent, VoltAgent, createTool } from "@voltagent/core";
+import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
 import { sharedMemory } from "./memory";
-
 // Uppercase conversion tool
 const uppercaseTool = createTool({
   name: "uppercase",
@@ -82,19 +82,31 @@ export const supervisorAgent = new Agent({
   model: openai("gpt-4o-mini"),
   subAgents: [uppercaseAgent, wordCountAgent, storyWriterAgent],
   memory: sharedMemory,
-  supervisorConfig: {
-    fullStreamEventForwarding: {
-      types: ["tool-call", "tool-result", "tool-input-delta", "tool-input-start"],
-    },
-  },
 });
 
-// Create VoltAgent instance
-new VoltAgent({
-  agents: {
-    supervisor: supervisorAgent,
-  },
-});
+// Type declaration for global augmentation
+declare global {
+  var voltAgentInstance: VoltAgent | undefined;
+}
+
+// Singleton initialization function
+function getVoltAgentInstance() {
+  if (!globalThis.voltAgentInstance) {
+    globalThis.voltAgentInstance = new VoltAgent({
+      agents: {
+        supervisorAgent,
+        storyWriterAgent,
+        wordCountAgent,
+        uppercaseAgent,
+      },
+      server: honoServer(),
+    });
+  }
+  return globalThis.voltAgentInstance;
+}
+
+// Initialize the singleton
+export const voltAgent = getVoltAgentInstance();
 
 // Export the supervisor as the main agent
 export const agent = supervisorAgent;
