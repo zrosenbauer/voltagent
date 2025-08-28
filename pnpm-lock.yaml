@@ -898,9 +898,6 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.0
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
       ai:
         specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
