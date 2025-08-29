@@ -3,7 +3,7 @@ import type { LoggerProvider, LoggerWithProvider } from "./providers";
 import type { LogBuffer, LoggerOptions } from "./types";
 
 /**
- * Get or create the global logger provider
+ * Get (or auto-create if not exists) the global logger provider
  */
 export function getGlobalLoggerProvider(): LoggerProvider {
   // @ts-expect-error - globalThis is not typed
@@ -20,7 +20,7 @@ export function getGlobalLoggerProvider(): LoggerProvider {
 }
 
 /**
- * Set a custom logger provider
+ * Set the global logger provider
  */
 export function setGlobalLoggerProvider(provider: LoggerProvider): void {
   // @ts-expect-error - globalThis is not typed
