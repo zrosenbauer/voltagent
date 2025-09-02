@@ -16,7 +16,8 @@ export function getGlobalLoggerProvider(): LoggerProvider {
     globalThis.___voltagent_logger_provider = new PinoLoggerProvider();
   }
 
-  return globalLoggerProvider as LoggerProvider;
+  // @ts-expect-error - globalThis is not typed
+  return globalThis.___voltagent_logger_provider as LoggerProvider;
 }
 
 /**
