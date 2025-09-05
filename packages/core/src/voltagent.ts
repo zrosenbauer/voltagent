@@ -15,9 +15,6 @@ import type { Workflow } from "./workflow";
 import type { WorkflowChain } from "./workflow/chain";
 import { WorkflowRegistry } from "./workflow/registry";
 
-let isTelemetryInitializedByVoltAgent = false;
-let registeredProvider: NodeTracerProvider | null = null;
-
 /**
  * Main VoltAgent class for managing agents and server
  */
@@ -365,7 +362,7 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
   private initializeGlobalTelemetry(
     exporterOrExporters: (SpanExporter | VoltAgentExporter) | (SpanExporter | VoltAgentExporter)[],
   ): void {
-    if (isTelemetryInitializedByVoltAgent) {
+    if (getGlobalTelemetryInitializedByVoltAgent()) {
       this.logger.warn(
         "Telemetry seems to be already initialized by a VoltAgent instance. Skipping re-initialization.",
       );
@@ -389,7 +386,7 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
         // to prevent multiple VoltAgent instances from trying to set up their own things.
         // However, the registeredProvider will remain null if only VoltAgentExporters are present.
         if (allExporters.length > 0) {
-          isTelemetryInitializedByVoltAgent = true;
+          setGlobalTelemetryInitializedByVoltAgent(true);
         }
         return;
       }
@@ -403,8 +400,8 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
       });
 
       provider.register();
-      isTelemetryInitializedByVoltAgent = true;
-      registeredProvider = provider;
+      setGlobalTelemetryInitializedByVoltAgent(true);
+      setGlobalTelemetryRegisteredProvider(provider);
 
       // Add automatic shutdown on SIGTERM
       process.on("SIGTERM", () => {
@@ -418,11 +415,13 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
   }
 
   public async shutdownTelemetry(): Promise<void> {
+    const isTelemetryInitializedByVoltAgent = getGlobalTelemetryInitializedByVoltAgent();
+    const registeredProvider = getGlobalTelemetryRegisteredProvider();
     if (isTelemetryInitializedByVoltAgent && registeredProvider) {
       try {
         await registeredProvider.shutdown();
-        isTelemetryInitializedByVoltAgent = false;
-        registeredProvider = null;
+        setGlobalTelemetryInitializedByVoltAgent(false);
+        setGlobalTelemetryRegisteredProvider(null);
       } catch (error) {
         this.logger.error("Error shutting down OpenTelemetry provider:", { error });
       }
@@ -432,4 +431,24 @@ https://voltagent.dev/docs/observability/developer-console/#migration-guide-from
       );
     }
   }
+}
+
+function setGlobalTelemetryInitializedByVoltAgent(value: boolean): void {
+  // @ts-expect-error - globalThis is not typed
+  globalThis.___voltagent_telemetry_initialized_by_voltagent = value;
+}
+
+function getGlobalTelemetryInitializedByVoltAgent(): boolean {
+  // @ts-expect-error - globalThis is not typed
+  return globalThis.___voltagent_telemetry_initialized_by_voltagent as boolean;
+}
+
+function setGlobalTelemetryRegisteredProvider(provider: NodeTracerProvider | null): void {
+  // @ts-expect-error - globalThis is not typed
+  globalThis.___voltagent_telemetry_registered_provider = provider;
+}
+
+function getGlobalTelemetryRegisteredProvider(): NodeTracerProvider | null {
+  // @ts-expect-error - globalThis is not typed
+  return globalThis.___voltagent_telemetry_registered_provider as NodeTracerProvider | null;
 }
