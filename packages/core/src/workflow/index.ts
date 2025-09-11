@@ -1,5 +1,6 @@
 export { andAgent, andThen, andWhen, andAll, andWorkflow, andRace, andTap } from "./steps";
-export { createWorkflow } from "./core";
+export { createWorkflow, serializeWorkflowStep } from "./core";
+export type { SerializedWorkflowStep } from "./core";
 export { createWorkflowChain } from "./chain";
 export { WorkflowRegistry } from "./registry";
 export type { RegisteredWorkflow } from "./registry";

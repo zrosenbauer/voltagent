@@ -1,10 +1,10 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent } from "@voltagent/core";
-import { LibSQLStorage } from "@voltagent/libsql";
+import { Agent, Memory, VoltAgent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 // Import the retrieval tool
 import { retriever } from "./retriever/index.js";
 
@@ -14,10 +14,10 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-// Create LibSQL storage for persistent memory
-const storage = new LibSQLStorage({
-  url: "file:./.voltagent/memory.db",
-  logger: logger.child({ component: "libsql" }),
+const memory = new Memory({
+  storage: new LibSQLMemoryAdapter({
+    logger,
+  }),
 });
 
 // Create the agent with retrieval tool
@@ -27,7 +27,7 @@ const agent = new Agent({
     "A helpful assistant that can retrieve information from documents using keyword-based search to provide better answers",
   model: openai("gpt-4o-mini"),
   retriever: retriever,
-  memory: storage,
+  memory,
 });
 
 // Create the agent with retrieval tool
@@ -37,7 +37,7 @@ const agentWithTools = new Agent({
     "A helpful assistant that can retrieve information from documents using keyword-based search to provide better answers",
   model: openai("gpt-4o-mini"),
   tools: [retriever.tool],
-  memory: storage,
+  memory,
 });
 
 // Initialize the VoltAgent

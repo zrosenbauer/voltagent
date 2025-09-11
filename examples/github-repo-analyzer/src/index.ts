@@ -1,9 +1,14 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, createHooks, createTool } from "@voltagent/core";
-import { LibSQLStorage } from "@voltagent/libsql";
+import {
+  Agent,
+  AiSdkEmbeddingAdapter,
+  InMemoryVectorAdapter,
+  Memory,
+  VoltAgent,
+} from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { fetchRepoContributorsTool } from "./tools";
 import { fetchRepoStarsTool } from "./tools";
 
@@ -13,10 +18,12 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-// Create LibSQL storage for persistent memory (shared between all agents)
-const memory = new LibSQLStorage({
-  url: "file:./.voltagent/memory.db",
-  logger: logger.child({ component: "libsql" }),
+const memory = new Memory({
+  storage: new LibSQLMemoryAdapter({
+    storageLimit: 100, // Keep last 100 messages per conversation
+  }),
+  embedding: new AiSdkEmbeddingAdapter(openai.textEmbeddingModel("text-embedding-3-small")),
+  vector: new InMemoryVectorAdapter(),
 });
 
 // Create the stars fetcher agent
@@ -25,7 +32,7 @@ const starsFetcherAgent = new Agent({
   instructions: "Fetches the number of stars for a GitHub repository using the GitHub API",
   model: openai("gpt-4o-mini"),
   tools: [fetchRepoStarsTool],
-  memory,
+  memory: memory,
 });
 
 // Create the contributors fetcher agent
@@ -34,7 +41,7 @@ const contributorsFetcherAgent = new Agent({
   instructions: "Fetches the list of contributors for a GitHub repository using the GitHub API",
   model: openai("gpt-4o-mini"),
   tools: [fetchRepoContributorsTool],
-  memory,
+  memory: memory,
 });
 
 // Create the analyzer agent
@@ -42,7 +49,7 @@ const analyzerAgent = new Agent({
   name: "Repo Analyzer",
   instructions: "Analyzes repository statistics and provides insights",
   model: openai("gpt-4o-mini"),
-  memory,
+  memory: memory,
 });
 
 // Create the supervisor agent that coordinates all the sub-agents
@@ -57,7 +64,7 @@ Example input: https://github.com/vercel/ai-sdk or vercel/ai-sdk
 `,
   model: openai("gpt-4o-mini"),
   subAgents: [starsFetcherAgent, contributorsFetcherAgent, analyzerAgent],
-  memory,
+  memory: memory,
 });
 
 // Initialize the VoltAgent with the agent hierarchy and server

@@ -29,6 +29,7 @@ const sidebars: SidebarsConfig = {
           },
         },
         "getting-started/providers-models",
+        "getting-started/migration-guide",
       ],
     },
     {
@@ -73,10 +74,18 @@ const sidebars: SidebarsConfig = {
       label: "Memory",
       items: [
         "agents/memory/overview",
-        "agents/memory/libsql",
-        "agents/memory/postgres",
-        "agents/memory/supabase",
-        "agents/memory/in-memory",
+        "agents/memory/working-memory",
+        "agents/memory/semantic-search",
+        {
+          type: "category",
+          label: "Storage Adapters",
+          items: [
+            "agents/memory/in-memory",
+            "agents/memory/libsql",
+            "agents/memory/postgres",
+            "agents/memory/supabase",
+          ],
+        },
       ],
     },
     {
@@ -92,7 +101,24 @@ const sidebars: SidebarsConfig = {
     {
       type: "category",
       label: "API",
-      items: ["api/overview"],
+      items: [
+        "api/overview",
+        "api/server-architecture",
+        "api/authentication",
+        "api/streaming",
+        "api/custom-endpoints",
+        "api/api-reference",
+        {
+          type: "category",
+          label: "Endpoints",
+          items: ["api/endpoints/agents", "api/endpoints/workflows"],
+        },
+      ],
+    },
+    {
+      type: "category",
+      label: "UI",
+      items: ["ui/ai-sdk-integration"],
     },
     {
       type: "category",
@@ -104,11 +130,17 @@ const sidebars: SidebarsConfig = {
       label: "Providers",
       items: [
         "providers/overview",
-        "providers/vercel-ai",
-        "providers/google-ai",
-        "providers/groq-ai",
-        "providers/xsai",
-        "providers/anthropic-ai",
+        {
+          type: "category",
+          label: "Legacy (deprecated)",
+          items: [
+            "providers/vercel-ai",
+            "providers/google-ai",
+            "providers/groq-ai",
+            "providers/xsai",
+            "providers/anthropic-ai",
+          ],
+        },
         "providers/contributing",
       ],
     },

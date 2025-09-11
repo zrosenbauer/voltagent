@@ -8,7 +8,8 @@ import type { UIMessage } from "ai";
 import { MockLanguageModelV2 } from "ai/test";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { InMemoryStorage } from "../memory/in-memory";
+import { Memory } from "../memory";
+import { InMemoryStorageAdapter } from "../memory/adapters/storage/in-memory";
 import { Tool } from "../tool";
 import { Agent } from "./agent";
 
@@ -369,7 +370,9 @@ describe("Agent", () => {
 
   describe("Memory Integration", () => {
     it("should initialize with memory", () => {
-      const memory = new InMemoryStorage();
+      const memory = new Memory({
+        storage: new InMemoryStorageAdapter(),
+      });
       const agent = new Agent({
         name: "TestAgent",
         instructions: "Test",
@@ -393,7 +396,9 @@ describe("Agent", () => {
     });
 
     it("should save messages to memory", async () => {
-      const memory = new InMemoryStorage();
+      const memory = new Memory({
+        storage: new InMemoryStorageAdapter(),
+      });
 
       const agent = new Agent({
         name: "TestAgent",
@@ -445,7 +450,9 @@ describe("Agent", () => {
     });
 
     it("should retrieve messages from memory", async () => {
-      const memory = new InMemoryStorage();
+      const memory = new Memory({
+        storage: new InMemoryStorageAdapter(),
+      });
       const threadId = "test-thread";
 
       // Pre-populate memory with proper UIMessage format
@@ -509,7 +516,9 @@ describe("Agent", () => {
     });
 
     it("should handle memory with context limit", async () => {
-      const memory = new InMemoryStorage();
+      const memory = new Memory({
+        storage: new InMemoryStorageAdapter(),
+      });
       const agent = new Agent({
         name: "TestAgent",
         instructions: "Test",
@@ -588,18 +597,18 @@ describe("Agent", () => {
       expect(onStart).toHaveBeenCalled();
       expect(onStart.mock.calls).toHaveLength(1);
 
-      // Verify hook was called with correct AgentContext structure
-      const context = onStart.mock.calls[0]?.[0];
-      if (context) {
-        expect(context).toBeDefined();
-        // Check correct context structure
-        expect(context.context).toBeInstanceOf(Map); // user-provided context
-        expect(context.operation).toBeDefined();
-        expect(context.operation.userId).toBe("user123");
-        expect(context.operation.conversationId).toBe("conv456");
-        expect(context.system).toBeDefined();
-        expect(context.system.logger).toBeDefined();
-      }
+      // Verify hook was called with object-arg containing OperationContext
+      const arg = onStart.mock.calls[0]?.[0];
+      expect(arg).toBeDefined();
+      expect(arg.agent).toBeDefined();
+      const oc = arg.context;
+      expect(oc).toBeDefined();
+      // Check correct context structure
+      expect(oc.context).toBeInstanceOf(Map); // user-provided context
+      expect(oc.operationId).toBeDefined();
+      expect(oc.userId).toBe("user123");
+      expect(oc.conversationId).toBe("conv456");
+      expect(oc.logger).toBeDefined();
     });
 
     it("should call onError hook with error details", async () => {
@@ -619,17 +628,14 @@ describe("Agent", () => {
       expect(onError).toHaveBeenCalled();
       expect(onError.mock.calls).toHaveLength(1);
 
-      // Verify error hook was called with context
-      const context = onError.mock.calls[0]?.[0];
-      if (context) {
-        expect(context).toBeDefined();
-        expect(context.context).toBeInstanceOf(Map);
-        expect(context.operation).toBeDefined();
-        expect(context.system).toBeDefined();
-        // Error might be wrapped or transformed
-        // Just check it was called with an error
-        expect(context).toBeDefined();
-      }
+      // Verify error hook was called with args object
+      const arg = onError.mock.calls[0]?.[0];
+      expect(arg).toBeDefined();
+      const oc = arg.context;
+      expect(oc.context).toBeInstanceOf(Map);
+      expect(oc.operationId).toBeDefined();
+      expect(oc.logger).toBeDefined();
+      expect(arg.error).toBeDefined();
     });
 
     it("should call onEnd hook with context and result", async () => {
@@ -669,21 +675,16 @@ describe("Agent", () => {
       expect(onEnd).toHaveBeenCalled();
       expect(onEnd.mock.calls).toHaveLength(1);
 
-      // onEnd receives (context, result, error?)
-      const args = onEnd.mock.calls[0];
-      if (args && args.length > 0) {
-        const [context, result] = args;
-
-        // Verify context structure
-        expect(context).toBeDefined();
-        expect(context.context).toBeInstanceOf(Map);
-        expect(context.operation).toBeDefined();
-        expect(context.system).toBeDefined();
-
-        // Verify result
-        expect(result).toBeDefined();
-        expect(result.text).toBe("Success response");
-      }
+      const arg = onEnd.mock.calls[0]?.[0];
+      expect(arg).toBeDefined();
+      expect(arg.agent).toBeDefined();
+      const oc = arg.context;
+      expect(oc).toBeDefined();
+      expect(oc.context).toBeInstanceOf(Map);
+      expect(oc.operationId).toBeDefined();
+      expect(oc.logger).toBeDefined();
+      expect(arg.output).toBeDefined();
+      expect(arg.output.text).toBe("Success response");
     });
 
     it("should call onStepFinish for multi-step generation", async () => {
@@ -1002,26 +1003,6 @@ describe("Agent", () => {
       expect(state.memory).toBeDefined();
       expect(state.subAgents).toBeDefined();
     });
-
-    it("should get history", async () => {
-      const agent = new Agent({
-        name: "TestAgent",
-        instructions: "Test",
-        model: mockModel as any,
-      });
-
-      const history = await agent.getHistory();
-
-      expect(history).toMatchObject({
-        entries: expect.any(Array),
-        pagination: expect.objectContaining({
-          page: expect.any(Number),
-          limit: expect.any(Number),
-          total: expect.any(Number),
-          totalPages: expect.any(Number),
-        }),
-      });
-    });
   });
 
   describe("Tool Execution", () => {
@@ -1174,10 +1155,10 @@ describe("Agent", () => {
 
       expect(agent.getMemoryManager()).toBeDefined();
       expect(agent.getToolManager()).toBeDefined();
-      expect(agent.getHistoryManager()).toBeDefined();
     });
 
     it("should check telemetry configuration", () => {
+      // Without VoltOpsClient, should return false
       const agent = new Agent({
         name: "TestAgent",
         instructions: "Test",
@@ -1185,6 +1166,22 @@ describe("Agent", () => {
       });
 
       expect(agent.isTelemetryConfigured()).toBe(false);
+
+      // With VoltOpsClient, should return true
+      const mockVoltOpsClient = {
+        getApiUrl: () => "https://api.example.com",
+        getAuthHeaders: () => ({ Authorization: "Bearer token" }),
+        createPromptHelper: () => undefined, // Mock method
+      };
+
+      const agentWithVoltOps = new Agent({
+        name: "TestAgent",
+        instructions: "Test",
+        model: mockModel as any,
+        voltOpsClient: mockVoltOpsClient as any,
+      });
+
+      expect(agentWithVoltOps.isTelemetryConfigured()).toBe(true);
     });
 
     it("should get tools for API", () => {

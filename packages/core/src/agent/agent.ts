@@ -3,6 +3,7 @@
  * Refactored with better architecture and type safety
  */
 
+import * as crypto from "node:crypto";
 import type {
   AssistantModelMessage,
   ProviderOptions,
@@ -10,6 +11,7 @@ import type {
   ToolModelMessage,
 } from "@ai-sdk/provider-utils";
 import type { Span } from "@opentelemetry/api";
+import { SpanKind, SpanStatusCode } from "@opentelemetry/api";
 import type { Logger } from "@voltagent/internal";
 import { safeStringify } from "@voltagent/internal/utils";
 import type {
@@ -36,30 +38,17 @@ import {
   streamObject,
   streamText,
 } from "ai";
-import type { z } from "zod";
-import { AgentEventEmitter } from "../events";
-import type {
-  AgentErrorEvent,
-  AgentStartEvent,
-  AgentSuccessEvent,
-  RetrieverErrorEvent,
-  RetrieverStartEvent,
-  RetrieverSuccessEvent,
-  ToolErrorEvent,
-  ToolStartEvent,
-  ToolSuccessEvent,
-} from "../events/types";
-import { LogEvents, LoggerProxy, ensureBufferedLogger } from "../logger";
+import { z } from "zod";
+import { LogEvents, LoggerProxy } from "../logger";
 import { ActionType, buildAgentLogMessage } from "../logger/message-builder";
-import type { InternalMemory } from "../memory";
-import { MemoryManager } from "../memory/manager";
-import type { Memory } from "../memory/types";
+import type { Memory } from "../memory";
+import { MemoryManager } from "../memory/manager/memory-manager";
+import { VoltAgentObservability } from "../observability";
 import { AgentRegistry } from "../registries/agent-registry";
 import type { BaseRetriever } from "../retriever/retriever";
-import type { VoltAgentExporter } from "../telemetry/exporter";
 import type { Tool, Toolkit } from "../tool";
+import { createTool } from "../tool";
 import { ToolManager } from "../tool/manager";
-import type { ReasoningToolExecuteOptions } from "../tool/reasoning/types";
 import { convertResponseMessagesToUIMessages } from "../utils/message-converter";
 import { NodeType, createNodeId } from "../utils/node-utils";
 import { convertUsage } from "../utils/usage-converter";
@@ -67,20 +56,23 @@ import type { Voice } from "../voice";
 import { VoltOpsClient as VoltOpsClientClass } from "../voltops/client";
 import type { VoltOpsClient } from "../voltops/client";
 import type { PromptContent, PromptHelper } from "../voltops/types";
-import { type AgentHistoryEntry, HistoryManager } from "./history";
-import { endOperationSpan, endToolSpan, startOperationSpan, startToolSpan } from "./open-telemetry";
+import type { AgentHooks } from "./hooks";
+import { AgentTraceContext, addModelAttributesToSpan } from "./open-telemetry/trace-context";
 import type { BaseMessage, StepWithContent } from "./providers/base/types";
+export type { AgentHooks } from "./hooks";
+import type { StopWhen } from "../ai-types";
 import { SubAgentManager } from "./subagent";
 import type { SubAgentConfig } from "./subagent/types";
 import type { VoltAgentTextStreamPart } from "./subagent/types";
 import type {
   AbortError,
   AgentFullState,
+  AgentOptions,
   DynamicValue,
   DynamicValueOptions,
+  InstructionsDynamicValue,
   OperationContext,
   SupervisorConfig,
-  ToolExecutionContext,
   VoltAgentError,
 } from "./types";
 
@@ -104,58 +96,9 @@ function toContextMap(context?: ContextInput): Map<string | symbol, unknown> | u
 /**
  * Agent context with comprehensive tracking
  */
-export interface AgentContext {
-  // User-provided context
-  context: Map<string | symbol, unknown>;
+// AgentContext removed; OperationContext is used directly throughout
 
-  // Operation metadata
-  operation: {
-    id: string;
-    userId?: string;
-    conversationId?: string;
-    parentAgentId?: string;
-    parentHistoryId?: string;
-  };
-
-  // System internals
-  system: {
-    logger: Logger;
-    signal?: AbortSignal;
-    abortController?: AbortController;
-    startTime: string;
-    agentStartEventId?: string;
-  };
-
-  // OpenTelemetry tracking
-  otelSpan?: Span;
-  toolSpans?: Map<string, Span>;
-
-  // Cancellation support
-  cancellationError?: AbortError;
-
-  // Conversation tracking
-  conversationSteps?: StepWithContent[];
-
-  // Internal operation context for compatibility
-  operationContext?: OperationContext;
-}
-
-/**
- * Agent hooks for lifecycle events
- */
-export interface AgentHooks {
-  onStart?: (context: AgentContext) => Promise<void> | void;
-  onEnd?: (context: AgentContext, result: any, error?: Error) => Promise<void> | void;
-  onError?: (context: AgentContext, error: Error) => Promise<void> | void;
-  onStepFinish?: (step: any) => Promise<void> | void;
-  onPrepareMessages?: (
-    messages: UIMessage[],
-    context: AgentContext,
-  ) => Promise<{ messages: UIMessage[] }> | { messages: UIMessage[] };
-  onHandoff?: (context: AgentContext) => Promise<void> | void;
-  onToolStart?: (context: AgentContext, tool: Tool) => Promise<void> | void;
-  onToolEnd?: (context: AgentContext, tool: Tool, output: any, error?: any) => Promise<void> | void;
-}
+// AgentHooks type is defined in './hooks' and uses OperationContext
 
 /**
  * Extended StreamTextResult that includes context
@@ -224,56 +167,6 @@ export interface GenerateObjectResultWithContext<T> extends GenerateObjectResult
 }
 
 /**
- * Agent constructor options
- */
-export interface AgentOptions {
-  // Identity
-  id?: string;
-  name: string;
-  purpose?: string;
-
-  // Core AI
-  model: LanguageModel | DynamicValue<LanguageModel>;
-  instructions: string | DynamicValue<string>;
-
-  // Tools & Memory
-  tools?: (Tool<any, any> | Toolkit)[] | DynamicValue<(Tool<any, any> | Toolkit)[]>;
-  toolkits?: Toolkit[];
-  memory?: Memory | false;
-  memoryOptions?: any;
-  historyMemory?: Memory;
-
-  // Retriever/RAG
-  retriever?: BaseRetriever;
-
-  // SubAgents
-  subAgents?: SubAgentConfig[];
-  supervisorConfig?: SupervisorConfig;
-  maxHistoryEntries?: number;
-
-  // Hooks
-  hooks?: AgentHooks;
-
-  // Configuration
-  temperature?: number;
-  maxOutputTokens?: number;
-  maxSteps?: number;
-  markdown?: boolean;
-
-  // Voice
-  voice?: Voice;
-
-  // System
-  logger?: Logger;
-  historyManager?: HistoryManager;
-  voltOpsClient?: VoltOpsClient;
-  telemetryExporter?: VoltAgentExporter; // Deprecated
-
-  // User context
-  context?: ContextInput;
-}
-
-/**
  * Base options for all generation methods
  * Extends AI SDK's CallSettings for full compatibility
  */
@@ -286,14 +179,29 @@ export interface BaseGenerationOptions extends Partial<CallSettings> {
 
   // Parent tracking
   parentAgentId?: string;
-  parentHistoryEntryId?: string;
   parentOperationContext?: OperationContext;
+  parentSpan?: Span; // Optional parent span for OpenTelemetry context propagation
 
   // Memory
   contextLimit?: number;
 
+  // Semantic memory options
+  semanticMemory?: {
+    enabled?: boolean;
+    semanticLimit?: number;
+    semanticThreshold?: number;
+    mergeStrategy?: "prepend" | "append" | "interleave";
+  };
+
   // Steps control
   maxSteps?: number;
+  /**
+   * Custom stop condition for ai-sdk step execution.
+   * When provided, this overrides VoltAgent's default `stepCountIs(maxSteps)`.
+   * Use with care: incorrect predicates can cause early termination or
+   * unbounded loops depending on provider behavior and tool usage.
+   */
+  stopWhen?: StopWhen;
 
   // Hooks (can override agent hooks)
   hooks?: AgentHooks;
@@ -324,13 +232,14 @@ export class Agent {
   readonly id: string;
   readonly name: string;
   readonly purpose?: string;
-  readonly instructions: string | DynamicValue<string>;
+  readonly instructions: InstructionsDynamicValue;
   readonly model: LanguageModel | DynamicValue<LanguageModel>;
   readonly tools: (Tool<any, any> | Toolkit)[] | DynamicValue<(Tool<any, any> | Toolkit)[]>;
   readonly hooks: AgentHooks;
   readonly temperature?: number;
   readonly maxOutputTokens?: number;
   readonly maxSteps: number;
+  readonly stopWhen?: StopWhen;
   readonly markdown: boolean;
   readonly voice?: Voice;
   readonly retriever?: BaseRetriever;
@@ -339,8 +248,9 @@ export class Agent {
 
   private readonly logger: Logger;
   private readonly memoryManager: MemoryManager;
+  private readonly memory?: Memory | false;
+  private defaultObservability?: VoltAgentObservability;
   private readonly toolManager: ToolManager;
-  private readonly historyManager: HistoryManager;
   private readonly subAgentManager: SubAgentManager;
   private readonly voltOpsClient?: VoltOpsClient;
   private readonly prompts?: PromptHelper;
@@ -356,6 +266,7 @@ export class Agent {
     this.temperature = options.temperature;
     this.maxOutputTokens = options.maxOutputTokens;
     this.maxSteps = options.maxSteps || 5;
+    this.stopWhen = options.stopWhen;
     this.markdown = options.markdown ?? false;
     this.voice = options.voice;
     this.retriever = options.retriever;
@@ -363,25 +274,16 @@ export class Agent {
     this.context = toContextMap(options.context);
     this.voltOpsClient = options.voltOpsClient;
 
-    // Initialize prompts helper if VoltOpsClient is available
-    if (this.voltOpsClient) {
-      this.prompts = this.voltOpsClient.createPromptHelper(this.id);
-    }
-
-    // Initialize logger - use provided logger or fall back to LoggerProxy
-    if (options.logger) {
-      this.logger = ensureBufferedLogger(options.logger, {
-        component: "agent-v2",
+    // Initialize logger - always use LoggerProxy for consistency
+    // If external logger is provided, it will be used by LoggerProxy
+    this.logger = new LoggerProxy(
+      {
+        component: "agent",
         agentId: this.id,
         modelName: this.getModelName(),
-      });
-    } else {
-      this.logger = new LoggerProxy({
-        component: "agent-v2",
-        agentId: this.id,
-        modelName: this.getModelName(),
-      });
-    }
+      },
+      options.logger,
+    );
 
     // Log agent creation
     this.logger.debug(`Agent created: ${this.name}`, {
@@ -393,15 +295,11 @@ export class Agent {
       hasSubAgents: !!(options.subAgents && options.subAgents.length > 0),
     });
 
-    // Initialize managers
-    // Cast to InternalMemory since InMemoryStorage implements it
-    this.memoryManager = new MemoryManager(
-      this.id,
-      options.memory as any as InternalMemory | false | undefined,
-      options.memoryOptions || {},
-      options.historyMemory as any as InternalMemory | undefined,
-      this.logger,
-    );
+    // Store Memory
+    this.memory = options.memory;
+
+    // Initialize memory manager
+    this.memoryManager = new MemoryManager(this.id, this.memory, {}, this.logger);
 
     // Initialize tool manager with static tools
     const staticTools = typeof this.tools === "function" ? [] : this.tools || [];
@@ -417,35 +315,14 @@ export class Agent {
       this.supervisorConfig,
     );
 
-    // Initialize history manager with VoltOpsClient or legacy telemetryExporter support
-    let chosenExporter: VoltAgentExporter | undefined;
-
-    if (options.voltOpsClient?.observability) {
-      chosenExporter = options.voltOpsClient.observability;
-      this.logger.debug("VoltOpsClient initialized with observability and prompt management");
-    } else if (options.telemetryExporter) {
-      this.logger.warn(
-        `⚠️  DEPRECATION WARNING: 'telemetryExporter' parameter is deprecated!
-   
-   🔄 MIGRATION REQUIRED:
-   ❌ OLD: telemetryExporter: new VoltAgentExporter({ ... })
-   ✅ NEW: voltOpsClient: new VoltOpsClient({ publicKey: "...", secretKey: "..." })
-   `,
-      );
-      chosenExporter = options.telemetryExporter;
-    } else {
-      chosenExporter = AgentRegistry.getInstance().getGlobalVoltAgentExporter();
+    // Initialize prompts helper with VoltOpsClient (agent's own or global)
+    // Priority 1: Agent's own VoltOpsClient
+    // Priority 2: Global VoltOpsClient from registry
+    const voltOpsClient =
+      this.voltOpsClient || AgentRegistry.getInstance().getGlobalVoltOpsClient();
+    if (voltOpsClient) {
+      this.prompts = voltOpsClient.createPromptHelper(this.id);
     }
-
-    this.historyManager =
-      options.historyManager ||
-      new HistoryManager(
-        this.id,
-        this.memoryManager,
-        options.maxHistoryEntries || 0,
-        chosenExporter,
-        this.logger,
-      );
   }
 
   // ============================================================================
@@ -460,160 +337,183 @@ export class Agent {
     options?: GenerateTextOptions,
   ): Promise<GenerateTextResultWithContext> {
     const startTime = Date.now();
-    const context = await this.createContext(input, options);
-    const methodLogger = context.system.logger; // Extract logger with executionId
+    const oc = this.createOperationContext(input, options);
+    const methodLogger = oc.logger;
 
-    const { messages, model, tools, maxSteps } = await this.prepareExecution(
-      input,
-      context,
-      options,
-    );
+    // Wrap entire execution in root span for trace context
+    const rootSpan = oc.traceContext.getRootSpan();
+    return await oc.traceContext.withSpan(rootSpan, async () => {
+      const { messages, model, tools, maxSteps } = await this.prepareExecution(input, oc, options);
 
-    const modelName = this.getModelName();
-    const contextLimit = options?.contextLimit;
+      const modelName = this.getModelName();
+      const contextLimit = options?.contextLimit;
 
-    // Log generation start with only event-specific context
-    methodLogger.debug(
-      buildAgentLogMessage(
-        this.name,
-        ActionType.GENERATION_START,
-        `Starting text generation with ${modelName}`,
-      ),
-      {
-        event: LogEvents.AGENT_GENERATION_STARTED,
-        operationType: "text",
-        contextLimit,
-        memoryEnabled: !!this.memoryManager.getMemory(),
-        model: modelName,
-        messageCount: messages?.length || 0,
-        input,
-      },
-    );
-
-    try {
-      // Call hooks
-      await this.getMergedHooks(options).onStart?.(context);
-
-      // Publish agent:start event
-      const agentStartEvent = this.createAgentStartEvent(
-        context,
-        input,
-        messages,
-        maxSteps,
+      // Add model attributes and all options
+      addModelAttributesToSpan(
+        rootSpan,
+        modelName,
         options,
-      );
-      this.publishTimelineEvent(context, agentStartEvent);
-
-      // Setup abort signal listener
-      this.setupAbortSignalListener(
-        context.system.abortController?.signal || context.system.signal,
-        context,
-        agentStartEvent,
+        this.maxOutputTokens,
+        this.temperature,
       );
 
-      methodLogger.debug("Starting agent llm call");
+      // Add context to span
+      const contextMap = Object.fromEntries(oc.context.entries());
+      if (Object.keys(contextMap).length > 0) {
+        rootSpan.setAttribute("agent.context", JSON.stringify(contextMap));
+      }
 
-      methodLogger.debug("[LLM] - Generating text", {
-        messages: messages.map((msg) => ({
-          role: msg.role,
-          content: msg.content,
-        })),
-        maxSteps,
-        tools: tools ? Object.keys(tools) : [],
-      });
+      // Add messages (serialize to JSON string)
+      rootSpan.setAttribute("agent.messages", JSON.stringify(messages));
 
-      // Extract VoltAgent-specific options
-      const {
-        userId,
-        conversationId,
-        parentAgentId,
-        parentHistoryEntryId,
-        parentOperationContext,
-        contextLimit,
-        hooks,
-        maxSteps: userMaxSteps,
-        providerOptions,
-        ...aiSDKOptions
-      } = options || {};
+      // Add agent state snapshot for remote observability
+      const agentState = this.getFullState();
+      rootSpan.setAttribute("agent.stateSnapshot", JSON.stringify(agentState));
 
-      const result = await generateText({
-        model,
-        messages,
-        tools,
-        // Default values
-        temperature: this.temperature,
-        maxOutputTokens: this.maxOutputTokens,
-        maxRetries: 3,
-        stopWhen: stepCountIs(maxSteps),
-        // User overrides from AI SDK options
-        ...aiSDKOptions,
-        // Provider-specific options
-        providerOptions,
-        // VoltAgent controlled (these should not be overridden)
-        abortSignal: context.system.signal,
-        onStepFinish: this.createStepHandler(context, options),
-      });
-
-      // Save response messages to memory
-      await this.saveResponseMessagesToMemory(context, result.response?.messages);
-
-      // Update history
-      this.updateHistoryEntry(context, {
-        output: result.text,
-        usage: convertUsage(result.usage),
-        endTime: new Date(),
-        status: "completed",
-      });
-
-      // Publish agent:success event
-      const agentSuccessEvent = this.createAgentSuccessEvent(context, result);
-      this.publishTimelineEvent(context, agentSuccessEvent);
-
-      // Call hooks
-      await this.getMergedHooks(options).onEnd?.(context, result);
-
-      // Log stream complete
-      methodLogger.debug(
-        buildAgentLogMessage(this.name, ActionType.STREAM_COMPLETE, "Stream generation completed"),
-        {
-          text: result.text,
-          toolCalls: [],
-          toolResults: [],
-          finishReason: result.finishReason || "stop",
-          usage: result.usage,
-        },
-      );
-
-      // Log successful completion with usage details
-      const usage = result.usage;
-      const tokenInfo = usage ? `${usage.totalTokens} tokens` : "no usage data";
+      // Log generation start with only event-specific context
       methodLogger.debug(
         buildAgentLogMessage(
           this.name,
-          ActionType.GENERATION_COMPLETE,
-          `Text generation completed (${tokenInfo})`,
+          ActionType.GENERATION_START,
+          `Starting text generation with ${modelName}`,
         ),
         {
-          event: LogEvents.AGENT_GENERATION_COMPLETED,
-          duration: Date.now() - startTime,
-          finishReason: result.finishReason,
-          usage: result.usage,
-          toolCalls: result.toolCalls?.length || 0,
-          text: result.text,
+          event: LogEvents.AGENT_GENERATION_STARTED,
+          operationType: "text",
+          contextLimit,
+          memoryEnabled: !!this.memoryManager.getMemory(),
+          model: modelName,
+          messageCount: messages?.length || 0,
+          input,
         },
       );
 
-      // Return result with context - use Object.assign to properly copy all properties including getters
-      const returnValue = Object.assign(
-        Object.create(Object.getPrototypeOf(result)), // Preserve prototype chain
-        result, // Copy all enumerable properties
-        { context: new Map(context.context) }, // Add context
-      );
+      try {
+        // Call hooks
+        await this.getMergedHooks(options).onStart?.({ agent: this, context: oc });
 
-      return returnValue;
-    } catch (error) {
-      return this.handleError(error as Error, context, options, startTime);
-    }
+        // Event tracking now handled by OpenTelemetry spans
+
+        // Setup abort signal listener
+        this.setupAbortSignalListener(oc);
+
+        methodLogger.debug("Starting agent llm call");
+
+        methodLogger.debug("[LLM] - Generating text", {
+          messages: messages.map((msg) => ({
+            role: msg.role,
+            content: msg.content,
+          })),
+          maxSteps,
+          tools: tools ? Object.keys(tools) : [],
+        });
+
+        // Extract VoltAgent-specific options
+        const {
+          userId,
+          conversationId,
+          parentAgentId,
+          parentOperationContext,
+          contextLimit,
+          hooks,
+          maxSteps: userMaxSteps,
+          providerOptions,
+          ...aiSDKOptions
+        } = options || {};
+
+        const result = await generateText({
+          model,
+          messages,
+          tools,
+          // Default values
+          temperature: this.temperature,
+          maxOutputTokens: this.maxOutputTokens,
+          maxRetries: 3,
+          stopWhen: options?.stopWhen ?? this.stopWhen ?? stepCountIs(maxSteps),
+          // User overrides from AI SDK options
+          ...aiSDKOptions,
+          // Provider-specific options
+          providerOptions,
+          // VoltAgent controlled (these should not be overridden)
+          abortSignal: oc.abortController.signal,
+          onStepFinish: this.createStepHandler(oc, options),
+        });
+
+        // Save response messages to memory
+        await this.saveResponseMessagesToMemory(oc, result.response?.messages);
+
+        // History update removed - using OpenTelemetry only
+
+        // Event tracking now handled by OpenTelemetry spans
+
+        // Call hooks with standardized output
+        await this.getMergedHooks(options).onEnd?.({
+          conversationId: oc.conversationId || "",
+          agent: this,
+          output: {
+            text: result.text,
+            usage: convertUsage(result.usage),
+            providerResponse: result.response,
+            finishReason: result.finishReason,
+            warnings: result.warnings,
+            context: oc.context,
+          },
+          error: undefined,
+          context: oc,
+        });
+
+        // Log stream complete
+        methodLogger.debug(
+          buildAgentLogMessage(
+            this.name,
+            ActionType.STREAM_COMPLETE,
+            "Stream generation completed",
+          ),
+          {
+            text: result.text,
+            toolCalls: [],
+            toolResults: [],
+            finishReason: result.finishReason || "stop",
+            usage: result.usage,
+          },
+        );
+
+        // Log successful completion with usage details
+        const usage = result.usage;
+        const tokenInfo = usage ? `${usage.totalTokens} tokens` : "no usage data";
+        methodLogger.debug(
+          buildAgentLogMessage(
+            this.name,
+            ActionType.GENERATION_COMPLETE,
+            `Text generation completed (${tokenInfo})`,
+          ),
+          {
+            event: LogEvents.AGENT_GENERATION_COMPLETED,
+            duration: Date.now() - startTime,
+            finishReason: result.finishReason,
+            usage: result.usage,
+            toolCalls: result.toolCalls?.length || 0,
+            text: result.text,
+          },
+        );
+
+        // Add usage to span and close it successfully
+        this.setTraceContextUsage(oc.traceContext, result.usage);
+        oc.traceContext.setOutput(result.text);
+        oc.traceContext.end("completed");
+
+        // Return result with context - use Object.assign to properly copy all properties including getters
+        const returnValue = Object.assign(
+          Object.create(Object.getPrototypeOf(result)), // Preserve prototype chain
+          result, // Copy all enumerable properties
+          { context: new Map(oc.context) }, // Add context
+        );
+
+        return returnValue;
+      } catch (error) {
+        return this.handleError(error as Error, oc, options, startTime);
+      }
+    });
   }
 
   /**
@@ -623,196 +523,282 @@ export class Agent {
     input: string | UIMessage[],
     options?: StreamTextOptions,
   ): Promise<StreamTextResultWithContext> {
-    const context = await this.createContext(input, options);
-    const methodLogger = context.system.logger; // Extract logger with executionId
+    const oc = this.createOperationContext(input, options);
 
-    // No need to initialize stream collection anymore - we'll use UIMessageStreamWriter
+    // Wrap entire execution in root span to ensure all logs have trace context
+    const rootSpan = oc.traceContext.getRootSpan();
+    return await oc.traceContext.withSpan(rootSpan, async () => {
+      const methodLogger = oc.logger; // Extract logger with executionId
 
-    const { messages, model, tools, maxSteps } = await this.prepareExecution(
-      input,
-      context,
-      options,
-    );
+      // No need to initialize stream collection anymore - we'll use UIMessageStreamWriter
 
-    const modelName = this.getModelName();
-    const contextLimit = options?.contextLimit;
+      const { messages, model, tools, maxSteps } = await this.prepareExecution(input, oc, options);
 
-    // Log stream start
-    methodLogger.debug(
-      buildAgentLogMessage(
-        this.name,
-        ActionType.STREAM_START,
-        `Starting stream generation with ${modelName}`,
-      ),
-      {
-        event: LogEvents.AGENT_STREAM_STARTED,
-        operationType: "stream",
-        contextLimit,
-        memoryEnabled: !!this.memoryManager.getMemory(),
-        model: modelName,
-        messageCount: messages?.length || 0,
-        input,
-      },
-    );
+      const modelName = this.getModelName();
+      const contextLimit = options?.contextLimit;
 
-    try {
-      // Call hooks
-      await this.getMergedHooks(options).onStart?.(context);
+      // Add model attributes to root span if TraceContext exists
+      // Input is now set during TraceContext creation in createContext
+      if (oc.traceContext) {
+        const rootSpan = oc.traceContext.getRootSpan();
+        // Add model attributes and all options
+        addModelAttributesToSpan(
+          rootSpan,
+          modelName,
+          options,
+          this.maxOutputTokens,
+          this.temperature,
+        );
 
-      // Publish agent:start event
-      const agentStartEvent = this.createAgentStartEvent(
-        context,
-        input,
-        messages,
-        maxSteps,
-        options,
+        // Add context to span
+        const contextMap = Object.fromEntries(oc.context.entries());
+        if (Object.keys(contextMap).length > 0) {
+          rootSpan.setAttribute("agent.context", JSON.stringify(contextMap));
+        }
+
+        // Add messages (serialize to JSON string)
+        rootSpan.setAttribute("agent.messages", JSON.stringify(messages));
+
+        // Add agent state snapshot for remote observability
+        const agentState = this.getFullState();
+        rootSpan.setAttribute("agent.stateSnapshot", JSON.stringify(agentState));
+      }
+
+      // Log stream start
+      methodLogger.debug(
+        buildAgentLogMessage(
+          this.name,
+          ActionType.STREAM_START,
+          `Starting stream generation with ${modelName}`,
+        ),
+        {
+          event: LogEvents.AGENT_STREAM_STARTED,
+          operationType: "stream",
+          contextLimit,
+          memoryEnabled: !!this.memoryManager.getMemory(),
+          model: modelName,
+          messageCount: messages?.length || 0,
+          input,
+        },
       );
-      this.publishTimelineEvent(context, agentStartEvent);
 
-      // Setup abort signal listener
-      this.setupAbortSignalListener(
-        context.system.abortController?.signal || context.system.signal,
-        context,
-        agentStartEvent,
-      );
+      try {
+        // Call hooks
+        await this.getMergedHooks(options).onStart?.({ agent: this, context: oc });
 
-      // Extract VoltAgent-specific options
-      const {
-        userId,
-        conversationId,
-        parentAgentId,
-        parentHistoryEntryId,
-        parentOperationContext,
-        contextLimit,
-        hooks,
-        maxSteps: userMaxSteps,
-        onFinish: userOnFinish,
-        providerOptions,
-        ...aiSDKOptions
-      } = options || {};
+        // Event tracking now handled by OpenTelemetry spans
 
-      const result = streamText({
-        model,
-        messages,
-        tools,
-        // Default values
-        temperature: this.temperature,
-        maxOutputTokens: this.maxOutputTokens,
-        maxRetries: 3,
-        stopWhen: stepCountIs(maxSteps),
-        // User overrides from AI SDK options
-        ...aiSDKOptions,
-        // Provider-specific options
-        providerOptions,
-        // VoltAgent controlled (these should not be overridden)
-        abortSignal: context.system.signal,
-        onStepFinish: this.createStepHandler(context, options),
-        onError: ({ error }) => {
-          // Log the error
-          methodLogger.error("Stream error occurred", {
-            error,
-            agentName: this.name,
-            modelName: this.getModelName(),
-          });
+        // Setup abort signal listener
+        this.setupAbortSignalListener(oc);
 
-          // Update history entry with error status
-          this.updateHistoryEntry(context, {
-            status: "error",
-            endTime: new Date(),
-          });
+        // Extract VoltAgent-specific options
+        const {
+          userId,
+          conversationId,
+          parentAgentId,
+          parentOperationContext,
+          contextLimit,
+          hooks,
+          maxSteps: userMaxSteps,
+          onFinish: userOnFinish,
+          providerOptions,
+          ...aiSDKOptions
+        } = options || {};
 
-          // Publish agent:error event
-          const agentErrorEvent = this.createAgentErrorEvent(context, error as Error);
-          this.publishTimelineEvent(context, agentErrorEvent);
+        const result = streamText({
+          model,
+          messages,
+          tools,
+          // Default values
+          temperature: this.temperature,
+          maxOutputTokens: this.maxOutputTokens,
+          maxRetries: 3,
+          stopWhen: options?.stopWhen ?? this.stopWhen ?? stepCountIs(maxSteps),
+          // User overrides from AI SDK options
+          ...aiSDKOptions,
+          // Provider-specific options
+          providerOptions,
+          // VoltAgent controlled (these should not be overridden)
+          abortSignal: oc.abortController.signal,
+          onStepFinish: this.createStepHandler(oc, options),
+          onError: (errorData) => {
+            // Handle nested error structure from OpenAI and other providers
+            // The error might be directly the error or wrapped in { error: ... }
+            const actualError = (errorData as any)?.error || errorData;
 
-          // Call error hooks if they exist
-          this.getMergedHooks(options).onError?.(context, error as Error);
+            // Log the error
+            methodLogger.error("Stream error occurred", {
+              error: actualError,
+              agentName: this.name,
+              modelName: this.getModelName(),
+            });
 
-          // Don't re-throw - let the error be part of the stream
-          // The onError callback should return void for AI SDK compatibility
-        },
-        onFinish: async (finalResult) => {
-          // Save response messages to memory
-          await this.saveResponseMessagesToMemory(context, finalResult.response?.messages);
+            // History update removed - using OpenTelemetry only
 
-          // Update history
-          this.updateHistoryEntry(context, {
-            output: finalResult.text,
-            usage: convertUsage(finalResult.totalUsage),
-            endTime: new Date(),
-            status: "completed",
-          });
+            // Event tracking now handled by OpenTelemetry spans
 
-          // Publish agent:success event
-          const agentSuccessEvent = this.createAgentSuccessEvent(context, finalResult);
-          this.publishTimelineEvent(context, agentSuccessEvent);
+            // Call error hooks if they exist
+            this.getMergedHooks(options).onError?.({
+              agent: this,
+              error: actualError as Error,
+              context: oc,
+            });
 
-          // Call hooks
-          await this.getMergedHooks(options).onEnd?.(context, finalResult);
+            // Close OpenTelemetry span with error status
+            oc.traceContext.end("error", actualError as Error);
 
-          // Call user's onFinish if it exists
-          if (userOnFinish) {
-            await userOnFinish(finalResult);
-          }
-        },
-      });
+            // Don't re-throw - let the error be part of the stream
+            // The onError callback should return void for AI SDK compatibility
+          },
+          onFinish: async (finalResult) => {
+            // Save response messages to memory
+            await this.saveResponseMessagesToMemory(oc, finalResult.response?.messages);
 
-      // Create a wrapper that includes context and delegates to the original result
-      const resultWithContext: StreamTextResultWithContext = {
-        // Delegate all properties and methods to the original result
-        text: result.text,
-        textStream: result.textStream,
-        fullStream: result.fullStream,
-        usage: result.usage,
-        finishReason: result.finishReason,
-        // Don't access experimental_partialOutputStream directly, use getter
-        get experimental_partialOutputStream() {
-          return result.experimental_partialOutputStream;
-        },
-        // Override toUIMessageStreamResponse to use createUIMessageStream for merging
-        toUIMessageStreamResponse: (options) => {
-          // Only use custom stream if we have subagents and operation context
-          if (this.subAgentManager.hasSubAgents() && context.operationContext) {
-            // Use createUIMessageStream to enable stream merging
-            const mergedStream = createUIMessageStream({
-              execute: async ({ writer }) => {
-                // Put the writer in context for delegate_task to use
-                context.operationContext?.systemContext.set("uiStreamWriter", writer);
+            // History update removed - using OpenTelemetry only
 
-                // Start with the parent agent's stream
-                const parentStream = result.toUIMessageStream(options);
+            // Event tracking now handled by OpenTelemetry spans
 
-                // Merge the parent stream
-                writer.merge(parentStream);
+            // Add usage to span and close it successfully
+            this.setTraceContextUsage(oc.traceContext, finalResult.totalUsage);
+            oc.traceContext.setOutput(finalResult.text);
+            oc.traceContext.end("completed");
 
-                // The delegate_task tool will use the writer to merge subagent streams
+            // Call hooks with standardized output (stream finish result)
+            await this.getMergedHooks(options).onEnd?.({
+              conversationId: oc.conversationId || "",
+              agent: this,
+              output: {
+                text: finalResult.text,
+                usage: convertUsage(finalResult.totalUsage as any),
+                providerResponse: finalResult.response,
+                finishReason: finalResult.finishReason,
+                warnings: finalResult.warnings,
+                context: oc.context,
               },
-              onError: (error) => String(error),
+              error: undefined,
+              context: oc,
             });
 
-            // Return the response with the merged stream
-            return createUIMessageStreamResponse({
-              stream: mergedStream,
-              ...options,
-            });
-          }
+            // Call user's onFinish if it exists
+            if (userOnFinish) {
+              await userOnFinish(finalResult);
+            }
+          },
+        });
 
-          // Fall back to original method if no subagents
-          return result.toUIMessageStreamResponse.call(result, options as any);
-        },
-        // Keep other methods bound to the original result
-        toUIMessageStream: result.toUIMessageStream.bind(result),
-        pipeUIMessageStreamToResponse: result.pipeUIMessageStreamToResponse.bind(result),
-        pipeTextStreamToResponse: result.pipeTextStreamToResponse.bind(result),
-        toTextStreamResponse: result.toTextStreamResponse.bind(result),
-        // Add our custom context
-        context: new Map(context.context),
-      };
+        // Capture the agent instance for use in getters
+        const agent = this;
 
-      return resultWithContext;
-    } catch (error) {
-      return this.handleError(error as Error, context, options, 0);
-    }
+        // Create a wrapper that includes context and delegates to the original result
+        const resultWithContext: StreamTextResultWithContext = {
+          // Delegate all properties and methods to the original result
+          text: result.text,
+          // Use getters for streams to avoid ReadableStream locking issues
+          get textStream() {
+            return result.textStream;
+          },
+          get fullStream() {
+            // If we have subagents, create a merged fullStream similar to toUIMessageStreamResponse
+            if (agent.subAgentManager.hasSubAgents()) {
+              // Create a custom async iterable that merges streams
+              const createMergedFullStream =
+                async function* (): AsyncIterable<VoltAgentTextStreamPart> {
+                  // Create a TransformStream to handle merging
+                  const { readable, writable } = new TransformStream<VoltAgentTextStreamPart>();
+                  const writer = writable.getWriter();
+
+                  // Store the writer in context for delegate_task to use
+                  oc.systemContext.set("fullStreamWriter", writer);
+
+                  // Start writing parent stream events
+                  const writeParentStream = async () => {
+                    try {
+                      for await (const part of result.fullStream) {
+                        await writer.write(part as VoltAgentTextStreamPart);
+                      }
+                    } finally {
+                      // Don't close the writer here, delegate_task might still write
+                      // It will be closed after all operations complete
+                    }
+                  };
+
+                  // Start the parent stream writing in background
+                  const parentPromise = writeParentStream();
+
+                  // Read from the merged stream
+                  const reader = readable.getReader();
+                  try {
+                    while (true) {
+                      const { done, value } = await reader.read();
+                      if (done) break;
+                      yield value;
+                    }
+                  } finally {
+                    reader.releaseLock();
+                    // Ensure parent stream completes
+                    await parentPromise;
+                    // Close the writer after everything is done
+                    await writer.close();
+                  }
+                };
+
+              return createMergedFullStream();
+            }
+
+            // No subagents, return original fullStream
+            return result.fullStream;
+          },
+          usage: result.usage,
+          finishReason: result.finishReason,
+          // Don't access experimental_partialOutputStream directly, use getter
+          get experimental_partialOutputStream() {
+            return result.experimental_partialOutputStream;
+          },
+          // Override toUIMessageStreamResponse to use createUIMessageStream for merging
+          toUIMessageStreamResponse: (options) => {
+            // Only use custom stream if we have subagents and operation context
+            if (this.subAgentManager.hasSubAgents()) {
+              // Use createUIMessageStream to enable stream merging
+              const mergedStream = createUIMessageStream({
+                execute: async ({ writer }) => {
+                  // Put the writer in context for delegate_task to use
+                  oc.systemContext.set("uiStreamWriter", writer);
+
+                  // Start with the parent agent's stream
+                  const parentStream = result.toUIMessageStream(options);
+
+                  // Merge the parent stream
+                  writer.merge(parentStream);
+
+                  // The delegate_task tool will use the writer to merge subagent streams
+                },
+                onError: (error) => String(error),
+              });
+
+              // Return the response with the merged stream
+              return createUIMessageStreamResponse({
+                stream: mergedStream,
+                ...options,
+              });
+            }
+
+            // Fall back to original method if no subagents
+            return result.toUIMessageStreamResponse.call(result, options as any);
+          },
+          // Keep other methods bound to the original result
+          toUIMessageStream: result.toUIMessageStream.bind(result),
+          pipeUIMessageStreamToResponse: result.pipeUIMessageStreamToResponse.bind(result),
+          pipeTextStreamToResponse: result.pipeTextStreamToResponse.bind(result),
+          toTextStreamResponse: result.toTextStreamResponse.bind(result),
+          // Add our custom context
+          context: new Map(oc.context),
+        };
+
+        return resultWithContext;
+      } catch (error) {
+        return this.handleError(error as Error, oc, options, 0);
+      }
+    });
   }
 
   /**
@@ -824,100 +810,135 @@ export class Agent {
     options?: GenerateObjectOptions,
   ): Promise<GenerateObjectResultWithContext<z.infer<T>>> {
     const startTime = Date.now();
-    const context = await this.createContext(input, options);
-    const { messages, model, maxSteps } = await this.prepareExecution(input, context, options);
+    const oc = this.createOperationContext(input, options);
 
-    try {
-      // Call hooks
-      await this.getMergedHooks(options).onStart?.(context);
+    // Wrap entire execution in root span for trace context
+    const rootSpan = oc.traceContext.getRootSpan();
+    return await oc.traceContext.withSpan(rootSpan, async () => {
+      const { messages, model } = await this.prepareExecution(input, oc, options);
 
-      // Publish agent:start event
-      const agentStartEvent = this.createAgentStartEvent(
-        context,
-        input,
-        messages,
-        maxSteps,
+      const modelName = this.getModelName();
+
+      // Add model attributes and all options
+      addModelAttributesToSpan(
+        rootSpan,
+        modelName,
         options,
+        this.maxOutputTokens,
+        this.temperature,
       );
-      this.publishTimelineEvent(context, agentStartEvent);
 
-      // Extract VoltAgent-specific options
-      const {
-        userId,
-        conversationId,
-        parentAgentId,
-        parentHistoryEntryId,
-        parentOperationContext,
-        contextLimit,
-        hooks,
-        maxSteps: userMaxSteps,
-        providerOptions,
-        ...aiSDKOptions
-      } = options || {};
-
-      const result = await generateObject({
-        model,
-        messages,
-        output: "object",
-        schema,
-        // Default values
-        maxOutputTokens: this.maxOutputTokens,
-        temperature: this.temperature,
-        maxRetries: 3,
-        // User overrides from AI SDK options
-        ...aiSDKOptions,
-        // Provider-specific options
-        providerOptions,
-        // VoltAgent controlled
-        abortSignal: context.system.signal,
-      });
-
-      // Save the object response to memory
-      if (
-        context.operationContext &&
-        context.operation.userId &&
-        context.operation.conversationId
-      ) {
-        const stepHandler = this.memoryManager.createStepFinishHandler(
-          context.operationContext,
-          context.operation.userId,
-          context.operation.conversationId,
-        );
-
-        const step: StepWithContent = {
-          id: crypto.randomUUID(),
-          type: "text",
-          content: safeStringify(result.object),
-          role: "assistant",
-          usage: convertUsage(result.usage),
-        };
-        await stepHandler(step);
-        this.addStepToHistory(step, context);
+      // Add context to span
+      const contextMap = Object.fromEntries(oc.context.entries());
+      if (Object.keys(contextMap).length > 0) {
+        rootSpan.setAttribute("agent.context", JSON.stringify(contextMap));
       }
 
-      // Update history
-      this.updateHistoryEntry(context, {
-        output: safeStringify(result.object),
-        usage: convertUsage(result.usage),
-        endTime: new Date(),
-        status: "completed",
-      });
+      // Add messages (serialize to JSON string)
+      rootSpan.setAttribute("agent.messages", JSON.stringify(messages));
 
-      // Publish agent:success event
-      const agentSuccessEvent = this.createAgentSuccessEvent(context, result);
-      this.publishTimelineEvent(context, agentSuccessEvent);
+      // Add agent state snapshot for remote observability
+      const agentState = this.getFullState();
+      rootSpan.setAttribute("agent.stateSnapshot", JSON.stringify(agentState));
 
-      // Call hooks
-      await this.getMergedHooks(options).onEnd?.(context, result);
+      try {
+        // Call hooks
+        await this.getMergedHooks(options).onStart?.({ agent: this, context: oc });
 
-      // Return result with context for consistency
-      return {
-        ...result,
-        context: new Map(context.context),
-      };
-    } catch (error) {
-      return this.handleError(error as Error, context, options, startTime);
-    }
+        // Event tracking now handled by OpenTelemetry spans
+
+        // Extract VoltAgent-specific options
+        const {
+          userId,
+          conversationId,
+          parentAgentId,
+          parentOperationContext,
+          contextLimit,
+          hooks,
+          maxSteps: userMaxSteps,
+          providerOptions,
+          ...aiSDKOptions
+        } = options || {};
+
+        const result = await generateObject({
+          model,
+          messages,
+          output: "object",
+          schema,
+          // Default values
+          maxOutputTokens: this.maxOutputTokens,
+          temperature: this.temperature,
+          maxRetries: 3,
+          // User overrides from AI SDK options
+          ...aiSDKOptions,
+          // Provider-specific options
+          providerOptions,
+          // VoltAgent controlled
+          abortSignal: oc.abortController.signal,
+        });
+
+        // Save the object response to memory
+        if (oc.userId && oc.conversationId) {
+          // Create UIMessage from the object response
+          const message: UIMessage = {
+            id: crypto.randomUUID(),
+            role: "assistant",
+            parts: [
+              {
+                type: "text",
+                text: safeStringify(result.object),
+              },
+            ],
+          };
+
+          // Save the message to memory
+          await this.memoryManager.saveMessage(oc, message, oc.userId, oc.conversationId);
+
+          // Add step to history
+          const step: StepWithContent = {
+            id: crypto.randomUUID(),
+            type: "text",
+            content: safeStringify(result.object),
+            role: "assistant",
+            usage: convertUsage(result.usage),
+          };
+          this.addStepToHistory(step, oc);
+        }
+
+        // History update removed - using OpenTelemetry only
+
+        // Event tracking now handled by OpenTelemetry spans
+
+        // Add usage to span and close it successfully
+        this.setTraceContextUsage(oc.traceContext, result.usage);
+        oc.traceContext.setOutput(result.object);
+        oc.traceContext.end("completed");
+
+        // Call hooks
+        await this.getMergedHooks(options).onEnd?.({
+          conversationId: oc.conversationId || "",
+          agent: this,
+          output: {
+            object: result.object,
+            usage: convertUsage(result.usage),
+            providerResponse: (result as any).response,
+            finishReason: result.finishReason,
+            warnings: result.warnings,
+            context: oc.context,
+          },
+          error: undefined,
+          context: oc,
+        });
+
+        // Return result with context for consistency
+        return {
+          ...result,
+          context: new Map(oc.context),
+        };
+      } catch (error) {
+        return this.handleError(error as Error, oc, options, startTime);
+      }
+    });
   }
 
   /**
@@ -928,167 +949,211 @@ export class Agent {
     schema: T,
     options?: StreamObjectOptions,
   ): Promise<StreamObjectResultWithContext<z.infer<T>>> {
-    const context = await this.createContext(input, options);
-    const methodLogger = context.system.logger; // Extract logger with executionId
+    const oc = this.createOperationContext(input, options);
 
-    const { messages, model, maxSteps } = await this.prepareExecution(input, context, options);
+    // Wrap entire execution in root span for trace context
+    const rootSpan = oc.traceContext.getRootSpan();
+    return await oc.traceContext.withSpan(rootSpan, async () => {
+      const methodLogger = oc.logger; // Extract logger with executionId
 
-    const modelName = this.getModelName();
-    const schemaName = schema.description || "unknown";
+      const { messages, model } = await this.prepareExecution(input, oc, options);
 
-    // Log stream object start
-    methodLogger.debug(
-      buildAgentLogMessage(
-        this.name,
-        ActionType.STREAM_START,
-        `Starting object stream generation with ${modelName}`,
-      ),
-      {
-        event: LogEvents.AGENT_STREAM_STARTED,
-        operationType: "object",
-        schemaName: schemaName,
-        model: modelName,
-        messageCount: messages?.length || 0,
-        input,
-      },
-    );
+      const modelName = this.getModelName();
+      const schemaName = schema.description || "unknown";
 
-    try {
-      // Call hooks
-      await this.getMergedHooks(options).onStart?.(context);
-
-      // Publish agent:start event
-      const agentStartEvent = this.createAgentStartEvent(
-        context,
-        input,
-        messages,
-        maxSteps,
+      // Add model attributes and all options
+      addModelAttributesToSpan(
+        rootSpan,
+        modelName,
         options,
+        this.maxOutputTokens,
+        this.temperature,
       );
-      this.publishTimelineEvent(context, agentStartEvent);
 
-      // Extract VoltAgent-specific options
-      const {
-        userId,
-        conversationId,
-        parentAgentId,
-        parentHistoryEntryId,
-        parentOperationContext,
-        contextLimit,
-        hooks,
-        maxSteps: userMaxSteps,
-        onFinish: userOnFinish,
-        providerOptions,
-        ...aiSDKOptions
-      } = options || {};
+      // Add context to span
+      const contextMap = Object.fromEntries(oc.context.entries());
+      if (Object.keys(contextMap).length > 0) {
+        rootSpan.setAttribute("agent.context", JSON.stringify(contextMap));
+      }
 
-      const result = streamObject({
-        model,
-        messages,
-        output: "object",
-        schema,
-        // Default values
-        maxOutputTokens: this.maxOutputTokens,
-        temperature: this.temperature,
-        maxRetries: 3,
-        // User overrides from AI SDK options
-        ...aiSDKOptions,
-        // Provider-specific options
-        providerOptions,
-        // VoltAgent controlled
-        abortSignal: context.system.signal,
-        onError: ({ error }) => {
-          // Log the error
-          methodLogger.error("Stream object error occurred", {
-            error,
-            agentName: this.name,
-            modelName: this.getModelName(),
-            schemaName: schemaName,
-          });
+      // Add messages (serialize to JSON string)
+      rootSpan.setAttribute("agent.messages", JSON.stringify(messages));
 
-          // Update history entry with error status
-          this.updateHistoryEntry(context, {
-            status: "error",
-            endTime: new Date(),
-          });
+      // Add agent state snapshot for remote observability
+      const agentState = this.getFullState();
+      rootSpan.setAttribute("agent.stateSnapshot", JSON.stringify(agentState));
 
-          // Publish agent:error event
-          const agentErrorEvent = this.createAgentErrorEvent(context, error as Error);
-          this.publishTimelineEvent(context, agentErrorEvent);
-
-          // Call error hooks if they exist
-          this.getMergedHooks(options).onError?.(context, error as Error);
-
-          // Don't re-throw - let the error be part of the stream
-          // The onError callback should return void for AI SDK compatibility
+      // Log stream object start
+      methodLogger.debug(
+        buildAgentLogMessage(
+          this.name,
+          ActionType.STREAM_START,
+          `Starting object stream generation with ${modelName}`,
+        ),
+        {
+          event: LogEvents.AGENT_STREAM_STARTED,
+          operationType: "object",
+          schemaName: schemaName,
+          model: modelName,
+          messageCount: messages?.length || 0,
+          input,
         },
-        onFinish: async (finalResult: any) => {
-          // Save the object response to memory
-          if (
-            context.operationContext &&
-            context.operation.userId &&
-            context.operation.conversationId
-          ) {
-            const stepHandler = this.memoryManager.createStepFinishHandler(
-              context.operationContext,
-              context.operation.userId,
-              context.operation.conversationId,
-            );
+      );
 
-            const step: StepWithContent = {
-              id: crypto.randomUUID(),
-              type: "text",
-              content: safeStringify(finalResult.object),
-              role: "assistant",
-              usage: convertUsage(finalResult.usage),
-            };
-            await stepHandler(step);
-            this.addStepToHistory(step, context);
-          }
+      try {
+        // Call hooks
+        await this.getMergedHooks(options).onStart?.({ agent: this, context: oc });
 
-          // Update history
-          this.updateHistoryEntry(context, {
-            output: safeStringify(finalResult.object),
-            usage: convertUsage(finalResult.usage),
-            endTime: new Date(),
-            status: "completed",
-          });
+        // Event tracking now handled by OpenTelemetry spans
 
-          // Publish agent:success event
-          const agentSuccessEvent = this.createAgentSuccessEvent(context, finalResult);
-          this.publishTimelineEvent(context, agentSuccessEvent);
+        // Extract VoltAgent-specific options
+        const {
+          userId,
+          conversationId,
+          parentAgentId,
+          parentOperationContext,
+          contextLimit,
+          hooks,
+          maxSteps: userMaxSteps,
+          onFinish: userOnFinish,
+          providerOptions,
+          ...aiSDKOptions
+        } = options || {};
 
-          // Call hooks
-          await this.getMergedHooks(options).onEnd?.(context, finalResult);
+        const result = streamObject({
+          model,
+          messages,
+          output: "object",
+          schema,
+          // Default values
+          maxOutputTokens: this.maxOutputTokens,
+          temperature: this.temperature,
+          maxRetries: 3,
+          // User overrides from AI SDK options
+          ...aiSDKOptions,
+          // Provider-specific options
+          providerOptions,
+          // VoltAgent controlled
+          abortSignal: oc.abortController.signal,
+          onError: (errorData) => {
+            // Handle nested error structure from OpenAI and other providers
+            // The error might be directly the error or wrapped in { error: ... }
+            const actualError = (errorData as any)?.error || errorData;
 
-          // Call user's onFinish if it exists
-          if (userOnFinish) {
-            await userOnFinish(finalResult);
-          }
-        },
-      });
+            // Log the error
+            methodLogger.error("Stream object error occurred", {
+              error: actualError,
+              agentName: this.name,
+              modelName: this.getModelName(),
+              schemaName: schemaName,
+            });
 
-      // Create a wrapper that includes context and delegates to the original result
-      const resultWithContext: StreamObjectResultWithContext<z.infer<T>> = {
-        // Delegate to original properties
-        object: result.object,
-        partialObjectStream: result.partialObjectStream,
-        textStream: result.textStream,
-        warnings: result.warnings,
-        usage: result.usage,
-        finishReason: result.finishReason,
-        // Delegate response conversion methods
-        pipeTextStreamToResponse: (response, init) =>
-          result.pipeTextStreamToResponse(response, init),
-        toTextStreamResponse: (init) => result.toTextStreamResponse(init),
-        // Add our custom context
-        context: new Map(context.context),
-      };
+            // History update removed - using OpenTelemetry only
 
-      return resultWithContext;
-    } catch (error) {
-      return this.handleError(error as Error, context, options, 0);
-    }
+            // Event tracking now handled by OpenTelemetry spans
+
+            // Call error hooks if they exist
+            this.getMergedHooks(options).onError?.({
+              agent: this,
+              error: actualError as Error,
+              context: oc,
+            });
+
+            // Close OpenTelemetry span with error status
+            oc.traceContext.end("error", actualError as Error);
+
+            // Don't re-throw - let the error be part of the stream
+            // The onError callback should return void for AI SDK compatibility
+          },
+          onFinish: async (finalResult: any) => {
+            // Save the object response to memory
+            if (oc.userId && oc.conversationId) {
+              // Create UIMessage from the object response
+              const message: UIMessage = {
+                id: crypto.randomUUID(),
+                role: "assistant",
+                parts: [
+                  {
+                    type: "text",
+                    text: safeStringify(finalResult.object),
+                  },
+                ],
+              };
+
+              // Save the message to memory
+              await this.memoryManager.saveMessage(oc, message, oc.userId, oc.conversationId);
+
+              // Add step to history
+              const step: StepWithContent = {
+                id: crypto.randomUUID(),
+                type: "text",
+                content: safeStringify(finalResult.object),
+                role: "assistant",
+                usage: convertUsage(finalResult.usage),
+              };
+              this.addStepToHistory(step, oc);
+            }
+
+            // History update removed - using OpenTelemetry only
+
+            // Event tracking now handled by OpenTelemetry spans
+
+            // Add usage to span and close it successfully
+            this.setTraceContextUsage(oc.traceContext, finalResult.usage);
+            oc.traceContext.setOutput(finalResult.object);
+            oc.traceContext.end("completed");
+
+            // Call hooks with standardized output (stream object finish)
+            await this.getMergedHooks(options).onEnd?.({
+              conversationId: oc.conversationId || "",
+              agent: this,
+              output: {
+                object: finalResult.object,
+                usage: convertUsage(finalResult.usage as any),
+                providerResponse: finalResult.response,
+                finishReason: finalResult.finishReason,
+                warnings: finalResult.warnings,
+                context: oc.context,
+              },
+              error: undefined,
+              context: oc,
+            });
+
+            // Call user's onFinish if it exists
+            if (userOnFinish) {
+              await userOnFinish(finalResult);
+            }
+          },
+        });
+
+        // Create a wrapper that includes context and delegates to the original result
+        // Use getters for streams to avoid ReadableStream locking issues
+        const resultWithContext = {
+          // Delegate to original properties
+          object: result.object,
+          // Use getter for lazy access to avoid stream locking
+          get partialObjectStream() {
+            return result.partialObjectStream;
+          },
+          get textStream() {
+            return result.textStream;
+          },
+          warnings: result.warnings,
+          usage: result.usage,
+          finishReason: result.finishReason,
+          // Delegate response conversion methods
+          pipeTextStreamToResponse: (response, init) =>
+            result.pipeTextStreamToResponse(response, init),
+          toTextStreamResponse: (init) => result.toTextStreamResponse(init),
+          // Add our custom context
+          context: new Map(oc.context),
+        } as StreamObjectResultWithContext<z.infer<T>>;
+
+        return resultWithContext;
+      } catch (error) {
+        return this.handleError(error as Error, oc, options, 0);
+      }
+    });
   }
 
   // ============================================================================
@@ -1100,7 +1165,7 @@ export class Agent {
    */
   private async prepareExecution(
     input: string | UIMessage[],
-    context: AgentContext,
+    oc: OperationContext,
     options?: BaseGenerationOptions,
   ): Promise<{
     messages: BaseMessage[];
@@ -1109,11 +1174,11 @@ export class Agent {
     maxSteps: number;
   }> {
     // Resolve dynamic values
-    const model = await this.resolveValue(this.model, context);
-    const toolList = await this.resolveValue(this.tools, context);
+    const model = await this.resolveValue(this.model, oc);
+    const toolList = await this.resolveValue(this.tools, oc);
 
     // Prepare messages (system + memory + input) as UIMessages
-    const uiMessages = await this.prepareMessages(input, context, options);
+    const uiMessages = await this.prepareMessages(input, oc, options);
 
     // Convert UIMessages to ModelMessages for the LLM
     const messages = convertToModelMessages(uiMessages);
@@ -1123,7 +1188,7 @@ export class Agent {
 
     // Prepare tools with execution context
     const toolsArray = Array.isArray(toolList) ? toolList : [];
-    const tools = await this.prepareTools(toolsArray, context, maxSteps, options);
+    const tools = await this.prepareTools(toolsArray, oc, maxSteps, options);
 
     return { messages, model, tools, maxSteps };
   }
@@ -1131,104 +1196,79 @@ export class Agent {
   /**
    * Create execution context
    */
-  private async createContext(
+  // createContext removed; use createOperationContext directly
+
+  /**
+   * Create only the OperationContext (sync)
+   * Transitional helper to gradually adopt OperationContext across methods
+   */
+  private createOperationContext(
     input: string | UIMessage[],
     options?: BaseGenerationOptions,
-  ): Promise<AgentContext> {
+  ): OperationContext {
     const operationId = crypto.randomUUID();
-    const startTime = new Date().toISOString();
+    const startTimeDate = new Date();
 
-    // Merge default context with runtime context
     const runtimeContext = toContextMap(options?.context);
     const context = new Map([
-      ...(this.context?.entries() || []), // Agent-level default context
-      ...(runtimeContext?.entries() || []), // Runtime context (overrides defaults)
-      ...(options?.parentOperationContext?.context?.entries() || []), // Parent context (highest priority)
+      ...(this.context?.entries() || []),
+      ...(runtimeContext?.entries() || []),
+      ...(options?.parentOperationContext?.context?.entries() || []),
     ]);
 
-    // Create OTEL span
-    const otelSpan = startOperationSpan({
-      agentId: this.id,
-      agentName: this.name,
-      operationName: "execute",
-      parentAgentId: options?.parentAgentId,
-      parentHistoryEntryId: options?.parentHistoryEntryId,
-      modelName: this.getModelName(),
-    });
-
-    // Add history entry first (before creating logger)
-    const historyEntry = await this.historyManager.addEntry({
-      input: typeof input === "string" ? input : input,
-      output: "",
-      status: "working",
-      steps: [],
-      userId: options?.userId,
-      conversationId: options?.conversationId,
-      model: this.getModelName(),
-      options: {
-        metadata: {
-          agentSnapshot: this.getFullState(),
-        },
-      },
-    });
-
-    // Create logger for this operation using historyEntry.id as executionId
-    const logger = this.getContextualLogger(
-      options?.parentAgentId,
-      options?.parentHistoryEntryId,
-    ).child({
+    const logger = this.getContextualLogger(options?.parentAgentId).child({
       operationId,
       userId: options?.userId,
       conversationId: options?.conversationId,
-      executionId: historyEntry.id, // Use historyEntry.id instead of operationId
-      // Preserve parent execution ID if present
-      ...(options?.parentHistoryEntryId && {
-        parentExecutionId: options?.parentHistoryEntryId,
-      }),
+      executionId: operationId,
     });
 
-    // Create legacy operation context for compatibility
-    const operationContext: OperationContext = {
-      operationId: historyEntry.id,
+    const observability = this.getObservability();
+    const traceContext = new AgentTraceContext(observability, this.name, {
+      agentId: this.id,
+      agentName: this.name,
+      userId: options?.userId,
+      conversationId: options?.conversationId,
+      operationId,
+      parentSpan: options?.parentSpan,
+      parentAgentId: options?.parentAgentId,
+      input,
+    });
+
+    // Use parent's AbortController if available, otherwise create new one
+    const abortController =
+      options?.parentOperationContext?.abortController || new AbortController();
+
+    // Setup cascade abort only if we created a new controller
+    if (!options?.parentOperationContext?.abortController && options?.abortSignal) {
+      const externalSignal = options.abortSignal;
+      externalSignal.addEventListener("abort", () => {
+        if (!abortController.signal.aborted) {
+          abortController.abort(externalSignal.reason);
+        }
+      });
+    }
+
+    return {
+      operationId,
       context,
       systemContext: new Map(),
-      historyEntry,
       isActive: true,
       logger,
       conversationSteps: options?.parentOperationContext?.conversationSteps || [],
-      signal: options?.abortSignal,
-      abortController: undefined,
-      otelSpan,
+      abortController,
+      userId: options?.userId,
+      conversationId: options?.conversationId,
       parentAgentId: options?.parentAgentId,
-      parentHistoryEntryId: options?.parentHistoryEntryId,
-    };
-
-    return {
-      context,
-      operation: {
-        id: operationId,
-        userId: options?.userId,
-        conversationId: options?.conversationId,
-        parentAgentId: options?.parentAgentId,
-        parentHistoryId: options?.parentHistoryEntryId,
-      },
-      system: {
-        logger,
-        signal: options?.abortSignal,
-        abortController: undefined,
-        startTime,
-      },
-      otelSpan,
-      toolSpans: new Map(),
-      conversationSteps: operationContext.conversationSteps,
-      operationContext,
+      traceContext,
+      startTime: startTimeDate,
     };
   }
 
   /**
    * Get contextual logger with parent tracking
    */
-  private getContextualLogger(parentAgentId?: string, parentHistoryEntryId?: string): Logger {
+  private getContextualLogger(parentAgentId?: string): Logger {
     if (parentAgentId) {
       const parentAgent = AgentRegistry.getInstance().getAgent(parentAgentId);
       if (parentAgent) {
@@ -1236,9 +1276,6 @@ export class Agent {
           parentAgentId,
           isSubAgent: true,
           delegationDepth: this.calculateDelegationDepth(parentAgentId),
-          ...(parentHistoryEntryId && {
-            parentExecutionId: parentHistoryEntryId,
-          }),
         });
       }
     }
@@ -1272,17 +1309,85 @@ export class Agent {
   }
 
   /**
+   * Get observability instance (lazy initialization)
+   */
+  /**
+   * Get observability instance - checks global registry on every call
+   * This ensures agents can use global observability when available
+   * but still work standalone with their own instance
+   */
+  private getObservability(): VoltAgentObservability {
+    // Always check global registry first (it might have been set after agent creation)
+    const globalObservability = AgentRegistry.getInstance().getGlobalObservability();
+    if (globalObservability) {
+      return globalObservability;
+    }
+
+    // If no global observability, use or create default instance for this agent
+    return this.getOrCreateDefaultObservability();
+  }
+
+  /**
+   * Create a default observability instance for standalone agent usage
+   */
+  private getOrCreateDefaultObservability(): VoltAgentObservability {
+    if (!this.defaultObservability) {
+      this.defaultObservability = new VoltAgentObservability({
+        serviceName: `agent-${this.name}`,
+      });
+    }
+    return this.defaultObservability;
+  }
+
+  /**
+   * Check if semantic search is supported
+   */
+  private hasSemanticSearchSupport(): boolean {
+    // Check if MemoryManager has vector support
+    const memory = this.memoryManager.getMemory();
+    if (memory) {
+      return memory?.hasVectorSupport?.() ?? false;
+    }
+    return false;
+  }
+
+  /**
+   * Extract user query from input for semantic search
+   */
+  private extractUserQuery(input: string | UIMessage[]): string | undefined {
+    if (typeof input === "string") {
+      return input;
+    }
+
+    // Filter user messages and get the last one
+    const userMessages = input.filter((msg) => msg.role === "user");
+    const lastUserMessage = userMessages.at(-1);
+
+    if (!lastUserMessage?.parts) {
+      return undefined;
+    }
+
+    const textParts = lastUserMessage.parts
+      .filter((part) => part.type === "text" && "text" in part)
+      .map((part) => (part as any).text)
+      .filter((text) => text) // Filter out null, undefined, and empty strings
+      .map((text) => text.trim()); // Trim whitespace from each part
+
+    return textParts.length > 0 ? textParts.join(" ") : undefined;
+  }
+
+  /**
    * Prepare messages with system prompt and memory
    */
   private async prepareMessages(
     input: string | UIMessage[],
-    context: AgentContext,
+    oc: OperationContext,
     options?: BaseGenerationOptions,
   ): Promise<UIMessage[]> {
     const messages: UIMessage[] = [];
 
-    // Get system message with retriever context
-    const systemMessage = await this.getSystemMessage(input, context);
+    // Get system message with retriever context and working memory
+    const systemMessage = await this.getSystemMessage(input, oc, options);
     if (systemMessage) {
       // Convert system message to UIMessage format
       const systemUIMessage: UIMessage = {
@@ -1305,24 +1410,104 @@ export class Agent {
         ],
       };
       messages.push(systemUIMessage);
+
+      // Add system instructions to telemetry
+      if (systemUIMessage.parts[0]?.type === "text") {
+        oc.traceContext.setInstructions(systemUIMessage.parts[0].text);
+      }
     }
 
+    const canIUseMemory = options?.userId && options.conversationId;
+
     // Load memory context if available (already returns UIMessages)
-    if (context.operationContext) {
-      const { messages: memoryMessages, conversationId } =
-        await this.memoryManager.prepareConversationContext(
-          context.operationContext,
-          input,
-          context.operation.userId,
-          context.operation.conversationId,
-          options?.contextLimit,
-        );
+    if (canIUseMemory) {
+      // Check if we should use semantic search
+      // Default to true if vector support is available
+      const useSemanticSearch = options?.semanticMemory?.enabled ?? this.hasSemanticSearchSupport();
 
-      // Update conversation ID
-      context.operation.conversationId = conversationId;
+      // Extract user query for semantic search if enabled
+      const currentQuery = useSemanticSearch ? this.extractUserQuery(input) : undefined;
 
-      // Add memory messages (already UIMessages)
-      messages.push(...memoryMessages);
+      // Prepare memory read parameters
+      const semanticLimit = options?.semanticMemory?.semanticLimit ?? 5;
+      const semanticThreshold = options?.semanticMemory?.semanticThreshold ?? 0.0;
+      const mergeStrategy = options?.semanticMemory?.mergeStrategy ?? "prepend";
+      const isSemanticSearch = useSemanticSearch && currentQuery;
+
+      const traceContext = oc.traceContext;
+
+      if (traceContext) {
+        // Create unified memory read span
+        const memoryReadSpan = traceContext.createChildSpan("memory.read", "memory", {
+          label: isSemanticSearch ? "Semantic Memory Read" : "Memory Context Read",
+          attributes: {
+            "memory.operation": "read",
+            "memory.semantic": isSemanticSearch,
+            input: isSemanticSearch ? currentQuery : input,
+            ...(isSemanticSearch && {
+              "memory.semantic.limit": semanticLimit,
+              "memory.semantic.threshold": semanticThreshold,
+              "memory.semantic.merge_strategy": mergeStrategy,
+            }),
+          },
+        });
+
+        try {
+          const memoryResult = await traceContext.withSpan(memoryReadSpan, async () => {
+            if (isSemanticSearch) {
+              // Semantic search
+              return await this.memoryManager.getMessages(
+                oc,
+                oc.userId,
+                oc.conversationId,
+                options?.contextLimit,
+                {
+                  useSemanticSearch: true,
+                  currentQuery,
+                  semanticLimit,
+                  semanticThreshold,
+                  mergeStrategy,
+                  traceContext: traceContext,
+                  parentMemorySpan: memoryReadSpan,
+                },
+              );
+            }
+            // Regular memory context
+            const result = await this.memoryManager.prepareConversationContext(
+              oc,
+              input,
+              oc.userId,
+              oc.conversationId,
+              options?.contextLimit,
+            );
+
+            // Update conversation ID
+            oc.conversationId = result.conversationId;
+
+            return result.messages;
+          });
+
+          traceContext.endChildSpan(memoryReadSpan, "completed", {
+            output: memoryResult,
+            attributes: {
+              "memory.message_count": Array.isArray(memoryResult) ? memoryResult.length : 0,
+            },
+          });
+
+          // Ensure conversation ID exists for semantic search
+          if (isSemanticSearch && !oc.conversationId) {
+            oc.conversationId = crypto.randomUUID();
+          }
+
+          // Add memory messages
+          messages.push(...memoryResult);
+        } catch (error) {
+          traceContext.endChildSpan(memoryReadSpan, "error", {
+            error: error as Error,
+          });
+          throw error;
+        }
+      }
     }
 
     // Add current input
@@ -1339,7 +1524,7 @@ export class Agent {
     // Allow hooks to modify messages
     const hooks = this.getMergedHooks(options);
     if (hooks.onPrepareMessages) {
-      const result = await hooks.onPrepareMessages(messages, context);
+      const result = await hooks.onPrepareMessages({ messages, agent: this, context: oc });
       return result?.messages || messages;
     }
 
@@ -1351,7 +1536,8 @@ export class Agent {
    */
   private async getSystemMessage(
     input: string | UIMessage[],
-    context: AgentContext,
+    oc: OperationContext,
+    options?: BaseGenerationOptions,
   ): Promise<BaseMessage | BaseMessage[]> {
     // Resolve dynamic instructions
     const promptHelper = VoltOpsClientClass.createPromptHelperWithFallback(
@@ -1362,20 +1548,74 @@ export class Agent {
     );
 
     const dynamicValueOptions: DynamicValueOptions = {
-      context: context.context,
+      context: oc.context,
       prompts: promptHelper,
     };
 
     const resolvedInstructions = await this.resolveValue(
       this.instructions,
-      context,
+      oc,
       dynamicValueOptions,
     );
 
+    // Add VoltOps prompt metadata to OpenTelemetry trace if available
+    if (
+      typeof resolvedInstructions === "object" &&
+      "type" in resolvedInstructions &&
+      "metadata" in resolvedInstructions
+    ) {
+      const promptContent = resolvedInstructions as PromptContent;
+      if (promptContent.metadata && oc.traceContext) {
+        const rootSpan = oc.traceContext.getRootSpan();
+        const metadata = promptContent.metadata;
+
+        // Add each metadata field as a separate attribute
+        if (metadata.prompt_id) {
+          rootSpan.setAttribute("prompt.id", metadata.prompt_id);
+        }
+        if (metadata.prompt_version_id) {
+          rootSpan.setAttribute("prompt.version_id", metadata.prompt_version_id);
+        }
+        if (metadata.name) {
+          rootSpan.setAttribute("prompt.name", metadata.name);
+        }
+        if (metadata.version !== undefined) {
+          rootSpan.setAttribute("prompt.version", metadata.version);
+        }
+        if (metadata.labels && metadata.labels.length > 0) {
+          rootSpan.setAttribute("prompt.labels", JSON.stringify(metadata.labels));
+        }
+        if (metadata.tags && metadata.tags.length > 0) {
+          rootSpan.setAttribute("prompt.tags", JSON.stringify(metadata.tags));
+        }
+        if (metadata.config) {
+          rootSpan.setAttribute("prompt.config", JSON.stringify(metadata.config));
+        }
+      }
+    }
+
     // Get retriever context if available
     let retrieverContext: string | null = null;
-    if (this.retriever && input && context.operationContext) {
-      retrieverContext = await this.getRetrieverContext(input, context);
+    if (this.retriever && input) {
+      retrieverContext = await this.getRetrieverContext(input, oc);
+    }
+
+    // Get working memory instructions if available
+    let workingMemoryContext: string | null = null;
+    if (this.hasWorkingMemorySupport() && options?.conversationId) {
+      const memory = this.memoryManager.getMemory();
+
+      if (memory) {
+        // Get full working memory instructions with current data
+        const workingMemoryInstructions = await memory.getWorkingMemoryInstructions({
+          conversationId: options.conversationId,
+          userId: options.userId,
+        });
+
+        if (workingMemoryInstructions) {
+          workingMemoryContext = `\n\n${workingMemoryInstructions}`;
+        }
+      }
     }
 
     // Handle different instruction types
@@ -1385,8 +1625,15 @@ export class Agent {
       if (promptContent.type === "chat" && promptContent.messages) {
         const messages = [...promptContent.messages];
 
-        // Add retriever context to last system message if available
-        if (retrieverContext) {
+        // Add retriever context and working memory to last system message if available
+        const additionalContext = [
+          retrieverContext ? `Relevant Context:\n${retrieverContext}` : null,
+          workingMemoryContext,
+        ]
+          .filter(Boolean)
+          .join("\n\n");
+
+        if (additionalContext) {
           const lastSystemIndex = messages
             .map((m, i) => ({ message: m, index: i }))
             .filter(({ message }) => message.role === "system")
@@ -1396,12 +1643,12 @@ export class Agent {
             const existingMessage = messages[lastSystemIndex];
             messages[lastSystemIndex] = {
               ...existingMessage,
-              content: `${existingMessage.content}\n\nRelevant Context:\n${retrieverContext}`,
+              content: `${existingMessage.content}\n\n${additionalContext}`,
             } as typeof existingMessage;
           } else {
             messages.push({
               role: "system",
-              content: `Relevant Context:\n${retrieverContext}`,
+              content: additionalContext,
             } as SystemModelMessage);
           }
         }
@@ -1425,9 +1672,14 @@ export class Agent {
           content = `${content}\n\nRelevant Context:\n${retrieverContext}`;
         }
 
+        // Add working memory context
+        if (workingMemoryContext) {
+          content = `${content}${workingMemoryContext}`;
+        }
+
         // Add supervisor instructions if needed
         if (this.subAgentManager.hasSubAgents()) {
-          const agentsMemory = await this.prepareAgentsMemory(context);
+          const agentsMemory = await this.prepareAgentsMemory(oc);
           content = this.subAgentManager.generateSupervisorSystemMessage(
             content,
             agentsMemory,
@@ -1458,9 +1710,14 @@ export class Agent {
       content = `${content}\n\nRelevant Context:\n${retrieverContext}`;
     }
 
+    // Add working memory context
+    if (workingMemoryContext) {
+      content = `${content}${workingMemoryContext}`;
+    }
+
     // Add supervisor instructions if needed
     if (this.subAgentManager.hasSubAgents()) {
-      const agentsMemory = await this.prepareAgentsMemory(context);
+      const agentsMemory = await this.prepareAgentsMemory(oc);
       content = this.subAgentManager.generateSupervisorSystemMessage(
         content,
         agentsMemory,
@@ -1493,13 +1750,13 @@ export class Agent {
   /**
    * Prepare agents memory for supervisor
    */
-  private async prepareAgentsMemory(context: AgentContext): Promise<string> {
+  private async prepareAgentsMemory(oc: OperationContext): Promise<string> {
     try {
       const subAgents = this.subAgentManager.getSubAgents();
       if (subAgents.length === 0) return "";
 
       // Get recent conversation steps
-      const steps = context.conversationSteps || [];
+      const steps = oc.conversationSteps || [];
       const formattedMemory = steps
         .filter((step) => step.role !== "system" && step.role === "assistant")
         .map((step) => `${step.role}: ${step.content}`)
@@ -1517,12 +1774,12 @@ export class Agent {
    */
   private async getRetrieverContext(
     input: string | UIMessage[],
-    context: AgentContext,
+    oc: OperationContext,
   ): Promise<string | null> {
-    if (!this.retriever || !context.operationContext) return null;
+    if (!this.retriever) return null;
 
     const startTime = Date.now();
-    const retrieverLogger = context.system.logger.child({
+    const retrieverLogger = oc.logger.child({
       operation: "retriever",
       retrieverId: this.retriever.tool.name,
     });
@@ -1532,35 +1789,34 @@ export class Agent {
       input,
     });
 
-    const retrieverStartEvent: RetrieverStartEvent = {
-      id: crypto.randomUUID(),
-      name: "retriever:start",
-      type: "retriever",
-      startTime: new Date().toISOString(),
-      status: "running",
-      input: { query: input },
-      output: null,
-      metadata: {
-        displayName: this.retriever.tool.name || "Retriever",
-        id: this.retriever.tool.name,
-        agentId: this.id,
+    // Create OpenTelemetry span for retriever using TraceContext
+    const retrieverSpan = oc.traceContext.createChildSpan("retriever.search", "retriever", {
+      label: this.retriever.tool.name || "Retriever",
+      attributes: {
+        "retriever.name": this.retriever.tool.name || "Retriever",
+        input: typeof input === "string" ? input : JSON.stringify(input),
       },
-      traceId: context.operationContext.historyEntry.id,
-    };
+    });
 
-    this.publishTimelineEvent(context, retrieverStartEvent);
+    // Event tracking now handled by OpenTelemetry spans
 
     try {
       // Convert UIMessage to ModelMessage for retriever if needed
       const retrieverInput = typeof input === "string" ? input : convertToModelMessages(input);
 
-      const retrieverContext = await this.retriever.retrieve(retrieverInput, {
-        context: context.context,
-        logger: retrieverLogger,
+      // Execute retriever with the span context
+      const retrievedContent = await oc.traceContext.withSpan(retrieverSpan, async () => {
+        if (!this.retriever) return null;
+        return await this.retriever.retrieve(retrieverInput, {
+          context: oc.context,
+          logger: retrieverLogger,
+        });
       });
 
-      if (retrieverContext?.trim()) {
-        const documentCount = retrieverContext.split("\n").filter((line) => line.trim()).length;
+      if (retrievedContent?.trim()) {
+        const documentCount = retrievedContent
+          .split("\n")
+          .filter((line: string) => line.trim()).length;
 
         retrieverLogger.debug(
           buildAgentLogMessage(
@@ -1575,46 +1831,35 @@ export class Agent {
           },
         );
 
-        const retrieverSuccessEvent: RetrieverSuccessEvent = {
-          id: crypto.randomUUID(),
-          name: "retriever:success",
-          type: "retriever",
-          startTime: retrieverStartEvent.startTime,
-          endTime: new Date().toISOString(),
-          status: "completed",
-          input: null,
-          output: { context: retrieverContext },
-          metadata: retrieverStartEvent.metadata,
-          traceId: context.operationContext.historyEntry.id,
-          parentEventId: retrieverStartEvent.id,
-        };
+        // Event tracking now handled by OpenTelemetry spans
 
-        this.publishTimelineEvent(context, retrieverSuccessEvent);
-        return retrieverContext;
+        // End OpenTelemetry span successfully
+        oc.traceContext?.endChildSpan(retrieverSpan, "completed", {
+          output: retrievedContent,
+          attributes: {
+            "retriever.document_count": documentCount,
+          },
+        });
+
+        return retrievedContent;
       }
+
+      // End span if no content retrieved
+      oc.traceContext?.endChildSpan(retrieverSpan, "completed", {
+        output: null,
+        attributes: {
+          "retriever.document_count": 0,
+        },
+      });
 
       return null;
     } catch (error) {
-      const retrieverErrorEvent: RetrieverErrorEvent = {
-        id: crypto.randomUUID(),
-        name: "retriever:error",
-        type: "retriever",
-        startTime: retrieverStartEvent.startTime,
-        endTime: new Date().toISOString(),
-        status: "error",
-        level: "ERROR",
-        input: null,
-        output: null,
-        statusMessage: {
-          message: error instanceof Error ? error.message : "Unknown retriever error",
-          ...(error instanceof Error && error.stack ? { stack: error.stack } : {}),
-        },
-        metadata: retrieverStartEvent.metadata,
-        traceId: context.operationContext.historyEntry.id,
-        parentEventId: retrieverStartEvent.id,
-      };
+      // Event tracking now handled by OpenTelemetry spans
 
-      this.publishTimelineEvent(context, retrieverErrorEvent);
+      // End OpenTelemetry span with error
+      oc.traceContext.endChildSpan(retrieverSpan, "error", {
+        error: error as Error,
+      });
 
       retrieverLogger.error(
         buildAgentLogMessage(
@@ -1639,7 +1884,7 @@ export class Agent {
    */
   private async resolveValue<T>(
     value: T | DynamicValue<T>,
-    context: AgentContext,
+    oc: OperationContext,
     options?: DynamicValueOptions,
   ): Promise<T> {
     if (typeof value === "function") {
@@ -1648,11 +1893,11 @@ export class Agent {
         options ||
         (this.prompts
           ? {
-              context: context.context,
+              context: oc.context,
               prompts: this.prompts,
             }
           : {
-              context: context.context,
+              context: oc.context,
               prompts: {
                 getPrompt: async () => ({ type: "text" as const, text: "" }),
               },
@@ -1667,7 +1912,7 @@ export class Agent {
    */
   private async prepareTools(
     toolList: any,
-    context: AgentContext,
+    oc: OperationContext,
     maxSteps: number,
     options?: BaseGenerationOptions,
   ): Promise<Record<string, any>> {
@@ -1678,8 +1923,8 @@ export class Agent {
     if (this.subAgentManager.hasSubAgents()) {
       const delegateTool = this.subAgentManager.createDelegateTool({
         sourceAgent: this as any, // Type workaround
-        currentHistoryEntryId: context.operationContext?.historyEntry.id,
-        operationContext: context.operationContext,
+        currentHistoryEntryId: oc.operationId,
+        operationContext: oc,
         maxSteps: maxSteps,
         conversationId: options?.conversationId,
         userId: options?.userId,
@@ -1687,8 +1932,14 @@ export class Agent {
       baseTools.push(delegateTool);
     }
 
+    // Add working memory tools if Memory V2 with working memory is configured
+    const workingMemoryTools = this.createWorkingMemoryTools(options);
+    if (workingMemoryTools.length > 0) {
+      baseTools.push(...workingMemoryTools);
+    }
+
     // Convert to AI SDK tools with context injection
-    return this.convertTools(baseTools, context, options);
+    return this.convertTools(baseTools, oc, options);
   }
 
   /**
@@ -1696,7 +1947,7 @@ export class Agent {
    */
   private convertTools(
     tools: Tool<any, any>[],
-    context: AgentContext,
+    oc: OperationContext,
     options?: BaseGenerationOptions,
   ): Record<string, any> {
     const aiTools: Record<string, any> = {};
@@ -1707,214 +1958,148 @@ export class Agent {
         description: tool.description,
         inputSchema: tool.parameters, // AI SDK will convert this to JSON Schema internally
         execute: async (args: any) => {
-          // Create tool execution context
-          const toolExecutionContext: ToolExecutionContext = {
-            operationContext: context.operationContext,
-            agentId: this.id,
-            historyEntryId: context.operationContext?.historyEntry.id || "unknown",
-          };
+          // Event tracking now handled by OpenTelemetry spans
 
-          // Publish tool:start event
-          const toolStartEvent: ToolStartEvent = {
-            id: crypto.randomUUID(),
-            name: "tool:start",
-            type: "tool",
-            startTime: new Date().toISOString(),
-            status: "running",
-            input: args || {},
-            output: null,
-            metadata: {
-              displayName: tool.name,
-              id: tool.name,
-              agentId: this.id,
+          // Create tool span using TraceContext
+          const toolSpan = oc.traceContext.createChildSpan(`tool.execution:${tool.name}`, "tool", {
+            label: tool.name,
+            attributes: {
+              "tool.name": tool.name,
+              "tool.call.id": crypto.randomUUID(),
+              input: args ? safeStringify(args) : undefined,
             },
-            traceId: context.operationContext?.historyEntry.id || context.operation.id,
-            parentEventId: context.system.agentStartEventId,
-          };
-
-          this.publishTimelineEvent(context, toolStartEvent);
-
-          // Create and track OTEL span
-          const toolSpan = startToolSpan({
-            toolName: tool.name,
-            toolCallId: crypto.randomUUID(),
-            toolInput: args,
-            agentId: this.id,
-            parentSpan: context.otelSpan,
+            kind: SpanKind.CLIENT,
           });
 
-          try {
-            // Call tool start hook
-            await hooks.onToolStart?.(context, tool);
+          // Push execution metadata into systemContext for tools to consume
+          oc.systemContext.set("agentId", this.id);
+          oc.systemContext.set("historyEntryId", oc.operationId);
+          oc.systemContext.set("parentToolSpan", toolSpan);
 
-            // Specifically handle Reasoning Tools (think and analyze)
-            let result: any;
-            if (tool.name === "think" || tool.name === "analyze") {
-              // Reasoning tools require ReasoningToolExecuteOptions
-              const reasoningOptions: ReasoningToolExecuteOptions = {
-                ...toolExecutionContext,
-                agentId: this.id,
-                historyEntryId: context.operationContext?.historyEntry.id || "unknown",
-              };
+          // Execute tool and handle span lifecycle
+          return await oc.traceContext.withSpan(toolSpan, async () => {
+            try {
+              // Call tool start hook
+              await hooks.onToolStart?.({ agent: this, tool, context: oc });
 
-              // Warn if historyEntryId is not available
+              // Specifically handle Reasoning Tools (think and analyze)
+              let result: any;
+              // Execute tool with OperationContext directly
+              result = await tool.execute(args, oc);
+
+              // Validate output if schema provided
               if (
-                !reasoningOptions.historyEntryId ||
-                reasoningOptions.historyEntryId === "unknown"
+                tool.outputSchema &&
+                typeof tool.outputSchema === "object" &&
+                "safeParse" in tool.outputSchema
               ) {
-                this.logger.warn(
-                  `Executing reasoning tool '${tool.name}' without a known historyEntryId`,
-                  {
-                    toolName: tool.name,
-                    agentId: this.id,
-                    operationContext: !!context.operationContext,
-                  },
-                );
-              }
+                const parseResult = (tool.outputSchema as any).safeParse(result);
+                if (!parseResult.success) {
+                  const error = {
+                    error: true,
+                    message: `Output validation failed: ${parseResult.error.message}`,
+                    validationErrors: parseResult.error.errors,
+                    actualOutput: result,
+                  };
 
-              // Execute with properly typed options
-              result = await tool.execute(args, reasoningOptions);
-            } else {
-              // Execute regular tools with standard context
-              result = await tool.execute(args, toolExecutionContext);
-            }
+                  // End OTEL span with error
+                  if (toolSpan) {
+                    toolSpan.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
+                    toolSpan.recordException(new Error(error.message));
+                    toolSpan.end();
+                  }
 
-            // Validate output if schema provided
-            if (
-              tool.outputSchema &&
-              typeof tool.outputSchema === "object" &&
-              "safeParse" in tool.outputSchema
-            ) {
-              const parseResult = (tool.outputSchema as any).safeParse(result);
-              if (!parseResult.success) {
-                const error = {
-                  error: true,
-                  message: `Output validation failed: ${parseResult.error.message}`,
-                  validationErrors: parseResult.error.errors,
-                  actualOutput: result,
-                };
+                  // Event tracking now handled by OpenTelemetry spans
 
-                // End OTEL span with error
-                endToolSpan({ span: toolSpan, resultData: { error } }, this.logger);
+                  // Call tool end hook
+                  await hooks.onToolEnd?.({
+                    agent: this,
+                    tool,
+                    output: undefined,
+                    error: error as any,
+                    context: oc,
+                  });
 
-                // Publish tool:error event
-                const toolErrorEvent: ToolErrorEvent = {
-                  id: crypto.randomUUID(),
-                  name: "tool:error",
-                  type: "tool",
-                  startTime: toolStartEvent.startTime,
-                  endTime: new Date().toISOString(),
-                  status: "error",
-                  level: "ERROR",
-                  input: null,
-                  output: null,
-                  statusMessage: {
-                    message: error.message,
-                  },
-                  metadata: toolStartEvent.metadata,
-                  traceId: context.operationContext?.historyEntry.id || context.operation.id,
-                  parentEventId: toolStartEvent.id,
-                };
+                  return error;
+                }
 
-                this.publishTimelineEvent(context, toolErrorEvent);
+                // End OTEL span with success
+                if (toolSpan) {
+                  toolSpan.setAttribute("output", JSON.stringify(parseResult.data));
+                  toolSpan.setStatus({ code: SpanStatusCode.OK });
+                  toolSpan.end();
+                }
+
+                // Event tracking now handled by OpenTelemetry spans
 
                 // Call tool end hook
-                await hooks.onToolEnd?.(context, tool, undefined, error);
+                await hooks.onToolEnd?.({
+                  agent: this,
+                  tool,
+                  output: parseResult.data,
+                  error: undefined,
+                  context: oc,
+                });
 
-                return error;
+                return parseResult.data;
               }
 
-              // End OTEL span with success
-              endToolSpan(
-                { span: toolSpan, resultData: { result: parseResult.data } },
-                this.logger,
-              );
+              // End OTEL span
+              if (toolSpan) {
+                toolSpan.setAttribute("output", JSON.stringify(result));
+                toolSpan.setStatus({ code: SpanStatusCode.OK });
+                toolSpan.end();
+              }
 
-              // Publish tool:success event
-              const toolSuccessEvent: ToolSuccessEvent = {
-                id: crypto.randomUUID(),
-                name: "tool:success",
-                type: "tool",
-                startTime: toolStartEvent.startTime,
-                endTime: new Date().toISOString(),
-                status: "completed",
-                input: null,
-                output: parseResult.data,
-                metadata: toolStartEvent.metadata,
-                traceId: context.operationContext?.historyEntry.id || context.operation.id,
-                parentEventId: toolStartEvent.id,
-              };
-
-              this.publishTimelineEvent(context, toolSuccessEvent);
+              // Event tracking now handled by OpenTelemetry spans
 
               // Call tool end hook
-              await hooks.onToolEnd?.(context, tool, parseResult.data);
+              await hooks.onToolEnd?.({
+                agent: this,
+                tool,
+                output: result,
+                error: undefined,
+                context: oc,
+              });
 
-              return parseResult.data;
+              return result;
+            } catch (error) {
+              const errorResult = {
+                error: true,
+                message: error instanceof Error ? error.message : String(error),
+                stack: error instanceof Error ? error.stack : undefined,
+              };
+
+              // End OTEL span with error
+              if (toolSpan) {
+                toolSpan.setStatus({
+                  code: SpanStatusCode.ERROR,
+                  message: error instanceof Error ? error.message : String(error),
+                });
+                toolSpan.recordException(error instanceof Error ? error : new Error(String(error)));
+                toolSpan.end();
+              }
+
+              // Event tracking now handled by OpenTelemetry spans
+
+              // Call tool end hook
+              await hooks.onToolEnd?.({
+                agent: this,
+                tool,
+                output: undefined,
+                error: errorResult as any,
+                context: oc,
+              });
+
+              return errorResult;
+            } finally {
+              // End the span if it was created
+              if (toolSpan) {
+                oc.traceContext.endChildSpan(toolSpan, "completed", {});
+              }
             }
-
-            // End OTEL span
-            endToolSpan({ span: toolSpan, resultData: { result } }, this.logger);
-
-            // Publish tool:success event
-            const toolSuccessEvent: ToolSuccessEvent = {
-              id: crypto.randomUUID(),
-              name: "tool:success",
-              type: "tool",
-              startTime: toolStartEvent.startTime,
-              endTime: new Date().toISOString(),
-              status: "completed",
-              input: null,
-              output: result as Record<string, unknown> | null,
-              metadata: toolStartEvent.metadata,
-              traceId: context.operationContext?.historyEntry.id || context.operation.id,
-              parentEventId: toolStartEvent.id,
-            };
-
-            this.publishTimelineEvent(context, toolSuccessEvent);
-
-            // Call tool end hook
-            await hooks.onToolEnd?.(context, tool, result);
-
-            return result;
-          } catch (error) {
-            const errorResult = {
-              error: true,
-              message: error instanceof Error ? error.message : String(error),
-              stack: error instanceof Error ? error.stack : undefined,
-            };
-
-            // End OTEL span with error
-            endToolSpan({ span: toolSpan, resultData: { error: errorResult } }, this.logger);
-
-            // Publish tool:error event
-            const toolErrorEvent: ToolErrorEvent = {
-              id: crypto.randomUUID(),
-              name: "tool:error",
-              type: "tool",
-              startTime: toolStartEvent.startTime,
-              endTime: new Date().toISOString(),
-              status: "error",
-              level: "ERROR",
-              input: null,
-              output: null,
-              statusMessage: {
-                message: errorResult.message,
-                ...(errorResult.stack && { stack: errorResult.stack }),
-              },
-              metadata: toolStartEvent.metadata,
-              traceId: context.operationContext?.historyEntry.id || context.operation.id,
-              parentEventId: toolStartEvent.id,
-            };
-
-            this.publishTimelineEvent(context, toolErrorEvent);
-
-            // Call tool end hook
-            await hooks.onToolEnd?.(context, tool, undefined, errorResult);
-
-            return errorResult;
-          }
-        },
+          }); // End of withSpan
+        }, // End of execute function
       };
     }
 
@@ -1924,21 +2109,15 @@ export class Agent {
   /**
    * Create step handler for memory and hooks
    */
-  private createStepHandler(context: AgentContext, options?: BaseGenerationOptions) {
+  private createStepHandler(oc: OperationContext, options?: BaseGenerationOptions) {
     return async (event: StepResult<ToolSet>) => {
       // Instead of saving immediately, collect steps in context for batch processing in onFinish
-      if (
-        context.operationContext &&
-        context.operation.userId &&
-        context.operation.conversationId &&
-        event.content &&
-        Array.isArray(event.content)
-      ) {
+      if (event.content && Array.isArray(event.content)) {
         // Store the step content in context for later processing
-        if (!context.operationContext.systemContext.has("conversationSteps")) {
-          context.operationContext.systemContext.set("conversationSteps", []);
+        if (!oc.systemContext.has("conversationSteps")) {
+          oc.systemContext.set("conversationSteps", []);
         }
-        const conversationSteps = context.operationContext.systemContext.get(
+        const conversationSteps = oc.systemContext.get(
           "conversationSteps",
         ) as StepResult<ToolSet>[];
         conversationSteps.push(event);
@@ -1946,26 +2125,26 @@ export class Agent {
         // Log each content part
         for (const part of event.content) {
           if (part.type === "text") {
-            context.system.logger.debug("Step: Text generated", {
+            oc.logger.debug("Step: Text generated", {
               event: LogEvents.AGENT_STEP_TEXT,
               textPreview: part.text.substring(0, 100),
               length: part.text.length,
             });
           } else if (part.type === "reasoning") {
-            context.system.logger.debug("Step: Reasoning generated", {
+            oc.logger.debug("Step: Reasoning generated", {
               event: LogEvents.AGENT_STEP_TEXT,
               textPreview: part.text.substring(0, 100),
               length: part.text.length,
             });
           } else if (part.type === "tool-call") {
-            context.system.logger.debug(`Step: Calling tool '${part.toolName}'`, {
+            oc.logger.debug(`Step: Calling tool '${part.toolName}'`, {
               event: LogEvents.AGENT_STEP_TOOL_CALL,
               toolName: part.toolName,
               toolCallId: part.toolCallId,
               arguments: part.input,
             });
 
-            context.system.logger.debug(
+            oc.logger.debug(
               buildAgentLogMessage(this.name, ActionType.TOOL_CALL, `Executing ${part.toolName}`),
               {
                 event: LogEvents.TOOL_EXECUTION_STARTED,
@@ -1975,7 +2154,7 @@ export class Agent {
               },
             );
           } else if (part.type === "tool-result") {
-            context.system.logger.debug(`Step: Tool '${part.toolName}' completed`, {
+            oc.logger.debug(`Step: Tool '${part.toolName}' completed`, {
               event: LogEvents.AGENT_STEP_TOOL_RESULT,
               toolName: part.toolName,
               toolCallId: part.toolCallId,
@@ -1985,7 +2164,7 @@ export class Agent {
               ),
             });
           } else if (part.type === "tool-error") {
-            context.system.logger.debug(`Step: Tool '${part.toolName}' error`, {
+            oc.logger.debug(`Step: Tool '${part.toolName}' error`, {
               event: LogEvents.AGENT_STEP_TOOL_RESULT,
               toolName: part.toolName,
               toolCallId: part.toolCallId,
@@ -1998,7 +2177,7 @@ export class Agent {
 
       // Call hooks
       const hooks = this.getMergedHooks(options);
-      await hooks.onStepFinish?.(event);
+      await hooks.onStepFinish?.({ agent: this, step: event, context: oc });
     };
   }
 
@@ -2007,52 +2186,57 @@ export class Agent {
    * Converts and saves all messages from the response in batch
    */
   private async saveResponseMessagesToMemory(
-    context: AgentContext,
+    oc: OperationContext,
     responseMessages: (AssistantModelMessage | ToolModelMessage)[] | undefined,
   ): Promise<void> {
-    if (
-      !context.operationContext ||
-      !context.operation.userId ||
-      !context.operation.conversationId ||
-      !responseMessages
-    ) {
+    if (!oc.userId || !oc.conversationId || !responseMessages) {
       return;
     }
 
-    // Convert all response messages to UIMessages
-    const uiMessages = await convertResponseMessagesToUIMessages(responseMessages);
+    // Create memory write span using TraceContext
+    const memorySpan = oc.traceContext.createChildSpan("memory.write", "memory", {
+      label: "Memory Write",
+      attributes: {
+        "memory.operation": "write",
+        input: responseMessages,
+      },
+    });
 
-    // Save each UIMessage using the existing saveMessage method
-    for (const uiMessage of uiMessages) {
-      await this.memoryManager.saveMessage(
-        context.operationContext,
-        uiMessage,
-        context.operation.userId,
-        context.operation.conversationId,
-      );
+    try {
+      // Execute memory write operations within the memory span context
+      await oc.traceContext.withSpan(memorySpan, async () => {
+        // Convert all response messages to UIMessages
+        const uiMessages = await convertResponseMessagesToUIMessages(responseMessages);
+
+        // Save each UIMessage using the existing saveMessage method
+        for (const uiMessage of uiMessages) {
+          await this.memoryManager.saveMessage(oc, uiMessage, oc.userId, oc.conversationId);
+        }
+
+        // End span successfully
+        oc.traceContext.endChildSpan(memorySpan, "completed", {
+          output: uiMessages,
+          attributes: {
+            "memory.message_count": uiMessages.length,
+          },
+        });
+      });
+    } catch (error) {
+      // End span with error
+      oc.traceContext.endChildSpan(memorySpan, "error", {
+        error: error as Error,
+      });
+      throw error;
     }
   }
 
   /**
-   * Add step to history
+   * Add step to history - now only tracks in conversation steps
    */
-  private addStepToHistory(step: StepWithContent, context: AgentContext): void {
-    if (context.operationContext) {
-      this.historyManager.addStepsToEntry(context.operationContext.historyEntry.id, [step]);
-    }
-
+  private async addStepToHistory(step: StepWithContent, oc: OperationContext): Promise<void> {
     // Track in conversation steps
-    if (context.conversationSteps) {
-      context.conversationSteps.push(step);
-    }
-  }
-
-  /**
-   * Update history entry
-   */
-  private updateHistoryEntry(context: AgentContext, updates: Partial<AgentHistoryEntry>): void {
-    if (context.operationContext) {
-      this.historyManager.updateEntry(context.operationContext.historyEntry.id, updates);
+    if (oc.conversationSteps) {
+      oc.conversationSteps.push(step);
     }
   }
 
@@ -2098,143 +2282,18 @@ export class Agent {
   }
 
   /**
-   * Publish timeline event
-   */
-  private publishTimelineEvent(context: AgentContext, event: any, skipPropagation = false): void {
-    if (!context.operationContext) return;
-
-    AgentEventEmitter.getInstance().publishTimelineEventAsync({
-      agentId: this.id,
-      historyId: context.operationContext.historyEntry.id,
-      event,
-      skipPropagation,
-      parentHistoryEntryId: context.operationContext.parentHistoryEntryId,
-    });
-  }
-
-  /**
-   * Create agent:start event
-   */
-  private createAgentStartEvent(
-    context: AgentContext,
-    input: string | UIMessage[],
-    messages: BaseMessage[],
-    maxSteps: number,
-    options?: BaseGenerationOptions,
-  ): AgentStartEvent {
-    const event: AgentStartEvent = {
-      id: crypto.randomUUID(),
-      name: "agent:start",
-      type: "agent",
-      startTime: context.system.startTime,
-      status: "running",
-      input: { input },
-      output: null,
-      metadata: {
-        displayName: this.name,
-        id: this.id,
-        context: Object.fromEntries(context.context.entries()) as Record<string, unknown>,
-        messages,
-        modelParameters: {
-          model: this.getModelName(),
-          temperature: options?.temperature ?? this.temperature,
-          topP: options?.topP,
-          frequencyPenalty: options?.frequencyPenalty,
-          presencePenalty: options?.presencePenalty,
-          maxSteps: maxSteps,
-        },
-      },
-      traceId: context.operationContext?.historyEntry.id || context.operation.id,
-    };
-
-    // Store event ID for later reference
-    context.system.agentStartEventId = event.id;
-
-    return event;
-  }
-
-  /**
-   * Create agent:success event
-   */
-  private createAgentSuccessEvent(context: AgentContext, result: any): AgentSuccessEvent {
-    return {
-      id: crypto.randomUUID(),
-      name: "agent:success",
-      type: "agent",
-      startTime: context.system.startTime,
-      endTime: new Date().toISOString(),
-      status: "completed",
-      input: null,
-      output: result.text ? { text: result.text } : { object: result.object },
-      metadata: {
-        displayName: this.name,
-        id: this.id,
-        usage: convertUsage(result.usage),
-        context: Object.fromEntries(context.context.entries()) as Record<string, unknown>,
-      },
-      traceId: context.operationContext?.historyEntry.id || context.operation.id,
-      parentEventId: context.system.agentStartEventId,
-    };
-  }
-
-  /**
-   * Create agent:error event
-   */
-  private createAgentErrorEvent(context: AgentContext, error: VoltAgentError): AgentErrorEvent {
-    return {
-      id: crypto.randomUUID(),
-      name: "agent:error",
-      type: "agent",
-      startTime: context.system.startTime,
-      endTime: new Date().toISOString(),
-      status: "error",
-      level: "ERROR",
-      input: null,
-      output: null,
-      statusMessage: {
-        message: error.message,
-        code: error.code,
-        stage: error.stage,
-        ...(error.originalError ? { originalError: String(error.originalError) } : {}),
-      },
-      metadata: {
-        displayName: this.name,
-        id: this.id,
-        context: Object.fromEntries(context.context.entries()) as Record<string, unknown>,
-      },
-      traceId: context.operationContext?.historyEntry.id || context.operation.id,
-      parentEventId: context.system.agentStartEventId,
-    };
-  }
-
-  /**
    * Setup abort signal listener
    */
-  private setupAbortSignalListener(
-    signal: AbortSignal | undefined,
-    context: AgentContext,
-    agentStartEvent: { id: string; startTime: string },
-  ): void {
-    if (!signal) return;
+  private setupAbortSignalListener(oc: OperationContext): void {
+    if (!oc.abortController) return;
 
+    const signal = oc.abortController.signal;
     signal.addEventListener("abort", async () => {
-      // Update history with cancelled status
-      this.updateHistoryEntry(context, {
-        status: "cancelled",
-        endTime: new Date(),
-      });
-
       // Mark operation as inactive
-      if (context.operationContext) {
-        context.operationContext.isActive = false;
-      }
+      oc.isActive = false;
 
       // Get abort reason
-      let abortReason: unknown = undefined;
-      if (context.system.abortController && "signal" in context.system.abortController) {
-        const sig = context.system.abortController.signal as AbortSignal & { reason?: unknown };
-        abortReason = sig.reason;
-      }
+      const abortReason: unknown = signal.reason;
 
       // Create cancellation error
       const cancellationError = new Error(
@@ -2248,37 +2307,31 @@ export class Agent {
       cancellationError.reason = abortReason;
 
       // Store cancellation error
-      context.cancellationError = cancellationError;
+      oc.cancellationError = cancellationError;
 
-      // Create agent:cancel event
-      const agentCancelledEvent = {
-        id: crypto.randomUUID(),
-        name: "agent:cancel",
-        type: "agent",
-        startTime: agentStartEvent.startTime,
-        endTime: new Date().toISOString(),
-        level: "INFO",
-        input: null,
-        statusMessage: {
+      // Track cancellation in OpenTelemetry
+      if (oc.traceContext) {
+        const rootSpan = oc.traceContext.getRootSpan();
+        rootSpan.setAttribute("agent.state", "cancelled");
+        rootSpan.setAttribute("cancelled", true);
+        rootSpan.setAttribute("cancellation.reason", cancellationError.message);
+        rootSpan.setStatus({
+          code: SpanStatusCode.ERROR,
           message: cancellationError.message,
-          code: "USER_CANCELLED",
-          stage: "cancelled",
-        },
-        status: "cancelled",
-        metadata: {
-          displayName: this.name,
-          id: this.id,
-          context: Object.fromEntries(context.context.entries()) as Record<string, unknown>,
-        },
-        traceId: context.operationContext?.historyEntry.id || context.operation.id,
-        parentEventId: agentStartEvent.id,
-      };
-
-      this.publishTimelineEvent(context, agentCancelledEvent);
+        });
+        rootSpan.recordException(cancellationError);
+        rootSpan.end();
+      }
 
       // Call onEnd hook with cancellation error
       const hooks = this.getMergedHooks();
-      await hooks.onEnd?.(context, undefined, cancellationError);
+      await hooks.onEnd?.({
+        conversationId: oc.conversationId || "",
+        agent: this,
+        output: undefined,
+        error: cancellationError,
+        context: oc,
+      });
     });
   }
 
@@ -2287,47 +2340,38 @@ export class Agent {
    */
   private async handleError(
     error: Error,
-    context: AgentContext,
+    oc: OperationContext,
     options?: BaseGenerationOptions,
     startTime?: number,
   ): Promise<never> {
     // Check if cancelled
-    if (!context.operationContext?.isActive && context.cancellationError) {
-      throw context.cancellationError;
+    if (!oc.isActive && oc.cancellationError) {
+      throw oc.cancellationError;
     }
 
     const voltagentError = error as VoltAgentError;
 
-    // Publish agent:error event
-    const agentErrorEvent = this.createAgentErrorEvent(context, voltagentError);
-    this.publishTimelineEvent(context, agentErrorEvent);
+    // Event tracking now handled by OpenTelemetry spans
 
-    // Update history
-    this.updateHistoryEntry(context, {
-      status: "error",
-      endTime: new Date(),
-    });
+    // History update removed - using OpenTelemetry only
 
-    // End OTEL span
-    if (context.otelSpan) {
-      endOperationSpan(
-        {
-          span: context.otelSpan,
-          status: "error",
-          data: { error: voltagentError },
-        },
-        this.logger,
-      );
-    }
+    // End OpenTelemetry span
+    oc.traceContext.end("error", error);
 
     // Call hooks
     const hooks = this.getMergedHooks(options);
     const errorForHooks = Object.assign(new Error(voltagentError.message), voltagentError);
-    await hooks.onEnd?.(context, undefined, errorForHooks);
-    await hooks.onError?.(context, errorForHooks);
+    await hooks.onEnd?.({
+      conversationId: oc.conversationId || "",
+      agent: this,
+      output: undefined,
+      error: errorForHooks,
+      context: oc,
+    });
+    await hooks.onError?.({ agent: this, error: errorForHooks, context: oc });
 
     // Log error
-    context.system.logger.error("Generation failed", {
+    oc.logger.error("Generation failed", {
       event: LogEvents.AGENT_GENERATION_FAILED,
       duration: startTime ? Date.now() - startTime : undefined,
       error: {
@@ -2390,6 +2434,27 @@ export class Agent {
       memory: {
         ...this.memoryManager.getMemoryState(),
         node_id: createNodeId(NodeType.MEMORY, this.id),
+        // Add vector DB and embedding info if Memory V2 is configured
+        vectorDB:
+          this.memory && typeof this.memory === "object" && this.memory.getVectorAdapter?.()
+            ? {
+                enabled: true,
+                adapter: this.memory.getVectorAdapter()?.constructor.name || "Unknown",
+                dimension: this.memory.getEmbeddingAdapter?.()?.getDimensions() || 0,
+                status: "idle",
+                node_id: createNodeId(NodeType.VECTOR, this.id),
+              }
+            : null,
+        embeddingModel:
+          this.memory && typeof this.memory === "object" && this.memory.getEmbeddingAdapter?.()
+            ? {
+                enabled: true,
+                model: this.memory.getEmbeddingAdapter()?.getModelName() || "unknown",
+                dimension: this.memory.getEmbeddingAdapter()?.getDimensions() || 0,
+                status: "idle",
+                node_id: createNodeId(NodeType.EMBEDDING, this.id),
+              }
+            : null,
       },
 
       retriever: this.retriever
@@ -2401,21 +2466,6 @@ export class Agent {
           }
         : null,
     };
-  }
-
-  /**
-   * Get agent's history with pagination
-   */
-  public async getHistory(options?: { page?: number; limit?: number }): Promise<{
-    entries: AgentHistoryEntry[];
-    pagination: {
-      page: number;
-      limit: number;
-      total: number;
-      totalPages: number;
-    };
-  }> {
-    return await this.historyManager.getEntries(options);
   }
 
   /**
@@ -2516,21 +2566,26 @@ export class Agent {
    * Unregister this agent
    */
   public unregister(): void {
-    AgentEventEmitter.getInstance().emitAgentUnregistered(this.id);
-  }
-
-  /**
-   * Get history manager
-   */
-  public getHistoryManager(): HistoryManager {
-    return this.historyManager;
+    // Agent unregistration tracked via OpenTelemetry
   }
 
   /**
    * Check if telemetry is configured
+   * Returns true if VoltOpsClient with observability is configured
    */
   public isTelemetryConfigured(): boolean {
-    return this.historyManager.isExporterConfigured();
+    // Check if observability is configured
+    const observability = this.getObservability();
+    if (!observability) {
+      return false;
+    }
+
+    // Check if VoltOpsClient is available for remote export
+    // Priority: Agent's own VoltOpsClient, then global one
+    const voltOpsClient =
+      this.voltOpsClient || AgentRegistry.getInstance().getGlobalVoltOpsClient();
+
+    return voltOpsClient !== undefined;
   }
 
   /**
@@ -2548,11 +2603,109 @@ export class Agent {
   }
 
   /**
-   * Internal: Set VoltAgent exporter
+   * Get Memory instance if available
    */
-  _INTERNAL_setVoltAgentExporter(exporter: VoltAgentExporter): void {
-    if (this.historyManager) {
-      this.historyManager.setExporter(exporter);
+  public getMemory(): Memory | false | undefined {
+    return this.memory;
+  }
+
+  /**
+   * Check if working memory is supported
+   */
+  private hasWorkingMemorySupport(): boolean {
+    const memory = this.memoryManager.getMemory();
+    return memory?.hasWorkingMemorySupport?.() ?? false;
+  }
+
+  /**
+   * Set usage information on trace context
+   * Maps AI SDK's LanguageModelUsage to trace context format
+   */
+  private setTraceContextUsage(traceContext: AgentTraceContext, usage?: LanguageModelUsage): void {
+    if (!usage) return;
+
+    traceContext.setUsage({
+      promptTokens: usage.inputTokens,
+      completionTokens: usage.outputTokens,
+      totalTokens: usage.totalTokens,
+      cachedTokens: usage.cachedInputTokens,
+      reasoningTokens: usage.reasoningTokens,
+    });
+  }
+
+  /**
+   * Create working memory tools if configured
+   */
+  private createWorkingMemoryTools(options?: BaseGenerationOptions): Tool<any, any>[] {
+    if (!this.hasWorkingMemorySupport()) {
+      return [];
     }
+
+    const memoryManager = this.memoryManager as unknown as MemoryManager;
+    const memory = memoryManager.getMemory();
+
+    if (!memory) {
+      return [];
+    }
+
+    const tools: Tool<any, any>[] = [];
+
+    // Get Working Memory tool
+    tools.push(
+      createTool({
+        name: "get_working_memory",
+        description: "Get the current working memory content for this conversation or user",
+        parameters: z.object({}),
+        execute: async () => {
+          const content = await memory.getWorkingMemory({
+            conversationId: options?.conversationId,
+            userId: options?.userId,
+          });
+          return content || "No working memory content found.";
+        },
+      }),
+    );
+
+    // Update Working Memory tool
+    const schema = memory.getWorkingMemorySchema();
+    const template = memory.getWorkingMemoryTemplate();
+
+    tools.push(
+      createTool({
+        name: "update_working_memory",
+        description: template
+          ? `Update the working memory. Template: ${template}`
+          : "Update the working memory with important context that should be remembered",
+        parameters: schema
+          ? z.object({ content: schema })
+          : z.object({ content: z.string().describe("The content to store in working memory") }),
+        execute: async ({ content }) => {
+          await memory.updateWorkingMemory({
+            conversationId: options?.conversationId,
+            userId: options?.userId,
+            content,
+          });
+          return "Working memory updated successfully.";
+        },
+      }),
+    );
+
+    // Clear Working Memory tool (optional, might not always be needed)
+    tools.push(
+      createTool({
+        name: "clear_working_memory",
+        description: "Clear the working memory content",
+        parameters: z.object({}),
+        execute: async () => {
+          await memory.clearWorkingMemory({
+            conversationId: options?.conversationId,
+            userId: options?.userId,
+          });
+          return "Working memory cleared.";
+        },
+      }),
+    );
+
+    return tools;
   }
 }

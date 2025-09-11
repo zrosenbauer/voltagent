@@ -2,6 +2,7 @@ import type { OpenAPIHono } from "@hono/zod-openapi";
 import type { ServerProviderDeps } from "@voltagent/core";
 import type { Logger } from "@voltagent/internal";
 import {
+  handleChatStream,
   handleCheckUpdates,
   handleExecuteWorkflow,
   handleGenerateObject,
@@ -11,6 +12,7 @@ import {
   handleGetAgents,
   handleGetLogs,
   handleGetWorkflow,
+  handleGetWorkflowState,
   handleGetWorkflows,
   handleInstallUpdates,
   handleResumeWorkflow,
@@ -22,6 +24,7 @@ import {
   mapLogResponse,
 } from "@voltagent/server-core";
 import {
+  chatRoute,
   executeWorkflowRoute,
   getAgentsRoute,
   getWorkflowsRoute,
@@ -62,18 +65,31 @@ export function registerAgentRoutes(app: OpenAPIHono, deps: ServerProviderDeps, 
   app.openapi(textRoute, async (c) => {
     const agentId = c.req.param("id");
     const body = await c.req.json();
-    const response = await handleGenerateText(agentId, body, deps, logger);
+    const signal = c.req.raw.signal;
+    const response = await handleGenerateText(agentId, body, deps, logger, signal);
     if (!response.success) {
       return c.json(response, 500);
     }
     return c.json(response, 200);
   });
 
-  // POST /agents/:id/stream - Stream text (AI SDK compatible SSE)
+  // POST /agents/:id/stream - Stream text (raw fullStream SSE)
   app.openapi(streamRoute, async (c) => {
     const agentId = c.req.param("id");
     const body = await c.req.json();
-    const response = await handleStreamText(agentId, body, deps, logger);
+    const signal = c.req.raw.signal;
+    const response = await handleStreamText(agentId, body, deps, logger, signal);
+
+    // Handler now always returns a Response object
+    return response;
+  });
+
+  // POST /agents/:id/chat - Stream chat messages (UI message stream SSE)
+  app.openapi(chatRoute, async (c) => {
+    const agentId = c.req.param("id");
+    const body = await c.req.json();
+    const signal = c.req.raw.signal;
+    const response = await handleChatStream(agentId, body, deps, logger, signal);
 
     // Handler now always returns a Response object
     return response;
@@ -83,7 +99,8 @@ export function registerAgentRoutes(app: OpenAPIHono, deps: ServerProviderDeps, 
   app.openapi(objectRoute, async (c) => {
     const agentId = c.req.param("id");
     const body = await c.req.json();
-    const response = await handleGenerateObject(agentId, body, deps, logger);
+    const signal = c.req.raw.signal;
+    const response = await handleGenerateObject(agentId, body, deps, logger, signal);
     if (!response.success) {
       return c.json(response, 500);
     }
@@ -94,7 +111,8 @@ export function registerAgentRoutes(app: OpenAPIHono, deps: ServerProviderDeps, 
   app.openapi(streamObjectRoute, async (c) => {
     const agentId = c.req.param("id");
     const body = await c.req.json();
-    const response = await handleStreamObject(agentId, body, deps, logger);
+    const signal = c.req.raw.signal;
+    const response = await handleStreamObject(agentId, body, deps, logger, signal);
 
     // Handler now always returns a Response object
     return response;
@@ -193,6 +211,17 @@ export function registerWorkflowRoutes(app: OpenAPIHono, deps: ServerProviderDep
     }
     return c.json(response, 200);
   });
+
+  // Get workflow execution state
+  app.get("/workflows/:id/executions/:executionId/state", async (c) => {
+    const workflowId = c.req.param("id");
+    const executionId = c.req.param("executionId");
+    const response = await handleGetWorkflowState(workflowId, executionId, deps, logger);
+    if (!response.success) {
+      return c.json(response, response.error?.includes("not found") ? 404 : 500);
+    }
+    return c.json(response, 200);
+  });
 }
 
 /**
@@ -248,3 +277,5 @@ export function registerUpdateRoutes(app: OpenAPIHono, deps: ServerProviderDeps,
     return c.json(response, 200);
   });
 }
+
+export { registerObservabilityRoutes } from "./observability";

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { InMemoryStorage } from "../memory/in-memory";
+import { Memory } from "../memory";
+import { InMemoryStorageAdapter } from "../memory/adapters/storage/in-memory";
 import { createWorkflowChain } from "./chain";
 import { WorkflowRegistry } from "./registry";
 
@@ -11,12 +12,11 @@ describe.sequential("Step-level Schema Runtime Tests", () => {
     // Clear registry before each test
     registry = WorkflowRegistry.getInstance();
     (registry as any).workflows.clear();
-    (registry as any).workflowHistoryManagers.clear();
     vi.clearAllMocks();
   });
   describe("resumeSchema runtime behavior", () => {
     it("should handle resume with step-level resumeSchema", async () => {
-      const memory = new InMemoryStorage();
+      const memory = new Memory({ storage: new InMemoryStorageAdapter() });
 
       const workflow = createWorkflowChain({
         id: "test-resume-runtime",
@@ -105,7 +105,7 @@ describe.sequential("Step-level Schema Runtime Tests", () => {
     });
 
     it("should use step resumeSchema over workflow resumeSchema", async () => {
-      const memory = new InMemoryStorage();
+      const memory = new Memory({ storage: new InMemoryStorageAdapter() });
 
       const workflow = createWorkflowChain({
         id: "test-schema-priority",
@@ -171,7 +171,7 @@ describe.sequential("Step-level Schema Runtime Tests", () => {
 
   describe("multiple steps with different schemas", () => {
     it("should handle workflow with multiple schema-defined steps", async () => {
-      const memory = new InMemoryStorage();
+      const memory = new Memory({ storage: new InMemoryStorageAdapter() });
 
       const workflow = createWorkflowChain({
         id: "multi-step-schemas",

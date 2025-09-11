@@ -5,7 +5,7 @@ slug: /agents/memory/libsql
 
 # LibSQL / Turso / SQLite Memory
 
-VoltAgent provides a separate package (`@voltagent/libsql`) that includes `LibSQLStorage`, a memory provider which uses [LibSQL](https://github.com/tursodatabase/libsql) for persistent storage. LibSQL is an open-source fork of SQLite.
+VoltAgent provides a separate package (`@voltagent/libsql`) that includes `LibSQLMemoryAdapter`, a storage adapter for the `Memory` class using [LibSQL](https://github.com/tursodatabase/libsql) for persistent storage.
 
 This provider is versatile and can connect to:
 
@@ -29,12 +29,11 @@ If you plan to use Turso, you might need the Turso CLI for setup: `npm install -
 
 ## Configuration
 
-Initialize `LibSQLStorage` and pass it to your `Agent` configuration:
+Initialize `LibSQLMemoryAdapter` and pass it to the `Memory` instance used by your `Agent`:
 
 ```typescript
-import { Agent } from "@voltagent/core";
-import { LibSQLStorage } from "@voltagent/libsql";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { Agent, Memory } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { openai } from "@ai-sdk/openai";
 import { createPinoLogger } from "@voltagent/logger";
 
@@ -44,8 +43,8 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-// Configure LibSQLStorage
-const memoryStorage = new LibSQLStorage({
+// Configure LibSQL memory adapter
+const memoryStorage = new LibSQLMemoryAdapter({
   // Required: Connection URL
   url: process.env.DATABASE_URL || "file:./.voltagent/memory.db", // Example: Env var for Turso, fallback to local file
 
@@ -65,9 +64,8 @@ const memoryStorage = new LibSQLStorage({
 const agent = new Agent({
   name: "LibSQL Memory Agent",
   instructions: "An agent using LibSQL for memory.",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
-  memory: memoryStorage,
+  memory: new Memory({ storage: memoryStorage }),
 });
 ```
 
@@ -219,75 +217,53 @@ Messages are returned in chronological order (oldest first) for natural conversa
 
 ## Automatic Table Creation
 
-Unlike some other database providers, `LibSQLStorage` **automatically creates** the necessary tables (`messages`, `conversations`, `agent_history`, etc., with the configured `tablePrefix`) in the target database if they don't already exist. This simplifies setup, especially for local development using SQLite files.
+Unlike some other database providers, `LibSQLMemoryAdapter` **automatically creates** the necessary tables (`messages`, `conversations`, `agent_history`, etc., with the configured `tablePrefix`) in the target database if they don't already exist. This simplifies setup, especially for local development using SQLite files.
 
 The provider also **automatically migrates** existing databases to new schemas when you update VoltAgent, ensuring backward compatibility.
 
-## Migration Guide
+## Working Memory
 
-### Breaking Change: LibSQL Package Separation (v0.1.64+)
+`LibSQLMemoryAdapter` implements working memory operations used by `Memory`:
 
-Starting from version 0.1.64, `LibSQLStorage` has been moved from `@voltagent/core` to its own package `@voltagent/libsql`. This change:
+- Conversation-scoped working memory is stored under `conversations.metadata.workingMemory`.
+- User-scoped working memory is stored under `users.metadata.workingMemory`.
 
-- Reduces the core package size for users who don't need LibSQL
-- Allows independent versioning and updates
-- Makes VoltAgent more modular and flexible
+Enable via `Memory({ workingMemory: { enabled: true, template | schema, scope } })`. See: [Working Memory](./working-memory.md).
 
-#### Before (v0.1.63 and earlier):
+Programmatic APIs (via `Memory`):
 
-```typescript
-import { Agent, LibSQLStorage } from "@voltagent/core";
+- `getWorkingMemory({ conversationId?, userId? })`
+- `updateWorkingMemory({ conversationId?, userId?, content })`
+- `clearWorkingMemory({ conversationId?, userId? })`
 
-const agent = new Agent({
-  name: "My Agent",
-  // ... other config
-  memory: new LibSQLStorage({
-    url: "file:./.voltagent/memory.db",
-  }),
+## Semantic Search (Embeddings + Vectors)
+
+Vector search is configured on `Memory` independently of the storage adapter. To persist vectors with LibSQL, use `LibSQLVectorAdapter`:
+
+```ts
+import { Memory, AiSdkEmbeddingAdapter } from "@voltagent/core";
+import { LibSQLMemoryAdapter, LibSQLVectorAdapter } from "@voltagent/libsql";
+import { openai } from "@ai-sdk/openai";
+
+const memory = new Memory({
+  storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
+  embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
+  vector: new LibSQLVectorAdapter({ url: "file:./.voltagent/memory.db" }),
 });
 ```
 
-#### After (v0.1.64+):
+Tips:
 
-```typescript
-import { Agent } from "@voltagent/core";
-import { LibSQLStorage } from "@voltagent/libsql";
+- For tests/ephemeral runs use `url: ":memory:"` (or `"file::memory:"`).
+- Do not pass `mode=memory` in the URL; LibSQL client doesn’t support it; use `:memory:`.
+- For production persistence use a file path (e.g., `file:./.voltagent/memory.db`) or a remote Turso URL.
 
-const agent = new Agent({
-  name: "My Agent",
-  // ... other config
-  memory: new LibSQLStorage({
-    url: "file:./.voltagent/memory.db",
-    logger: logger.child({ component: "libsql" }),
-  }),
-});
-```
+Use with agent calls by passing `semanticMemory` options. See: [Semantic Search](./semantic-search.md).
 
-#### Migration Steps:
+## Notes
 
-1. Install the new LibSQL package:
-
-   ```bash
-   npm install @voltagent/libsql
-   ```
-
-2. Update your imports:
-   - Change: `import { LibSQLStorage } from "@voltagent/core"`
-   - To: `import { LibSQLStorage } from "@voltagent/libsql"`
-
-3. Add a logger configuration (recommended):
-
-   ```typescript
-   memory: new LibSQLStorage({
-     url: "file:./.voltagent/memory.db",
-     logger: logger.child({ component: "libsql" }),
-   });
-   ```
-
-4. Note that the default memory behavior has changed:
-   - **Before**: Agents without explicit memory configuration used LibSQL by default
-   - **After**: Agents without explicit memory configuration use InMemoryStorage by default
-   - If you were relying on the default LibSQL behavior, you must now explicitly configure it
+- LibSQL is ideal for local development (SQLite file) and Turso deployments.
+- Default memory is in-memory; configure LibSQL explicitly for persistence.
 
 ## Use Cases
 

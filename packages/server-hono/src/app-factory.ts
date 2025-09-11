@@ -12,6 +12,7 @@ import { createAuthMiddleware } from "./auth/middleware";
 import {
   registerAgentRoutes,
   registerLogRoutes,
+  registerObservabilityRoutes,
   registerUpdateRoutes,
   registerWorkflowRoutes,
 } from "./routes";
@@ -56,6 +57,7 @@ export async function createApp(
   registerWorkflowRoutes(app, deps, logger);
   registerLogRoutes(app, deps, logger);
   registerUpdateRoutes(app, deps, logger);
+  registerObservabilityRoutes(app, deps, logger);
 
   // Allow user to configure the app with custom routes and middleware
   if (config.configureApp) {

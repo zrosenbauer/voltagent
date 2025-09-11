@@ -1,5 +1,13 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, InMemoryStorage, VoltAgent, createTool } from "@voltagent/core";
+import {
+  Agent,
+  AiSdkEmbeddingAdapter,
+  InMemoryVectorAdapter,
+  Memory,
+  VoltAgent,
+  createTool,
+} from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
@@ -10,13 +18,13 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-// Create LibSQL storage for persistent memory
-/* const storage = new LibSQLStorage({
-  url: "file:./.voltagent/memory.db",
-  logger: logger.child({ component: "libsql" }),
-}); */
-
-const memory = new InMemoryStorage();
+const memory = new Memory({
+  storage: new LibSQLMemoryAdapter({
+    storageLimit: 100, // Keep last 100 messages per conversation
+  }),
+  embedding: new AiSdkEmbeddingAdapter(openai.textEmbeddingModel("text-embedding-3-small")),
+  vector: new InMemoryVectorAdapter(),
+});
 
 const uppercaseTool = createTool({
   name: "uppercase",
@@ -24,7 +32,7 @@ const uppercaseTool = createTool({
   parameters: z.object({
     text: z.string().describe("The text to convert to uppercase"),
   }),
-  execute: async ({ text }: { text: string }) => {
+  execute: async ({ text }: { text: string }, _oc) => {
     return { result: text.toUpperCase() };
   },
 });
@@ -34,7 +42,7 @@ const contentCreatorAgent = new Agent({
   name: "ContentCreator",
   instructions: "Creates short text content on requested topics",
   model: openai("gpt-4o-mini"),
-  memory: memory,
+  memory,
 });
 
 const formatterAgent = new Agent({
@@ -42,7 +50,7 @@ const formatterAgent = new Agent({
   instructions: "Formats and styles text content",
   model: openai("gpt-4o-mini"),
   tools: [uppercaseTool],
-  memory: memory,
+  memory,
 });
 
 // Create a simple supervisor agent
@@ -50,14 +58,13 @@ const supervisorAgent = new Agent({
   name: "Supervisor",
   instructions: "Coordinates between content creation and formatting agents",
   model: openai("gpt-4o-mini"),
+  memory,
   subAgents: [contentCreatorAgent, formatterAgent],
   supervisorConfig: {
     fullStreamEventForwarding: {
       types: ["tool-call", "tool-result"],
-      addSubAgentPrefix: true,
     },
   },
-  memory: memory,
 });
 
 // Create VoltAgent with the new server provider pattern
@@ -71,37 +78,3 @@ new VoltAgent({
   // Use the new honoServer factory with configuration
   server: honoServer(),
 });
-
-/* logger.error("VoltAgent initialized with subagents");
-
-(async () => {
-  // Stream with full event details
-  const result = await supervisorAgent.streamText(
-    "3 kelimelik bir hikaye yaz ve format agent ile uppercase yap",
-    {
-      userId: "1",
-      conversationId: "2",
-    },
-  );
-
-  // Process different event types
-  for await (const event of result.fullStream) {
-    switch (event.type) {
-      case "tool-call":
-        console.log("Tool called:", event);
-        break;
-      case "tool-result":
-        console.log("Tool result:", event);
-        break;
-      case "text-delta":
-        // Only appears if included in types array
-        console.log("Text:", event);
-        break;
-    }
-  }
-
-  const conversations = await memory.getConversationsByUserId("1");
-
-  const messages = await memory.getUIMessages("1", "2");
-})();
- */

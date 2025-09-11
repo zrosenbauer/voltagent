@@ -104,14 +104,14 @@ export const AGENT_ROUTES = {
   streamText: {
     method: "post" as const,
     path: "/agents/:id/stream",
-    summary: "Stream text response",
+    summary: "Stream raw text response",
     description:
-      "Generate a text response from an agent and stream it in real-time via Server-Sent Events (SSE). This endpoint is ideal for interactive applications where you want to display partial responses as they're generated, providing a more responsive user experience. Each event contains incremental text updates, timestamps, and completion status.",
+      "Generate a text response from an agent and stream the raw fullStream data via Server-Sent Events (SSE). This endpoint provides direct access to all stream events including text deltas, tool calls, and tool results. Use this for advanced applications that need full control over stream processing.",
     tags: ["Agent Generation"],
     operationId: "streamText",
     responses: {
       200: {
-        description: "Successfully established SSE stream for text generation",
+        description: "Successfully established SSE stream for raw text generation",
         contentType: "text/event-stream",
       },
       400: {
@@ -124,6 +124,33 @@ export const AGENT_ROUTES = {
       },
       500: {
         description: "Failed to stream text due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
+  chatStream: {
+    method: "post" as const,
+    path: "/agents/:id/chat",
+    summary: "Stream chat messages",
+    description:
+      "Generate a text response from an agent and stream it as UI messages via Server-Sent Events (SSE). This endpoint is optimized for chat interfaces and works seamlessly with the AI SDK's useChat hook. It provides a high-level stream format with automatic handling of messages, tool calls, and metadata.",
+    tags: ["Agent Generation"],
+    operationId: "chatStream",
+    responses: {
+      200: {
+        description: "Successfully established SSE stream for chat generation",
+        contentType: "text/event-stream",
+      },
+      400: {
+        description: "Invalid request parameters or message format",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Agent not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to stream chat due to server error",
         contentType: "application/json",
       },
     },
@@ -359,6 +386,29 @@ export const WORKFLOW_ROUTES = {
       },
     },
   },
+  getWorkflowState: {
+    method: "get" as const,
+    path: "/workflows/:id/executions/:executionId/state",
+    summary: "Get workflow execution state",
+    description:
+      "Retrieve the workflow execution state including input data, suspension information, context, and current status. This is essential for understanding the current state of a workflow execution, especially for suspended workflows that need to be resumed with the correct context.",
+    tags: ["Workflow Management"],
+    operationId: "getWorkflowState",
+    responses: {
+      200: {
+        description: "Successfully retrieved workflow execution state",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Workflow or execution not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve workflow state due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
 } as const;
 
 /**
@@ -438,6 +488,182 @@ export const UPDATE_ROUTES = {
 } as const;
 
 /**
+ * Observability route definitions
+ */
+export const OBSERVABILITY_ROUTES = {
+  setupObservability: {
+    method: "post" as const,
+    path: "/setup-observability",
+    summary: "Configure observability settings",
+    description:
+      "Updates the .env file with VoltAgent public and secret keys to enable observability features. This allows automatic tracing and monitoring of agent operations.",
+    tags: ["Observability"],
+    operationId: "setupObservability",
+    responses: {
+      200: {
+        description: "Successfully configured observability settings",
+        contentType: "application/json",
+      },
+      400: {
+        description: "Invalid request - missing publicKey or secretKey",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to update .env file",
+        contentType: "application/json",
+      },
+    },
+  },
+  getTraces: {
+    method: "get" as const,
+    path: "/observability/traces",
+    summary: "List all traces",
+    description:
+      "Retrieve all OpenTelemetry traces from the observability store. Each trace represents a complete operation with its spans showing the execution flow.",
+    tags: ["Observability"],
+    operationId: "getTraces",
+    responses: {
+      200: {
+        description: "Successfully retrieved traces",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve traces due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
+  getTraceById: {
+    method: "get" as const,
+    path: "/observability/traces/:traceId",
+    summary: "Get trace by ID",
+    description: "Retrieve a specific trace and all its spans by trace ID.",
+    tags: ["Observability"],
+    operationId: "getTraceById",
+    responses: {
+      200: {
+        description: "Successfully retrieved trace",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Trace not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve trace due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
+  getSpanById: {
+    method: "get" as const,
+    path: "/observability/spans/:spanId",
+    summary: "Get span by ID",
+    description: "Retrieve a specific span by its ID.",
+    tags: ["Observability"],
+    operationId: "getSpanById",
+    responses: {
+      200: {
+        description: "Successfully retrieved span",
+        contentType: "application/json",
+      },
+      404: {
+        description: "Span not found",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve span due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
+  getObservabilityStatus: {
+    method: "get" as const,
+    path: "/observability/status",
+    summary: "Get observability status",
+    description: "Check the status and configuration of the observability system.",
+    tags: ["Observability"],
+    operationId: "getObservabilityStatus",
+    responses: {
+      200: {
+        description: "Successfully retrieved observability status",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve status due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
+  getLogsByTraceId: {
+    method: "get" as const,
+    path: "/observability/traces/:traceId/logs",
+    summary: "Get logs by trace ID",
+    description: "Retrieve all logs associated with a specific trace ID.",
+    tags: ["Observability"],
+    operationId: "getLogsByTraceId",
+    responses: {
+      200: {
+        description: "Successfully retrieved logs",
+        contentType: "application/json",
+      },
+      404: {
+        description: "No logs found for the trace",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve logs due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
+  getLogsBySpanId: {
+    method: "get" as const,
+    path: "/observability/spans/:spanId/logs",
+    summary: "Get logs by span ID",
+    description: "Retrieve all logs associated with a specific span ID.",
+    tags: ["Observability"],
+    operationId: "getLogsBySpanId",
+    responses: {
+      200: {
+        description: "Successfully retrieved logs",
+        contentType: "application/json",
+      },
+      404: {
+        description: "No logs found for the span",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to retrieve logs due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
+  queryLogs: {
+    method: "get" as const,
+    path: "/observability/logs",
+    summary: "Query logs",
+    description: "Query logs with filters such as severity, time range, trace ID, etc.",
+    tags: ["Observability"],
+    operationId: "queryLogs",
+    responses: {
+      200: {
+        description: "Successfully retrieved logs",
+        contentType: "application/json",
+      },
+      400: {
+        description: "Invalid query parameters",
+        contentType: "application/json",
+      },
+      500: {
+        description: "Failed to query logs due to server error",
+        contentType: "application/json",
+      },
+    },
+  },
+} as const;
+
+/**
  * All route definitions combined
  */
 export const ALL_ROUTES = {
@@ -445,6 +671,7 @@ export const ALL_ROUTES = {
   ...WORKFLOW_ROUTES,
   ...LOG_ROUTES,
   ...UPDATE_ROUTES,
+  ...OBSERVABILITY_ROUTES,
 } as const;
 
 /**

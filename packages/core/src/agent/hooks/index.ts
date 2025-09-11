@@ -1,38 +1,113 @@
 import type { UIMessage } from "ai";
-import type { Tool } from "../../tool";
-import type { AgentContext } from "../agent";
+import type { AgentTool } from "../../tool";
+import type { Agent } from "../agent";
+import type { AbortError, AgentOperationOutput, OperationContext, VoltAgentError } from "../types";
+
+// Argument Object Interfaces (old API restored, adapted for AI SDK types)
+export interface OnStartHookArgs {
+  agent: Agent;
+  context: OperationContext;
+}
+
+export interface OnEndHookArgs {
+  /** The conversation ID. */
+  conversationId: string;
+  /** The agent that generated the output. */
+  agent: Agent;
+  /** The standardized successful output object. Undefined on error. */
+  output: AgentOperationOutput | undefined;
+  /** The error object if the operation failed. */
+  error: VoltAgentError | AbortError | undefined;
+  /** The operation context. */
+  context: OperationContext;
+}
+
+export interface OnHandoffHookArgs {
+  agent: Agent;
+  sourceAgent: Agent;
+}
+
+export interface OnToolStartHookArgs {
+  agent: Agent;
+  tool: AgentTool;
+  context: OperationContext;
+}
+
+export interface OnToolEndHookArgs {
+  agent: Agent;
+  tool: AgentTool;
+  /** The successful output from the tool. Undefined on error. */
+  output: unknown | undefined;
+  /** The error if the tool execution failed. */
+  error: VoltAgentError | AbortError | undefined;
+  context: OperationContext;
+}
+
+export interface OnPrepareMessagesHookArgs {
+  /** The messages that will be sent to the LLM (AI SDK UIMessage). */
+  messages: UIMessage[];
+  /** The agent instance making the LLM call. */
+  agent: Agent;
+  /** The operation context containing metadata about the current operation. */
+  context: OperationContext;
+}
+
+export interface OnPrepareMessagesHookResult {
+  /** The transformed messages to send to the LLM. */
+  messages?: UIMessage[];
+}
+
+export interface OnErrorHookArgs {
+  agent: Agent;
+  error: VoltAgentError | AbortError | Error;
+  context: OperationContext;
+}
+
+export interface OnStepFinishHookArgs {
+  agent: Agent;
+  step: any;
+  context: OperationContext;
+}
+
+// Hook Type Aliases (object-arg style)
+export type AgentHookOnStart = (args: OnStartHookArgs) => Promise<void> | void;
+export type AgentHookOnEnd = (args: OnEndHookArgs) => Promise<void> | void;
+export type AgentHookOnHandoff = (args: OnHandoffHookArgs) => Promise<void> | void;
+export type AgentHookOnToolStart = (args: OnToolStartHookArgs) => Promise<void> | void;
+export type AgentHookOnToolEnd = (args: OnToolEndHookArgs) => Promise<void> | void;
+export type AgentHookOnPrepareMessages = (
+  args: OnPrepareMessagesHookArgs,
+) => Promise<OnPrepareMessagesHookResult> | OnPrepareMessagesHookResult;
+export type AgentHookOnError = (args: OnErrorHookArgs) => Promise<void> | void;
+export type AgentHookOnStepFinish = (args: OnStepFinishHookArgs) => Promise<void> | void;
 
 /**
- * Type definition for agent hooks matching agent.ts implementation.
- * These hooks use positional arguments instead of single argument objects.
+ * Type definition for agent hooks using single argument objects.
  */
 export type AgentHooks = {
-  onStart?: (context: AgentContext) => Promise<void> | void;
-  onEnd?: (context: AgentContext, result: any, error?: Error) => Promise<void> | void;
-  onError?: (context: AgentContext, error: Error) => Promise<void> | void;
-  onStepFinish?: (step: any) => Promise<void> | void;
-  onPrepareMessages?: (
-    messages: UIMessage[],
-    context: AgentContext,
-  ) => Promise<{ messages: UIMessage[] }> | { messages: UIMessage[] };
-  onHandoff?: (context: AgentContext) => Promise<void> | void;
-  onToolStart?: (context: AgentContext, tool: Tool) => Promise<void> | void;
-  onToolEnd?: (context: AgentContext, tool: Tool, output: any, error?: any) => Promise<void> | void;
+  onStart?: AgentHookOnStart;
+  onEnd?: AgentHookOnEnd;
+  onHandoff?: AgentHookOnHandoff;
+  onToolStart?: AgentHookOnToolStart;
+  onToolEnd?: AgentHookOnToolEnd;
+  onPrepareMessages?: AgentHookOnPrepareMessages;
+  // Additional (kept for convenience)
+  onError?: AgentHookOnError;
+  onStepFinish?: AgentHookOnStepFinish;
 };
 
 /**
  * Default empty implementation of hook methods.
  */
 const defaultHooks: Required<AgentHooks> = {
-  // Mark as Required for internal consistency
-  onStart: async () => {},
-  onEnd: async () => {},
-  onError: async () => {},
-  onStepFinish: async () => {},
-  onHandoff: async () => {},
-  onToolStart: async () => {},
-  onToolEnd: async () => {},
-  onPrepareMessages: async (_messages, _context) => ({ messages: _messages }),
+  onStart: async (_args: OnStartHookArgs) => {},
+  onEnd: async (_args: OnEndHookArgs) => {},
+  onHandoff: async (_args: OnHandoffHookArgs) => {},
+  onToolStart: async (_args: OnToolStartHookArgs) => {},
+  onToolEnd: async (_args: OnToolEndHookArgs) => {},
+  onPrepareMessages: async (_args: OnPrepareMessagesHookArgs) => ({}),
+  onError: async (_args: OnErrorHookArgs) => {},
+  onStepFinish: async (_args: OnStepFinishHookArgs) => {},
 };
 
 /**
@@ -42,11 +117,11 @@ export function createHooks(hooks: Partial<AgentHooks> = {}): AgentHooks {
   return {
     onStart: hooks.onStart || defaultHooks.onStart,
     onEnd: hooks.onEnd || defaultHooks.onEnd,
-    onError: hooks.onError || defaultHooks.onError,
-    onStepFinish: hooks.onStepFinish || defaultHooks.onStepFinish,
     onHandoff: hooks.onHandoff || defaultHooks.onHandoff,
     onToolStart: hooks.onToolStart || defaultHooks.onToolStart,
     onToolEnd: hooks.onToolEnd || defaultHooks.onToolEnd,
     onPrepareMessages: hooks.onPrepareMessages || defaultHooks.onPrepareMessages,
+    onError: hooks.onError || defaultHooks.onError,
+    onStepFinish: hooks.onStepFinish || defaultHooks.onStepFinish,
   };
 }

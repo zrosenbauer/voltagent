@@ -371,7 +371,8 @@ export class ToolManager {
 
     try {
       // We assume the tool object retrieved by getToolByName has the correct execute signature
-      const result = await tool.execute(args, options);
+      const oc = options?.operationContext;
+      const result = await tool.execute(args, oc);
 
       const duration = Date.now() - startTime;
 

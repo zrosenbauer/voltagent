@@ -1,7 +1,7 @@
 import { type AgentHooks, createHooks } from ".";
 import type { Tool } from "../../tool";
-import type { AgentContext } from "../agent";
 import { createMockLanguageModel, createMockTool, createTestAgent } from "../test-utils";
+import type { OperationContext } from "../types";
 
 describe("Agent Hooks Functionality", () => {
   let hooks: AgentHooks;
@@ -47,12 +47,11 @@ describe("Agent Hooks Functionality", () => {
 
       await agent.generateText("Test input");
 
-      // Verify onStart was called with AgentContext
+      // Verify onStart was called with args object
       expect(onStartSpy).toHaveBeenCalledWith(
         expect.objectContaining({
-          operation: expect.objectContaining({
-            id: expect.any(String),
-          }),
+          agent: expect.any(Object),
+          context: expect.objectContaining({ operationId: expect.any(String) }),
         }),
       );
     });
@@ -80,25 +79,26 @@ describe("Agent Hooks Functionality", () => {
       // Verify onEnd was called
       expect(onEndSpy).toHaveBeenCalled();
 
-      // Get the actual arguments
-      const [contextArg, resultArg, errorArg] = onEndSpy.mock.calls[0];
+      // Get the actual argument object
+      const arg = onEndSpy.mock.calls[0][0];
 
-      // Verify context structure
-      expect(contextArg).toHaveProperty("operation");
-      expect(contextArg.operation).toHaveProperty("id");
+      // Verify structure
+      expect(arg).toHaveProperty("conversationId");
+      expect(arg).toHaveProperty("agent");
+      expect(arg).toHaveProperty("output");
+      expect(arg).toHaveProperty("context");
+      expect(arg.error).toBeUndefined();
 
-      // Verify result contains expected data
-      expect(resultArg).toBeDefined();
-      expect(resultArg.text).toBe("Mock response");
-      expect(resultArg.finishReason).toBe("stop");
-      expect(resultArg.usage).toEqual({
-        inputTokens: 10,
-        outputTokens: 5,
-        totalTokens: 15,
-      });
-
-      // Verify no error
-      expect(errorArg).toBeUndefined();
+      // Verify output contains expected data
+      expect(arg.output.text).toBe("Mock response");
+      expect(arg.output.finishReason).toBe("stop");
+      expect(arg.output.usage).toEqual(
+        expect.objectContaining({
+          promptTokens: 10,
+          completionTokens: 5,
+          totalTokens: 15,
+        }),
+      );
     });
 
     it("should include context in the onEnd hook output", async () => {
@@ -126,17 +126,15 @@ describe("Agent Hooks Functionality", () => {
       // Verify onEnd was called
       expect(onEndSpy).toHaveBeenCalled();
 
-      // Get the context from the call
-      const callArgs = onEndSpy.mock.calls[0];
-      const contextArg = callArgs[0] as AgentContext;
-      const resultArg = callArgs[1];
+      // Get the argument from the call
+      const arg = onEndSpy.mock.calls[0][0];
 
       // Verify context values are present
-      expect(contextArg.context?.get("agentName")).toBe("Test Agent");
-      expect(contextArg.context?.get("sessionId")).toBe("test-session-123");
-      if (resultArg?.context) {
-        expect(resultArg.context.get("agentName")).toBe("Test Agent");
-        expect(resultArg.context.get("sessionId")).toBe("test-session-123");
+      expect(arg.context.context?.get("agentName")).toBe("Test Agent");
+      expect(arg.context.context?.get("sessionId")).toBe("test-session-123");
+      if (arg.output?.context) {
+        expect(arg.output.context.get("agentName")).toBe("Test Agent");
+        expect(arg.output.context.get("sessionId")).toBe("test-session-123");
       }
     });
 
@@ -162,28 +160,21 @@ describe("Agent Hooks Functionality", () => {
         // Expected error
       }
 
-      // Verify onError was called with context and error
+      // Verify onError was called with args object
       expect(onErrorSpy).toHaveBeenCalledWith(
         expect.objectContaining({
-          operation: expect.objectContaining({
-            id: expect.any(String),
-          }),
-        }),
-        expect.objectContaining({
-          message: expect.stringContaining("LLM Error"),
+          agent: expect.any(Object),
+          context: expect.objectContaining({ operationId: expect.any(String) }),
+          error: expect.objectContaining({ message: expect.stringContaining("LLM Error") }),
         }),
       );
 
-      // Verify onEnd was called with undefined result and an error
+      // Verify onEnd was called with error
       expect(onEndSpy).toHaveBeenCalledWith(
         expect.objectContaining({
-          operation: expect.objectContaining({
-            id: expect.any(String),
-          }),
-        }),
-        undefined, // No result on error
-        expect.objectContaining({
-          message: expect.stringContaining("LLM Error"),
+          context: expect.objectContaining({ operationId: expect.any(String) }),
+          output: undefined,
+          error: expect.objectContaining({ message: expect.stringContaining("LLM Error") }),
         }),
       );
     });
@@ -199,26 +190,34 @@ describe("Agent Hooks Functionality", () => {
       });
 
       // Create a mock context for testing
-      const mockContext = {
-        operation: {
-          id: "test-op-id",
-          operationId: "test-op-id",
-          userId: "test-user",
-          conversationId: "test-conv",
-        },
-        system: {
-          logger: console as any,
-          signal: new AbortController().signal,
-        },
+      const _mockContext: OperationContext = {
+        operationId: "test-op-id",
+        userId: "test-user",
+        conversationId: "test-conv",
         context: new Map(),
-        telemetry: {},
-      } as unknown as AgentContext;
+        // no userContext; use context only
+        systemContext: new Map(),
+        isActive: true,
+        logger: console as any,
+        abortController: new AbortController(),
+        traceContext: {
+          getRootSpan: () => ({}) as any,
+          withSpan: async (_s: any, fn: any) => await fn(),
+          createChildSpan: () => ({}) as any,
+          end: () => {},
+          setOutput: () => {},
+          setInstructions: () => {},
+          endChildSpan: () => {},
+        } as any,
+      };
 
       // Simulate a handoff by calling the hook directly
-      await agent.hooks.onHandoff?.(mockContext);
+      await agent.hooks.onHandoff?.({ agent: agent as any, sourceAgent: agent as any });
 
-      // Verify onHandoff was called with the context
-      expect(onHandoffSpy).toHaveBeenCalledWith(mockContext);
+      // Verify onHandoff was called with the args object
+      expect(onHandoffSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ agent: expect.any(Object), sourceAgent: expect.any(Object) }),
+      );
     });
   });
 
@@ -239,30 +238,52 @@ describe("Agent Hooks Functionality", () => {
       agent.addTools([tool]);
 
       // Create a mock context
-      const mockContext = {
-        operation: {
-          id: "test-op-id",
-          operationId: "test-op-id",
-          userId: "test-user",
-          conversationId: "test-conv",
-        },
-        system: {
-          logger: console as any,
-          signal: new AbortController().signal,
-        },
+      const mockContext: OperationContext = {
+        operationId: "test-op-id",
+        userId: "test-user",
+        conversationId: "test-conv",
         context: new Map(),
-        telemetry: {},
-      } as unknown as AgentContext;
+        systemContext: new Map(),
+        isActive: true,
+        logger: console as any,
+        abortController: new AbortController(),
+        traceContext: {
+          getRootSpan: () => ({}) as any,
+          withSpan: async (_s: any, fn: any) => await fn(),
+          createChildSpan: () => ({}) as any,
+          end: () => {},
+          setOutput: () => {},
+          setInstructions: () => {},
+          endChildSpan: () => {},
+        } as any,
+        startTime: new Date(),
+      } as any;
 
       const toolResult = "Tool result";
 
       // Directly execute the hooks
-      await agent.hooks.onToolStart?.(mockContext, tool);
-      await agent.hooks.onToolEnd?.(mockContext, tool, toolResult, undefined);
+      await agent.hooks.onToolStart?.({ agent: agent as any, tool, context: mockContext });
+      await agent.hooks.onToolEnd?.({
+        agent: agent as any,
+        tool,
+        output: toolResult,
+        error: undefined,
+        context: mockContext,
+      });
 
       // Verify hooks were called with correct arguments
-      expect(onToolStartSpy).toHaveBeenCalledWith(mockContext, tool);
-      expect(onToolEndSpy).toHaveBeenCalledWith(mockContext, tool, toolResult, undefined);
+      expect(onToolStartSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ agent: expect.any(Object), tool, context: mockContext }),
+      );
+      expect(onToolEndSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          agent: expect.any(Object),
+          tool,
+          output: toolResult,
+          error: undefined,
+          context: mockContext,
+        }),
+      );
     });
 
     it("should call onToolEnd with an error when tool fails", async () => {
@@ -273,34 +294,54 @@ describe("Agent Hooks Functionality", () => {
         hooks: createHooks({ onToolEnd: onToolEndSpy }),
       });
 
-      const mockContext = {
-        operation: {
-          id: "test-op-id",
-          operationId: "test-op-id",
-          userId: "test-user",
-          conversationId: "test-conv",
-        },
-        system: {
-          logger: console as any,
-          signal: new AbortController().signal,
-        },
+      const mockContext: OperationContext = {
+        operationId: "test-op-id",
+        userId: "test-user",
+        conversationId: "test-conv",
         context: new Map(),
-        telemetry: {},
-      } as unknown as AgentContext;
+        systemContext: new Map(),
+        isActive: true,
+        logger: console as any,
+        abortController: new AbortController(),
+        traceContext: {
+          getRootSpan: () => ({}) as any,
+          withSpan: async (_s: any, fn: any) => await fn(),
+          createChildSpan: () => ({}) as any,
+          end: () => {},
+          setOutput: () => {},
+          setInstructions: () => {},
+          endChildSpan: () => {},
+        } as any,
+        startTime: new Date(),
+      } as any;
 
       const toolError = new Error("Tool execution failed");
 
       // Simulate calling onToolEnd with an error
-      await agent.hooks.onToolEnd?.(mockContext, tool, undefined, toolError);
+      await agent.hooks.onToolEnd?.({
+        agent: agent as any,
+        tool,
+        output: undefined,
+        error: toolError,
+        context: mockContext,
+      });
 
       // Verify onToolEnd was called with undefined output and the error
-      expect(onToolEndSpy).toHaveBeenCalledWith(mockContext, tool, undefined, toolError);
+      expect(onToolEndSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          agent: expect.any(Object),
+          tool,
+          output: undefined,
+          error: toolError,
+          context: mockContext,
+        }),
+      );
     });
   });
 
   describe("onPrepareMessages", () => {
     it("should call onPrepareMessages to transform messages", async () => {
-      const onPrepareMessagesSpy = vi.fn((messages, _context) => ({
+      const onPrepareMessagesSpy = vi.fn(({ messages }: any) => ({
         messages: [
           ...messages,
           {
@@ -317,20 +358,26 @@ describe("Agent Hooks Functionality", () => {
         hooks: createHooks({ onPrepareMessages: onPrepareMessagesSpy }),
       });
 
-      const mockContext = {
-        operation: {
-          id: "test-op-id",
-          operationId: "test-op-id",
-          userId: "test-user",
-          conversationId: "test-conv",
-        },
-        system: {
-          logger: console as any,
-          signal: new AbortController().signal,
-        },
+      const mockContext: OperationContext = {
+        operationId: "test-op-id",
+        userId: "test-user",
+        conversationId: "test-conv",
         context: new Map(),
-        telemetry: {},
-      } as unknown as AgentContext;
+        systemContext: new Map(),
+        isActive: true,
+        logger: console as any,
+        abortController: new AbortController(),
+        traceContext: {
+          getRootSpan: () => ({}) as any,
+          withSpan: async (_s: any, fn: any) => await fn(),
+          createChildSpan: () => ({}) as any,
+          end: () => {},
+          setOutput: () => {},
+          setInstructions: () => {},
+          endChildSpan: () => {},
+        } as any,
+        startTime: new Date(),
+      };
 
       const messages = [
         {
@@ -340,9 +387,15 @@ describe("Agent Hooks Functionality", () => {
         },
       ] as any[];
 
-      const result = await agent.hooks.onPrepareMessages?.(messages, mockContext);
+      const result = await agent.hooks.onPrepareMessages?.({
+        messages,
+        agent: agent as any,
+        context: mockContext,
+      });
 
-      expect(onPrepareMessagesSpy).toHaveBeenCalledWith(messages, mockContext);
+      expect(onPrepareMessagesSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ messages, context: mockContext }),
+      );
       expect(result?.messages).toHaveLength(2);
       expect((result?.messages?.[1].parts[0] as any).text).toBe("Extra message");
     });
@@ -364,9 +417,17 @@ describe("Agent Hooks Functionality", () => {
         finishReason: "stop",
       };
 
-      await agent.hooks.onStepFinish?.(mockStep);
+      await agent.hooks.onStepFinish?.({
+        agent: agent as any,
+        step: mockStep,
+        context: {
+          operationId: "op",
+        } as any,
+      });
 
-      expect(onStepFinishSpy).toHaveBeenCalledWith(mockStep);
+      expect(onStepFinishSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ agent: expect.any(Object), step: mockStep }),
+      );
     });
   });
 });

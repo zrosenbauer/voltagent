@@ -439,3 +439,69 @@ export async function handleResumeWorkflow(
     };
   }
 }
+
+/**
+ * Handler for getting workflow execution state
+ * Returns workflow state from Memory V2
+ */
+export async function handleGetWorkflowState(
+  workflowId: string,
+  executionId: string,
+  deps: ServerProviderDeps,
+  logger: Logger,
+): Promise<ApiResponse> {
+  try {
+    // Get the registered workflow
+    const registeredWorkflow = deps.workflowRegistry.getWorkflow(workflowId);
+
+    if (!registeredWorkflow) {
+      return {
+        success: false,
+        error: `Workflow with id ${workflowId} not found`,
+      };
+    }
+
+    // Get the workflow state from Memory
+    const workflowState = await registeredWorkflow.workflow.memory.getWorkflowState(executionId);
+
+    if (!workflowState) {
+      return {
+        success: false,
+        error: `Workflow execution state for ${executionId} not found`,
+      };
+    }
+
+    // Format dates for JSON response
+    const formattedState = {
+      ...workflowState,
+      createdAt:
+        workflowState.createdAt instanceof Date
+          ? workflowState.createdAt.toISOString()
+          : workflowState.createdAt,
+      updatedAt:
+        workflowState.updatedAt instanceof Date
+          ? workflowState.updatedAt.toISOString()
+          : workflowState.updatedAt,
+      suspension: workflowState.suspension
+        ? {
+            ...workflowState.suspension,
+            suspendedAt:
+              workflowState.suspension.suspendedAt instanceof Date
+                ? workflowState.suspension.suspendedAt.toISOString()
+                : workflowState.suspension.suspendedAt,
+          }
+        : undefined,
+    };
+
+    return {
+      success: true,
+      data: formattedState,
+    };
+  } catch (error) {
+    logger.error("Failed to get workflow state", { error });
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to get workflow state",
+    };
+  }
+}

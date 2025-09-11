@@ -7,29 +7,36 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 :::warning Deprecated Package
-**This provider is deprecated.** We recommend using the [Vercel AI SDK's Google providers](https://ai-sdk.dev/providers/ai-sdk-providers/google-generative-ai) instead with `@voltagent/vercel-ai`.
+**This provider is deprecated.** Use the official ai-sdk Google providers directly and pass the model to `Agent` via the `model` option.
 
 **Migration Guide:**
 
 ```typescript
 // Old (deprecated)
 import { GoogleAIProvider } from "@voltagent/google-ai";
-const provider = new GoogleAIProvider({ apiKey: "..." });
+const googleProvider = new GoogleAIProvider({ apiKey: "..." });
 
-// New (recommended) - for Gemini API
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+// New (recommended) - Gemini API
+import { Agent } from "@voltagent/core";
 import { google } from "@ai-sdk/google";
-const provider = new VercelAIProvider();
-// Use with: model: google("gemini-1.5-pro")
 
-// New (recommended) - for Vertex AI
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+const agent = new Agent({
+  name: "Gemini Agent",
+  model: google("gemini-1.5-pro"),
+  instructions: "You are helpful.",
+});
+
+// New (recommended) - Vertex AI
 import { vertex } from "@ai-sdk/google-vertex";
-const provider = new VercelAIProvider();
-// Use with: model: vertex("gemini-1.5-pro")
+
+const vertexAgent = new Agent({
+  name: "Vertex Agent",
+  model: vertex("gemini-1.5-pro"),
+  instructions: "You are helpful.",
+});
 ```
 
-For the latest models and features, please see our [Providers & Models guide](/docs/getting-started/providers-models).
+See [Providers & Models](/docs/getting-started/providers-models) for details.
 :::
 
 # Google AI Provider (`@voltagent/google-ai`)
@@ -68,18 +75,7 @@ _Note: `@google/genai` is a peer dependency. `zod` is required if using `generat
 
 There's currently a known issue with using `@voltagent/google-ai` provider in [Subagents](../agents/subagents.md) configurations. This is an open contribution opportunity!
 
-**Workaround:** Until this is fixed, you can use [`@voltagent/vercel-ai`](vercel-ai.md) with `@ai-sdk/google` which works seamlessly with Google models.
-
-```typescript
-import { VercelAIProvider } from "@voltagent/vercel-ai";
-import { google } from "@ai-sdk/google";
-
-const agent = new Agent({
-  name: "Google Assistant",
-  llm: new VercelAIProvider(),
-  model: google("gemini-2.0-flash"),
-});
-```
+Use ai-sdk providers directly as shown above.
 
 :::
 

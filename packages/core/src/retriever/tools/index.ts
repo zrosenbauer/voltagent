@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { ToolExecuteOptions } from "../../agent/providers";
+import type { OperationContext } from "../../agent/types";
 import { LogEvents } from "../../logger/events";
 import {
   ActionType,
@@ -47,10 +47,10 @@ export const createRetrieverTool = (
     parameters: z.object({
       query: z.string().describe("The search query to find relevant information"),
     }),
-    execute: async ({ query }, executeOptions?: ToolExecuteOptions) => {
+    execute: async ({ query }, oc?: OperationContext) => {
       // Extract context and logger from tool execution context
-      const context = executeOptions?.operationContext?.context;
-      const logger = executeOptions?.operationContext?.logger;
+      const context = oc?.context;
+      const logger = oc?.logger;
       const startTime = Date.now();
 
       logger?.debug(

@@ -59,7 +59,7 @@ describe("createRetrieverTool", () => {
     expect(mockRetriever.retrieve).toHaveBeenCalledTimes(1);
   });
 
-  it("should pass context from executeOptions to retriever", async () => {
+  it("should pass context from operation context to retriever", async () => {
     // Arrange
     const mockResults: string = "Test content with context";
     const mockRetriever = createMockRetriever(mockResults);
@@ -68,22 +68,31 @@ describe("createRetrieverTool", () => {
 
     // Mock context
     const context = new Map<string | symbol, unknown>();
-    const executeOptions = {
-      operationContext: {
-        context,
-        operationId: "test-op",
-        historyEntry: {} as any,
-        isActive: true,
+    const operationContext: any = {
+      operationId: "test-op",
+      context,
+      systemContext: new Map(),
+      isActive: true,
+      logger: console as any,
+      traceContext: {
+        getRootSpan: () => ({}),
+        withSpan: async (_s: any, fn: any) => await fn(),
+        createChildSpan: () => ({}),
+        end: () => {},
+        setOutput: () => {},
+        setInstructions: () => {},
+        endChildSpan: () => {},
       },
     };
 
     // Act
-    await tool.execute({ query }, executeOptions);
+    await tool.execute({ query }, operationContext);
 
     // Assert
-    expect(mockRetriever.retrieve).toHaveBeenCalledWith(query, {
-      context,
-    });
+    expect(mockRetriever.retrieve).toHaveBeenCalledWith(
+      query,
+      expect.objectContaining({ context }),
+    );
   });
 
   it("should handle missing executeOptions gracefully", async () => {

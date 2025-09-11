@@ -2,13 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   serverExternalPackages: [
-    "@voltagent/*",
+    // Externalize only what’s needed at runtime.
+    // LibSQL client is safe to externalize; native platform packages are optional.
     "@libsql/client",
-    "@libsql/darwin-arm64",
-    "@libsql/linux-x64-gnu",
-    "@libsql/win32-x64-msvc",
-    "@libsql/linux-arm64-gnu",
-    "@libsql/darwin-x64",
   ],
 };
 

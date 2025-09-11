@@ -1,29 +1,20 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, andThen, createWorkflowChain } from "@voltagent/core";
-import { LibSQLStorage } from "@voltagent/libsql";
+import { Agent, VoltAgent, createWorkflowChain } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { z } from "zod";
-
-// Create LibSQL storage for persistent memory
-const storage = new LibSQLStorage({
-  url: "file:./.voltagent/memory.db",
-});
 
 // Define reusable agents
 const analysisAgent = new Agent({
   name: "AnalysisAgent",
   model: openai("gpt-4o-mini"),
   instructions: "You are a data analyst. Provide clear, structured analysis.",
-  memory: storage,
 });
 
 const contentAgent = new Agent({
   name: "ContentAgent",
   model: openai("gpt-4o-mini"),
   instructions: "You are a content creator. Generate engaging and accurate content.",
-  memory: storage,
 });
 
 // ==============================================================================
@@ -147,7 +138,6 @@ const expenseApprovalWorkflow = createWorkflowChain({
   id: "expense-approval",
   name: "Expense Approval Workflow",
   purpose: "Process expense reports with manager approval for high amounts",
-
   input: z.object({
     employeeId: z.string(),
     amount: z.number(),

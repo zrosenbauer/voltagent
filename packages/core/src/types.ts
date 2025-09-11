@@ -2,17 +2,16 @@
  * Basic type definitions for VoltAgent Core
  */
 
-import type { SpanExporter } from "@opentelemetry/sdk-trace-base";
 import type { Logger } from "@voltagent/internal";
 import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type { Agent } from "./agent/agent";
 import type { AgentStatus } from "./agent/types";
-import type { VoltAgentExporter } from "./telemetry/exporter";
+import type { VoltAgentObservability } from "./observability/voltagent-observability";
 import type { ToolStatusInfo } from "./tool";
-import type { VoltOpsClient } from "./voltops/types";
+import type { VoltOpsClient } from "./voltops/client";
 import type { WorkflowChain } from "./workflow/chain";
 import type { RegisteredWorkflow } from "./workflow/registry";
-import type { Workflow, WorkflowHistoryEntry, WorkflowSuspendController } from "./workflow/types";
+import type { Workflow, WorkflowSuspendController } from "./workflow/types";
 
 // Re-export VoltOps types for convenience
 export type {
@@ -48,7 +47,7 @@ export interface ServerProviderDeps {
     getAgentCount(): number;
     removeAgent(id: string): boolean;
     registerAgent(agent: Agent): void;
-    getGlobalVoltAgentExporter(): VoltAgentExporter | undefined;
+    // getGlobalVoltAgentExporter(): VoltAgentExporter | undefined; // Removed - migrated to OpenTelemetry
     getGlobalVoltOpsClient(): VoltOpsClient | undefined;
     getGlobalLogger(): Logger | undefined;
   };
@@ -57,11 +56,6 @@ export interface ServerProviderDeps {
     getWorkflowsForApi(): unknown[];
     getWorkflowDetailForApi(id: string): unknown;
     getWorkflowCount(): number;
-    getWorkflowExecutionsAsync(
-      workflowId: string,
-      limit?: number,
-      offset?: number,
-    ): Promise<WorkflowHistoryEntry[]>;
     on(event: string, handler: (...args: any[]) => void): void;
     off(event: string, handler: (...args: any[]) => void): void;
     activeExecutions: Map<string, WorkflowSuspendController>;
@@ -72,13 +66,10 @@ export interface ServerProviderDeps {
       stepId?: string,
     ): Promise<any>;
   };
-  agentEventEmitter?: {
-    onHistoryUpdate(callback: (agentId: string, historyEntry: any) => void): () => void;
-    onHistoryEntryCreated(callback: (agentId: string, historyEntry: any) => void): () => void;
-  };
   logger?: Logger;
-  telemetryExporter?: VoltAgentExporter;
+  // telemetryExporter?: VoltAgentExporter; // Removed - migrated to OpenTelemetry
   voltOpsClient?: VoltOpsClient;
+  observability?: VoltAgentObservability;
 }
 
 /**
@@ -156,20 +147,19 @@ export type VoltAgentOptions = {
   voltOpsClient?: VoltOpsClient;
 
   /**
+   * Observability instance for OpenTelemetry-compliant tracing
+   * Allows sharing the same observability instance between VoltAgent and Agents
+   * If not provided, creates a default instance with in-memory storage
+   */
+  observability?: VoltAgentObservability;
+
+  /**
    * Global logger instance to use across all agents and workflows
    * If not provided, a default logger will be created
    */
   logger?: Logger;
 
-  /**
-   * @deprecated Use `voltOpsClient` instead. Will be removed in a future version.
-   * Optional OpenTelemetry SpanExporter instance or array of instances.
-   * or a VoltAgentExporter instance or array of instances.
-   * If provided, VoltAgent will attempt to initialize and register
-   * a NodeTracerProvider with a BatchSpanProcessor for the given exporter(s).
-   * It's recommended to only provide this in one VoltAgent instance per application process.
-   */
-  telemetryExporter?: (SpanExporter | VoltAgentExporter) | (SpanExporter | VoltAgentExporter)[];
+  // telemetryExporter removed - migrated to OpenTelemetry
 
   /**
    * @deprecated Use `server.port` instead

@@ -294,31 +294,28 @@ describe("VoltOpsClient Priority Hierarchy", () => {
       });
 
       // Test resolveInstructions (private method, tested through getSystemMessage)
-      // Create proper AgentContext structure
-      const agentContext = {
+      // Create proper OperationContext structure
+      const oc = {
+        operationId: "test-op",
+        userId: "test-user",
+        conversationId: "test-conv",
         context: new Map(),
-        operation: {
-          id: "test-op",
-          userId: "test-user",
-          conversationId: "test-conv",
+        systemContext: new Map(),
+        isActive: true,
+        logger: mockLoggerInstance as any,
+        traceContext: {
+          getRootSpan: () => ({}) as any,
+          withSpan: async (_span: any, fn: any) => await fn(),
+          createChildSpan: () => ({}) as any,
+          end: () => {},
+          setOutput: () => {},
+          setInstructions: () => {},
+          endChildSpan: () => {},
         },
-        system: {
-          logger: mockLoggerInstance,
-          startTime: new Date().toISOString(),
-        },
-        operationContext: {
-          operationId: "test-op",
-          context: new Map(),
-          historyEntry: { id: "test-id" } as any,
-          isActive: true,
-          conversationSteps: [],
-        },
+        startTime: new Date(),
       };
 
-      const systemMessageResponse = await (dynamicAgent as any).getSystemMessage(
-        "test input",
-        agentContext,
-      );
+      const systemMessageResponse = await (dynamicAgent as any).getSystemMessage("test input", oc);
 
       // Verify createPromptHelperWithFallback was called with agent-specific client
       expect(createPromptHelperSpy).toHaveBeenCalledWith(
@@ -373,31 +370,28 @@ describe("VoltOpsClient Priority Hierarchy", () => {
         // No voltOpsClient specified - should use global
       });
 
-      // Create proper AgentContext structure
-      const agentContext = {
+      // Create proper OperationContext structure
+      const oc = {
+        operationId: "test-op",
+        userId: "test-user",
+        conversationId: "test-conv",
         context: new Map(),
-        operation: {
-          id: "test-op",
-          userId: "test-user",
-          conversationId: "test-conv",
-        },
-        system: {
-          logger: mockLoggerInstance,
-          startTime: new Date().toISOString(),
-        },
-        operationContext: {
-          operationId: "test-op",
-          context: new Map(),
-          historyEntry: { id: "test-id" } as any,
-          isActive: true,
-          conversationSteps: [],
-        },
-      };
+        systemContext: new Map(),
+        isActive: true,
+        logger: mockLoggerInstance as any,
+        traceContext: {
+          getRootSpan: () => ({}) as any,
+          withSpan: async (_span: any, fn: any) => await fn(),
+          createChildSpan: () => ({}) as any,
+          end: () => {},
+          setOutput: () => {},
+          setInstructions: () => {},
+          endChildSpan: () => {},
+        } as any,
+        startTime: new Date(),
+      } as any;
 
-      const systemMessageResponse = await (dynamicAgent as any).getSystemMessage(
-        "test input",
-        agentContext,
-      );
+      const systemMessageResponse = await (dynamicAgent as any).getSystemMessage("test input", oc);
 
       // Verify createPromptHelperWithFallback was called without agent client
       expect(createPromptHelperSpy).toHaveBeenCalledWith(

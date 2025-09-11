@@ -1,5 +1,6 @@
+import type { Span } from "@opentelemetry/api";
 import { safeStringify } from "@voltagent/internal/utils";
-import type { UIMessage } from "ai";
+import type { UIDataTypes, UIMessage, UIMessageStreamWriter, UITools } from "ai";
 import { z } from "zod";
 import { getGlobalLogger } from "../../logger";
 import { AgentRegistry } from "../../registries/agent-registry";
@@ -26,7 +27,7 @@ import type {
 export { createSubagent } from "./types";
 
 // Import stream utilities
-import { createMetadataEnrichedStream } from "./stream-metadata-enricher";
+import { createMetadataEnrichedStream, shouldForwardChunk } from "./stream-metadata-enricher";
 
 /**
  * SubAgentManager - Manages sub-agents and delegation functionality for an Agent
@@ -304,6 +305,7 @@ ${guidelinesText}
     maxSteps?: number;
     context?: Map<string | symbol, unknown>;
     sharedContext?: UIMessage[];
+    parentSpan?: Span;
   }): Promise<{
     result: string;
     messages: UIMessage[];
@@ -321,6 +323,7 @@ ${guidelinesText}
       maxSteps,
       context,
       sharedContext = [],
+      parentSpan,
     } = options;
 
     // Extract the actual agent
@@ -331,10 +334,9 @@ ${guidelinesText}
 
     try {
       // Call onHandoff hook if source agent is provided
-      // Note: AgentV2 hooks have different signature, this needs to be updated
-      // if (sourceAgent && targetAgent.hooks) {
-      //   await targetAgent.hooks.onHandoff?.(context || new Map());
-      // }
+      if (sourceAgent && targetAgent.hooks) {
+        await targetAgent.hooks.onHandoff?.({ agent: targetAgent, sourceAgent });
+      }
 
       // Include context information if available
       let taskContent = task;
@@ -358,6 +360,9 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
       let finalMessages: UIMessage[];
       let usage: any;
 
+      // Note: parentSpan is already provided in the options parameter from delegate_task tool
+      // It contains the parentToolSpan passed from the tool execution context
+
       // Prepare base options for all methods
       const baseOptions = {
         conversationId: handoffConversationId,
@@ -366,9 +371,9 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
         parentHistoryEntryId,
         parentOperationContext,
         context,
-        abortController: parentOperationContext?.abortController,
-        signal: parentOperationContext?.signal,
+        abortSignal: parentOperationContext?.abortController?.signal,
         maxSteps,
+        parentSpan, // Use the parentSpan passed from the delegate_task tool
       };
 
       if (this.isDirectAgent(targetAgentConfig)) {
@@ -376,9 +381,16 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
         const response = await targetAgent.streamText(messages, baseOptions);
 
         // Get the UI stream writer from operationContext if available
-        const uiStreamWriter = parentOperationContext?.systemContext?.get("uiStreamWriter");
+        const uiStreamWriter = parentOperationContext?.systemContext?.get(
+          "uiStreamWriter",
+        ) as UIMessageStreamWriter<UIMessage<unknown, UIDataTypes, UITools>>;
 
-        // If we have a writer, merge the subagent's stream with metadata
+        // Get the fullStream writer from operationContext if available
+        const fullStreamWriter = parentOperationContext?.systemContext?.get(
+          "fullStreamWriter",
+        ) as WritableStreamDefaultWriter<any>;
+
+        // If we have a UI writer, merge the subagent's stream with metadata
         if (uiStreamWriter && response.fullStream) {
           // Convert the subagent's fullStream to UI message stream
           // Don't use messageMetadata as it only works at message level
@@ -403,6 +415,42 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
           uiStreamWriter.merge(enrichedStream);
         }
 
+        // If we have a fullStream writer, also write the subagent's fullStream events
+        if (fullStreamWriter && response.fullStream) {
+          // Get allowed event types from supervisor config
+          const allowedTypes = this.supervisorConfig?.fullStreamEventForwarding?.types || [
+            "tool-call",
+            "tool-result",
+          ];
+
+          // Write subagent's fullStream events with metadata
+          const writeSubagentFullStream = async () => {
+            try {
+              for await (const part of response.fullStream) {
+                // Check if this event type should be forwarded
+                if (!shouldForwardChunk(part, allowedTypes)) {
+                  continue; // Skip this event if not in allowed types
+                }
+
+                // Add subagent metadata to each part
+                const enrichedPart = {
+                  ...part,
+                  subAgentId: targetAgent.id,
+                  subAgentName: targetAgent.name,
+                };
+                await fullStreamWriter.write(enrichedPart);
+              }
+            } catch (error) {
+              // Log error but don't throw to avoid breaking the main flow
+              const logger = parentOperationContext?.logger || getGlobalLogger();
+              logger.error("Error writing subagent fullStream", { error });
+            }
+          };
+
+          // Start writing in background (don't await)
+          writeSubagentFullStream();
+        }
+
         // Get the final result
         finalResult = await response.text;
         usage = await response.usage;
@@ -419,9 +467,16 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
         const response = await targetAgent.streamText(messages, options);
 
         // Get the UI stream writer from operationContext if available
-        const uiStreamWriter = parentOperationContext?.systemContext?.get("uiStreamWriter");
+        const uiStreamWriter = parentOperationContext?.systemContext?.get(
+          "uiStreamWriter",
+        ) as UIMessageStreamWriter<UIMessage<unknown, UIDataTypes, UITools>>;
 
-        // If we have a writer, merge the subagent's stream with metadata
+        // Get the fullStream writer from operationContext if available
+        const fullStreamWriter = parentOperationContext?.systemContext?.get(
+          "fullStreamWriter",
+        ) as WritableStreamDefaultWriter<any>;
+
+        // If we have a UI writer, merge the subagent's UI stream with metadata
         if (uiStreamWriter && response.fullStream) {
           // Convert the subagent's fullStream to UI message stream
           // Don't use messageMetadata as it only works at message level
@@ -441,6 +496,42 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
           // Use the writer to merge the enriched stream
           // This handles promise tracking and error handling automatically
           uiStreamWriter.merge(enrichedStream);
+        }
+
+        // If we have a fullStream writer, also write the subagent's fullStream events
+        if (fullStreamWriter && response.fullStream) {
+          // Get allowed event types from supervisor config
+          const allowedTypes = this.supervisorConfig?.fullStreamEventForwarding?.types || [
+            "tool-call",
+            "tool-result",
+          ];
+
+          // Write subagent's fullStream events with metadata
+          const writeSubagentFullStream = async () => {
+            try {
+              for await (const part of response.fullStream) {
+                // Check if this event type should be forwarded
+                if (!shouldForwardChunk(part, allowedTypes)) {
+                  continue; // Skip this event if not in allowed types
+                }
+
+                // Add subagent metadata to each part
+                const enrichedPart = {
+                  ...part,
+                  subAgentId: targetAgent.id,
+                  subAgentName: targetAgent.name,
+                };
+                await fullStreamWriter.write(enrichedPart);
+              }
+            } catch (error) {
+              // Log error but don't throw to avoid breaking the main flow
+              const logger = parentOperationContext?.logger || getGlobalLogger();
+              logger.error("Error writing subagent fullStream", { error });
+            }
+          };
+
+          // Start writing in background (don't await)
+          writeSubagentFullStream();
         }
 
         // Get the final result
@@ -611,9 +702,14 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
         targetAgents: z.array(z.string()).describe("List of agent names to delegate the task to"),
         context: z.record(z.unknown()).optional().describe("Additional context for the task"),
       }),
-      execute: async ({ task, targetAgents, context = {} }) => {
+      execute: async ({ task, targetAgents, context = {} }, currentOperationContext) => {
+        // Fall back to the original operation context if not available
+        const effectiveOperationContext = currentOperationContext || operationContext;
+
         const logger =
-          operationContext?.logger || getGlobalLogger().child({ component: "subagent-manager" });
+          effectiveOperationContext?.logger ||
+          getGlobalLogger().child({ component: "subagent-manager" });
+
         try {
           // Validate input parameters
           if (!task || task.trim() === "") {
@@ -651,7 +747,7 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
           // Convert context from record to Map
           const contextMap = new Map(Object.entries(context));
 
-          // Wait for all agent tasks to complete using Promise.all
+          // Execute handoffToMultiple - Agent.ts wrapper handles span creation
           const results = await this.handoffToMultiple({
             task,
             targetAgents: agents,
@@ -664,9 +760,13 @@ ${task}\n\nContext: ${safeStringify(contextObj, { indentation: 2 })}`;
             // Get current history entry ID for parent context
             // This is passed from the Agent class via options when the tool is called
             parentHistoryEntryId: currentHistoryEntryId,
-            parentOperationContext: operationContext,
+            parentOperationContext: effectiveOperationContext,
             // Pass maxSteps from parent to subagents
             maxSteps,
+            // Pass the parentToolSpan from executeOptions for proper span hierarchy
+            parentSpan: effectiveOperationContext?.systemContext?.get("parentToolSpan") as
+              | Span
+              | undefined,
           });
 
           // Return structured results with agent names and their responses

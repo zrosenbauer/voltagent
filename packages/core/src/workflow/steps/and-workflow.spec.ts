@@ -1,17 +1,25 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { z } from "zod";
-import { InMemoryStorage } from "../../memory";
+import { Memory } from "../../memory";
+import { InMemoryStorageAdapter } from "../../memory/adapters/storage/in-memory";
 import { createWorkflow } from "../core";
 import { WorkflowRegistry } from "../registry";
 import { andThen } from "./and-then";
 import { andWorkflow } from "./and-workflow";
 
 describe.sequential("andWorkflow", () => {
-  const storageInstances: InMemoryStorage[] = [];
+  const memoryInstances: Memory[] = [];
+
+  // Helper function to create test stores
+  const createTestStores = () => {
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
+    memoryInstances.push(memory);
+    return { memory };
+  };
 
   afterEach(async () => {
     // Clear storage instances
-    storageInstances.length = 0;
+    memoryInstances.length = 0;
 
     // Clear workflow registry
     const registry = WorkflowRegistry.getInstance();
@@ -29,11 +37,7 @@ describe.sequential("andWorkflow", () => {
           workflow: z.string(),
           count: z.number(),
         }),
-        memory: (() => {
-          const storage = new InMemoryStorage();
-          storageInstances.push(storage);
-          return storage;
-        })(),
+        ...createTestStores(),
       },
       andThen({
         id: "nested-step",
@@ -57,11 +61,7 @@ describe.sequential("andWorkflow", () => {
           processed: z.boolean(),
           workflow: z.string().nullable(),
         }),
-        memory: (() => {
-          const storage = new InMemoryStorage();
-          storageInstances.push(storage);
-          return storage;
-        })(),
+        ...createTestStores(),
       },
       andThen({
         id: "root-step",

@@ -137,7 +137,7 @@ export const textRoute = createRoute({
   description: AGENT_ROUTES.generateText.description,
 });
 
-// Stream text response
+// Stream text response (raw fullStream)
 export const streamRoute = createRoute({
   method: AGENT_ROUTES.streamText.method,
   path: AGENT_ROUTES.streamText.path.replace(":id", "{id}"), // Convert path format
@@ -164,12 +164,14 @@ export const streamRoute = createRoute({
           schema: StreamTextEventSchema, // Schema for the *content* of an event
         },
       },
-      description: `Server-Sent Events stream. Each event is formatted as:\n\
-'data: {"text":"...", "timestamp":"...", "type":"text"}\n\n'\n
+      description: `Server-Sent Events stream with raw fullStream data. Each event is formatted as:\n\
+'data: {"type":"text-delta","delta":"...","id":"..."}\n\n'\n
 or\n\
-'data: {"done":true, "timestamp":"...", "type":"completion"}\n\n'\n
+'data: {"type":"tool-call","toolName":"...","args":{...}}\n\n'\n
 or\n\
-'data: {"error":"...", "timestamp":"...", "type":"error"}\n\n'`,
+'data: {"type":"tool-result","toolName":"...","result":{...}}\n\n'\n
+or\n\
+'data: {"type":"finish","finishReason":"...","usage":{...}}\n\n'`,
     },
     404: {
       content: {
@@ -191,6 +193,57 @@ or\n\
   tags: [...AGENT_ROUTES.streamText.tags],
   summary: AGENT_ROUTES.streamText.summary,
   description: AGENT_ROUTES.streamText.description,
+});
+
+// Chat stream response (UI message stream)
+export const chatRoute = createRoute({
+  method: AGENT_ROUTES.chatStream.method,
+  path: AGENT_ROUTES.chatStream.path.replace(":id", "{id}"), // Convert path format
+  request: {
+    params: AgentParamsSchema.extend({
+      id: AgentParamsSchema.shape.id.openapi({
+        param: { name: "id", in: "path" },
+        example: "my-agent-123",
+      }),
+    }),
+    body: {
+      content: {
+        "application/json": {
+          schema: TextRequestSchema, // Reusing TextRequestSchema
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      content: {
+        "text/event-stream": {
+          schema: StreamTextEventSchema,
+        },
+      },
+      description:
+        "Server-Sent Events stream formatted for useChat hook. UI message stream with automatic handling of messages, tool calls, and metadata.",
+    },
+    404: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description: AGENT_ROUTES.chatStream.responses?.[404]?.description || "Agent not found",
+    },
+    500: {
+      content: {
+        "application/json": {
+          schema: ErrorSchema,
+        },
+      },
+      description: AGENT_ROUTES.chatStream.responses?.[500]?.description || "Failed to stream chat",
+    },
+  },
+  tags: [...AGENT_ROUTES.chatStream.tags],
+  summary: AGENT_ROUTES.chatStream.summary,
+  description: AGENT_ROUTES.chatStream.description,
 });
 
 // Generate object response

@@ -37,7 +37,6 @@ const multiModalMessage: BaseMessage = {
 When `content` is an array, each element must be an object with a `type` field indicating the kind of content. Common types include:
 
 1.  **Text Part:**
-
     - `type: 'text'`
     - `text: string` - The actual text content.
 
@@ -46,7 +45,6 @@ When `content` is an array, each element must be an object with a `type` field i
     ```
 
 2.  **Image Part:**
-
     - `type: 'image'`
     - `image: string` - The image data, typically provided as a **Base64 encoded string** or a **Data URI** (e.g., `data:image/png;base64,...`).
     - `mimeType?: string` - (Optional but Recommended) The MIME type of the image (e.g., `image/jpeg`, `image/png`, `image/webp`). Helps the provider interpret the data correctly.
@@ -62,7 +60,6 @@ When `content` is an array, each element must be an object with a `type` field i
     ```
 
 3.  **File Part (Used less commonly for direct LLM input, but supported):**
-
     - `type: 'file'`
     - `data: string` - Base64 encoded file data.
     - `filename: string` - Original filename.
@@ -87,10 +84,14 @@ To send multi-modal input, construct your `messages` array ensuring that the `co
 
 ```typescript
 import { Agent } from "@voltagent/core";
-import { VercelProvider } from "@voltagent/vercel-ai";
+import { openai } from "@ai-sdk/openai";
 
-// Assume 'agent' is an initialized Agent instance using the Vercel provider
-declare const agent: Agent<VercelProvider>;
+// Initialize an agent with a vision-capable model
+const agent = new Agent({
+  name: "vision-assistant",
+  instructions: "Answer based on the image and text.",
+  model: openai("gpt-4o-mini"), // or another vision-capable ai-sdk model
+});
 
 async function askAboutImage(imageUrlOrBase64: string, question: string) {
   const messages: BaseMessage[] = [
@@ -131,24 +132,18 @@ askAboutImage(catImageBase64, "What breed is this cat?");
 
 ## Provider Support & Considerations
 
-**Crucially, multi-modal support depends heavily on the specific LLM provider and model you are using.**
+Multi-modal support depends on the specific ai-sdk provider and model you choose.
 
-- Not all models can process images or other non-text modalities.
-- Consult the documentation for the underlying model to understand its specific multi-modal capabilities and limitations (e.g., supported image formats, resolutions, token costs for images).
+- Not all models accept image inputs.
+- Check provider docs for supported formats, limits, and costs.
 
-Here's a summary of the official VoltAgent providers:
+Common vision-capable options in ai-sdk:
 
-- **`@voltagent/anthropic-ai`**: ✅ **Supports Image Input.** The provider fully supports multi-modal content with Claude 3 models, handling both image URLs and base64-encoded images (including data URIs). Supported image formats include JPEG, PNG, GIF, and WebP. File content is converted to text descriptions.
+- OpenAI: `gpt-4o`, `gpt-4o-mini`
+- Google: `gemini-1.5-pro`, `gemini-1.5-flash`
+- Anthropic: latest Claude 3 models with vision
 
-- **`@voltagent/google-ai`**: ✅ **Supports Image Input.** The provider correctly maps `ImagePart` data to the format expected by the Google Generative AI SDK (Gemini models).
-
-- **`@voltagent/groq-ai`**: ✅ **Supports Image Input.** The provider maps `ImagePart` data to the `image_url` format compatible with Groq API (for models that support vision).
-
-- **`@voltagent/vercel-ai`**: ⚠️ **Conditional Support.** This provider passes the `BaseMessage` structure (including image parts) to the Vercel AI SDK functions (`streamText`, `generateText`). Actual multi-modal support depends entirely on whether the underlying model configured _within your Vercel AI SDK setup_ (e.g., GPT-4 Vision, Claude 3 Haiku/Sonnet/Opus) accepts image input. Check the Vercel AI SDK documentation and your model provider's capabilities.
-
-- **`@voltagent/xsai`**: ⚠️ **Conditional Support.** This provider passes the `BaseMessage` structure (including image parts) to the xsAI functions (`streamText`, `generateText`). Actual multi-modal support depends entirely on whether the underlying model configured _within your xsAI setup_ (e.g., GPT-4 Vision, Claude 3 Haiku/Sonnet/Opus) accepts image input. Check your model provider's capabilities.
-
-See the [Providers](../providers/overview.md) documentation for more general details on individual providers.
+See [Providers & Models](/docs/getting-started/providers-models) for details.
 
 ## VoltOps Platform Integration
 

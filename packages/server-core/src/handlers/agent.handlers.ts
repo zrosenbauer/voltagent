@@ -62,6 +62,7 @@ export async function handleGenerateText(
   body: any,
   deps: ServerProviderDeps,
   logger: Logger,
+  signal?: AbortSignal,
 ): Promise<ApiResponse> {
   try {
     const agent = deps.agentRegistry.getAgent(agentId);
@@ -73,7 +74,7 @@ export async function handleGenerateText(
     }
 
     const { input } = body;
-    const options = processAgentOptions(body);
+    const options = processAgentOptions(body, signal);
 
     const result = await agent.generateText(input, options);
 
@@ -100,14 +101,15 @@ export async function handleGenerateText(
 }
 
 /**
- * Handler for streaming text generation
- * Returns AI SDK Response or error
+ * Handler for streaming text generation with raw fullStream
+ * Returns raw stream data via SSE
  */
 export async function handleStreamText(
   agentId: string,
   body: any,
   deps: ServerProviderDeps,
   logger: Logger,
+  signal?: AbortSignal,
 ): Promise<Response> {
   try {
     const agent = deps.agentRegistry.getAgent(agentId);
@@ -127,14 +129,102 @@ export async function handleStreamText(
     }
 
     const { input } = body;
-    const options = processAgentOptions(body);
+    const options = processAgentOptions(body, signal);
+
+    const result = await agent.streamText(input, options);
+
+    // Access the fullStream property
+    const { fullStream } = result;
+
+    // Convert fullStream to SSE format
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const part of fullStream) {
+            // Send each part as a JSON-encoded SSE event
+            const data = `data: ${JSON.stringify(part)}\n\n`;
+            controller.enqueue(encoder.encode(data));
+          }
+        } catch (error) {
+          logger.error("Error in fullStream iteration", { error });
+          // Send error event
+          const errorData = `data: ${JSON.stringify({ type: "error", error: error instanceof Error ? error.message : "Unknown error" })}\n\n`;
+          controller.enqueue(encoder.encode(errorData));
+        } finally {
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(stream, {
+      status: 200,
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
+    });
+  } catch (error) {
+    logger.error("Failed to handle stream text request", { error });
+
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+
+    return new Response(
+      JSON.stringify({
+        error: errorMessage,
+        message: errorMessage,
+      }),
+      {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      },
+    );
+  }
+}
+
+/**
+ * Handler for streaming chat messages
+ * Returns AI SDK UI Message Stream Response
+ */
+export async function handleChatStream(
+  agentId: string,
+  body: any,
+  deps: ServerProviderDeps,
+  logger: Logger,
+  signal?: AbortSignal,
+): Promise<Response> {
+  try {
+    const agent = deps.agentRegistry.getAgent(agentId);
+    if (!agent) {
+      return new Response(
+        JSON.stringify({
+          error: `Agent ${agentId} not found`,
+          message: `Agent ${agentId} not found`,
+        }),
+        {
+          status: 404,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      );
+    }
+
+    const { input } = body;
+    const options = processAgentOptions(body, signal);
 
     const result = await agent.streamText(input, options);
 
     // Use the built-in toUIMessageStreamResponse - it handles errors properly
-    return result.toUIMessageStreamResponse();
+    return result.toUIMessageStreamResponse({
+      sendReasoning: true,
+      sendSources: true,
+    });
   } catch (error) {
-    logger.error("Failed to handle stream text request", { error });
+    logger.error("Failed to handle chat stream request", { error });
 
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
 
@@ -162,6 +252,7 @@ export async function handleGenerateObject(
   body: any,
   deps: ServerProviderDeps,
   logger: Logger,
+  signal?: AbortSignal,
 ): Promise<ApiResponse> {
   try {
     const agent = deps.agentRegistry.getAgent(agentId);
@@ -173,7 +264,7 @@ export async function handleGenerateObject(
     }
 
     const { input, schema: jsonSchema } = body;
-    const options = processAgentOptions(body);
+    const options = processAgentOptions(body, signal);
 
     // Convert JSON schema to Zod schema
     const zodSchema = convertJsonSchemaToZod(jsonSchema);
@@ -202,6 +293,7 @@ export async function handleStreamObject(
   body: any,
   deps: ServerProviderDeps,
   logger: Logger,
+  signal?: AbortSignal,
 ): Promise<Response> {
   try {
     const agent = deps.agentRegistry.getAgent(agentId);
@@ -221,7 +313,7 @@ export async function handleStreamObject(
     }
 
     const { input, schema: jsonSchema } = body;
-    const options = processAgentOptions(body);
+    const options = processAgentOptions(body, signal);
 
     // Convert JSON schema to Zod schema
     const zodSchema = convertJsonSchemaToZod(jsonSchema);

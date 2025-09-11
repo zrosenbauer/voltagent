@@ -1,2 +1,2 @@
 export { Agent } from "./agent";
-export type { AgentOptions } from "./agent";
+export type { AgentHooks } from "./hooks";

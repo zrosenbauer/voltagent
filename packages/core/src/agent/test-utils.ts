@@ -7,10 +7,9 @@ import { MockLanguageModelV2, mockId } from "ai/test";
 import { vi } from "vitest";
 import { z } from "zod";
 import type { ToolSchema } from "../agent/providers/base/types";
-import { InMemoryStorage } from "../memory/in-memory";
 import { Tool } from "../tool";
 import { Agent } from "./agent";
-import type { AgentOptions } from "./agent";
+import type { AgentOptions } from "./types";
 
 /**
  * Convert array to async iterable stream for testing
@@ -89,7 +88,6 @@ export function createTestAgent(options?: Partial<AgentOptions>): Agent {
     name: options?.name || "TestAgent",
     instructions: options?.instructions || "Test instructions",
     model: options?.model || createMockLanguageModel(),
-    memory: options?.memory ?? new InMemoryStorage(),
     maxSteps: options?.maxSteps || 5,
     markdown: options?.markdown ?? false,
   };

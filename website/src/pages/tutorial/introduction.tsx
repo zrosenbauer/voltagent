@@ -457,7 +457,6 @@ export default function TutorialIntroduction() {
                 <div className="flex w-[45%] flex-col gap-4">
                   {/* Card 1 - Agent Creation */}
                   <div className="relative h-full">
-                    {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
                     <div
                       className={`h-[100px] p-3 rounded-lg ${
                         highlightedSection === "agent"
@@ -484,7 +483,6 @@ export default function TutorialIntroduction() {
 
                   {/* Card 2 - Naming */}
                   <div className="relative h-full">
-                    {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
                     <div
                       className={`h-[100px] p-3 rounded-lg ${
                         highlightedSection === "name"
@@ -511,7 +509,6 @@ export default function TutorialIntroduction() {
 
                   {/* Card 3 - Behavior */}
                   <div className="relative h-full">
-                    {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
                     <div
                       className={`h-[100px] p-3 rounded-lg ${
                         highlightedSection === "behavior"

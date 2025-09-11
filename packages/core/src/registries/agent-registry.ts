@@ -1,19 +1,26 @@
 import type { Logger } from "@voltagent/internal";
 import type { Agent } from "../agent/agent";
-import { AgentEventEmitter } from "../events";
-import type { VoltAgentExporter } from "../telemetry/exporter";
-import type { VoltOpsClient } from "../voltops/types";
+import type { VoltAgentObservability } from "../observability/voltagent-observability";
+import type { VoltOpsClient } from "../voltops/client";
 
 /**
  * Registry to manage and track agents
  */
+declare global {
+  // Global singleton to ensure a single registry across bundles/runtime copies
+  // of this module (e.g., in monorepos, Next.js, or test runners).
+  // eslint-disable-next-line no-var
+  var ___voltagent_agent_registry: AgentRegistry | undefined;
+}
+
 export class AgentRegistry {
-  private static instance: AgentRegistry | null = null;
+  // Note: avoid relying on module-scoped statics since bundlers can duplicate modules.
+  // private static instance: AgentRegistry | null = null;
   private agents: Map<string, Agent> = new Map();
   private isInitialized = false;
-  private globalVoltAgentExporter?: VoltAgentExporter;
   private globalVoltOpsClient?: VoltOpsClient;
   private globalLogger?: Logger;
+  private globalObservability?: VoltAgentObservability;
 
   /**
    * Track parent-child relationships between agents (child -> parents)
@@ -26,10 +33,11 @@ export class AgentRegistry {
    * Get the singleton instance of AgentRegistry
    */
   public static getInstance(): AgentRegistry {
-    if (!AgentRegistry.instance) {
-      AgentRegistry.instance = new AgentRegistry();
+    // Use globalThis to keep a single instance across multiple copies of this file
+    if (!globalThis.___voltagent_agent_registry) {
+      globalThis.___voltagent_agent_registry = new AgentRegistry();
     }
-    return AgentRegistry.instance;
+    return globalThis.___voltagent_agent_registry;
   }
 
   /**
@@ -50,8 +58,7 @@ export class AgentRegistry {
     }
     this.agents.set(agent.id, agent);
 
-    // Emit agent registered event
-    AgentEventEmitter.getInstance().emitAgentRegistered(agent.id);
+    // Agent registration tracked via OpenTelemetry
   }
 
   /**
@@ -144,8 +151,7 @@ export class AgentRegistry {
       // Clear agent relationships
       this.clearAgentRelationships(id);
 
-      // Emit agent unregistered event
-      AgentEventEmitter.getInstance().emitAgentUnregistered(id);
+      // Agent unregistration tracked via OpenTelemetry
     }
     return result;
   }
@@ -164,20 +170,20 @@ export class AgentRegistry {
     return this.isInitialized;
   }
 
-  /**
-   * Set the global VoltAgentExporter instance.
-   * This is typically called by the main VoltAgent instance.
-   */
-  public setGlobalVoltAgentExporter(exporter: VoltAgentExporter): void {
-    this.globalVoltAgentExporter = exporter;
-  }
+  // /**
+  //  * Set the global VoltAgentExporter instance.
+  //  * This is typically called by the main VoltAgent instance.
+  //  */
+  // public setGlobalVoltAgentExporter(exporter: VoltAgentExporter): void {
+  //   this.globalVoltAgentExporter = exporter;
+  // }
 
-  /**
-   * Get the global VoltAgentExporter instance.
-   */
-  public getGlobalVoltAgentExporter(): VoltAgentExporter | undefined {
-    return this.globalVoltAgentExporter;
-  }
+  // /**
+  //  * Get the global VoltAgentExporter instance.
+  //  */
+  // public getGlobalVoltAgentExporter(): VoltAgentExporter | undefined {
+  //   return this.globalVoltAgentExporter;
+  // }
 
   /**
    * Set the global VoltOpsClient instance.
@@ -186,10 +192,7 @@ export class AgentRegistry {
   public setGlobalVoltOpsClient(client: VoltOpsClient | undefined): void {
     this.globalVoltOpsClient = client;
 
-    // Also set the observability exporter for backward compatibility
-    if (client?.observability) {
-      this.globalVoltAgentExporter = client.observability;
-    }
+    // Observability is now handled by VoltAgentObservability, not VoltOpsClient
   }
 
   /**
@@ -211,5 +214,20 @@ export class AgentRegistry {
    */
   public getGlobalLogger(): Logger | undefined {
     return this.globalLogger;
+  }
+
+  /**
+   * Set the global VoltAgentObservability instance.
+   * This enables OpenTelemetry-compliant tracing for all agents.
+   */
+  public setGlobalObservability(observability: VoltAgentObservability): void {
+    this.globalObservability = observability;
+  }
+
+  /**
+   * Get the global VoltAgentObservability instance.
+   */
+  public getGlobalObservability(): VoltAgentObservability | undefined {
+    return this.globalObservability;
   }
 }

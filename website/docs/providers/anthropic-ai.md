@@ -7,23 +7,27 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 :::warning Deprecated Package
-**This provider is deprecated.** We recommend using the [Vercel AI SDK's Anthropic provider](https://ai-sdk.dev/providers/ai-sdk-providers/anthropic) instead with `@voltagent/vercel-ai`.
+**This provider is deprecated.** Use the official ai-sdk Anthropic provider directly and pass the model to `Agent` via the `model` option.
 
 **Migration Guide:**
 
 ```typescript
 // Old (deprecated)
 import { AnthropicProvider } from "@voltagent/anthropic-ai";
-const provider = new AnthropicProvider({ apiKey: "..." });
+const anthropicProvider = new AnthropicProvider({ apiKey: "..." });
 
 // New (recommended)
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { Agent } from "@voltagent/core";
 import { anthropic } from "@ai-sdk/anthropic";
-const provider = new VercelAIProvider();
-// Use with: model: anthropic("claude-opus-4-1")
+
+const agent = new Agent({
+  name: "Claude Agent",
+  instructions: "An agent powered by Claude",
+  model: anthropic("claude-3-5-sonnet"),
+});
 ```
 
-For the latest models and features, please see our [Providers & Models guide](/docs/getting-started/providers-models).
+See [Providers & Models](/docs/getting-started/providers-models) for details.
 :::
 
 # Anthropic AI Provider (`@voltagent/anthropic-ai`)

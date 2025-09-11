@@ -464,13 +464,12 @@ Message helpers integrate with agent hooks for message transformation.
 
 ```typescript
 import { Agent, messageHelpers } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "Assistant",
-  description: "A helpful assistant",
-  llm: new VercelAIProvider(),
+  instructions: "A helpful assistant",
+  // Direct ai-sdk model; no custom provider needed
   model: openai("gpt-4o-mini"),
 
   hooks: {

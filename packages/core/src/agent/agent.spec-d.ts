@@ -1,10 +1,7 @@
 import type { LanguageModel, UIMessage } from "ai";
 import { MockLanguageModelV2 } from "ai/test";
-import { describe, expectTypeOf, it, vi } from "vitest";
+import { describe, expectTypeOf, it } from "vitest";
 import { z } from "zod";
-import type { HistoryManager } from "../agent/history";
-import { InMemoryStorage } from "../memory/in-memory";
-import type { Memory } from "../memory/types";
 import type { BaseRetriever } from "../retriever/retriever";
 import { Tool, type Toolkit, createTool } from "../tool";
 import type { StreamEventType } from "../utils/streams";
@@ -13,7 +10,6 @@ import type { VoltOpsClient } from "../voltops/client";
 import type { DynamicValue, DynamicValueOptions } from "../voltops/types";
 import {
   Agent,
-  type AgentContext,
   type AgentHooks,
   type GenerateObjectResultWithContext,
   type GenerateTextResultWithContext,
@@ -27,6 +23,7 @@ import type {
   InstructionsDynamicValue,
   InternalGenerateOptions,
   ModelDynamicValue,
+  OperationContext,
   ProviderOptions,
   PublicGenerateOptions,
   StandardizedObjectResult,
@@ -56,18 +53,9 @@ describe("Agent Type System", () => {
     }),
   });
 
-  const mockMemory: Memory = {
-    addMessage: vi.fn(),
-    getMessages: vi.fn(() => Promise.resolve([])),
-    clear: vi.fn(),
-    deleteMessage: vi.fn(),
-    updateMessage: vi.fn(),
-  } as unknown as Memory;
-
   const mockVoltOpsClient = {} as VoltOpsClient;
   const mockRetriever = {} as BaseRetriever;
   const mockVoice = {} as Voice;
-  const mockHistoryManager = {} as HistoryManager;
   const mockToolkit: Toolkit = {
     name: "test-toolkit",
     description: "Test toolkit",
@@ -125,8 +113,6 @@ describe("Agent Type System", () => {
         model: mockModel,
         id: "custom-id",
         purpose: "Test purpose",
-        memory: mockMemory,
-        historyMemory: mockMemory,
         tools: [],
         maxSteps: 10,
         context: new Map(),
@@ -169,7 +155,6 @@ describe("Agent Type System", () => {
         name: "Test",
         instructions: "Test",
         model: mockModel,
-        historyManager: mockHistoryManager,
       });
 
       expectTypeOf(agent).toMatchTypeOf<Agent>();
@@ -298,30 +283,23 @@ describe("Agent Type System", () => {
     });
   });
 
-  describe("AgentContext Type Tests", () => {
-    it("should validate AgentContext structure", () => {
-      const context: AgentContext = {
+  describe("OperationContext Type Tests", () => {
+    it("should validate OperationContext structure", () => {
+      const oc: OperationContext = {
+        operationId: "op-123",
         context: new Map(),
-        operation: {
-          id: "op-123",
-          conversationId: "conv-456",
-          userId: "user-789",
-          parentAgentId: undefined,
-          parentHistoryId: undefined,
-        },
-        system: {
-          logger: {} as any, // Logger interface
-          signal: undefined,
-          abortController: undefined,
-          startTime: new Date().toISOString(),
-          agentStartEventId: undefined,
-        },
+        systemContext: new Map(),
+        isActive: true,
+        logger: {} as any, // Logger interface
+        traceContext: {} as any, // Mock AgentTraceContext
+        startTime: new Date(),
+        abortController: new AbortController(),
       };
 
-      expectTypeOf(context).toMatchTypeOf<AgentContext>();
-      expectTypeOf(context.context).toEqualTypeOf<Map<string | symbol, unknown>>();
-      expectTypeOf(context.operation.userId).toEqualTypeOf<string | undefined>();
-      expectTypeOf(context.operation.id).toEqualTypeOf<string>();
+      expectTypeOf(oc).toMatchTypeOf<OperationContext>();
+      expectTypeOf(oc.context).toEqualTypeOf<Map<string | symbol, unknown>>();
+      expectTypeOf(oc.userId).toEqualTypeOf<string | undefined>();
+      expectTypeOf(oc.operationId).toEqualTypeOf<string>();
     });
   });
 
@@ -407,7 +385,6 @@ describe("Agent Type System", () => {
       const internalOptions: InternalGenerateOptions = {
         ...publicOptions,
         parentAgentId: "parent-123",
-        parentHistoryEntryId: "history-123",
       };
 
       // @ts-expect-error - historyEntryId is not in PublicGenerateOptions
@@ -461,7 +438,6 @@ describe("Agent Type System", () => {
         customGuidelines: ["Guideline 1", "Guideline 2"],
         fullStreamEventForwarding: {
           types: ["tool-call", "tool-result", "text-delta"],
-          addSubAgentPrefix: false,
         },
       };
 
@@ -469,7 +445,6 @@ describe("Agent Type System", () => {
       expectTypeOf(supervisorConfigWithForwarding.fullStreamEventForwarding).toMatchTypeOf<
         | {
             types?: StreamEventType[];
-            addSubAgentPrefix?: boolean;
           }
         | undefined
       >();
@@ -517,25 +492,28 @@ describe("Agent Type System", () => {
   });
 
   describe("Hook Type Tests", () => {
-    it("should validate AgentHooks with AgentContext", () => {
+    it("should validate AgentHooks with OperationContext", () => {
       const hooks: AgentHooks = {
-        onStart: async (context: AgentContext) => {
-          expectTypeOf(context).toMatchTypeOf<AgentContext>();
-          expectTypeOf(context.context).toEqualTypeOf<Map<string | symbol, unknown>>();
-          expectTypeOf(context.operation.id).toEqualTypeOf<string>();
+        onStart: async ({ context }) => {
+          expectTypeOf(context).toMatchTypeOf<OperationContext>();
+          expectTypeOf(context.context).toMatchTypeOf<Map<string | symbol, any>>();
+          expectTypeOf(context.operationId).toEqualTypeOf<string>();
         },
-        onEnd: async (context: AgentContext, _result: any, _error?: Error) => {
-          expectTypeOf(context).toMatchTypeOf<AgentContext>();
-          expectTypeOf(context.operation.conversationId).toEqualTypeOf<string | undefined>();
+        onEnd: async ({ context }) => {
+          expectTypeOf(context).toMatchTypeOf<OperationContext>();
+          expectTypeOf(context.conversationId).toEqualTypeOf<string | undefined>();
         },
-        onHandoff: async (context: AgentContext) => {
-          expectTypeOf(context).toMatchTypeOf<AgentContext>();
+        onHandoff: async ({ agent, sourceAgent }) => {
+          expectTypeOf(agent).toMatchTypeOf<Agent>();
+          expectTypeOf(sourceAgent).toMatchTypeOf<Agent>();
         },
-        onToolStart: async (context: AgentContext, _tool: any) => {
-          expectTypeOf(context).toMatchTypeOf<AgentContext>();
+        onToolStart: async ({ context, tool: _tool }) => {
+          expectTypeOf(context).toMatchTypeOf<OperationContext>();
+          // tool type is intentionally flexible
         },
-        onToolEnd: async (context: AgentContext, _tool: any, _output: any, _error?: any) => {
-          expectTypeOf(context).toMatchTypeOf<AgentContext>();
+        onToolEnd: async ({ context, tool: _tool, output: _output, error: _error }) => {
+          expectTypeOf(context).toMatchTypeOf<OperationContext>();
+          // tool/output/error types are intentionally flexible
         },
       };
 
@@ -544,13 +522,13 @@ describe("Agent Type System", () => {
 
     it("should allow sync and async hooks", () => {
       const syncHooks: AgentHooks = {
-        onStart: (_context: AgentContext) => {
+        onStart: () => {
           // Synchronous hook
         },
       };
 
       const asyncHooks: AgentHooks = {
-        onStart: async (_context: AgentContext) => {
+        onStart: async () => {
           // Asynchronous hook
           await Promise.resolve();
         },
@@ -562,9 +540,9 @@ describe("Agent Type System", () => {
 
     it("should validate onError hook", () => {
       const hooks: AgentHooks = {
-        onError: async (context: AgentContext, error: Error) => {
-          expectTypeOf(context).toMatchTypeOf<AgentContext>();
-          expectTypeOf(error).toMatchTypeOf<Error>();
+        onError: async ({ context, error: _error }) => {
+          expectTypeOf(context).toMatchTypeOf<OperationContext>();
+          // error type is intentionally flexible
         },
       };
 
@@ -573,7 +551,7 @@ describe("Agent Type System", () => {
 
     it("should validate onStepFinish hook", () => {
       const hooks: AgentHooks = {
-        onStepFinish: async (step: any) => {
+        onStepFinish: async ({ step }) => {
           // Step can be any type based on provider
           expectTypeOf(step).toBeAny();
         },
@@ -584,9 +562,9 @@ describe("Agent Type System", () => {
 
     it("should validate onPrepareMessages hook", () => {
       const hooks: AgentHooks = {
-        onPrepareMessages: async (messages: UIMessage[], context: AgentContext) => {
+        onPrepareMessages: async ({ messages, context }) => {
           expectTypeOf(messages).toMatchTypeOf<UIMessage[]>();
-          expectTypeOf(context).toMatchTypeOf<AgentContext>();
+          expectTypeOf(context).toMatchTypeOf<OperationContext>();
           return { messages };
         },
       };
@@ -595,7 +573,7 @@ describe("Agent Type System", () => {
 
       // Sync version
       const syncHooks: AgentHooks = {
-        onPrepareMessages: (messages: UIMessage[], _context: AgentContext) => ({
+        onPrepareMessages: ({ messages }) => ({
           messages: messages.filter((m) => m.role !== "system"),
         }),
       };
@@ -780,8 +758,6 @@ describe("Agent Type System", () => {
           expectTypeOf(options.context).toMatchTypeOf<Map<string | symbol, unknown>>();
           return [];
         },
-        memory: mockMemory,
-        historyMemory: mockMemory,
         maxSteps: 10,
         context: new Map([["initial", "value"]]),
         subAgents: [
@@ -832,14 +808,10 @@ describe("Agent Type System", () => {
         customGuidelines: ["Guideline 1", "Guideline 2"],
         fullStreamEventForwarding: {
           types: ["tool-call", "tool-result"],
-          addSubAgentPrefix: true,
         },
       };
 
       expectTypeOf(config).toMatchTypeOf<SupervisorConfig>();
-      expectTypeOf(config.fullStreamEventForwarding?.addSubAgentPrefix).toEqualTypeOf<
-        boolean | undefined
-      >();
     });
   });
 
@@ -879,16 +851,14 @@ describe("Agent Type System", () => {
       const options: AgentOptions = {
         name: "Test",
         instructions: "Test",
+        model: mockModel,
         // All these are optional
         id: undefined,
         purpose: undefined,
         memory: undefined,
-        memoryOptions: undefined,
-        historyMemory: undefined,
         tools: undefined,
         maxSteps: undefined,
         context: undefined,
-        telemetryExporter: undefined,
         subAgents: undefined,
         supervisorConfig: undefined,
         logger: undefined,
@@ -916,11 +886,14 @@ describe("Agent Type System", () => {
     it("should reject invalid hook signatures", () => {
       // Test that hook signatures are properly typed
       const validHooks: AgentHooks = {
-        onStart: async (_context: AgentContext) => {
+        onStart: async ({ context }) => {
           // context is properly typed
+          expectTypeOf(context).toMatchTypeOf<OperationContext>();
         },
-        onEnd: async (_context: AgentContext, _result?: any, _error?: any) => {
+        onEnd: async ({ context, output: _output, error: _error }) => {
           // All parameters are properly typed
+          expectTypeOf(context).toMatchTypeOf<OperationContext>();
+          // output and error types are intentionally flexible
         },
       };
 
@@ -1183,7 +1156,6 @@ describe("Agent Type System", () => {
         name: "Test",
         instructions: "Test",
         model: mockModel,
-        memory: new InMemoryStorage(),
       });
 
       expectTypeOf(memoryWithStorage).toMatchTypeOf<Agent>();

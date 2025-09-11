@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
-import { InMemoryStorage } from "../memory/in-memory";
+import { Memory } from "../memory";
+import { InMemoryStorageAdapter } from "../memory/adapters/storage/in-memory";
 import { createWorkflowChain } from "./chain";
 import { WorkflowRegistry } from "./registry";
 import { andThen } from "./steps";
@@ -13,7 +14,7 @@ describe.sequential("workflow.run", () => {
   });
 
   it("should return the expected result", async () => {
-    const memory = new InMemoryStorage();
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
 
     const workflow = createWorkflowChain({
       id: "test",
@@ -83,7 +84,7 @@ describe.sequential("workflow writer API", () => {
   it("should provide writer in andThen context", async () => {
     let writerAvailable = false;
     let customEventEmitted = false;
-    const memory = new InMemoryStorage();
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
 
     const workflow = createWorkflowChain({
       id: "writer-test",
@@ -134,7 +135,7 @@ describe.sequential("workflow writer API", () => {
 
   it("should provide writer in andTap context", async () => {
     let tapWriterAvailable = false;
-    const memory = new InMemoryStorage();
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
 
     const workflow = createWorkflowChain({
       id: "tap-writer-test",
@@ -183,7 +184,7 @@ describe.sequential("workflow writer API", () => {
   it("should provide writer in andWhen context", async () => {
     let conditionWriterAvailable = false;
     let executeWriterAvailable = false;
-    const memory = new InMemoryStorage();
+    const memory = new Memory({ storage: new InMemoryStorageAdapter() });
 
     const workflow = createWorkflowChain({
       id: "when-writer-test",

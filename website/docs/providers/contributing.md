@@ -163,7 +163,7 @@ const agent = new Agent({
 id: "my-agent",
 purpose: "Help users",
 instructions: "You are helpful",
-llm: new AcmeAIProvider(),
+model: acme("model-id"),
 });
 
 const response = await agent.generateText({

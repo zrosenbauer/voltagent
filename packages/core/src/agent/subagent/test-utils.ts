@@ -8,7 +8,6 @@ import type { FinishReason, LanguageModel, LanguageModelUsage, UIMessage } from 
 import { MockLanguageModelV2, simulateReadableStream } from "ai/test";
 import { vi } from "vitest";
 import { z } from "zod";
-import type { Memory } from "../../memory/types";
 import type { BaseRetriever } from "../../retriever/retriever";
 import type { Tool, Toolkit } from "../../tool";
 import type { Voice } from "../../voice";
@@ -69,7 +68,6 @@ export interface CreateMockAgentOptions {
   instructions?: string;
   model?: LanguageModel;
   tools?: (Tool<ToolSchema, ToolSchema | undefined> | Toolkit)[];
-  memory?: Memory;
   voice?: Voice;
   retriever?: BaseRetriever;
   subAgents?: SubAgentConfig[];
@@ -93,7 +91,6 @@ export function createMockAgent(options: CreateMockAgentOptions = {}): Agent {
     instructions = "You are a mock agent for testing",
     model = createMockLanguageModel(),
     tools = [],
-    memory,
     voice,
     retriever,
     subAgents = [],
@@ -113,7 +110,6 @@ export function createMockAgent(options: CreateMockAgentOptions = {}): Agent {
     instructions,
     model,
     tools,
-    memory,
     voice,
     retriever,
     subAgents,

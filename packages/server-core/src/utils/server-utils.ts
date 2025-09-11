@@ -44,7 +44,7 @@ export const preferredPorts = [
   },
   {
     port: 4310,
-    messages: ["Inspired by 'A.I.O' — because it's All In One. ⚡"],
+    messages: ["Inspired by 'A.I.O' - because it's All In One. ⚡"],
   },
   {
     port: 1337,

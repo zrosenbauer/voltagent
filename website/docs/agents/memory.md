@@ -9,19 +9,17 @@ Memory enables agents to remember past interactions and maintain conversation co
 
 ## Default Behavior
 
-Agents automatically use **InMemoryStorage** by default, storing conversations in application memory:
+Agents automatically use in-memory storage by default, storing conversations in application memory:
 
 ```typescript
 import { Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "Assistant",
   instructions: "You are a helpful assistant",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
-  // Memory is automatically enabled - no configuration needed
+  // Memory is automatically enabled with in-memory storage
 });
 ```
 
@@ -46,21 +44,19 @@ console.log(response2.text); // "Your name is Sarah"
 
 ## Persistent Storage
 
-For conversations that survive application restarts, use LibSQL:
+For conversations that survive application restarts, configure `Memory` with a persistent adapter such as LibSQL:
 
 ```typescript
-import { Agent } from "@voltagent/core";
-import { LibSQLStorage } from "@voltagent/libsql"; // npm install @voltagent/libsql
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { Agent, Memory } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql"; // npm install @voltagent/libsql
 import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "Persistent Assistant",
   instructions: "You are a helpful assistant",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
-  memory: new LibSQLStorage({
-    url: "file:./.voltagent/memory.db", // SQLite database file
+  memory: new Memory({
+    storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
   }),
 });
 ```
@@ -73,7 +69,6 @@ For stateless agents that don't need conversation history:
 const agent = new Agent({
   name: "Stateless Assistant",
   instructions: "You provide one-off responses",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
   memory: false, // Disable memory completely
 });
@@ -81,10 +76,10 @@ const agent = new Agent({
 
 ## Available Memory Providers
 
-- **[InMemoryStorage](./memory/in-memory.md)** (Default) - Built into `@voltagent/core`
-- **[LibSQLStorage](./memory/libsql.md)** - Install: `npm install @voltagent/libsql`
-- **[PostgresStorage](./memory/postgres.md)** - Install: `npm install @voltagent/postgres`
-- **[SupabaseStorage](./memory/supabase.md)** - Install: `npm install @voltagent/supabase`
+- **[InMemoryStorageAdapter](./memory/in-memory.md)** (Default) - Built into `@voltagent/core`
+- **[LibSQLMemoryAdapter](./memory/libsql.md)** - Install: `npm install @voltagent/libsql`
+- **[PostgreSQLMemoryAdapter](./memory/postgres.md)** - Install: `npm install @voltagent/postgres`
+- **[SupabaseMemoryAdapter](./memory/supabase.md)** - Install: `npm install @voltagent/supabase`
 
 ## Learn More
 

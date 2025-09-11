@@ -16,7 +16,7 @@ export interface ProcessedAgentOptions {
   seed?: number;
   stopSequences?: string[];
   maxRetries?: number;
-  signal?: AbortSignal;
+  abortSignal?: AbortSignal;
   onFinish?: (result: unknown) => Promise<void>;
   [key: string]: any;
 }
@@ -30,7 +30,7 @@ export function processAgentOptions(body: any, signal?: AbortSignal): ProcessedA
 
   const processedOptions: ProcessedAgentOptions = {
     ...options,
-    ...(signal && { signal }),
+    ...(signal && { abortSignal: signal }),
   };
 
   // Convert context to Map for internal use

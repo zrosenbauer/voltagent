@@ -62,4 +62,4 @@ console.log("");
 console.log("💡 The Tools Agent will automatically search when needed!");
 console.log("");
 console.log("📋 Sources tracking: Both agents track which documents were used");
-console.log("   Check userContext.get('references') to see sources with IDs and scores");
+console.log("   Check context.get('references') to see sources with IDs and scores");

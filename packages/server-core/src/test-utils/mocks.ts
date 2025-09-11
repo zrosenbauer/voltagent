@@ -118,7 +118,6 @@ export function createMockDeps(): ServerProviderDeps {
       getWorkflowDetailForApi: vi.fn().mockReturnValue(mockWorkflow),
       getWorkflow: vi.fn().mockReturnValue({ workflow: mockWorkflow }),
       getWorkflowCount: vi.fn().mockReturnValue(1),
-      getWorkflowExecutionsAsync: vi.fn().mockResolvedValue([]),
       on: vi.fn(),
       off: vi.fn(),
       activeExecutions: new Map(),

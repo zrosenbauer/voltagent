@@ -8,6 +8,8 @@ import TabItem from '@theme/TabItem';
 
 # Vercel AI Provider (`@voltagent/vercel-ai`)
 
+> Deprecated: VoltAgent 1.x removed custom provider wrappers and the `llm` prop. Use ai-sdk providers directly and pass a `LanguageModel` via the `model` option on `Agent`. See /docs/getting-started/providers-models for current guidance.
+
 The Vercel AI Provider acts as a bridge between VoltAgent and the [Vercel AI SDK](https://sdk.vercel.ai/docs), allowing your agents to leverage models deployed or accessible via Vercel's infrastructure. It essentially wraps the Vercel AI SDK's `generateText` and `streamText` functions (and potentially others in the future).
 
 **Key Characteristics:**
@@ -20,16 +22,19 @@ The Vercel AI Provider acts as a bridge between VoltAgent and the [Vercel AI SDK
 <Tabs>
   <TabItem value="npm" label="npm">
     ```bash copy
+    # deprecated
     npm install @voltagent/core @voltagent/vercel-ai
     ```
   </TabItem>
   <TabItem value="yarn" label="yarn">
     ```bash copy
+    # deprecated
     yarn add @voltagent/core @voltagent/vercel-ai
     ```
   </TabItem>
   <TabItem value="pnpm" label="pnpm">
     ```bash copy
+    # deprecated
     pnpm add @voltagent/core @voltagent/vercel-ai
     ```
   </TabItem>
@@ -40,7 +45,7 @@ The Vercel AI Provider acts as a bridge between VoltAgent and the [Vercel AI SDK
 The `VercelProvider` itself doesn't require any constructor arguments, as it relies on the environment configuration recognized by the Vercel AI SDK.
 
 ```typescript
-import { VercelProvider } from "@voltagent/vercel-ai";
+// deprecated: import { VercelProvider } from "@voltagent/vercel-ai";
 
 const vercelProvider = new VercelProvider();
 ```
@@ -55,7 +60,7 @@ Instantiate your `Agent` with the `VercelProvider`:
 
 ```typescript
 import { Agent } from "@voltagent/core";
-import { VercelProvider } from "@voltagent/vercel-ai";
+// deprecated: import { VercelProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 const vercelProvider = new VercelProvider();
@@ -291,7 +296,7 @@ async function main() {
 
     console.log("Streaming Object Updates:");
     // Stream partial object updates
-    for await (const partialObject of response.objectStream) {
+    for await (const partialObject of response.partialObjectStream) {
       console.log("Partial:", partialObject);
     }
 

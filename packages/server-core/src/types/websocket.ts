@@ -2,7 +2,6 @@
  * WebSocket types for server implementations
  */
 
-import type { AgentHistoryEntry, WorkflowHistoryEntry } from "@voltagent/core";
 import type { LogFilter } from "@voltagent/internal";
 
 /**
@@ -49,12 +48,4 @@ export interface LogStreamClient {
 /**
  * WebSocket event handlers
  */
-export interface WebSocketEventHandlers {
-  onAgentHistoryUpdate?: (
-    agentId: string,
-    historyEntry: AgentHistoryEntry & { _sequenceNumber?: number },
-  ) => void;
-  onAgentHistoryCreated?: (agentId: string, historyEntry: AgentHistoryEntry) => void;
-  onWorkflowHistoryCreated?: (historyEntry: WorkflowHistoryEntry) => void;
-  onWorkflowHistoryUpdate?: (executionId: string, historyEntry: WorkflowHistoryEntry) => void;
-}
+export type WebSocketEventHandlers = Record<string, never>;

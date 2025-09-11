@@ -15,6 +15,7 @@ export * from "./handlers/agent-additional.handlers";
 export * from "./handlers/workflow.handlers";
 export * from "./handlers/log.handlers";
 export * from "./handlers/update.handlers";
+export * from "./handlers/observability.handlers";
 
 // Export auth
 export * from "./auth";
@@ -32,6 +33,7 @@ export * from "./websocket/handlers";
 export * from "./websocket/log-stream";
 export * from "./websocket/adapter";
 export * from "./websocket/setup";
+export * from "./websocket/observability-handler";
 
 // Export server base classes and utilities
 export * from "./server/base-provider";

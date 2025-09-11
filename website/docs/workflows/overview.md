@@ -58,13 +58,11 @@ Now, let's enhance our workflow. We'll add an AI agent to analyze the sentiment 
 ```typescript
 import { createWorkflowChain, Agent } from "@voltagent/core";
 import { z } from "zod";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 // Define an AI agent to use in our workflow
 const agent = new Agent({
   name: "Analyzer",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   instructions: "You are a text analyzer.",
 });
@@ -104,12 +102,10 @@ Finally, let's add a step that only runs if a condition is met. We'll check if t
 ```typescript
 import { createWorkflowChain, Agent, andThen } from "@voltagent/core";
 import { z } from "zod";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 const agent = new Agent({
   name: "Analyzer",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o-mini"),
   instructions: "You are a text analyzer.",
 });
@@ -290,14 +286,14 @@ const result = await workflow.run(
   {
     userId: "user-abc-123",
     conversationId: "conv-xyz-456",
-    userContext: new Map([["plan", "premium"]]),
+    context: new Map([["plan", "premium"]]),
   }
 );
 ```
 
 **2. Access and Modify State in Steps**
 
-The `execute` function can accept a second argument containing the execution state. You can also modify the `userContext` map, and the changes will be available in subsequent steps.
+The `execute` function can accept a second argument containing the execution state. You can also modify the `context` map, and the changes will be available in subsequent steps.
 
 ```typescript
 import { createWorkflowChain } from "@voltagent/core";
@@ -313,13 +309,13 @@ const workflow = createWorkflowChain({
     id: "check-initial-plan",
     execute: async (data, state) => {
       const userId = state.userId;
-      const plan = state.userContext.get("plan");
+      const plan = state.context.get("plan");
 
       console.log(`Step 1: User ${userId} is on the ${plan} plan.`);
 
-      // Modify userContext for subsequent steps
+      // Modify context for subsequent steps
       if (plan === "premium") {
-        state.userContext.set("permissions", "unlimited");
+        state.context.set("permissions", "unlimited");
         console.log(`Step 1: Granted 'unlimited' permissions.`);
       }
 
@@ -329,7 +325,7 @@ const workflow = createWorkflowChain({
   .andThen({
     id: "use-modified-state",
     execute: async (data, state) => {
-      const permissions = state.userContext.get("permissions");
+      const permissions = state.context.get("permissions");
       console.log(`Step 2: User now has '${permissions}' permissions.`);
 
       // Return the final result
@@ -345,7 +341,7 @@ await workflow.run(
   { name: "Alex" },
   {
     userId: "user-alex-789",
-    userContext: new Map([["plan", "premium"]]),
+    context: new Map([["plan", "premium"]]),
   }
 );
 

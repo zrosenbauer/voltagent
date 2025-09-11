@@ -15,7 +15,6 @@ import type {
   StreamObjectOnFinishCallback,
   StreamOnErrorCallback,
   StreamTextOnFinishCallback,
-  ToolExecutionContext,
 } from "../../types";
 
 /**
@@ -313,7 +312,6 @@ export interface GenerateTextOptions<TModel> {
   provider?: ProviderOptions;
   onStepFinish?: StepFinishCallback;
   signal?: AbortSignal;
-  toolExecutionContext?: ToolExecutionContext;
 }
 
 export interface StreamTextOptions<TModel> {
@@ -327,7 +325,6 @@ export interface StreamTextOptions<TModel> {
   onFinish?: StreamTextOnFinishCallback;
   onError?: StreamOnErrorCallback;
   signal?: AbortSignal;
-  toolExecutionContext?: ToolExecutionContext;
 }
 
 export interface GenerateObjectOptions<TModel, TSchema extends z.ZodType> {
@@ -337,7 +334,6 @@ export interface GenerateObjectOptions<TModel, TSchema extends z.ZodType> {
   provider?: ProviderOptions;
   onStepFinish?: StepFinishCallback;
   signal?: AbortSignal;
-  toolExecutionContext?: ToolExecutionContext;
 }
 
 export interface StreamObjectOptions<TModel, TSchema extends z.ZodType> {
@@ -349,7 +345,6 @@ export interface StreamObjectOptions<TModel, TSchema extends z.ZodType> {
   onFinish?: StreamObjectOnFinishCallback<z.infer<TSchema>>;
   onError?: StreamOnErrorCallback;
   signal?: AbortSignal;
-  toolExecutionContext?: ToolExecutionContext;
 }
 
 // Utility types to infer provider-specific types

@@ -213,19 +213,13 @@ dist
     spinner.succeed(chalk.green("VoltAgent project created successfully! 📁"));
 
     // Install provider-specific dependency
-    if (options.aiProvider && options.aiProvider !== "ollama") {
+    if (options.aiProvider) {
       const providerConfig = AI_PROVIDER_CONFIG[options.aiProvider];
       await installProviderDependency(
         targetDir,
         providerConfig.package,
         providerConfig.packageVersion,
-      );
-    } else if (options.aiProvider === "ollama") {
-      const providerConfig = AI_PROVIDER_CONFIG.ollama;
-      await installProviderDependency(
-        targetDir,
-        providerConfig.package,
-        providerConfig.packageVersion,
+        providerConfig.extraPackages || [],
       );
     }
 
