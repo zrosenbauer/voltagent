@@ -70,6 +70,8 @@ describe("Memory V2 Type System", () => {
     delete: async () => {},
     deleteBatch: async () => {},
     clear: async () => {},
+    count: async () => 0,
+    get: async () => null,
   };
 
   describe("Memory Constructor Type Inference", () => {

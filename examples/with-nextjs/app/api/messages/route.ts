@@ -1,18 +1,13 @@
 import { sharedMemory } from "@/voltagent/memory";
 
 export async function GET(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const conversationId = searchParams.get("conversationId") || "1";
-    const userId = searchParams.get("userId") || "1";
+  const { searchParams } = new URL(request.url);
+  const conversationId = searchParams.get("conversationId") || "1";
+  const userId = searchParams.get("userId") || "1";
 
-    const uiMessages = await sharedMemory.getMessages(userId, conversationId);
+  const uiMessages = await sharedMemory.getMessages(userId, conversationId);
 
-    return Response.json({
-      data: uiMessages || [],
-    });
-  } catch (error) {
-    console.error("Error fetching messages:", error);
-    return Response.json({ error: "Failed to fetch messages" }, { status: 500 });
-  }
+  return Response.json({
+    data: uiMessages || [],
+  });
 }

@@ -152,6 +152,7 @@ describe("convertResponseMessagesToUIMessages", () => {
       state: "output-available",
       input: { operation: "add", a: 1, b: 2 },
       output: { result: 3 },
+      providerExecuted: true,
     });
   });
 
@@ -180,6 +181,7 @@ describe("convertResponseMessagesToUIMessages", () => {
       state: "output-available",
       input: {},
       output: { results: ["item1", "item2"] },
+      providerExecuted: true,
     });
   });
 
@@ -289,11 +291,11 @@ describe("convertResponseMessagesToUIMessages", () => {
 
     const result = await convertResponseMessagesToUIMessages(messages);
 
-    expect(result).toHaveLength(2);
+    expect(result).toHaveLength(1);
 
     // First assistant message with text and tool
     expect(result[0].role).toBe("assistant");
-    expect(result[0].parts).toHaveLength(2);
+    expect(result[0].parts).toHaveLength(4);
     expect(result[0].parts[0]).toEqual({
       type: "text",
       text: "Let me calculate that for you.",
@@ -304,12 +306,13 @@ describe("convertResponseMessagesToUIMessages", () => {
       state: "output-available",
       input: { operation: "multiply", a: 5, b: 7 },
       output: { result: 35 },
+      providerExecuted: true,
     });
 
     // Second assistant message with just text
-    expect(result[1].role).toBe("assistant");
-    expect(result[1].parts).toHaveLength(1);
-    expect(result[1].parts[0]).toEqual({
+    expect(result[0].role).toBe("assistant");
+    expect(result[0].parts).toHaveLength(4);
+    expect(result[0].parts[3]).toEqual({
       type: "text",
       text: "The result is 35.",
     });
@@ -364,6 +367,7 @@ describe("convertResponseMessagesToUIMessages", () => {
       state: "output-available",
       input: { query: "weather" },
       output: { results: ["sunny", "warm"] },
+      providerExecuted: true,
     });
 
     expect(result[0].parts[1]).toEqual({
@@ -372,6 +376,7 @@ describe("convertResponseMessagesToUIMessages", () => {
       state: "output-available",
       input: { operation: "add", a: 10, b: 20 },
       output: { result: 30 },
+      providerExecuted: true,
     });
   });
 
@@ -400,6 +405,6 @@ describe("convertResponseMessagesToUIMessages", () => {
 
     const result = await convertResponseMessagesToUIMessages(messages);
 
-    expect(result).toHaveLength(0);
+    expect(result).toHaveLength(1);
   });
 });
