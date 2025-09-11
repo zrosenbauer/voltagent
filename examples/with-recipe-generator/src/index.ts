@@ -2,7 +2,6 @@ import { openai } from "@ai-sdk/openai";
 import { Agent, MCPConfiguration, VoltAgent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 
 const mcpConfig = new MCPConfiguration({
   servers: {

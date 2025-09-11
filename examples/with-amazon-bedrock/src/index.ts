@@ -1,10 +1,9 @@
 import { createAmazonBedrock } from "@ai-sdk/amazon-bedrock";
 import { fromNodeProviderChain } from "@aws-sdk/credential-providers";
-import { Agent, VoltAgent, createTool } from "@voltagent/core";
-import { LibSQLStorage } from "@voltagent/libsql";
+import { Agent, Memory, VoltAgent, createTool } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { z } from "zod";
 
 // Example tool to demonstrate capabilities
@@ -64,9 +63,10 @@ const agent = new Agent({
   instructions: "An AI assistant powered by Amazon Bedrock",
   model: bedrock("anthropic.claude-opus-4-1-20250805-v1:0"),
   tools: [weatherTool],
-  memory: new LibSQLStorage({
-    url: "file:./.voltagent/memory.db",
-    logger: logger.child({ component: "libsql" }),
+  memory: new Memory({
+    storage: new LibSQLMemoryAdapter({
+      url: "file:./.voltagent/memory.db",
+    }),
   }),
 });
 

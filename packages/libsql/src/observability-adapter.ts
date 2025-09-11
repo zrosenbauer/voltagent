@@ -950,7 +950,6 @@ export class LibSQLObservabilityAdapter implements ObservabilityStorageAdapter {
    * Convert a database row to an ObservabilityLogRecord
    */
   private rowToLogRecord(row: any): ObservabilityLogRecord {
-    // TODO: fix me
     const log: ObservabilityLogRecord = {
       timestamp: row.timestamp as string,
       body: (() => {

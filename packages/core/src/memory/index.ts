@@ -406,17 +406,21 @@ export class Memory {
   ): Promise<void> {
     if (!this.embedding || !this.vector) return;
 
-    // Extract text content from message parts
-    if (!message.parts || !Array.isArray(message.parts)) return;
-
-    const textParts: string[] = [];
-    for (const part of message.parts) {
-      if (part.type === "text" && "text" in part && typeof part.text === "string") {
-        textParts.push(part.text);
+    // Extract text content: prefer parts, fallback to content if available
+    let textContent: string | null = null;
+    if (message.parts && Array.isArray(message.parts)) {
+      const textParts: string[] = [];
+      for (const part of message.parts) {
+        if (part.type === "text" && "text" in part && typeof (part as any).text === "string") {
+          textParts.push((part as any).text);
+        }
       }
+      textContent = textParts.length > 0 ? textParts.join(" ") : null;
     }
-
-    const textContent = textParts.length > 0 ? textParts.join(" ") : null;
+    // Fallback: some callers might still use message.content
+    if (!textContent && (message as any).content && typeof (message as any).content === "string") {
+      textContent = (message as any).content as string;
+    }
     if (!textContent) return;
 
     // Generate embedding
@@ -445,18 +449,20 @@ export class Memory {
     // Extract text content from messages
     const messagesWithText = messages
       .map((msg) => {
-        // Extract text from message parts
-        if (!msg.parts || !Array.isArray(msg.parts)) return null;
-
-        const textParts: string[] = [];
-        for (const part of msg.parts) {
-          if (part.type === "text" && "text" in part && typeof part.text === "string") {
-            textParts.push(part.text);
+        // Extract text from message parts, fallback to content
+        let text: string | null = null;
+        if (msg.parts && Array.isArray(msg.parts)) {
+          const textParts: string[] = [];
+          for (const part of msg.parts) {
+            if (part.type === "text" && "text" in part && typeof (part as any).text === "string") {
+              textParts.push((part as any).text);
+            }
           }
+          text = textParts.length > 0 ? textParts.join(" ") : null;
         }
-
-        const text = textParts.length > 0 ? textParts.join(" ") : null;
-
+        if (!text && (msg as any).content && typeof (msg as any).content === "string") {
+          text = (msg as any).content as string;
+        }
         return text ? { message: msg, text } : null;
       })
       .filter((item): item is { message: UIMessage; text: string } => item !== null);
@@ -795,9 +801,6 @@ Remember:
 
       // Add message to conversation
       await this.addMessage(message, userId, conversationId);
-
-      // Log successful operation
-      logger?.debug?.("[Memory] Write successful (1 record)");
     } catch (error) {
       // Log error
       logger?.error?.(

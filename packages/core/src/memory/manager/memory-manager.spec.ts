@@ -6,6 +6,37 @@ import { InMemoryStorageAdapter } from "../../memory/adapters/storage/in-memory"
 import { createTestUIMessage } from "../../memory/test-utils";
 import { MemoryManager } from "./memory-manager";
 
+// Helper function to create mock OperationContext
+function createMockOperationContext(): OperationContext {
+  const mockSpan = {
+    end: vi.fn(),
+    setStatus: vi.fn(),
+    setAttribute: vi.fn(),
+    setAttributes: vi.fn(),
+    recordException: vi.fn(),
+  };
+
+  return {
+    operationId: "test-operation-id",
+    logger: getGlobalLogger().child({ test: true }),
+    historyEntry: { id: "hist-1" },
+    messages: [],
+    context: new Map(),
+    systemContext: new Map(),
+    isActive: true,
+    traceContext: {
+      createChildSpan: vi.fn().mockReturnValue(mockSpan),
+      endChildSpan: vi.fn(),
+      withSpan: vi.fn().mockImplementation(async (_span, fn) => await fn()),
+      getRootSpan: vi.fn().mockReturnValue(mockSpan),
+      endRootSpan: vi.fn(),
+      updateGenerationOptions: vi.fn(),
+    } as any,
+    abortController: new AbortController(),
+    startTime: new Date(),
+  } as OperationContext;
+}
+
 describe("MemoryManager", () => {
   let manager: MemoryManager;
   let memory: Memory;
@@ -45,11 +76,7 @@ describe("MemoryManager", () => {
 
   describe("saveMessage", () => {
     it("should save a message to Memory V2", async () => {
-      const context: OperationContext = {
-        logger: getGlobalLogger().child({ test: true }),
-        historyEntry: { id: "hist-1" },
-        messages: [],
-      };
+      const context = createMockOperationContext();
 
       const message = createTestUIMessage({
         id: "msg-1",
@@ -79,11 +106,7 @@ describe("MemoryManager", () => {
         getGlobalLogger().child({ test: true }),
       );
 
-      const context: OperationContext = {
-        logger: getGlobalLogger().child({ test: true }),
-        historyEntry: { id: "hist-1" },
-        messages: [],
-      };
+      const context = createMockOperationContext();
 
       const message = createTestUIMessage();
 
@@ -96,11 +119,7 @@ describe("MemoryManager", () => {
 
   describe("getMessages", () => {
     it("should retrieve messages from Memory V2", async () => {
-      const context: OperationContext = {
-        logger: getGlobalLogger().child({ test: true }),
-        historyEntry: { id: "hist-1" },
-        messages: [],
-      };
+      const context = createMockOperationContext();
 
       // First save some messages
       const message1 = createTestUIMessage({ id: "msg-1" });
@@ -119,11 +138,7 @@ describe("MemoryManager", () => {
     it("should return empty array when memory is disabled", async () => {
       const disabledManager = new MemoryManager("agent-3", false);
 
-      const context: OperationContext = {
-        logger: getGlobalLogger().child({ test: true }),
-        historyEntry: { id: "hist-1" },
-        messages: [],
-      };
+      const context = createMockOperationContext();
 
       const messages = await disabledManager.getMessages(context, "user-1", "conv-1");
       expect(messages).toEqual([]);
@@ -132,11 +147,7 @@ describe("MemoryManager", () => {
 
   describe("searchMessages", () => {
     it("should search messages semantically", async () => {
-      const context: OperationContext = {
-        logger: getGlobalLogger().child({ test: true }),
-        historyEntry: { id: "hist-1" },
-        messages: [],
-      };
+      const context = createMockOperationContext();
 
       // Save some messages
       const message1 = createTestUIMessage({
@@ -160,11 +171,7 @@ describe("MemoryManager", () => {
 
   describe("clearMessages", () => {
     it("should clear messages from conversation", async () => {
-      const context: OperationContext = {
-        logger: getGlobalLogger().child({ test: true }),
-        historyEntry: { id: "hist-1" },
-        messages: [],
-      };
+      const context = createMockOperationContext();
 
       // Save a message
       const message = createTestUIMessage();

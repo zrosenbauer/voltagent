@@ -1,9 +1,8 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, VoltOpsClient } from "@voltagent/core";
-import { LibSQLStorage } from "@voltagent/libsql";
+import { Agent, Memory, VoltAgent, VoltOpsClient } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 
 import { addCalendarEventTool, checkCalendarTool, searchTool, weatherTool } from "./tools";
 
@@ -17,9 +16,10 @@ const agent = new Agent({
   instructions: "You are a helpful assistant",
   model: openai("gpt-4o-mini"),
   tools: [weatherTool, searchTool, checkCalendarTool, addCalendarEventTool],
-  memory: new LibSQLStorage({
-    url: "file:./.voltagent/memory.db",
-    logger: logger.child({ component: "libsql" }),
+  memory: new Memory({
+    storage: new LibSQLMemoryAdapter({
+      url: "file:./.voltagent/memory.db",
+    }),
   }),
 });
 

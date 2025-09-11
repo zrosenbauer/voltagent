@@ -41,7 +41,6 @@ export class VoltOpsClient implements IVoltOpsClient {
       // observability removed - now handled by VoltAgentObservability
       prompts: true,
       ...options,
-      // TODO: fix me
       baseUrl: options.baseUrl || "https://api.voltagent.dev",
       promptCache: {
         ...defaultPromptCache,

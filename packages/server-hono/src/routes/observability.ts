@@ -28,7 +28,7 @@ export function registerObservabilityRoutes(
   // Setup observability configuration
   app.post(OBSERVABILITY_ROUTES.setupObservability.path, async (c) => {
     const body = await c.req.json();
-    logger.debug("POST /setup-observability - configuring observability", {
+    logger.trace("POST /setup-observability - configuring observability", {
       hasKeys: !!(body.publicKey && body.secretKey),
     });
     const result = await setupObservabilityHandler(body, deps);
@@ -38,7 +38,7 @@ export function registerObservabilityRoutes(
   // Get all traces with optional agentId filter
   app.get(OBSERVABILITY_ROUTES.getTraces.path, async (c) => {
     const query = c.req.query();
-    logger.debug("GET /observability/traces - fetching traces", { query });
+    logger.trace("GET /observability/traces - fetching traces", { query });
     const result = await getTracesHandler(deps, query);
     return c.json(result, result.success ? 200 : 500);
   });
@@ -46,7 +46,7 @@ export function registerObservabilityRoutes(
   // Get specific trace by ID
   app.get(OBSERVABILITY_ROUTES.getTraceById.path, async (c) => {
     const traceId = c.req.param("traceId");
-    logger.debug(`GET /observability/traces/${traceId} - fetching trace`);
+    logger.trace(`GET /observability/traces/${traceId} - fetching trace`);
     const result = await getTraceByIdHandler(traceId, deps);
     return c.json(result, result.success ? 200 : 404);
   });
@@ -54,14 +54,14 @@ export function registerObservabilityRoutes(
   // Get specific span by ID
   app.get(OBSERVABILITY_ROUTES.getSpanById.path, async (c) => {
     const spanId = c.req.param("spanId");
-    logger.debug(`GET /observability/spans/${spanId} - fetching span`);
+    logger.trace(`GET /observability/spans/${spanId} - fetching span`);
     const result = await getSpanByIdHandler(spanId, deps);
     return c.json(result, result.success ? 200 : 404);
   });
 
   // Get observability status
   app.get(OBSERVABILITY_ROUTES.getObservabilityStatus.path, async (c) => {
-    logger.debug("GET /observability/status - fetching status");
+    logger.trace("GET /observability/status - fetching status");
     const result = await getObservabilityStatusHandler(deps);
     return c.json(result, result.success ? 200 : 500);
   });
@@ -69,7 +69,7 @@ export function registerObservabilityRoutes(
   // Get logs by trace ID
   app.get(OBSERVABILITY_ROUTES.getLogsByTraceId.path, async (c) => {
     const traceId = c.req.param("traceId");
-    logger.debug(`GET /observability/traces/${traceId}/logs - fetching logs`);
+    logger.trace(`GET /observability/traces/${traceId}/logs - fetching logs`);
     const result = await getLogsByTraceIdHandler(traceId, deps);
     return c.json(result, result.success ? 200 : 404);
   });
@@ -77,7 +77,7 @@ export function registerObservabilityRoutes(
   // Get logs by span ID
   app.get(OBSERVABILITY_ROUTES.getLogsBySpanId.path, async (c) => {
     const spanId = c.req.param("spanId");
-    logger.debug(`GET /observability/spans/${spanId}/logs - fetching logs`);
+    logger.trace(`GET /observability/spans/${spanId}/logs - fetching logs`);
     const result = await getLogsBySpanIdHandler(spanId, deps);
     return c.json(result, result.success ? 200 : 404);
   });
@@ -85,7 +85,7 @@ export function registerObservabilityRoutes(
   // Query logs with filters
   app.get(OBSERVABILITY_ROUTES.queryLogs.path, async (c) => {
     const query = c.req.query();
-    logger.debug("GET /observability/logs - querying logs", { query });
+    logger.trace("GET /observability/logs - querying logs", { query });
     const result = await queryLogsHandler(query, deps);
     return c.json(result, result.success ? 200 : 400);
   });

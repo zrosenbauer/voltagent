@@ -1,8 +1,7 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, Tool, VoltAgent, messageHelpers } from "@voltagent/core";
-import { LibSQLStorage } from "@voltagent/libsql";
+import { Agent, Memory, Tool, VoltAgent, messageHelpers } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { honoServer } from "@voltagent/server-hono";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { z } from "zod";
 
 // Simple tool for demonstration
@@ -28,8 +27,10 @@ const agent = new Agent({
   instructions: "Agent demonstrating all available hooks",
   model: openai("gpt-4o-mini"),
   tools: [weatherTool],
-  memory: new LibSQLStorage({
-    url: "file:./.voltagent/memory.db",
+  memory: new Memory({
+    storage: new LibSQLMemoryAdapter({
+      url: "file:./.voltagent/memory.db",
+    }),
   }),
 
   hooks: {

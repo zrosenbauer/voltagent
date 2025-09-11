@@ -1,10 +1,9 @@
 import path from "node:path";
 import { openai } from "@ai-sdk/openai";
-import { Agent, MCPConfiguration, VoltAgent } from "@voltagent/core";
-import { LibSQLStorage } from "@voltagent/libsql";
+import { Agent, MCPConfiguration, Memory, VoltAgent } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 
 // Create logger
 const logger = createPinoLogger({
@@ -27,9 +26,10 @@ const agent = new Agent({
   instructions: "You help users read and write files",
   model: openai("gpt-4o-mini"),
   tools: await mcpConfig.getTools(),
-  memory: new LibSQLStorage({
-    url: "file:./.voltagent/memory.db",
-    logger: logger.child({ component: "libsql" }),
+  memory: new Memory({
+    storage: new LibSQLMemoryAdapter({
+      url: "file:./.voltagent/memory.db",
+    }),
   }),
 });
 

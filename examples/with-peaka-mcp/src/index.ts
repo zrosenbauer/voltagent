@@ -1,8 +1,7 @@
-import { Agent, MCPConfiguration, VoltAgent } from "@voltagent/core";
-import { LibSQLStorage } from "@voltagent/libsql";
+import { Agent, MCPConfiguration, Memory, VoltAgent } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 
 import { openai } from "@ai-sdk/openai";
 
@@ -30,9 +29,10 @@ const mcp = new MCPConfiguration({
     model: openai("gpt-4o-mini"),
     tools: [...tools],
     markdown: true,
-    memory: new LibSQLStorage({
-      url: "file:./.voltagent/memory.db",
-      logger: logger.child({ component: "libsql" }),
+    memory: new Memory({
+      storage: new LibSQLMemoryAdapter({
+        url: "file:./.voltagent/memory.db",
+      }),
     }),
   });
 

@@ -1,12 +1,11 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent } from "@voltagent/core";
+import { Agent, Memory, VoltAgent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
-import { PostgresStorage } from "@voltagent/postgres";
+import { PostgreSQLMemoryAdapter } from "@voltagent/postgres";
 import { honoServer } from "@voltagent/server-hono";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 
 // Configure PostgreSQL Memory
-const memoryStorage = new PostgresStorage({
+const memoryStorage = new PostgreSQLMemoryAdapter({
   // Read connection details from environment variables
   connection: {
     host: process.env.POSTGRES_HOST || "localhost",
@@ -36,7 +35,9 @@ const agent = new Agent({
   name: "PostgreSQL Memory Agent",
   instructions: "A helpful assistant that remembers conversations using PostgreSQL.",
   model: openai("gpt-4o-mini"),
-  memory: memoryStorage, // Use the configured PostgreSQL storage
+  memory: new Memory({
+    storage: memoryStorage,
+  }),
 });
 
 // Create logger

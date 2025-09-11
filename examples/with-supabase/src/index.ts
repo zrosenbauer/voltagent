@@ -1,9 +1,8 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent } from "@voltagent/core";
+import { Agent, Memory, VoltAgent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
-import { SupabaseMemory } from "@voltagent/supabase"; // Import SupabaseMemory
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { SupabaseMemoryAdapter } from "@voltagent/supabase"; // Import SupabaseMemory
 
 // Get Supabase credentials from environment variables
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -16,9 +15,11 @@ if (!supabaseUrl || !supabaseKey) {
 }
 
 // Initialize SupabaseMemory
-const memory = new SupabaseMemory({
-  supabaseUrl,
-  supabaseKey,
+const memory = new Memory({
+  storage: new SupabaseMemoryAdapter({
+    supabaseUrl,
+    supabaseKey,
+  }),
 });
 
 const agent = new Agent({

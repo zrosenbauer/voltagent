@@ -42,12 +42,49 @@ Escape the limitations of no-code builders and the complexity of starting from s
 
 </div>
 
-## VoltAgent: Build AI Agents Fast and Flexibly
+## VoltAgent: Embeddings + Vector Search
 
-VoltAgent is an open-source TypeScript framework for creating and managing AI agents. It provides modular components to build, customize, and scale agents with ease. From connecting to APIs and memory management to supporting multiple LLMs, VoltAgent simplifies the process of creating sophisticated AI systems. It enables fast development, maintains clean code, and offers flexibility to switch between models and tools without vendor lock-in.
+This example shows how to enable semantic memory using embeddings and a vector database. Messages are embedded on save, stored in LibSQL via `LibSQLVectorAdapter`, and retrieved with semantic search when the agent answers.
 
 ## Try Example
 
 ```bash
-npm create voltagent-app@latest -- --example with-xsai
+npm create voltagent-app@latest -- --example with-vector-search
 ```
+
+## Highlights
+
+- OpenAI embeddings via AI SDK (`text-embedding-3-small`)
+- Vector DB via `LibSQLVectorAdapter`
+- Automatic semantic recall in `Agent` when vector support exists
+- Optional raw vector search API (`memory.searchSimilar`)
+
+## Snippet
+
+```ts
+import { openai } from "@ai-sdk/openai";
+import { Agent, AiSdkEmbeddingAdapter, Memory, VoltAgent } from "@voltagent/core";
+import { LibSQLMemoryAdapter, LibSQLVectorAdapter } from "@voltagent/libsql";
+import { honoServer } from "@voltagent/server-hono";
+
+const memory = new Memory({
+  storage: new LibSQLMemoryAdapter(),
+  embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
+  vector: new LibSQLVectorAdapter(),
+});
+
+const agent = new Agent({ name: "Semantic Memory Agent", model: openai("gpt-4o-mini"), memory });
+new VoltAgent({ agents: { agent }, server: honoServer({ port: 3142 }) });
+```
+
+## Run Locally
+
+1. Copy `.env.example` to `.env` and set `OPENAI_API_KEY`.
+2. Install deps and start:
+
+```bash
+pnpm i
+pnpm dev
+```
+
+To observe semantic recall, seed a conversation with prior messages (see commented demo in `src/index.ts`), then ask a related question. The agent will merge relevant past messages using semantic search.

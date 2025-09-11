@@ -178,20 +178,27 @@ export class SupabaseMemoryAdapter implements StorageAdapter {
   }
 
   /**
-   * Check if old columns exist (indicating upgrade from old system)
+   * Check if migration to V2 is needed (new columns are missing)
    */
-  private async checkOldColumns(): Promise<boolean> {
+  private async checkMigrationNeeded(): Promise<boolean> {
     try {
-      // Try to select old columns from messages table
-      const { error } = await this.client
+      // Try to select new V2 columns from messages table
+      const { error: messagesError } = await this.client
         .from(`${this.baseTableName}_messages`)
-        .select("content, type")
+        .select("parts, format_version")
         .limit(1);
 
-      // If no error, old columns exist
-      return !error;
+      // Try to select new V2 columns from conversations table
+      const { error: conversationsError } = await this.client
+        .from(`${this.baseTableName}_conversations`)
+        .select("user_id, resource_id")
+        .limit(1);
+
+      // If either query fails, migration is needed
+      // If both succeed, migration has already been done
+      return !!messagesError || !!conversationsError;
     } catch {
-      return false;
+      return true;
     }
   }
 
@@ -289,10 +296,9 @@ END OF SQL
 `);
     } else {
       // Tables exist - check if migration is needed
-      const hasOldColumns = await this.checkOldColumns();
-
-      if (hasOldColumns) {
-        // Old system detected - show migration SQL
+      const needsMigration = await this.checkMigrationNeeded();
+      if (needsMigration) {
+        // Migration needed - show migration SQL
         this.logMigrationSQL();
       } else {
         // V2 system already in place
@@ -359,14 +365,14 @@ CREATE TABLE IF NOT EXISTS ${workflowStatesTable} (
   updated_at TIMESTAMPTZ NOT NULL
 );
 
--- Step 6: Migrate default user IDs to actual user IDs
--- IMPORTANT: This updates messages with 'default' user_id to use their conversation's user_id
+-- Step 6: Migrate null user IDs to actual user IDs
+-- IMPORTANT: This updates messages with NULL user_id to use their conversation's user_id
 UPDATE ${messagesTable} m
 SET user_id = c.user_id
 FROM ${conversationsTable} c
-WHERE m.conversation_id = c.conversation_id
-  AND m.user_id = 'default'
-  AND c.user_id != 'default';
+WHERE m.conversation_id = c.id
+  AND m.user_id IS NULL
+  AND c.user_id IS NOT NULL;
 
 
 -- Step 6: Create indexes for all tables

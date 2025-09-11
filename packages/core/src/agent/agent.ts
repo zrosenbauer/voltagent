@@ -462,22 +462,6 @@ export class Agent {
           context: oc,
         });
 
-        // Log stream complete
-        methodLogger.debug(
-          buildAgentLogMessage(
-            this.name,
-            ActionType.STREAM_COMPLETE,
-            "Stream generation completed",
-          ),
-          {
-            text: result.text,
-            toolCalls: [],
-            toolResults: [],
-            finishReason: result.finishReason || "stop",
-            usage: result.usage,
-          },
-        );
-
         // Log successful completion with usage details
         const usage = result.usage;
         const tokenInfo = usage ? `${usage.totalTokens} tokens` : "no usage data";
@@ -523,6 +507,7 @@ export class Agent {
     input: string | UIMessage[],
     options?: StreamTextOptions,
   ): Promise<StreamTextResultWithContext> {
+    const startTime = Date.now();
     const oc = this.createOperationContext(input, options);
 
     // Wrap entire execution in root span to ensure all logs have trace context
@@ -663,13 +648,14 @@ export class Agent {
             oc.traceContext.setOutput(finalResult.text);
             oc.traceContext.end("completed");
 
+            const usage = convertUsage(finalResult.totalUsage);
             // Call hooks with standardized output (stream finish result)
             await this.getMergedHooks(options).onEnd?.({
               conversationId: oc.conversationId || "",
               agent: this,
               output: {
                 text: finalResult.text,
-                usage: convertUsage(finalResult.totalUsage as any),
+                usage,
                 providerResponse: finalResult.response,
                 finishReason: finalResult.finishReason,
                 warnings: finalResult.warnings,
@@ -683,6 +669,23 @@ export class Agent {
             if (userOnFinish) {
               await userOnFinish(finalResult);
             }
+
+            const tokenInfo = usage ? `${usage.totalTokens} tokens` : "no usage data";
+            methodLogger.debug(
+              buildAgentLogMessage(
+                this.name,
+                ActionType.GENERATION_COMPLETE,
+                `Text generation completed (${tokenInfo})`,
+              ),
+              {
+                event: LogEvents.AGENT_GENERATION_COMPLETED,
+                duration: Date.now() - startTime,
+                finishReason: finalResult.finishReason,
+                usage: finalResult.usage,
+                toolCalls: finalResult.toolCalls?.length || 0,
+                text: finalResult.text,
+              },
+            );
           },
         });
 
@@ -811,6 +814,7 @@ export class Agent {
   ): Promise<GenerateObjectResultWithContext<z.infer<T>>> {
     const startTime = Date.now();
     const oc = this.createOperationContext(input, options);
+    const methodLogger = oc.logger;
 
     // Wrap entire execution in root span for trace context
     const rootSpan = oc.traceContext.getRootSpan();
@@ -818,6 +822,7 @@ export class Agent {
       const { messages, model } = await this.prepareExecution(input, oc, options);
 
       const modelName = this.getModelName();
+      const schemaName = schema.description || "unknown";
 
       // Add model attributes and all options
       addModelAttributesToSpan(
@@ -840,6 +845,23 @@ export class Agent {
       // Add agent state snapshot for remote observability
       const agentState = this.getFullState();
       rootSpan.setAttribute("agent.stateSnapshot", JSON.stringify(agentState));
+
+      // Log generation start (object)
+      methodLogger.debug(
+        buildAgentLogMessage(
+          this.name,
+          ActionType.GENERATION_START,
+          `Starting object generation with ${modelName}`,
+        ),
+        {
+          event: LogEvents.AGENT_GENERATION_STARTED,
+          operationType: "object",
+          schemaName,
+          model: modelName,
+          messageCount: messages?.length || 0,
+          input,
+        },
+      );
 
       try {
         // Call hooks
@@ -930,6 +952,24 @@ export class Agent {
           context: oc,
         });
 
+        // Log successful completion
+        const usage = result.usage;
+        const tokenInfo = usage ? `${usage.totalTokens} tokens` : "no usage data";
+        methodLogger.debug(
+          buildAgentLogMessage(
+            this.name,
+            ActionType.GENERATION_COMPLETE,
+            `Object generation completed (${tokenInfo})`,
+          ),
+          {
+            event: LogEvents.AGENT_GENERATION_COMPLETED,
+            duration: Date.now() - startTime,
+            finishReason: result.finishReason,
+            usage: result.usage,
+            schemaName,
+          },
+        );
+
         // Return result with context for consistency
         return {
           ...result,
@@ -949,6 +989,7 @@ export class Agent {
     schema: T,
     options?: StreamObjectOptions,
   ): Promise<StreamObjectResultWithContext<z.infer<T>>> {
+    const startTime = Date.now();
     const oc = this.createOperationContext(input, options);
 
     // Wrap entire execution in root span for trace context
@@ -1123,6 +1164,24 @@ export class Agent {
             if (userOnFinish) {
               await userOnFinish(finalResult);
             }
+
+            // Log successful completion
+            const usage = finalResult.usage as any;
+            const tokenInfo = usage ? `${usage.totalTokens} tokens` : "no usage data";
+            methodLogger.debug(
+              buildAgentLogMessage(
+                this.name,
+                ActionType.GENERATION_COMPLETE,
+                `Object generation completed (${tokenInfo})`,
+              ),
+              {
+                event: LogEvents.AGENT_GENERATION_COMPLETED,
+                duration: Date.now() - startTime,
+                finishReason: finalResult.finishReason,
+                usage: finalResult.usage,
+                schemaName,
+              },
+            );
           },
         });
 
@@ -1363,17 +1422,22 @@ export class Agent {
     const userMessages = input.filter((msg) => msg.role === "user");
     const lastUserMessage = userMessages.at(-1);
 
-    if (!lastUserMessage?.parts) {
-      return undefined;
+    // Prefer parts; fallback to content if available
+    if (lastUserMessage?.parts) {
+      const textParts = lastUserMessage.parts
+        .filter((part) => part.type === "text" && "text" in part)
+        .map((part) => (part as any).text)
+        .filter((text) => text)
+        .map((text) => text.trim());
+      if (textParts.length > 0) return textParts.join(" ");
     }
 
-    const textParts = lastUserMessage.parts
-      .filter((part) => part.type === "text" && "text" in part)
-      .map((part) => (part as any).text)
-      .filter((text) => text) // Filter out null, undefined, and empty strings
-      .map((text) => text.trim()); // Trim whitespace from each part
+    if ((lastUserMessage as any)?.content && typeof (lastUserMessage as any).content === "string") {
+      const content = ((lastUserMessage as any).content as string).trim();
+      return content.length > 0 ? content : undefined;
+    }
 
-    return textParts.length > 0 ? textParts.join(" ") : undefined;
+    return undefined;
   }
 
   /**
@@ -1438,12 +1502,18 @@ export class Agent {
 
       if (traceContext) {
         // Create unified memory read span
+
+        const spanInput = {
+          query: isSemanticSearch ? currentQuery : input,
+          userId: options?.userId,
+          conversationId: options?.conversationId,
+        };
         const memoryReadSpan = traceContext.createChildSpan("memory.read", "memory", {
           label: isSemanticSearch ? "Semantic Memory Read" : "Memory Context Read",
           attributes: {
             "memory.operation": "read",
             "memory.semantic": isSemanticSearch,
-            input: isSemanticSearch ? currentQuery : input,
+            input: JSON.stringify(spanInput),
             ...(isSemanticSearch && {
               "memory.semantic.limit": semanticLimit,
               "memory.semantic.threshold": semanticThreshold,
@@ -1501,6 +1571,16 @@ export class Agent {
 
           // Add memory messages
           messages.push(...memoryResult);
+
+          // When using semantic search, also persist the current input in background
+          // so user messages are stored and embedded consistently.
+          if (isSemanticSearch && oc.userId && oc.conversationId) {
+            try {
+              this.memoryManager.queueSaveInput(oc, input, oc.userId, oc.conversationId);
+            } catch (_e) {
+              // Non-fatal: background persistence should not block message preparation
+            }
+          }
         } catch (error) {
           traceContext.endChildSpan(memoryReadSpan, "error", {
             error: error as Error,
@@ -2193,40 +2273,10 @@ export class Agent {
       return;
     }
 
-    // Create memory write span using TraceContext
-    const memorySpan = oc.traceContext.createChildSpan("memory.write", "memory", {
-      label: "Memory Write",
-      attributes: {
-        "memory.operation": "write",
-        input: responseMessages,
-      },
-    });
-
-    try {
-      // Execute memory write operations within the memory span context
-      await oc.traceContext.withSpan(memorySpan, async () => {
-        // Convert all response messages to UIMessages
-        const uiMessages = await convertResponseMessagesToUIMessages(responseMessages);
-
-        // Save each UIMessage using the existing saveMessage method
-        for (const uiMessage of uiMessages) {
-          await this.memoryManager.saveMessage(oc, uiMessage, oc.userId, oc.conversationId);
-        }
-
-        // End span successfully
-        oc.traceContext.endChildSpan(memorySpan, "completed", {
-          output: uiMessages,
-          attributes: {
-            "memory.message_count": uiMessages.length,
-          },
-        });
-      });
-    } catch (error) {
-      // End span with error
-      oc.traceContext.endChildSpan(memorySpan, "error", {
-        error: error as Error,
-      });
-      throw error;
+    // Convert all response messages to UIMessages and save
+    const uiMessages = await convertResponseMessagesToUIMessages(responseMessages);
+    for (const uiMessage of uiMessages) {
+      await this.memoryManager.saveMessage(oc, uiMessage, oc.userId, oc.conversationId);
     }
   }
 

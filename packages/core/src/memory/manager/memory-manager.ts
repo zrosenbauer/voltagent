@@ -108,28 +108,45 @@ export class MemoryManager {
       operation: "write",
     });
 
-    // Event tracking now handled by OpenTelemetry spans
+    // Event tracking with OpenTelemetry spans
+    const trace = context.traceContext;
+    const spanInput = { userId, conversationId, message };
+    const writeSpan = trace.createChildSpan("memory.write", "memory", {
+      label: message.role === "user" ? "Persist User Message" : "Persist Assistant Message",
+      attributes: {
+        "memory.operation": "write",
+        input: JSON.stringify(spanInput),
+      },
+    });
 
     try {
-      // Use Memory V2 to save message
-      if (conversationId && userId) {
-        // Ensure conversation exists
-        const conv = await this.conversationMemory.getConversation(conversationId);
-        if (!conv) {
-          await this.conversationMemory.createConversation({
-            id: conversationId,
-            userId: userId,
-            resourceId: this.resourceId,
-            title: "Conversation",
-            metadata: {},
+      await trace.withSpan(writeSpan, async () => {
+        // Use Memory V2 to save message
+        if (conversationId && userId) {
+          // Ensure conversation exists
+          const conv = await this.conversationMemory?.getConversation(conversationId);
+          if (!conv) {
+            await this.conversationMemory?.createConversation({
+              id: conversationId,
+              userId: userId,
+              resourceId: this.resourceId,
+              title: "Conversation",
+              metadata: {},
+            });
+          }
+
+          // Add message to conversation using Memory V2's saveMessageWithContext
+          await this.conversationMemory?.saveMessageWithContext(message, userId, conversationId, {
+            logger: memoryLogger,
           });
         }
+      });
 
-        // Add message to conversation using Memory V2's saveMessageWithContext
-        await this.conversationMemory.saveMessageWithContext(message, userId, conversationId, {
-          logger: memoryLogger,
-        });
-      }
+      // End span successfully
+      trace.endChildSpan(writeSpan, "completed", {
+        output: { saved: true },
+        attributes: { "memory.message_count": 1 },
+      });
 
       // Log successful memory operation - PRESERVED
       memoryLogger.debug("[Memory] Write successful (1 record)", {
@@ -138,6 +155,9 @@ export class MemoryManager {
         message,
       });
     } catch (error) {
+      // End span with error
+      trace.endChildSpan(writeSpan, "error", { error: error as Error });
+
       // Log memory operation failure - PRESERVED
       memoryLogger.error(
         `Memory write failed: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -252,8 +272,6 @@ export class MemoryManager {
     });
 
     try {
-      // For now, use getMessages since searchMessages is not yet implemented
-      // TODO: Implement searchMessages when vector search is added
       const messages = await this.conversationMemory.getMessages(userId, conversationId, { limit });
 
       memoryLogger.debug(`[Memory] Search successful (${messages.length} records)`, {
@@ -408,6 +426,19 @@ export class MemoryManager {
         }
       },
     });
+  }
+
+  /**
+   * Public: Enqueue saving current input in the background.
+   * Ensures conversation exists and then saves input without blocking.
+   */
+  queueSaveInput(
+    context: OperationContext,
+    input: string | UIMessage[],
+    userId: string,
+    conversationId: string,
+  ): void {
+    this.handleSequentialBackgroundOperations(context, input, userId, conversationId);
   }
 
   /**
@@ -656,6 +687,12 @@ export class MemoryManager {
     const vectorDBName = vectorAdapter?.constructor?.name || "unknown";
 
     if (traceContext && parentMemorySpan) {
+      const spanInput = {
+        query,
+        userId,
+        conversationId,
+        model: embeddingModel,
+      };
       // Use TraceContext with specific parent span for proper hierarchy
       const embeddingSpan = traceContext.createChildSpanWithParent(
         parentMemorySpan,
@@ -664,8 +701,7 @@ export class MemoryManager {
         {
           label: "Query Embedding",
           attributes: {
-            input: query,
-            "model.name": embeddingModel,
+            input: JSON.stringify(spanInput),
           },
         },
       );
@@ -673,6 +709,13 @@ export class MemoryManager {
       return await traceContext.withSpan(embeddingSpan, async () => {
         try {
           // Create vector span as child of embedding span
+          const spanInput = {
+            query,
+            userId,
+            conversationId,
+            vectorDB: vectorDBName,
+            limit,
+          };
           const vectorSpan = traceContext.createChildSpanWithParent(
             embeddingSpan,
             "vector.search",
@@ -681,8 +724,7 @@ export class MemoryManager {
               label: "Semantic Search",
               attributes: {
                 "vector.operation": "search",
-                input: query,
-                "vector.adapter": vectorDBName,
+                input: JSON.stringify(spanInput),
               },
             },
           );
@@ -711,7 +753,7 @@ export class MemoryManager {
           const dimension = embeddingAdapter?.getDimensions?.() || 0;
           traceContext.endChildSpan(embeddingSpan, "completed", {
             attributes: {
-              "embedding.dimensions": dimension,
+              output: dimension,
             },
           });
         }

@@ -1,9 +1,8 @@
 import { mistral } from "@ai-sdk/mistral";
-import VoltAgent, { Agent, type OperationContext, type AgentHooks } from "@voltagent/core";
-import { LibSQLStorage } from "@voltagent/libsql";
+import VoltAgent, { Agent, Memory, type OperationContext, type AgentHooks } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import {
   assertResponseTool,
   checkTool,
@@ -38,10 +37,11 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-// Create LibSQL storage for persistent memory
-const storage = new LibSQLStorage({
-  url: "file:./.voltagent/memory.db",
-  logger: logger.child({ component: "libsql" }),
+// Create Memory with LibSQL adapter for persistent memory
+const memory = new Memory({
+  storage: new LibSQLMemoryAdapter({
+    url: "file:./.voltagent/memory.db",
+  }),
 });
 
 // Create a specialized agent for browsing
@@ -96,7 +96,7 @@ export const browserAgent = new Agent({
     getVisibleHtmlTool,
     listInteractiveElementsTool,
   ],
-  memory: storage,
+  memory,
 });
 
 new VoltAgent({

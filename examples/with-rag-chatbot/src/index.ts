@@ -1,9 +1,8 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, type BaseMessage, BaseRetriever, VoltAgent } from "@voltagent/core";
-import { LibSQLStorage } from "@voltagent/libsql";
+import { Agent, type BaseMessage, BaseRetriever, Memory, VoltAgent } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 
 // --- Simple Knowledge Base Retriever ---
 
@@ -67,9 +66,10 @@ const ragAgent = new Agent({
   model: openai("gpt-4o-mini"), // Using OpenAI model via Vercel
   // Attach the retriever directly
   retriever: knowledgeRetriever,
-  memory: new LibSQLStorage({
-    url: "file:./.voltagent/memory.db",
-    logger: logger.child({ component: "libsql" }),
+  memory: new Memory({
+    storage: new LibSQLMemoryAdapter({
+      url: "file:./.voltagent/memory.db",
+    }),
   }),
 });
 

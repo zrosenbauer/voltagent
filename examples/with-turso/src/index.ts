@@ -1,12 +1,11 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent } from "@voltagent/core";
-import { LibSQLStorage } from "@voltagent/libsql";
+import { Agent, Memory, VoltAgent } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 
 // Configure Turso/LibSQL Memory
-const memoryStorage = new LibSQLStorage({
+const memoryStorage = new LibSQLMemoryAdapter({
   // Read connection details from environment variables
   url: process.env.TURSO_DB_URL || "file:./voltagent-memory.db", // Fallback to local file if URL not set
   authToken: process.env.TURSO_DB_AUTH_TOKEN, // Auth token for Turso (optional for local SQLite)
@@ -20,7 +19,9 @@ const agent = new Agent({
   name: "Turso Memory Agent",
   instructions: "A helpful assistant that remembers conversations using Turso/LibSQL.",
   model: openai("gpt-4o-mini"),
-  memory: memoryStorage, // Use the configured LibSQL storage
+  memory: new Memory({
+    storage: memoryStorage,
+  }), // Use the configured LibSQL storage
 });
 
 // Create logger

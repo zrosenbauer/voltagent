@@ -1,9 +1,8 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent } from "@voltagent/core";
-import { LibSQLStorage } from "@voltagent/libsql";
+import { Agent, Memory, VoltAgent } from "@voltagent/core";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 
 import { retriever } from "./retriever/index.js";
 
@@ -14,9 +13,10 @@ const logger = createPinoLogger({
 });
 
 // Create LibSQL storage for persistent memory (shared between agents)
-const memory = new LibSQLStorage({
-  url: "file:./.voltagent/memory.db",
-  logger: logger.child({ component: "libsql" }),
+const memory = new Memory({
+  storage: new LibSQLMemoryAdapter({
+    url: "file:./.voltagent/memory.db",
+  }),
 });
 
 // Agent 1: Using retriever directly

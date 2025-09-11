@@ -673,11 +673,17 @@ describe.sequential("SupabaseMemoryAdapter - Core Functionality", () => {
       // restore original initialize
       (SupabaseMemoryAdapter.prototype as any).initialize.mockRestore?.();
 
-      // Not fresh: both selects succeed
+      // checkFreshInstallation: Not fresh, both tables exist
       supabaseMock.queue("voltagent_memory_conversations", ok([]));
       supabaseMock.queue("voltagent_memory_messages", ok([]));
-      // Old columns exist: selecting content,type succeeds
-      supabaseMock.queue("voltagent_memory_messages", ok([]));
+
+      // checkMigrationNeeded: New columns don't exist (migration needed)
+      // Trying to select new columns fails
+      supabaseMock.queue("voltagent_memory_messages", dbError("column parts does not exist"));
+      supabaseMock.queue(
+        "voltagent_memory_conversations",
+        dbError("column user_id does not exist"),
+      );
 
       const logSpy = vi.spyOn(console, "log");
 

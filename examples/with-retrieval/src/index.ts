@@ -2,7 +2,6 @@ import { openai } from "@ai-sdk/openai";
 import { Agent, Memory, VoltAgent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 // Import the retrieval tool
@@ -15,9 +14,7 @@ const logger = createPinoLogger({
 });
 
 const memory = new Memory({
-  storage: new LibSQLMemoryAdapter({
-    logger,
-  }),
+  storage: new LibSQLMemoryAdapter({}),
 });
 
 // Create the agent with retrieval tool

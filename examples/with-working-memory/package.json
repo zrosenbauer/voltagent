@@ -1,13 +1,14 @@
 {
-  "name": "voltagent-example-xsai",
+  "name": "voltagent-example-with-working-memory",
   "author": "",
   "dependencies": {
+    "@ai-sdk/openai": "^2.0.2",
     "@voltagent/cli": "^0.1.10",
     "@voltagent/core": "^1.0.0-next.1",
     "@voltagent/libsql": "^1.0.0-next.0",
     "@voltagent/logger": "^0.1.4",
     "@voltagent/server-hono": "^1.0.0-next.1",
-    "@voltagent/xsai": "^1.0.0-next.0",
+    "ai": "^5.0.12",
     "zod": "^3.25.0"
   },
   "devDependencies": {
@@ -18,13 +19,14 @@
   "keywords": [
     "agent",
     "ai",
-    "voltagent"
+    "voltagent",
+    "working-memory"
   ],
   "license": "MIT",
   "private": true,
   "scripts": {
     "build": "tsc",
-    "dev": "tsx watch --env-file=.env ./src ",
+    "dev": "tsx watch --env-file=.env ./src",
     "start": "node dist/index.js",
     "volt": "volt"
   },

@@ -1,6 +1,36 @@
 # Migration guide: 0.1.x → 1.x
 
-This guide explains the changes required to migrate your VoltAgent apps to 1.x. The most impactful change is removal of the custom LLM provider prop and package in favor of native ai-sdk usage.
+Welcome to VoltAgent 1.x! This release brings the architectural improvements you've been asking for - native ai-sdk integration, truly modular components, and production-ready observability. Your agents are about to get a serious upgrade.
+
+This guide is built for real-world migrations. Copy-paste the commands, follow the checklists, ship your update. No fluff, just the changes you need to know.
+
+**Need help?** Hit a snag during migration? We've got you covered:
+
+- Open an issue on [GitHub](https://github.com/VoltAgent/voltagent/issues) - we're tracking migration experiences closely
+- Join our [Discord](https://s.voltagent.dev/discord) for real-time help from the community and core team
+
+Here's what we'll cover:
+
+- What changed and why (high-level rationale)
+- Quick migration steps (copy-paste friendly)
+- Detailed changes (API-by-API, with examples)
+
+## Overview: What changed and why
+
+VoltAgent 1.x is a complete architectural refinement. We stripped away unnecessary abstractions, embraced native ai-sdk integration, and made everything pluggable:
+
+- Native ai-sdk integration: The custom LLM provider layer and `@voltagent/vercel-ai` are removed. Apps pass ai-sdk models directly (works with any ai-sdk provider).
+- Modular server: The built-in HTTP server is removed from core. Use pluggable providers (recommended: `@voltagent/server-hono`).
+- Memory V2: A clean adapter-based architecture for storage/embeddings/vector search and structured working memory.
+- Observability (OpenTelemetry): Legacy telemetry exporter is removed. Observability now uses OpenTelemetry with optional span/log processors and storage.
+- Developer ergonomics: Clear peer dependency on `ai`, improved logger support in SSR/Edge (via `globalThis`), and convenience exports.
+
+Benefits:
+
+- Smaller surface area in core, better portability (Node/Edge/Workers).
+- First-class ai-sdk support and predictable results/streams.
+- Composable memory: scale from in-memory to LibSQL/PostgreSQL/Supabase, plus semantic search.
+- Standardized observability (OTel) with optional web socket streaming/logging.
 
 ## Step 1. Update Packages (@1)
 
@@ -27,7 +57,16 @@ npm install @voltagent/core@^1 @voltagent/server-hono@^1 @voltagent/libsql@^1 ai
 - `@voltagent/server-hono`: New pluggable HTTP server provider (replaces built-in server)
 - `@voltagent/libsql`: LibSQL/Turso memory adapter (replaces built-in LibSQL in core)
 
+Optional adapters:
+
+- `@voltagent/postgres`: PostgreSQL storage adapter
+- `@voltagent/supabase`: Supabase storage adapter
+
 Note: `@voltagent/core@1.x` declares `ai@^5` as a peer dependency. Your application must install `ai` (and a provider like `@ai-sdk/openai`) to use LLM features. If `ai` is missing, you will get a module resolution error at runtime when calling generation methods.
+
+Node runtime requirement:
+
+- The repo targets Node >= 20. Please ensure your deployment matches.
 
 ## Step 2. Update Code
 
@@ -93,7 +132,60 @@ Summary of changes:
 - Add: `honoServer()` as the server provider
 - Keep: `model: openai("...")` (or any ai-sdk provider)
 
+Custom routes and auth (server):
+
+```ts
+new VoltAgent({
+  agents: { agent },
+  server: honoServer({
+    port: 3141, // default
+    enableSwaggerUI: true, // optional
+    configureApp: (app) => {
+      app.get("/api/health", (c) => c.json({ status: "ok" }));
+    },
+    // JWT auth (optional)
+    // auth: jwtAuth({ secret: process.env.JWT_SECRET!, publicRoutes: ["/health", "/metrics"] }),
+  }),
+});
+```
+
 ## Detailed Changes
+
+### Observability (OpenTelemetry)
+
+What changed:
+
+- Legacy `telemetry/*` and the telemetry exporter were removed from core.
+- Observability now uses OpenTelemetry and can be enabled for production with only environment variables. No code changes are required.
+
+New APIs (from `@voltagent/core`):
+
+- `VoltAgentObservability` (created automatically unless you pass your own)
+- Optional processors: `LocalStorageSpanProcessor`, `WebSocketSpanProcessor`, `WebSocketLogProcessor`
+- In-memory adapter and OTel helpers (`Span`, `SpanKind`, `SpanStatusCode`, etc.)
+
+Minimal usage (recommended):
+
+1. Add keys to your `.env`:
+
+```bash
+# .env
+VOLTAGENT_PUBLIC_KEY=pk_...
+VOLTAGENT_SECRET_KEY=sk_...
+```
+
+2. Run your app normally. Remote export auto-enables when valid keys are present. Local, real-time debugging via the VoltOps Console stays available either way.
+
+[Learn more](../observability//developer-console.md)
+
+Notes:
+
+- If you previously used the deprecated `telemetryExporter` or wired observability via `VoltOpsClient`, remove that code. The `.env` keys are sufficient.
+- When keys are missing/invalid, VoltAgent continues with local debugging only (no remote export).
+
+Advanced (optional):
+
+- Provide a custom `VoltAgentObservability` to tune sampling/batching or override defaults. This is not required for typical setups.
 
 ### Remove `llm` provider and `@voltagent/vercel-ai`
 
@@ -455,3 +547,23 @@ Notes:
 
 - Tools still access an internal `operationContext.abortController` and its signal.
 - You only need to pass `abortSignal` to agent calls; propagation is handled internally.
+
+### Server Core (typed routes, schemas, handlers)
+
+The core HTTP surface moved into `@voltagent/server-core` and is consumed by `@voltagent/server-hono`:
+
+- Typed route definitions and schemas for agents/workflows/logs/observability
+- WebSocket utilities (log/observability streaming)
+- Auth helpers and server utilities
+
+If you previously relied on core’s internal server exports (custom endpoints, registry), migrate to `@voltagent/server-core` types and helpers, then run via `@voltagent/server-hono`.
+
+### Convenience exports & logger
+
+- Convenience from `@voltagent/core`: `zodSchemaToJsonUI`, `stepCountIs`, `hasToolCall`, `convertUsage`.
+- Logger helpers: `LoggerProxy`, `getGlobalLogger`, `getGlobalLogBuffer`. Logger is SSR/Edge-friendly via `globalThis` in Next.js.
+
+### Runtime & TypeScript
+
+- Node >= 20 is recommended/required for 1.x deployments.
+- TypeScript 5.x recommended (repo uses 5.9). Typical `tsconfig` basics: `moduleResolution` matching your toolchain (NodeNext/Bundler), `skipLibCheck: true`, and DOM libs only if needed.
