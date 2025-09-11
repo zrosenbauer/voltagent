@@ -12,8 +12,6 @@ import type { Workflow } from "./workflow";
 import type { WorkflowChain } from "./workflow/chain";
 import { WorkflowRegistry } from "./workflow/registry";
 
-// Removed: Global telemetry is now handled by VoltAgentObservability
-
 /**
  * Main VoltAgent class for managing agents and server
  */
