@@ -129,9 +129,9 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       zod:
         specifier: ^3.25.0
         version: 3.25.76
@@ -166,9 +166,9 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       zod:
         specifier: ^3.25.0
         version: 3.25.76
@@ -231,9 +231,9 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       zod:
         specifier: ^3.25.0
         version: 3.25.76
@@ -268,9 +268,9 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       zod:
         specifier: ^3.25.0
         version: 3.25.76
@@ -314,9 +314,9 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       chromadb:
         specifier: ^3.0.4
         version: 3.0.12
@@ -354,9 +354,9 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       zod:
         specifier: ^3.25.0
         version: 3.25.76
@@ -391,9 +391,9 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       zod:
         specifier: ^3.25.0
         version: 3.25.76
@@ -428,9 +428,9 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       zod:
         specifier: ^3.25.0
         version: 3.25.76
@@ -465,9 +465,9 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       zod:
         specifier: ^3.25.0
         version: 3.25.76
@@ -502,9 +502,9 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       zod:
         specifier: ^3.25.0
         version: 3.25.76
@@ -631,9 +631,9 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       zod:
         specifier: ^3.25.0
         version: 3.25.76
@@ -668,9 +668,9 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       zod:
         specifier: ^3.25.0
         version: 3.25.76
@@ -705,9 +705,9 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       zod:
         specifier: ^3.25.0
         version: 3.25.76
@@ -742,9 +742,9 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       zod:
         specifier: ^3.25.0
         version: 3.25.76
@@ -776,6 +776,9 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       jsonwebtoken:
         specifier: ^9.0.2
         version: 9.0.2
@@ -819,9 +822,9 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       zod:
         specifier: ^3.25.0
         version: 3.25.76
@@ -856,9 +859,9 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       zod:
         specifier: ^3.25.0
         version: 3.25.76
@@ -966,9 +969,9 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       zod:
         specifier: ^3.25.0
         version: 3.25.76
@@ -1006,9 +1009,9 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       openai:
         specifier: ^4.91.0
         version: 4.104.0(zod@3.25.76)
@@ -1058,9 +1061,9 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       axios:
         specifier: ^1.5.0
         version: 1.11.0
@@ -1107,9 +1110,9 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       zod:
         specifier: ^3.25.0
         version: 3.25.76
@@ -1147,9 +1150,9 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       openai:
         specifier: ^4.91.0
         version: 4.104.0(zod@3.25.76)
@@ -1187,9 +1190,9 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       zod:
         specifier: ^3.25.0
         version: 3.25.76
@@ -1221,9 +1224,9 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       zod:
         specifier: ^3.25.0
         version: 3.25.76
@@ -1258,9 +1261,9 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       zod:
         specifier: ^3.25.0
         version: 3.25.76
@@ -1295,9 +1298,9 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       zod:
         specifier: ^3.25.0
         version: 3.25.76
@@ -1335,9 +1338,9 @@ importers:
       '@voltagent/supabase':
         specifier: ^1.0.0-next.0
         version: link:../../packages/supabase
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       zod:
         specifier: ^3.25.0
         version: 3.25.76
@@ -1372,9 +1375,9 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       zod:
         specifier: ^3.25.0
         version: 3.25.76
@@ -1409,9 +1412,9 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       zod:
         specifier: ^3.25.0
         version: 3.25.76
@@ -1446,9 +1449,46 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
+      zod:
+        specifier: ^3.25.0
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^24.2.1
+        version: 24.2.1
+      tsx:
+        specifier: ^4.19.3
+        version: 4.20.4
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.2
+
+  examples/with-vector-search:
+    dependencies:
+      '@ai-sdk/openai':
+        specifier: ^2.0.2
+        version: 2.0.12(zod@3.25.76)
+      '@voltagent/cli':
+        specifier: ^0.1.10
+        version: link:../../packages/cli
+      '@voltagent/core':
+        specifier: ^1.0.0-next.1
+        version: link:../../packages/core
+      '@voltagent/libsql':
         specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
+        version: link:../../packages/libsql
+      '@voltagent/logger':
+        specifier: ^0.1.4
+        version: link:../../packages/logger
+      '@voltagent/server-hono':
+        specifier: ^1.0.0-next.1
+        version: link:../../packages/server-hono
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       zod:
         specifier: ^3.25.0
         version: 3.25.76
@@ -1483,9 +1523,9 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       zod:
         specifier: ^3.25.0
         version: 3.25.76
@@ -1520,12 +1560,12 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
       '@voltagent/voice':
         specifier: ^1.0.0-next.0
         version: link:../../packages/voice
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       zod:
         specifier: ^3.25.0
         version: 3.25.76
@@ -1560,12 +1600,12 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
       '@voltagent/voice':
         specifier: ^1.0.0-next.0
         version: link:../../packages/voice
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       dotenv:
         specifier: ^16.4.5
         version: 16.6.1
@@ -1606,12 +1646,12 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
       '@voltagent/voice':
         specifier: ^1.0.0-next.0
         version: link:../../packages/voice
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       dotenv:
         specifier: ^16.4.5
         version: 16.6.1
@@ -1652,9 +1692,9 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       zod:
         specifier: ^3.25.0
         version: 3.25.76
@@ -1689,9 +1729,9 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       zod:
         specifier: ^3.25.0
         version: 3.25.76
@@ -1706,8 +1746,11 @@ importers:
         specifier: ^5.8.2
         version: 5.9.2
 
-  examples/with-xsai:
+  examples/with-working-memory:
     dependencies:
+      '@ai-sdk/openai':
+        specifier: ^2.0.2
+        version: 2.0.12(zod@3.25.76)
       '@voltagent/cli':
         specifier: ^0.1.10
         version: link:../../packages/cli
@@ -1723,9 +1766,9 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/xsai':
-        specifier: ^1.0.0-next.0
-        version: 1.0.0-next.0(@voltagent/core@packages+core)(zod@3.25.76)
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       zod:
         specifier: ^3.25.0
         version: 3.25.76
@@ -1760,9 +1803,9 @@ importers:
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.1
         version: link:../../packages/server-hono
-      '@voltagent/vercel-ai':
-        specifier: ~1.0.0-next.0
-        version: 1.0.0(@voltagent/core@packages+core)(zod@3.25.76)
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.12(zod@3.25.76)
       zod:
         specifier: ^3.25.0
         version: 3.25.76
@@ -9850,76 +9893,10 @@ packages:
       tinyrainbow: 2.0.0
     dev: true
 
-  /@voltagent/vercel-ai@1.0.0(@voltagent/core@packages+core)(zod@3.25.76):
-    resolution: {integrity: sha512-ooknKRG0G79YuHJAPuZ5Xoy1oiirq0XfyS5ncKO2+yMqasRSn5phd8wHq5x4nVwRFMY1mulo3YZJ2QGQLj1mIg==}
-    peerDependencies:
-      '@voltagent/core': ^0.1.71
-      zod: ^3.25.0
-    dependencies:
-      '@ai-sdk/openai': 2.0.12(zod@3.25.76)
-      '@voltagent/core': link:packages/core
-      ai: 5.0.12(zod@3.25.76)
-      ts-pattern: 5.8.0
-      type-fest: 4.41.0
-      zod: 3.25.76
-    dev: false
-
-  /@voltagent/xsai@1.0.0-next.0(@voltagent/core@packages+core)(zod@3.25.76):
-    resolution: {integrity: sha512-m5zGpLsAX0oM/OceUjo7qtczSFtvysYLd1rvc/HAtpFAzmk10nS38LZ7WuAGMjegMDX1QhvV5XpokS46q3PhOA==}
-    peerDependencies:
-      '@voltagent/core': ^1.0.0-next.0
-      zod: ^3.24.2
-    dependencies:
-      '@voltagent/core': link:packages/core
-      ts-pattern: 5.8.0
-      type-fest: 4.41.0
-      xsai: 0.4.0-beta.1(zod@3.25.76)
-      zod: 3.25.76
-    transitivePeerDependencies:
-      - '@valibot/to-json-schema'
-      - arktype
-      - effect
-      - sury
-      - zod-to-json-schema
-    dev: false
-
-  /@xsai/embed@0.4.0-beta.1:
-    resolution: {integrity: sha512-2vr0pRsaMxQ3o4xSkCWCTvqClIZ2/srHV+mVPDtPDDv53ZoSTheJVSJpbpwmn439ToyK6kM6ASWeqtrLP7iWOA==}
-    dependencies:
-      '@xsai/shared': 0.4.0-beta.1
-    dev: false
-
-  /@xsai/generate-image@0.4.0-beta.1:
-    resolution: {integrity: sha512-9tENuDjMTWU3yO15+/aVZrCmTLcnhXilDHXgY4uN8XkmnSFs3Z4p+xNbwLDTaocZ03Ggz/8r+KyYpLw3AQIc2w==}
-    dependencies:
-      '@xsai/shared': 0.4.0-beta.1
-    dev: false
-
-  /@xsai/generate-object@0.4.0-beta.1(zod@3.25.76):
-    resolution: {integrity: sha512-vcFSZSSBPMWzNkalGoaWtn6TdFDSnpUbstq1pVL9MPbPdfmPKzLnxvAHPyBtclR37B8D/BE4nyP4SFVwlh751g==}
-    dependencies:
-      '@xsai/generate-text': 0.4.0-beta.1
-      xsschema: 0.4.0-beta.1(zod@3.25.76)
-    transitivePeerDependencies:
-      - '@valibot/to-json-schema'
-      - arktype
-      - effect
-      - sury
-      - zod
-      - zod-to-json-schema
-    dev: false
-
   /@xsai/generate-speech@0.4.0-beta.1:
     resolution: {integrity: sha512-RyQyIvBlXQHR4jfCCRYr9BY4h1gf1lUEm+dE+N3DJ/qf4mMI1CtMY+UqC4j6Zbr7TIyATlOPNrQlSp0qMCFjmw==}
     dependencies:
       '@xsai/shared': 0.4.0-beta.1
-    dev: false
-
-  /@xsai/generate-text@0.4.0-beta.1:
-    resolution: {integrity: sha512-a4/79sWL/418qYKrZNXogTLOMRwWSEzoB0HPZ51Zl0PBMbxIP9ICuALLnhoXsap9QlDsdxJ4iyXJVORZ7cqRCQ==}
-    dependencies:
-      '@xsai/shared': 0.4.0-beta.1
-      '@xsai/shared-chat': 0.4.0-beta.1
     dev: false
 
   /@xsai/generate-transcription@0.4.0-beta.1:
@@ -9928,69 +9905,8 @@ packages:
       '@xsai/shared': 0.4.0-beta.1
     dev: false
 
-  /@xsai/model@0.4.0-beta.1:
-    resolution: {integrity: sha512-7NneierHFSkYXEiEvoswXTV6L8QWhbbtxEoAcETtBJsb3NTVTTJsvG2+aWDwEZSxh0jyFrGB8igUBRWSgOEvYA==}
-    dependencies:
-      '@xsai/shared': 0.4.0-beta.1
-    dev: false
-
-  /@xsai/shared-chat@0.4.0-beta.1:
-    resolution: {integrity: sha512-rVG6/3gB5EXFtEtmvbM5TZwDHNTB2vKwtBtBjV8whL8qEagfe5AEpIuwXQoLWXel1P3X7HBO+nrHSqU4vdT+XA==}
-    dependencies:
-      '@xsai/shared': 0.4.0-beta.1
-    dev: false
-
   /@xsai/shared@0.4.0-beta.1:
     resolution: {integrity: sha512-azgYCr9Ww+t94p2vyLpVUpTGICs3fto8fTSX1ivgRJ0HeYZzYI5nk4X9HB2zXy4omkJtbtWWPiZOt7oYsPa+mg==}
-    dev: false
-
-  /@xsai/stream-object@0.4.0-beta.1(zod@3.25.76):
-    resolution: {integrity: sha512-867N/Gzlq1crcls7loai6r2AEJuSCt6jp76ItY18SMp858e5y9YywvTim+RMH84wC/NEDpJxWgfy1H9Oj4r4Ug==}
-    dependencies:
-      '@xsai/stream-text': 0.4.0-beta.1
-      xsschema: 0.4.0-beta.1(zod@3.25.76)
-    transitivePeerDependencies:
-      - '@valibot/to-json-schema'
-      - arktype
-      - effect
-      - sury
-      - zod
-      - zod-to-json-schema
-    dev: false
-
-  /@xsai/stream-text@0.4.0-beta.1:
-    resolution: {integrity: sha512-smnenjLlVZpvpsHc0y5Qeur2DU4ztRjxKtWEBUruMiUte6dgblNuspgWhTLL732q/Fp6pYBGyOyUVUo6ZbYRfA==}
-    dependencies:
-      '@xsai/shared-chat': 0.4.0-beta.1
-    dev: false
-
-  /@xsai/tool@0.4.0-beta.1(zod@3.25.76):
-    resolution: {integrity: sha512-A3fuIYXE2dAJYDiBbIiXz8OKjCKj0OluwJCdtLSMXpdF+OMsa0+OSlpoQjQbTW8g3TVqohd+LfeFUlwoKD2lDQ==}
-    dependencies:
-      '@xsai/shared': 0.4.0-beta.1
-      '@xsai/shared-chat': 0.4.0-beta.1
-      xsschema: 0.4.0-beta.1(zod@3.25.76)
-    transitivePeerDependencies:
-      - '@valibot/to-json-schema'
-      - arktype
-      - effect
-      - sury
-      - zod
-      - zod-to-json-schema
-    dev: false
-
-  /@xsai/utils-chat@0.4.0-beta.1:
-    resolution: {integrity: sha512-/nsIuJGECHbubowFyVWGSigHI2EWSeTKcowDXR2Q4H6GiNQubArW/tCg96rtInt1qJI9brO92yUaHvkxXSIrhA==}
-    dependencies:
-      '@xsai/shared-chat': 0.4.0-beta.1
-    dev: false
-
-  /@xsai/utils-reasoning@0.4.0-beta.1:
-    resolution: {integrity: sha512-M6XD5WOu8wdl8rKtMpY+oP5ysUTpHVpwP0zRJ1BgZ0Hco1uCRhaxBvcn/+ETZKIRV2dDohw5zXxh94Hihtj15w==}
-    dev: false
-
-  /@xsai/utils-stream@0.4.0-beta.1:
-    resolution: {integrity: sha512-RxhqV9RJY+ye+LZR2eErW44PcKI7S4Q4ceOUZx/VwjWIJQM9GvmTsRRvhlp78PD7vlMUfTzi9/isqDPKQ9INmQ==}
     dev: false
 
   /@yarnpkg/lockfile@1.1.0:
@@ -19926,6 +19842,7 @@ packages:
   /type-fest@4.41.0:
     resolution: {integrity: sha512-TeTSQ6H5YHvpqVwBRcnLDCBnDOHWYu7IvGbHT6N8AOymcr9PJGjc1GTtiWZTYg0NCgYwvnYWEkVChQAr9bjfwA==}
     engines: {node: '>=16'}
+    dev: true
 
   /type-is@2.0.1:
     resolution: {integrity: sha512-OZs6gsjF4vMp32qrCbiVSkrFmXtG/AZhY3t0iAMrMBiAZyV9oALtXO8hsrHbMXF9x6L3grlFuwW2oAz7cav+Gw==}
@@ -20722,59 +20639,6 @@ packages:
   /xmlchars@2.2.0:
     resolution: {integrity: sha512-JZnDKK8B0RCDw84FNdDAIpZK+JuJw+s7Lz8nksI7SIuU3UXJJslUthsi+uWBUYOwPFwW7W7PRLRfUKpxjtjFCw==}
     dev: true
-
-  /xsai@0.4.0-beta.1(zod@3.25.76):
-    resolution: {integrity: sha512-9OI+kQqqy9RVAqrT+K/6DmtgECgREKQaQkrJS/JSkrRvpNZrK2tzBVkSDa4NVt3SZ4CqtXOx19NJLGsx2EtkHQ==}
-    dependencies:
-      '@xsai/embed': 0.4.0-beta.1
-      '@xsai/generate-image': 0.4.0-beta.1
-      '@xsai/generate-object': 0.4.0-beta.1(zod@3.25.76)
-      '@xsai/generate-speech': 0.4.0-beta.1
-      '@xsai/generate-text': 0.4.0-beta.1
-      '@xsai/generate-transcription': 0.4.0-beta.1
-      '@xsai/model': 0.4.0-beta.1
-      '@xsai/shared': 0.4.0-beta.1
-      '@xsai/shared-chat': 0.4.0-beta.1
-      '@xsai/stream-object': 0.4.0-beta.1(zod@3.25.76)
-      '@xsai/stream-text': 0.4.0-beta.1
-      '@xsai/tool': 0.4.0-beta.1(zod@3.25.76)
-      '@xsai/utils-chat': 0.4.0-beta.1
-      '@xsai/utils-reasoning': 0.4.0-beta.1
-      '@xsai/utils-stream': 0.4.0-beta.1
-    transitivePeerDependencies:
-      - '@valibot/to-json-schema'
-      - arktype
-      - effect
-      - sury
-      - zod
-      - zod-to-json-schema
-    dev: false
-
-  /xsschema@0.4.0-beta.1(zod@3.25.76):
-    resolution: {integrity: sha512-Ixjn2iLUG5LSRx7HMLHKO8fJ9sns0kHmUh2hvZSNGeLbs5qDkdZkXvTFd42pmNgfpp2MhHIpme2uA3rEfKZLJQ==}
-    peerDependencies:
-      '@valibot/to-json-schema': ^1.0.0
-      arktype: ^2.1.20
-      effect: ^3.16.0
-      sury: ^10.0.0
-      zod: ^3.25.0 || ^4.0.0
-      zod-to-json-schema: ^3.24.5
-    peerDependenciesMeta:
-      '@valibot/to-json-schema':
-        optional: true
-      arktype:
-        optional: true
-      effect:
-        optional: true
-      sury:
-        optional: true
-      zod:
-        optional: true
-      zod-to-json-schema:
-        optional: true
-    dependencies:
-      zod: 3.25.76
-    dev: false
 
   /xtend@4.0.2:
     resolution: {integrity: sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ==}
