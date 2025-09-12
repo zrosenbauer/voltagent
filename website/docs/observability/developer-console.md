@@ -47,6 +47,48 @@ When you run a VoltAgent application locally, it exposes a local server (typical
 <!-- This GIF should show the VoltOps Platform interface successfully connecting to the localhost:3141 endpoint after the VoltAgent application starts. -->
 <!-- ![Connecting to Local Agent](placeholder-connect.gif) -->
 
+#### Storage: In‑Memory (default) vs LibSQL (persistent)
+
+By default, observability traces and logs are kept in process memory only. This is ideal for local debugging sessions, but data is not persisted once the process exits.
+
+To persist observability data, provide a `storage` adapter to `VoltAgentObservability`. Use `@voltagent/libsql` for a simple, file‑backed SQLite database or a remote Turso LibSQL instance.
+
+Example (persist with LibSQL):
+
+```ts
+import { VoltAgent, VoltAgentObservability } from "@voltagent/core";
+import { honoServer } from "@voltagent/server-hono";
+import { createPinoLogger } from "@voltagent/logger";
+import { LibSQLObservabilityAdapter } from "@voltagent/libsql";
+
+// your agent instance
+import { agent } from "./agent"; // adjust path as needed
+
+const logger = createPinoLogger({ name: "my-voltagent-app", level: "info" });
+
+new VoltAgent({
+  agents: { agent },
+  server: honoServer(),
+  logger,
+  observability: new VoltAgentObservability({
+    logger,
+    storage: new LibSQLObservabilityAdapter({
+      // Local file (default): creates ./.voltagent/observability.db if not present
+      // url: "file:./.voltagent/observability.db",
+      // Remote Turso example:
+      // url: "libsql://<your-db>.turso.io",
+      // authToken: process.env.TURSO_AUTH_TOKEN,
+    }),
+  }),
+});
+```
+
+Notes:
+
+- In‑memory storage remains the default when no `storage` is provided.
+- The LibSQL adapter works for both traces and logs. Real‑time WebSocket view remains available either way.
+- File‑backed mode uses SQLite via LibSQL; directories are created automatically for the default path.
+
 ### Production Observability (Auto)
 
 VoltAgent now uses the new OpenTelemetry-based observability module and enables production export automatically when API keys are present in your environment. No code changes are required.
