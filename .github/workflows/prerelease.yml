@@ -22,9 +22,10 @@ jobs:
           - internal
           - logger
           - postgres
-          - sdk
           - supabase
           - voice
+          - server-core
+          - server-hono
       fail-fast: false
     name: Test ${{ matrix.package }}
     steps:

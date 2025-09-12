@@ -74,13 +74,12 @@ jobs:
           - create-voltagent-app
           - docs-mcp
           - internal
-          - langfuse-exporter
           - logger
           - postgres
-          - sdk
           - supabase
-          - vercel-ai-exporter
           - voice
+          - server-core
+          - server-hono
       fail-fast: false
     concurrency:
       group: ${{ github.ref }}-test-${{ matrix.package }}
