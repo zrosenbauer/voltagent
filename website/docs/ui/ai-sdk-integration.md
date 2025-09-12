@@ -416,9 +416,3 @@ export function ChatInterface() {
 
 - Configure CORS on VoltAgent server
 - Use proxy in development
-
-## Next Steps
-
-- [Agent Configuration](../agents/configuration.md)
-- [Memory Systems](../agents/memory.md)
-- [Custom Tools](../tools/custom-tools.md)
