@@ -4,9 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  '@voltagent/sdk': 0.1.7-next.0
-
 importers:
 
   .:
@@ -195,8 +192,8 @@ importers:
         specifier: ^1.0.0-next.0
         version: link:../../packages/logger
       '@voltagent/sdk':
-        specifier: 0.1.7-next.0
-        version: 0.1.7-next.0(@voltagent/logger@packages+logger)(ai@5.0.12)(zod@3.25.76)
+        specifier: ^0.1.6
+        version: 0.1.6(@voltagent/logger@packages+logger)(zod@3.25.76)
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.2
         version: link:../../packages/server-hono
@@ -5524,6 +5521,21 @@ packages:
       hono: 4.9.1
     dev: false
 
+  /@hono/node-ws@1.2.0(@hono/node-server@1.18.2)(hono@4.9.1):
+    resolution: {integrity: sha512-OBPQ8OSHBw29mj00wT/xGYtB6HY54j0fNSdVZ7gZM3TUeq0So11GXaWtFf1xWxQNfumKIsj0wRuLKWfVsO5GgQ==}
+    engines: {node: '>=18.14.1'}
+    peerDependencies:
+      '@hono/node-server': ^1.11.1
+      hono: ^4.6.0
+    dependencies:
+      '@hono/node-server': 1.18.2(hono@4.9.1)
+      hono: 4.9.1
+      ws: 8.18.3
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+    dev: false
+
   /@hono/swagger-ui@0.5.2(hono@4.9.1):
     resolution: {integrity: sha512-7wxLKdb8h7JTdZ+K8DJNE3KXQMIpJejkBTQjrYlUWF28Z1PGOKw6kUykARe5NTfueIN37jbyG/sBYsbzXzG53A==}
     peerDependencies:
@@ -9761,36 +9773,37 @@ packages:
       tinyrainbow: 2.0.0
     dev: true
 
-  /@voltagent/core@1.0.0-next.2(@voltagent/logger@packages+logger)(ai@5.0.12)(zod@3.25.76):
-    resolution: {integrity: sha512-Zq1qQmr0GDCQV5SXrayGZHtON7KO7DYYovHxdaqJWbKlBf6tz//3q8IWK0Nn0R3ccMqNCFp3bOEH7R7Y5wx/mw==}
+  /@voltagent/core@0.1.86(@voltagent/logger@packages+logger)(zod@3.25.76):
+    resolution: {integrity: sha512-sQW3n9QcLlRwkJWuoKlIqXfqu24A03H+LsssSMwzQeEZlBBixMG7KnPaFCB7HzsZRNV/Fr1W8tNfl9cbexevpw==}
     peerDependencies:
-      '@voltagent/logger': ^1.0.0-next.0
-      ai: ^5.0.0
+      '@voltagent/logger': ^0.1.0
       zod: ^3.25.0
     peerDependenciesMeta:
       '@voltagent/logger':
         optional: true
     dependencies:
+      '@hono/node-server': 1.18.2(hono@4.9.1)
+      '@hono/node-ws': 1.2.0(@hono/node-server@1.18.2)(hono@4.9.1)
+      '@hono/swagger-ui': 0.5.2(hono@4.9.1)
+      '@hono/zod-openapi': 0.19.10(hono@4.9.1)(zod@3.25.76)
+      '@libsql/client': 0.15.10
       '@modelcontextprotocol/sdk': 1.17.2
       '@opentelemetry/api': 1.9.0
-      '@opentelemetry/api-logs': 0.204.0
-      '@opentelemetry/core': 2.1.0(@opentelemetry/api@1.9.0)
-      '@opentelemetry/exporter-logs-otlp-http': 0.204.0(@opentelemetry/api@1.9.0)
-      '@opentelemetry/exporter-trace-otlp-http': 0.203.0(@opentelemetry/api@1.9.0)
-      '@opentelemetry/resources': 2.1.0(@opentelemetry/api@1.9.0)
-      '@opentelemetry/sdk-logs': 0.204.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/sdk-trace-base': 2.1.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/sdk-trace-node': 2.0.1(@opentelemetry/api@1.9.0)
-      '@opentelemetry/semantic-conventions': 1.36.0
+      '@types/ws': 8.18.1
       '@voltagent/internal': 0.0.9
       '@voltagent/logger': link:packages/logger
-      ai: 5.0.12(zod@3.25.76)
+      hono: 4.9.1
       ts-pattern: 5.8.0
       uuid: 9.0.1
+      ws: 8.18.3
       zod: 3.25.76
       zod-from-json-schema: 0.0.5
     transitivePeerDependencies:
+      - bufferutil
       - supports-color
+      - utf-8-validate
     dev: false
 
   /@voltagent/internal@0.0.9:
@@ -9805,14 +9818,15 @@ packages:
       pino-pretty: 13.1.1
     dev: false
 
-  /@voltagent/sdk@0.1.7-next.0(@voltagent/logger@packages+logger)(ai@5.0.12)(zod@3.25.76):
-    resolution: {integrity: sha512-9e3dvxl4T0lhf3z/kZ4YnpNY6z34vI1qB/Depfqd6ugf0yCy4nfDWxGWIvTS1UdwN5V6MGrV1axiRpJ2kfV9wg==}
+  /@voltagent/sdk@0.1.6(@voltagent/logger@packages+logger)(zod@3.25.76):
+    resolution: {integrity: sha512-ofyk36gaoF4unwEJIAKTWKjq9LaD1QUCrChGIPdChy8c81MsTPQdihNMT2GwIJeQMGCFAd30ybTBZ6ZvlI7oLQ==}
     dependencies:
-      '@voltagent/core': 1.0.0-next.2(@voltagent/logger@packages+logger)(ai@5.0.12)(zod@3.25.76)
+      '@voltagent/core': 0.1.86(@voltagent/logger@packages+logger)(zod@3.25.76)
     transitivePeerDependencies:
       - '@voltagent/logger'
-      - ai
+      - bufferutil
       - supports-color
+      - utf-8-validate
       - zod
     dev: false
 
