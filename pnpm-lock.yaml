@@ -1263,7 +1263,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.2.1
         version: 24.2.1
       tsx:
         specifier: ^4.19.3
@@ -1583,7 +1583,7 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0(@voltagent/core@0.1.86)(zod@3.25.76)
       ai:
-        specifier: ^5.0.8
+        specifier: ^5.0.12
         version: 5.0.19(zod@3.25.76)
       consola:
         specifier: ^3.4.2
