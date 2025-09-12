@@ -22,7 +22,7 @@ const agent = new Agent({
   hooks: {
     onStart: async ({ context }) => {
       // Access user from context
-      const user = context.get("user") as
+      const user = context.context.get("user") as
         | { id: string; email: string; name?: string; role?: string }
         | undefined;
 

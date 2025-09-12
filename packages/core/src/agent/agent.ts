@@ -203,6 +203,9 @@ export interface BaseGenerationOptions extends Partial<CallSettings> {
    */
   stopWhen?: StopWhen;
 
+  // Tools (can provide additional tools dynamically)
+  tools?: (Tool<any, any> | Toolkit)[];
+
   // Hooks (can override agent hooks)
   hooks?: AgentHooks;
 
@@ -417,6 +420,7 @@ export class Agent {
           contextLimit,
           hooks,
           maxSteps: userMaxSteps,
+          tools: userTools,
           providerOptions,
           ...aiSDKOptions
         } = options || {};
@@ -585,6 +589,7 @@ export class Agent {
           contextLimit,
           hooks,
           maxSteps: userMaxSteps,
+          tools: userTools,
           onFinish: userOnFinish,
           providerOptions,
           ...aiSDKOptions
@@ -878,6 +883,7 @@ export class Agent {
           contextLimit,
           hooks,
           maxSteps: userMaxSteps,
+          tools: userTools,
           providerOptions,
           ...aiSDKOptions
         } = options || {};
@@ -1056,6 +1062,7 @@ export class Agent {
           contextLimit,
           hooks,
           maxSteps: userMaxSteps,
+          tools: userTools,
           onFinish: userOnFinish,
           providerOptions,
           ...aiSDKOptions
@@ -1234,7 +1241,7 @@ export class Agent {
   }> {
     // Resolve dynamic values
     const model = await this.resolveValue(this.model, oc);
-    const toolList = await this.resolveValue(this.tools, oc);
+    const agentToolList = await this.resolveValue(this.tools, oc);
 
     // Prepare messages (system + memory + input) as UIMessages
     const uiMessages = await this.prepareMessages(input, oc, options);
@@ -1245,9 +1252,13 @@ export class Agent {
     // Calculate maxSteps (use provided option or calculate based on subagents)
     const maxSteps = options?.maxSteps ?? this.calculateMaxSteps();
 
+    // Merge agent tools with option tools
+    const agentToolsArray = Array.isArray(agentToolList) ? agentToolList : [];
+    const optionToolsArray = options?.tools || [];
+    const mergedTools = [...agentToolsArray, ...optionToolsArray];
+
     // Prepare tools with execution context
-    const toolsArray = Array.isArray(toolList) ? toolList : [];
-    const tools = await this.prepareTools(toolsArray, oc, maxSteps, options);
+    const tools = await this.prepareTools(mergedTools, oc, maxSteps, options);
 
     return { messages, model, tools, maxSteps };
   }

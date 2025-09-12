@@ -51,10 +51,10 @@ export const browserAgent = new Agent({
   model: mistral("mistral-large-latest"),
 
   hooks: {
-    onEnd: async (oc: OperationContext) => {
-      console.log(`[${oc.operationId}] Operation finished. Cleaning up browser state...`);
+    onEnd: async ({ context }) => {
+      console.log(`[${context.operationId}] Operation finished. Cleaning up browser state...`);
       // Call the reset function from the handler using the operation context
-      await resetBrowserStateInternal(oc);
+      await resetBrowserStateInternal(context);
     },
   },
   tools: [

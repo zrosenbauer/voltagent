@@ -1,5 +1,6 @@
 packages:
   - "!archive/**"
+  - "!packages/sdk"
   - "packages/*"
   - "examples/*"
   - "examples/**/*"

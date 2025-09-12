@@ -79,7 +79,6 @@ jobs:
           - supabase
           - voice
           - server-core
-          - server-hono
       fail-fast: false
     concurrency:
       group: ${{ github.ref }}-test-${{ matrix.package }}

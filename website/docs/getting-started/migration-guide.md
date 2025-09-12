@@ -548,6 +548,53 @@ Notes:
 - Tools still access an internal `operationContext.abortController` and its signal.
 - You only need to pass `abortSignal` to agent calls; propagation is handled internally.
 
+### Message helpers now use UIMessage (breaking)
+
+What changed:
+
+- Message-level helpers now accept and return `UIMessage` (ai-sdk UI message type) instead of `BaseMessage`:
+  - `addTimestampToMessage(message: UIMessage, ...) => UIMessage`
+  - `prependToMessage(message: UIMessage, ...) => UIMessage`
+  - `appendToMessage(message: UIMessage, ...) => UIMessage`
+  - `hasContent(message: UIMessage) => boolean`
+  - `mapMessageContent(message: UIMessage, transformer) => UIMessage`
+- Content-level helpers are unchanged and still operate on `MessageContent` (`string | parts[]`).
+
+Why:
+
+- The Agent pipeline and hooks operate on ai-sdk `UIMessage[]`. Aligning helpers eliminates type mismatches and extra conversions in hooks (e.g., `onPrepareMessages`).
+
+Before (0.1.x):
+
+```ts
+import { addTimestampToMessage, mapMessageContent } from "@voltagent/core/utils";
+import type { BaseMessage } from "@voltagent/core";
+
+const msg: BaseMessage = { role: "user", content: "hello" };
+const stamped = addTimestampToMessage(msg, "10:30"); // returns BaseMessage
+```
+
+After (1.x):
+
+```ts
+import { addTimestampToMessage, mapMessageContent } from "@voltagent/core/utils";
+import type { UIMessage } from "ai";
+
+const msg: UIMessage = {
+  id: "m1",
+  role: "user",
+  parts: [{ type: "text", text: "hello" }],
+  metadata: {},
+} as UIMessage;
+const stamped = addTimestampToMessage(msg, "10:30"); // returns UIMessage
+```
+
+Notes:
+
+- If you were calling helpers with `BaseMessage`, update those call sites to construct `UIMessage` objects (id, role, parts, metadata). Agent `onPrepareMessages` already provides `UIMessage[]`.
+- No changes needed for `transformTextContent`, `extractText`, etc. — they still operate on `MessageContent`.
+-
+
 ### Server Core (typed routes, schemas, handlers)
 
 The core HTTP surface moved into `@voltagent/server-core` and is consumed by `@voltagent/server-hono`:

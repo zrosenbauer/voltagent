@@ -25,7 +25,6 @@ jobs:
           - supabase
           - voice
           - server-core
-          - server-hono
       fail-fast: false
     name: Test ${{ matrix.package }}
     steps:

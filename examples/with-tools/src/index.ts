@@ -23,10 +23,10 @@ const memory = new Memory({
 
 // Create the agent with tools (no observability here - will use global)
 const agent = new Agent({
-  name: "Assistant with Tools22",
+  name: "Assistant with Tools",
   instructions: "A helpful assistant that can use tools to provide better answers",
   model: openai("gpt-4o-mini"),
-  tools: [checkCalendarTool, addCalendarEventTool, searchTool],
+  tools: [],
   memory,
 });
 
