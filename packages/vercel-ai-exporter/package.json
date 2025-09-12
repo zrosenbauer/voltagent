@@ -6,7 +6,7 @@
   "dependencies": {
     "@opentelemetry/core": "^2.0.0",
     "@opentelemetry/sdk-trace-base": "^2.0.0",
-    "@voltagent/sdk": "^0.1.7-next.0"
+    "@voltagent/sdk": "^0.1.6"
   },
   "devDependencies": {
     "@types/node": "^24.2.1",
