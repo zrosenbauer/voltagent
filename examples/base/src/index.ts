@@ -34,5 +34,4 @@ new VoltAgent({
   agents: { agent },
   server: honoServer(),
   logger,
-  observability: new VoltAgentObservability(),
 });
