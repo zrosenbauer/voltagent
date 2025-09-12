@@ -1436,6 +1436,22 @@ export function createWorkflow<
         if (stateManager.state.status !== "completed" && stateManager.state.status !== "failed") {
           stateManager.fail(error);
         }
+        // Persist error status to Memory V2 so /state reflects the failure
+        try {
+          await effectiveMemory.updateWorkflowState(executionId, {
+            status: "error",
+            // Store a lightweight error summary in metadata for debugging
+            metadata: {
+              ...(stateManager.state?.usage ? { usage: stateManager.state.usage } : {}),
+              errorMessage: error instanceof Error ? error.message : String(error),
+            },
+            updatedAt: new Date(),
+          });
+        } catch (memoryError) {
+          runLogger.warn("Failed to update workflow state to error in Memory V2:", {
+            error: memoryError,
+          });
+        }
         await hooks?.onEnd?.(stateManager.state);
 
         // Close stream after state update
