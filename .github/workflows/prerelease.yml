@@ -25,6 +25,7 @@ jobs:
           - supabase
           - voice
           - server-core
+          - libsql
       fail-fast: false
     name: Test ${{ matrix.package }}
     steps:

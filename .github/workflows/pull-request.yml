@@ -79,6 +79,7 @@ jobs:
           - supabase
           - voice
           - server-core
+          - libsql
       fail-fast: false
     concurrency:
       group: ${{ github.ref }}-test-${{ matrix.package }}
