@@ -165,3 +165,10 @@ vitest.config.*.timestamp*
 # claude
 .claude
 CLAUDE.md
+
+dev-debug.log
+node_modules/
+
+.taskmaster
+
+!packages/core/src/observability/logs

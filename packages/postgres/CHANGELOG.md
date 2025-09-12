@@ -1,5 +1,51 @@
 # @voltagent/postgres
 
+## 1.0.0-next.1
+
+### Major Changes
+
+- [`a2b492e`](https://github.com/VoltAgent/voltagent/commit/a2b492e8ed4dba96fa76862bbddf156f3a1a5c93) Thanks [@omeraplak](https://github.com/omeraplak)! - # PostgreSQL 1.x — Memory Adapter
+
+  The old `PostgresStorage` API is replaced by a Memory V2 adapter.
+
+  Full migration guide: [Migration Guide](https://voltagent.dev/docs/getting-started/migration-guide/)
+
+  ## Migrate
+
+  Before (0.1.x):
+
+  ```ts
+  import { PostgresStorage } from "@voltagent/postgres";
+
+  const agent = new Agent({
+    // ...
+    memory: new PostgresStorage({ connection: process.env.DATABASE_URL! }),
+  });
+  ```
+
+  After (1.x):
+
+  ```ts
+  import { Memory } from "@voltagent/core";
+  import { PostgreSQLMemoryAdapter } from "@voltagent/postgres";
+
+  const agent = new Agent({
+    // ...
+    memory: new Memory({
+      storage: new PostgreSQLMemoryAdapter({
+        connection: process.env.DATABASE_URL!,
+      }),
+    }),
+  });
+  ```
+
+## 1.0.0-next.0
+
+### Patch Changes
+
+- Updated dependencies [[`64a50e6`](https://github.com/VoltAgent/voltagent/commit/64a50e6800dec844fad7b9f3a3b1c2c8d0486229), [`9e8b211`](https://github.com/VoltAgent/voltagent/commit/9e8b2119a783942f114459f0a9b93e645727445e)]:
+  - @voltagent/core@1.0.0-next.0
+
 ## 0.1.12
 
 ### Patch Changes

@@ -4,6 +4,12 @@ title: Langfuse Integration
 sidebar_label: Langfuse
 ---
 
+:::caution Temporarily unavailable in v1
+The Langfuse integration described here (using `telemetryExporter` and `@voltagent/langfuse-exporter`) was removed in VoltAgent v1 as part of our migration to the new OpenTelemetry-based observability system. We are rebuilding an official Langfuse integration compatible with v1.
+
+For production observability today, use the built-in OpenTelemetry export to VoltOps by adding `VOLTAGENT_PUBLIC_KEY` and `VOLTAGENT_SECRET_KEY` to your `.env` (see Observability > Developer Console and Observability > Logging). This page will be updated once the v1-compatible Langfuse integration is available.
+:::
+
 VoltAgent offers built-in OpenTelemetry support, making it easy to send traces and logs to observability platforms like Langfuse. This guide shows you how to integrate VoltAgent with Langfuse using the dedicated `@voltagent/langfuse-exporter` package.
 
 ## Prerequisites
@@ -27,12 +33,11 @@ In your main application file (e.g., `index.ts`), import the required classes.
 
 ```typescript
 import { Agent, VoltAgent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
 // highlight-next-line
 import { LangfuseExporter } from "@voltagent/langfuse-exporter";
-// ... other imports like your LLM provider and tools
+// ... other imports like your tools
 ```
 
 ## Configure the Exporter
@@ -59,7 +64,7 @@ When creating your main `VoltAgent` instance, pass the configured `langfuseExpor
 const agent = new Agent({
   name: "my-voltagent-app",
   instructions: "A helpful assistant that answers questions without using tools",
-  llm: new VercelAIProvider(),
+  model: openai("gpt-4o-mini"),
 });
 
 // Initialize VoltAgent with the exporter

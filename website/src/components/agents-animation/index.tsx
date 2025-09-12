@@ -476,7 +476,6 @@ const Node = forwardRef<
   if (type === "input" || type === "output") {
     return (
       <div className="relative">
-        {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
         <div
           ref={ref}
           className={clsx(
@@ -511,7 +510,7 @@ const Node = forwardRef<
       {label && type === "core" && (
         <span className="text-xs mb-2 font-medium text-gray-300">{label}</span>
       )}
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents: ignore */}
+
       <div
         ref={ref}
         className={clsx(

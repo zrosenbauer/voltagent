@@ -8,7 +8,7 @@ import TabItem from '@theme/TabItem';
 
 # PostgreSQL Memory
 
-The `@voltagent/postgres` package provides a `PostgresStorage` provider that uses PostgreSQL for persistent storage of agent memory.
+The `@voltagent/postgres` package provides a `PostgreSQLMemoryAdapter` storage adapter for the `Memory` class, using PostgreSQL for persistent conversation storage.
 
 This is ideal for production applications requiring enterprise-grade database storage, complex queries, or integration with existing PostgreSQL infrastructure.
 
@@ -60,16 +60,15 @@ Store these credentials securely, typically as environment variables or use a co
 
 ## Configuration
 
-Import `PostgresStorage` and initialize it with your credentials:
+Import `PostgreSQLMemoryAdapter` and initialize it with your credentials, then pass it to `new Memory({ storage: ... })`:
 
 ```typescript
-import { Agent } from "@voltagent/core";
-import { PostgresStorage } from "@voltagent/postgres";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { Agent, Memory } from "@voltagent/core";
+import { PostgreSQLMemoryAdapter } from "@voltagent/postgres";
 import { openai } from "@ai-sdk/openai";
 
 // Using connection string (recommended)
-const memory = new PostgresStorage({
+const storage = new PostgreSQLMemoryAdapter({
   connection: process.env.DATABASE_URL || "postgresql://postgres:password@localhost:5432/mydb",
   // Optional: Adjust connection pool size
   maxConnections: 10,
@@ -80,7 +79,7 @@ const memory = new PostgresStorage({
 });
 
 // Alternative: Using connection object
-const memory = new PostgresStorage({
+const storage = new PostgreSQLMemoryAdapter({
   connection: {
     host: process.env.DB_HOST || "localhost",
     port: parseInt(process.env.DB_PORT || "5432"),
@@ -97,9 +96,8 @@ const memory = new PostgresStorage({
 const agent = new Agent({
   name: "PostgreSQL Memory Agent",
   instructions: "An agent using PostgreSQL for memory.",
-  llm: new VercelAIProvider(),
   model: openai("gpt-4o"),
-  memory: memory, // Assign the memory provider instance
+  memory: new Memory({ storage }),
 });
 ```
 
@@ -271,3 +269,36 @@ try {
   }
 }
 ```
+
+## Working Memory
+
+`PostgreSQLMemoryAdapter` implements working memory operations used by `Memory`:
+
+- Conversation-scoped working memory is stored under `conversations.metadata.workingMemory`.
+- User-scoped working memory is stored in the `${tablePrefix}_users` table `metadata.workingMemory` field.
+
+Enable via `Memory({ workingMemory: { enabled: true, template | schema, scope } })`. See: [Working Memory](./working-memory.md).
+
+Programmatic APIs (via `Memory`):
+
+- `getWorkingMemory({ conversationId?, userId? })`
+- `updateWorkingMemory({ conversationId?, userId?, content })`
+- `clearWorkingMemory({ conversationId?, userId? })`
+
+## Semantic Search (Embeddings + Vectors)
+
+Vector search is configured on `Memory` independently of the storage adapter. To enable semantic retrieval with PostgreSQL storage, attach an embedding adapter and a vector adapter (e.g., in-memory for development):
+
+```ts
+import { Memory, AiSdkEmbeddingAdapter, InMemoryVectorAdapter } from "@voltagent/core";
+import { PostgreSQLMemoryAdapter } from "@voltagent/postgres";
+import { openai } from "@ai-sdk/openai";
+
+const memory = new Memory({
+  storage: new PostgreSQLMemoryAdapter({ connection: process.env.DATABASE_URL! }),
+  embedding: new AiSdkEmbeddingAdapter(openai.embedding("text-embedding-3-small")),
+  vector: new InMemoryVectorAdapter(),
+});
+```
+
+Use with agent calls by passing `semanticMemory` options. See: [Semantic Search](./semantic-search.md).

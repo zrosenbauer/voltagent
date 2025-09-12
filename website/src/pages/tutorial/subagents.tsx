@@ -522,8 +522,8 @@ new VoltAgent({
   
   // Monitor delegation flow
   hooks: {
-    onHandoff: ({ agent, source }) => {
-      console.log(\`\${source.name} → \${agent.name}\`);
+    onHandoff: ({ agent, sourceAgent }) => {
+      console.log(\`\${sourceAgent.name} → \${agent.name}\`);
       // Output: "creative-director → writer"
       // Output: "creative-director → translator"
     }

@@ -8,6 +8,8 @@ import TabItem from '@theme/TabItem';
 
 # xsAI Provider (`@voltagent/xsai`)
 
+> Deprecated: VoltAgent 1.x integrates directly with ai-sdk providers. We recommend using the official ai-sdk OpenAI-compatible providers instead of `@voltagent/xsai`. See: /docs/getting-started/providers-models
+
 The xsAI Provider acts as a versatile connector between VoltAgent and any OpenAI-compatible API endpoint. It leverages the [`xsai`](https://www.npmjs.com/package/xsai) library, providing a unified interface for interacting with various services like OpenAI, Groq, Together AI, Anyscale Endpoints, Mistral AI (via compatible endpoints), and more.
 
 **Key Characteristics:**
@@ -290,7 +292,7 @@ async function main() {
   try {
     const response = await agent.streamObject(prompt, travelPlanSchema);
     console.log("Streaming Object Updates:");
-    for await (const partialObject of response.objectStream) {
+    for await (const partialObject of response.partialObjectStream) {
       console.log("Partial:", partialObject);
     }
     // Final object/usage might be available via callbacks or provider result

@@ -7,23 +7,27 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 :::warning Deprecated Package
-**This provider is deprecated.** We recommend using the [Vercel AI SDK's Groq provider](https://ai-sdk.dev/providers/ai-sdk-providers/groq) instead with `@voltagent/vercel-ai`.
+**This provider is deprecated.** Use the official ai-sdk Groq provider directly and pass the model to `Agent` via the `model` option.
 
 **Migration Guide:**
 
 ```typescript
 // Old (deprecated)
 import { GroqProvider } from "@voltagent/groq-ai";
-const provider = new GroqProvider({ apiKey: "..." });
+const groqProvider = new GroqProvider({ apiKey: "..." });
 
 // New (recommended)
-import { VercelAIProvider } from "@voltagent/vercel-ai";
+import { Agent } from "@voltagent/core";
 import { groq } from "@ai-sdk/groq";
-const provider = new VercelAIProvider();
-// Use with: model: groq("llama-3.3-70b-versatile")
+
+const agent = new Agent({
+  name: "Groq Agent",
+  model: groq("llama-3.3-70b-versatile"),
+  instructions: "You are helpful.",
+});
 ```
 
-For the latest models and features, please see our [Providers & Models guide](/docs/getting-started/providers-models).
+See [Providers & Models](/docs/getting-started/providers-models) for details.
 :::
 
 # Groq AI Provider (`@voltagent/groq-ai`)
