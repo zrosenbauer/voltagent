@@ -5,7 +5,7 @@
     "@ai-sdk/openai": "^2.0.2",
     "@voltagent/core": "^0.1.86",
     "@voltagent/vercel-ai": "^1.0.0",
-    "ai": "^5.0.8",
+    "ai": "^5.0.12",
     "consola": "^3.4.2",
     "envalid": "^8.1.0",
     "yargs": "^18.0.0",
