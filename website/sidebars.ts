@@ -122,11 +122,6 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
-      label: "Migration Guide",
-      items: ["migration-guide/0.1.x-to-1.0.0"],
-    },
-    {
-      type: "category",
       label: "Providers",
       items: [
         "providers/overview",
