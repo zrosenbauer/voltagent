@@ -193,7 +193,7 @@ importers:
         version: link:../../packages/logger
       '@voltagent/sdk':
         specifier: ^0.1.7-next.0
-        version: 0.1.7-next.0(@voltagent/logger@packages+logger)(zod@3.25.76)
+        version: 0.1.7-next.0(@voltagent/logger@packages+logger)(ai@5.0.12)(zod@3.25.76)
       '@voltagent/server-hono':
         specifier: ^1.0.0-next.2
         version: link:../../packages/server-hono
@@ -2154,9 +2154,6 @@ importers:
       '@voltagent/internal':
         specifier: ^0.0.9
         version: link:../internal
-      '@voltagent/logger':
-        specifier: ^1.0.0-next.0
-        version: link:../logger
     devDependencies:
       '@types/node':
         specifier: ^24.2.1
@@ -2167,6 +2164,9 @@ importers:
       '@voltagent/core':
         specifier: ^1.0.0-next.2
         version: link:../core
+      '@voltagent/logger':
+        specifier: ^1.0.0-next.0
+        version: link:../logger
       ai:
         specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
@@ -2363,9 +2363,6 @@ importers:
       '@voltagent/internal':
         specifier: ^0.0.9
         version: link:../internal
-      '@voltagent/logger':
-        specifier: ^1.0.0-next.0
-        version: link:../logger
       ts-pattern:
         specifier: ^5.7.1
         version: 5.8.0
@@ -2379,6 +2376,9 @@ importers:
       '@voltagent/core':
         specifier: ^1.0.0-next.2
         version: link:../core
+      '@voltagent/logger':
+        specifier: ^1.0.0-next.0
+        version: link:../logger
       ai:
         specifier: ^5.0.12
         version: 5.0.12(zod@3.25.76)
@@ -9787,10 +9787,11 @@ packages:
       tinyrainbow: 2.0.0
     dev: true
 
-  /@voltagent/core@1.0.0-next.1(@voltagent/logger@packages+logger)(zod@3.25.76):
-    resolution: {integrity: sha512-1YwHiZt7+9BVexZt1BXyLgWSrB+scC1fKhErMOyshnIkQKFlHAzLTRZ1THeKIQ958Hjm1/xqiG86+jUA/RBKiA==}
+  /@voltagent/core@1.0.0-next.2(@voltagent/logger@packages+logger)(ai@5.0.12)(zod@3.25.76):
+    resolution: {integrity: sha512-Zq1qQmr0GDCQV5SXrayGZHtON7KO7DYYovHxdaqJWbKlBf6tz//3q8IWK0Nn0R3ccMqNCFp3bOEH7R7Y5wx/mw==}
     peerDependencies:
-      '@voltagent/logger': ^0.1.0
+      '@voltagent/logger': ^1.0.0-next.0
+      ai: ^5.0.0
       zod: ^3.25.0
     peerDependenciesMeta:
       '@voltagent/logger':
@@ -9798,10 +9799,18 @@ packages:
     dependencies:
       '@modelcontextprotocol/sdk': 1.17.2
       '@opentelemetry/api': 1.9.0
+      '@opentelemetry/api-logs': 0.204.0
+      '@opentelemetry/core': 2.1.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/exporter-logs-otlp-http': 0.204.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/exporter-trace-otlp-http': 0.203.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/resources': 2.1.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/sdk-logs': 0.204.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/sdk-trace-base': 2.1.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/sdk-trace-node': 2.0.1(@opentelemetry/api@1.9.0)
+      '@opentelemetry/semantic-conventions': 1.36.0
       '@voltagent/internal': 0.0.9
       '@voltagent/logger': link:packages/logger
+      ai: 5.0.12(zod@3.25.76)
       ts-pattern: 5.8.0
       uuid: 9.0.1
       zod: 3.25.76
@@ -9822,12 +9831,13 @@ packages:
       pino-pretty: 13.1.1
     dev: false
 
-  /@voltagent/sdk@0.1.7-next.0(@voltagent/logger@packages+logger)(zod@3.25.76):
+  /@voltagent/sdk@0.1.7-next.0(@voltagent/logger@packages+logger)(ai@5.0.12)(zod@3.25.76):
     resolution: {integrity: sha512-9e3dvxl4T0lhf3z/kZ4YnpNY6z34vI1qB/Depfqd6ugf0yCy4nfDWxGWIvTS1UdwN5V6MGrV1axiRpJ2kfV9wg==}
     dependencies:
-      '@voltagent/core': 1.0.0-next.1(@voltagent/logger@packages+logger)(zod@3.25.76)
+      '@voltagent/core': 1.0.0-next.2(@voltagent/logger@packages+logger)(ai@5.0.12)(zod@3.25.76)
     transitivePeerDependencies:
       - '@voltagent/logger'
+      - ai
       - supports-color
       - zod
     dev: false
