@@ -22,6 +22,7 @@
     "deep-feet-clap",
     "docs-mcp-migration-link",
     "few-keys-change",
+    "sdk-version-bump",
     "v1-core",
     "v1-libsql",
     "v1-logger-otel",
