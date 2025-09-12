@@ -149,6 +149,7 @@ export type {
   ServerApiResponse,
 } from "./types";
 export { VoltAgent } from "./voltagent";
+export { VoltAgent as default } from "./voltagent";
 
 // Logger exports - only export what core owns
 export { LoggerProxy, getGlobalLogger, getGlobalLogBuffer } from "./logger";

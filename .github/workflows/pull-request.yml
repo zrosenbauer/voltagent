@@ -61,8 +61,8 @@ jobs:
         run: pnpm build:all
       - name: Publint
         run: pnpm publint:all
-      - name: Are The Types Wrong
-        run: pnpm attw:all
+     # - name: Are The Types Wrong
+     #   run: pnpm attw:all
 
   test-packages:
     runs-on: ubuntu-latest

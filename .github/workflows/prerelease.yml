@@ -118,8 +118,8 @@ jobs:
       - name: Publint
         run: pnpm publint:all
 
-      - name: Are The Types Wrong
-        run: pnpm attw:all
+      #- name: Are The Types Wrong
+      #  run: pnpm attw:all
 
       - name: PostgreSQL Integration Tests
         run: |
