@@ -593,6 +593,32 @@ Notes:
 
 - If you were calling helpers with `BaseMessage`, update those call sites to construct `UIMessage` objects (id, role, parts, metadata). Agent `onPrepareMessages` already provides `UIMessage[]`.
 - No changes needed for `transformTextContent`, `extractText`, etc. — they still operate on `MessageContent`.
+
+### Hook arg rename: onHandoff `source` → `sourceAgent` (breaking)
+
+What changed:
+
+- `onHandoff` hook argument object renamed the source agent field from `source` to `sourceAgent` for clarity and consistency with internal APIs.
+
+Before (0.1.x):
+
+```ts
+onHandoff: ({ agent, source }) => {
+  console.log(`${source.name} → ${agent.name}`);
+};
+```
+
+After (1.x):
+
+```ts
+onHandoff: ({ agent, sourceAgent }) => {
+  console.log(`${sourceAgent.name} → ${agent.name}`);
+};
+```
+
+Action:
+
+- Update all `onHandoff` usages in your code and docs to use `sourceAgent`.
 -
 
 ### Server Core (typed routes, schemas, handlers)

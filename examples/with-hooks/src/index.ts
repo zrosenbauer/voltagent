@@ -101,9 +101,9 @@ const agent = new Agent({
     },
 
     // Called when an agent hands off to another agent (in multi-agent scenarios)
-    onHandoff: async ({ agent, source }) => {
+    onHandoff: async ({ agent, sourceAgent }) => {
       console.log("\n🤝 [onHandoff] Agent handoff");
-      console.log(`   From: ${source.name}`);
+      console.log(`   From: ${sourceAgent.name}`);
       console.log(`   To: ${agent.name}`);
     },
   },

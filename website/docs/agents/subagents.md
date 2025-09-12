@@ -384,8 +384,8 @@ const supervisor = new Agent({
   name: "Supervisor",
   subAgents: [writer, translator],
   hooks: {
-    onHandoff: ({ agent, source }) => {
-      console.log(`${source.name} → ${agent.name}`);
+    onHandoff: ({ agent, sourceAgent }) => {
+      console.log(`${sourceAgent.name} → ${agent.name}`);
     },
   },
 });
