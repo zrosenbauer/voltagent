@@ -243,7 +243,7 @@ This process happens seamlessly behind the scenes when using the agent's core in
 
 ## User and Conversation Identification
 
-To separate conversations for different users or different chat sessions within the same application, you **must** provide `userId` and `conversationId` in the options when calling agent methods directly in your code. If you are interacting with the agent via the [Core API](../../api/overview.md), you can pass these same identifiers within the `options` object in your request body. See the [API examples](../../api/overview.md#basic-example-using-curl) for details on the API usage.
+To separate conversations for different users or different chat sessions within the same application, you **must** provide `userId` and `conversationId` in the options when calling agent methods directly in your code. If you are interacting with the agent via the [Core API](../../api/overview.md), you can pass these same identifiers within the `options` object in your request body. See the [API examples](../../api/endpoints/agents.md#generate-text) for details on the API usage.
 
 When calling agent methods directly:
 

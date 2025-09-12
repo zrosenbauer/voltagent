@@ -834,7 +834,7 @@ const anthropicAgent = new Agent({
 const res = await openaiAgent.generateText("Hello");
 ```
 
-[See Getting Started: Providers & Models](/getting-started/providers-models)
+[See Getting Started: Providers & Models](../getting-started/providers-models.md)
 
 ### Call Settings
 
@@ -1116,7 +1116,7 @@ This means if you cancel an agent operation, any active tool executions will als
 - **Error Recovery**: Cancel related operations when one fails
 - **Batch Processing**: Cancel remaining operations when stopping a batch
 
-For detailed examples of implementing cancellable tools, including error handling and best practices, see the [Tools documentation on AbortSignal](./tools.md#cancellable-tools-with-abortsignal).
+For detailed examples of implementing cancellable tools, including error handling and best practices, see the [Tools documentation on AbortSignal](./tools.md#cancellable-tools-with-abortcontroller).
 
 ### MCP (Model Context Protocol)
 

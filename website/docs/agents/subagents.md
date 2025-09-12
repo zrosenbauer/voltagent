@@ -63,7 +63,7 @@ const supervisorAgent = new Agent({
 :::tip Advanced SubAgent Configuration
 The basic example above uses the default `streamText` method for subagents. For more control over how subagents execute tasks, you can specify different methods like `generateText`, `generateObject`, or `streamObject` with custom schemas and options.
 
-**Learn more:** [Advanced SubAgent Configuration](#advanced-subagent-configuration)
+**Learn more:** [Advanced SubAgent Configuration](#advanced-configuration)
 :::
 
 ## Customizing Supervisor Behavior
@@ -468,7 +468,7 @@ This tool is the primary interface for delegation.
 - **Execution**:
   - The tool finds the corresponding subagent instances based on the provided names.
   - It calls the `handoffTask` (or `handoffToMultiple`) method internally, which sends the task description and context to the target subagent(s).
-  - Crucially, it passes the supervisor's agent ID (`parentAgentId`) and the current history entry ID (`parentHistoryEntryId`) to the subagent's execution context. This is key for [Observability](#observability-and-event-tracking).
+  - Crucially, it passes the supervisor's agent ID (`parentAgentId`) and the current history entry ID (`parentHistoryEntryId`) to the subagent's execution context. This is key for [Observability](#observability).
 - **Returns**: An array of objects, where each object contains the result from a delegated agent:
   ```ts
   [
