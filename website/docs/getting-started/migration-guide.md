@@ -47,9 +47,9 @@ npm uninstall @voltagent/vercel-ai @voltagent/vercel-ui
 Upgrade/install (required):
 
 ```bash
-npm install @voltagent/core@^1 @voltagent/server-hono@^1 @voltagent/libsql@^1 ai @ai-sdk/openai@^2
-# yarn add @voltagent/core@^1 @voltagent/server-hono@^1 @voltagent/libsql@^1 ai @ai-sdk/openai@^2
-# pnpm add @voltagent/core@^1 @voltagent/server-hono@^1 @voltagent/libsql@^1 ai @ai-sdk/openai@^2
+npm install @voltagent/core@latest @voltagent/server-hono@latest @voltagent/libsql@latest @voltagent/logger@latest ai
+# yarn add @voltagent/core@latest @voltagent/server-hono@latest @voltagent/libsql@latest @voltagent/logger@latest ai@latest
+# pnpm add @voltagent/core@latest @voltagent/server-hono@latest @voltagent/libsql@latest @voltagent/logger@latest ai@latest
 ```
 
 - `ai`: Base Vercel AI SDK library used by VoltAgent 1.x (peer of `@voltagent/core`)
