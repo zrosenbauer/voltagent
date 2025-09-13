@@ -140,8 +140,7 @@ const weatherTool = createTool({
 const agent = new Agent({
   name: "weather-agent",
   instructions: "A helpful weather assistant",
-  llm: new AnthropicProvider(),
-  model: "claude-opus-4-1",
+  model: anthropic("claude-3-5-sonnet"),
   tools: [weatherTool],
 });
 ```
@@ -150,12 +149,12 @@ const agent = new Agent({
 
 The specific Claude model (e.g., `'claude-opus-4-1'`, `'claude-3-opus-20240229'`) is set via the `model` property during `Agent` instantiation.
 
-You can override or provide additional Anthropic-specific generation parameters (like `temperature`, `max_tokens`, `top_p`, `stop_sequences`, etc.) per-request using the `provider` key within the options object of `generateText`, `streamText`, or `generateObject`.
+You can override or provide additional Anthropic-specific generation parameters (like `temperature`, `max_tokens`, `top_p`, `stop_sequences`, etc.) per-request using the `providerOptions` key within the options object of `generateText`, `streamText`, or `generateObject`.
 
 ```typescript
 // Example: Overriding temperature for a specific call
 const response = await agent.generateText("Write a creative story.", {
-  provider: {
+  providerOptions: {
     temperature: 0.9,
     max_tokens: 1024,
     // Any other valid Anthropic parameters
