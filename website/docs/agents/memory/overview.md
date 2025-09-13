@@ -7,7 +7,7 @@ slug: /agents/memory/overview
 
 Conversational AI agents often need to remember past interactions to maintain context, understand user preferences, and provide more coherent and personalized responses. Without memory, each interaction would be treated in isolation, leading to repetitive questions and unnatural conversations.
 
-VoltAgent 1.x provides a unified `Memory` class with pluggable storage adapters. It stores and retrieves conversation history, and optionally supports embedding-powered semantic search and structured working memory.
+VoltAgent provides a unified `Memory` class with pluggable storage adapters. It stores and retrieves conversation history, and optionally supports embedding-powered semantic search and structured working memory.
 
 ## Why Use Memory?
 
@@ -105,7 +105,7 @@ Example (JSON schema, user-scoped):
 ```ts
 import { z } from "zod";
 import { Agent, Memory } from "@voltagent/core";
-import { PostgreSQLMemoryAdapter } from "@voltagent/postgres";
+import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { openai } from "@ai-sdk/openai";
 
 const workingSchema = z.object({
