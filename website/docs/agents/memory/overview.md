@@ -119,7 +119,7 @@ const workingSchema = z.object({
 });
 
 const memory = new Memory({
-  storage: new PostgreSQLMemoryAdapter({ connection: process.env.DATABASE_URL! }),
+  storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
   workingMemory: {
     enabled: true,
     scope: "user",
@@ -214,8 +214,6 @@ Programmatic search:
 
 - `memory.hasVectorSupport()` → boolean
 - `memory.searchSimilar(query, { limit?, threshold?, filter? }) → Promise<SearchResult[]>`
-
-## Memory Providers
 
 ## Memory Providers
 
@@ -464,6 +462,20 @@ export class MyStorageAdapter implements StorageAdapter {
     return [];
   }
 }
+
+// Usage example
+import { Agent, Memory } from "@voltagent/core";
+import { openai } from "@ai-sdk/openai";
+
+const memory = new Memory({
+  storage: new MyStorageAdapter(),
+});
+
+const agent = new Agent({
+  name: "Helper",
+  model: openai("gpt-4o-mini"),
+  memory,
+});
 ```
 
 ## Best Practices
