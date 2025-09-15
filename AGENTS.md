@@ -10,7 +10,7 @@ VoltAgent is an open-source TypeScript framework for building and orchestrating 
 
 ```
 voltagent/
-├── packages/               # Core packages
+├── packages/              # Core packages
 │   ├── core/              # Core agent framework
 │   ├── server-core/       # Server implementation
 │   ├── server-hono/       # Hono server integration

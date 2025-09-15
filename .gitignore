@@ -150,7 +150,7 @@ dist
 .cursor/*
 !.cursor/rules/
 .cursor/rules/*
-!.cursor/rules/voltagent-*.mdc
+!.cursor/rules/agents.mdc
 
 # vite and vitest
 vite.config.*.timestamp*
