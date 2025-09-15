@@ -59,16 +59,17 @@ import type { Voice } from "../voice";
 import { VoltOpsClient as VoltOpsClientClass } from "../voltops/client";
 import type { VoltOpsClient } from "../voltops/client";
 import type { PromptContent, PromptHelper } from "../voltops/types";
+import { createVoltAgentErrorFromError } from "./agent-error";
 import type { AgentHooks } from "./hooks";
 import { AgentTraceContext, addModelAttributesToSpan } from "./open-telemetry/trace-context";
 import type { BaseMessage, StepWithContent } from "./providers/base/types";
 export type { AgentHooks } from "./hooks";
 import type { StopWhen } from "../ai-types";
+import type { AbortError } from "./agent-error";
 import { SubAgentManager } from "./subagent";
 import type { SubAgentConfig } from "./subagent/types";
 import type { VoltAgentTextStreamPart } from "./subagent/types";
 import type {
-  AbortError,
   AgentFullState,
   AgentOptions,
   DynamicValue,
@@ -76,7 +77,6 @@ import type {
   InstructionsDynamicValue,
   OperationContext,
   SupervisorConfig,
-  VoltAgentError,
 } from "./types";
 
 // ============================================================================
@@ -2476,7 +2476,7 @@ export class Agent {
       throw oc.cancellationError;
     }
 
-    const voltagentError = error as VoltAgentError;
+    const voltagentError = createVoltAgentErrorFromError(error);
 
     // Event tracking now handled by OpenTelemetry spans
 

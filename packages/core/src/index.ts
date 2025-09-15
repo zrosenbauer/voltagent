@@ -116,8 +116,6 @@ export type {
   SubAgentStateData,
   ModelToolCall,
   OperationContext,
-  VoltAgentError,
-  AbortError,
   StreamTextFinishResult,
   StreamTextOnFinishCallback,
   StreamObjectFinishResult,
@@ -125,7 +123,8 @@ export type {
   ToolErrorInfo,
   DynamicValueOptions,
 } from "./agent/types";
-export { isAbortError, isVoltAgentError } from "./agent/types";
+export type { VoltAgentError, AbortError } from "./agent/agent-error";
+export { isAbortError, isVoltAgentError } from "./agent/agent-error";
 // Telemetry history types removed - migrated to OpenTelemetry
 export type { AgentHooks } from "./agent/hooks";
 export * from "./types";

@@ -16,6 +16,7 @@ import {
   type StreamObjectResultWithContext,
   type StreamTextResultWithContext,
 } from "./agent";
+import type { VoltAgentError } from "./agent-error";
 import type { SubAgentConfig } from "./subagent/types";
 import type {
   AgentOperationOutput,
@@ -35,7 +36,6 @@ import type {
   ToolErrorInfo,
   ToolsDynamicValue,
   UserContext,
-  VoltAgentError,
 } from "./types";
 
 describe("Agent Type System", () => {
@@ -585,6 +585,7 @@ describe("Agent Type System", () => {
   describe("Error Type Tests", () => {
     it("should validate VoltAgentError structure", () => {
       const error: VoltAgentError = {
+        name: "VoltAgentError",
         message: "An error occurred",
         originalError: new Error("Original"),
         code: "ERR_001",

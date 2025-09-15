@@ -646,31 +646,6 @@ export interface ToolErrorInfo {
 }
 
 /**
- * Standardized error structure for Voltagent agent operations.
- * Providers should wrap their specific errors in this structure before
- * passing them to onError callbacks.
- */
-export interface VoltAgentError {
-  /** A clear, human-readable error message. This could be a general message or derived from toolError info. */
-  message: string;
-
-  /** The original error object thrown by the provider or underlying system (if available). */
-  originalError?: unknown;
-
-  /** Optional error code or identifier from the provider. */
-  code?: string | number;
-
-  /** Additional metadata related to the error (e.g., retry info, request ID). */
-  metadata?: Record<string, any>;
-
-  /** Information about the step or stage where the error occurred (optional, e.g., 'llm_request', 'tool_execution', 'response_parsing'). */
-  stage?: string;
-
-  /** If the error occurred during tool execution, this field contains the relevant details. Otherwise, it's undefined. */
-  toolError?: ToolErrorInfo;
-}
-
-/**
  * Error thrown when an operation is aborted via AbortController
  */
 export interface AbortError extends Error {
