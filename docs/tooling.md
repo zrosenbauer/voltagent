@@ -2,43 +2,44 @@
 
 Development tools and utilities used in this repository.
 
+- **package manager**: pnpm
+- **monorepo**: lerna
+- **language**: typescript
+- **formatter**: biome
+- **linter**: biome
+- **build system**: tsup
+
 ## pnpm
 
 Fast, disk space efficient package manager with built-in workspace support for managing dependencies across the monorepo.
 
 ### Links
 
-- [Documentation](https://pnpm.io/motivation)
-- [LLMs.txt](tbd)
-- [LLMs-full.txt](tbd)
+- [Documentation](https://pnpm.io/pnpm-cli)
 
-## NX
+## lerna
 
-High-performance build system optimized for JavaScript and TypeScript monorepos with smart caching and parallel execution.
+Lerna is a tool for managing JavaScript projects with multiple packages.
 
 ### Links
 
-- [Documentation](https://nx.dev/getting-started/what-is-nx)
-- [LLMs.txt](tbd)
-- [LLMs-full.txt](tbd)
+- [Documentation](https://lerna.js.org/docs/introduction)
+
+## nx
+
+High-performance build system optimized for JavaScript and TypeScript monorepos with smart caching and parallel execution. Lerna and nx are integrated as nx acquired lerna.
+
+### Links
+
+- [Documentation](https://nx.dev/getting-started/intro)
 
 ## Biome
 
 All-in-one toolchain for web projects, combining formatter and linter functionality (replaces ESLint + Prettier).
 
-- [Documentation](https://biomejs.dev/guides/getting-started/)
-- [LLMs.txt](tbd)
-- [LLMs-full.txt](tbd)
-
-## Vercel AI SDK
-
-Vercel AI SDK is a library for building AI applications with Vercel.
-
 ### Links
 
-- [Documentation](https://sdk.vercel.ai/docs)
-- [LLMs.txt](tbd)
-- [LLMs-full.txt](tbd)
+- [Documentation](https://biomejs.dev/guides/getting-started/)
 
 ## TypeScript
 
@@ -47,15 +48,11 @@ Strongly typed programming language that builds on JavaScript, providing static 
 ### Links
 
 - [Documentation](https://www.typescriptlang.org/docs/)
-- [LLMs.txt](tbd)
-- [LLMs-full.txt](tbd)
 
-## Syncpack
+## tsup
 
-Manages and synchronizes dependency versions across multiple package.json files in the monorepo.
+Builds and bundles TypeScript code into JavaScript.
 
 ### Links
 
-- [Documentation](https://jamiemason.github.io/syncpack/)
-- [LLMs.txt](tbd)
-- [LLMs-full.txt](tbd)
+- [Documentation](https://tsup.egoist.dev/)

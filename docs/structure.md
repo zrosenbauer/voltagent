@@ -21,48 +21,31 @@ voltagent/
 
 Core packages, AI provider integrations, and utilities:
 
-#### Core Framework
-
+- **cli** - VoltAgent CLI for project scaffolding and management
 - **core** - Main VoltAgent framework with agent orchestration, memory management, tools, and observability
+- **create-voltagent-app** - Project initialization tool
+- **docs-mcp** - Model Context Protocol documentation server
 - **internal** - Internal utilities and shared types used across packages
-- **shared** - Shared constants and configurations
-
-#### Server Implementations
-
+- **langfuse-exporter** - LangFuse telemetry exporter
+- **libsql** - LibSQL database integration
+- **logger** - Universal logger implementation
+- **postgres** - PostgreSQL database integration
+- **sdk** - JavaScript/TypeScript SDK for VoltAgent API
 - **server-core** - Core server handlers, schemas, and business logic
 - **server-hono** - Hono-based server implementation with API routes
-
-#### AI Provider Integrations
-
-- **anthropic-ai** - Anthropic Claude integration
-- **google-ai** - Google AI (Gemini) integration
-- **groq-ai** - Groq AI integration
-- **vercel-ai** - Vercel AI SDK integration
-- **xsai** - XS AI integration
-
-#### Database & Storage
-
-- **postgres** - PostgreSQL database integration
-- **libsql** - LibSQL database integration
 - **supabase** - Supabase client integration
-
-#### Observability & Logging
-
-- **logger** - Universal logger implementation
-- **langfuse-exporter** - LangFuse telemetry exporter
 - **vercel-ai-exporter** - Vercel AI telemetry exporter
-
-#### Developer Tools
-
-- **cli** - VoltAgent CLI for project scaffolding and management
-- **create-voltagent-app** - Project initialization tool
-- **sdk** - JavaScript/TypeScript SDK for VoltAgent API
-- **docs-mcp** - Model Context Protocol documentation server
-
-#### UI & Voice
-
-- **vercel-ui** - UI components for Vercel AI integration
 - **voice** - Voice interaction capabilities
+
+#### Conventions
+
+Packages are named using the following conventions:
+
+- `@voltagent/*` - Core framework packages
+- `@voltagent/*-exporter` - Telemetry exporters
+- `voltagent-example-*` - Example applications
+
+Certain packages are `deprecated` and include a `DEPRECATED.md` file with migration instructions in the root of the package (i.e. `google-ai`).
 
 ### `examples/`
 
@@ -72,6 +55,12 @@ Example implementations demonstrating VoltAgent usage:
 - Integration patterns
 - Advanced use cases
 - Best practices demonstrations
+
+#### Conventions
+
+Examples are named using the following conventions:
+
+- `with-*` - Example application using the specific integration (i.e. `with-chroma` or `with-google-ai`)
 
 ### `website/`
 
@@ -95,44 +84,4 @@ Project-level documentation:
 
 ### `scripts/`
 
-Build and maintenance scripts:
-
-- Build automation
-- Package management utilities
-- Archive and cleanup scripts
-- Development helpers
-
-### Configuration Files
-
-- **package.json** - Root package with workspace configuration
-- **pnpm-workspace.yaml** - pnpm workspace definitions
-- **lerna.json** - Lerna monorepo configuration
-- **tsconfig.json** - TypeScript configuration
-- **biome.json** - Biome linter/formatter configuration
-- **.changeset/** - Changeset configuration for versioning
-
-## Package Naming Conventions
-
-- `@voltagent/*` - Core framework packages
-- `@voltagent/*-ai` - AI provider integrations
-- `@voltagent/*-exporter` - Telemetry exporters
-- `voltagent-example-*` - Example applications
-
-## Development Workflow
-
-1. **Install dependencies**: `pnpm install`
-2. **Build all packages**: `pnpm build:all`
-3. **Run tests**: `pnpm test:all`
-4. **Start development**: `pnpm dev`
-5. **Lint code**: `pnpm lint`
-6. **Format code**: `pnpm format`
-
-## Key Technologies
-
-- **TypeScript** - Primary language with strict type checking
-- **pnpm** - Package manager with workspace support
-- **Lerna** - Monorepo management and publishing
-- **Vitest** - Testing framework
-- **Biome** - Fast linter and formatter
-- **Changesets** - Version management and changelogs
-- **OpenTelemetry** - Observability and tracing
+Reusable scripts for the project, for repeatable development tasks.
