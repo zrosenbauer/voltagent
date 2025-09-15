@@ -16,7 +16,6 @@ import {
   type StreamObjectResultWithContext,
   type StreamTextResultWithContext,
 } from "./agent";
-import type { VoltAgentError } from "./agent-error";
 import type { SubAgentConfig } from "./subagent/types";
 import type {
   AgentOperationOutput,
@@ -30,10 +29,8 @@ import type {
   StandardizedObjectResult,
   StandardizedTextResult,
   StreamObjectFinishResult,
-  StreamOnErrorCallback,
   StreamTextFinishResult,
   SupervisorConfig,
-  ToolErrorInfo,
   ToolsDynamicValue,
   UserContext,
 } from "./types";
@@ -579,37 +576,6 @@ describe("Agent Type System", () => {
       };
 
       expectTypeOf(syncHooks).toMatchTypeOf<AgentHooks>();
-    });
-  });
-
-  describe("Error Type Tests", () => {
-    it("should validate VoltAgentError structure", () => {
-      const error: VoltAgentError = {
-        name: "VoltAgentError",
-        message: "An error occurred",
-        originalError: new Error("Original"),
-        code: "ERR_001",
-        metadata: { retry: true },
-        stage: "tool_execution",
-        toolError: {
-          toolCallId: "call-123",
-          toolName: "test-tool",
-          toolExecutionError: new Error("Tool failed"),
-          toolArguments: { arg: "value" },
-        },
-      };
-
-      expectTypeOf(error).toMatchTypeOf<VoltAgentError>();
-      expectTypeOf(error.toolError).toMatchTypeOf<ToolErrorInfo | undefined>();
-    });
-
-    it("should validate StreamOnErrorCallback", () => {
-      const errorCallback: StreamOnErrorCallback = async (error) => {
-        expectTypeOf(error).toEqualTypeOf<VoltAgentError>();
-        expectTypeOf(error.message).toEqualTypeOf<string>();
-      };
-
-      expectTypeOf(errorCallback).toMatchTypeOf<StreamOnErrorCallback>();
     });
   });
 

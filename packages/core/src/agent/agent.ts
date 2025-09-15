@@ -1,8 +1,3 @@
-/**
- * Agent - Direct AI SDK integration without provider abstraction
- * Refactored with better architecture and type safety
- */
-
 import * as crypto from "node:crypto";
 import type {
   AssistantModelMessage,
@@ -59,13 +54,13 @@ import type { Voice } from "../voice";
 import { VoltOpsClient as VoltOpsClientClass } from "../voltops/client";
 import type { VoltOpsClient } from "../voltops/client";
 import type { PromptContent, PromptHelper } from "../voltops/types";
-import { createVoltAgentErrorFromError } from "./agent-error";
+import { createAbortError, createVoltAgentError } from "./errors";
 import type { AgentHooks } from "./hooks";
 import { AgentTraceContext, addModelAttributesToSpan } from "./open-telemetry/trace-context";
 import type { BaseMessage, StepWithContent } from "./providers/base/types";
 export type { AgentHooks } from "./hooks";
+import { P, match } from "ts-pattern";
 import type { StopWhen } from "../ai-types";
-import type { AbortError } from "./agent-error";
 import { SubAgentManager } from "./subagent";
 import type { SubAgentConfig } from "./subagent/types";
 import type { VoltAgentTextStreamPart } from "./subagent/types";
@@ -2419,19 +2414,11 @@ export class Agent {
       // Mark operation as inactive
       oc.isActive = false;
 
-      // Get abort reason
-      const abortReason: unknown = signal.reason;
-
-      // Create cancellation error
-      const cancellationError = new Error(
-        typeof abortReason === "string"
-          ? abortReason
-          : abortReason && typeof abortReason === "object" && "message" in abortReason
-            ? String(abortReason.message)
-            : "Operation cancelled",
-      ) as AbortError;
-      cancellationError.name = "AbortError";
-      cancellationError.reason = abortReason;
+      const abortReason = match(signal.reason)
+        .with(P.string, (reason) => reason)
+        .with({ message: P.string }, (reason) => reason.message)
+        .otherwise(() => "Operation cancelled");
+      const cancellationError = createAbortError(abortReason);
 
       // Store cancellation error
       oc.cancellationError = cancellationError;
@@ -2476,26 +2463,20 @@ export class Agent {
       throw oc.cancellationError;
     }
 
-    const voltagentError = createVoltAgentErrorFromError(error);
+    const voltagentError = createVoltAgentError(error);
 
-    // Event tracking now handled by OpenTelemetry spans
-
-    // History update removed - using OpenTelemetry only
-
-    // End OpenTelemetry span
     oc.traceContext.end("error", error);
 
     // Call hooks
     const hooks = this.getMergedHooks(options);
-    const errorForHooks = Object.assign(new Error(voltagentError.message), voltagentError);
     await hooks.onEnd?.({
       conversationId: oc.conversationId || "",
       agent: this,
       output: undefined,
-      error: errorForHooks,
+      error: voltagentError,
       context: oc,
     });
-    await hooks.onError?.({ agent: this, error: errorForHooks, context: oc });
+    await hooks.onError?.({ agent: this, error: voltagentError, context: oc });
 
     // Log error
     oc.logger.error("Generation failed", {

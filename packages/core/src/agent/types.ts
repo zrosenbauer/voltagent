@@ -16,6 +16,7 @@ import type { Tool, Toolkit } from "../tool";
 import type { StreamEvent } from "../utils/streams";
 import type { Voice } from "../voice/types";
 import type { VoltOpsClient } from "../voltops/client";
+import type { AbortError, VoltAgentError } from "./errors";
 import type { LLMProvider } from "./providers";
 import type { BaseTool } from "./providers";
 import type { StepWithContent } from "./providers";
@@ -643,29 +644,6 @@ export interface ToolErrorInfo {
 
   /** The arguments passed to the tool when the error occurred (for debugging). */
   toolArguments?: unknown;
-}
-
-/**
- * Error thrown when an operation is aborted via AbortController
- */
-export interface AbortError extends Error {
-  name: "AbortError";
-  /** The reason passed to abort() method */
-  reason?: unknown;
-}
-
-/**
- * Type guard to check if an error is an AbortError
- */
-export function isAbortError(error: unknown): error is AbortError {
-  return error instanceof Error && error.name === "AbortError";
-}
-
-/**
- * Type guard to check if an error is a VoltAgentError
- */
-export function isVoltAgentError(error: unknown): error is VoltAgentError {
-  return error !== null && typeof error === "object" && "message" in error && !isAbortError(error);
 }
 
 /**
