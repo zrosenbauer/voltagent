@@ -1990,9 +1990,6 @@ importers:
 
   packages/core:
     dependencies:
-      '@ai-sdk/provider-utils':
-        specifier: ^3.0.9
-        version: 3.0.9(zod@3.25.76)
       '@modelcontextprotocol/sdk':
         specifier: ^1.12.1
         version: 1.17.2
@@ -2032,9 +2029,6 @@ importers:
       '@voltagent/logger':
         specifier: ^1.0.0-next.0
         version: link:../logger
-      ai:
-        specifier: ^5.0.12
-        version: 5.0.19(zod@3.25.76)
       ts-pattern:
         specifier: ^5.7.1
         version: 5.8.0
@@ -2044,13 +2038,13 @@ importers:
       uuid:
         specifier: ^9.0.1
         version: 9.0.1
-      zod:
-        specifier: ^3.25.76
-        version: 3.25.76
       zod-from-json-schema:
         specifier: ^0.0.5
         version: 0.0.5
     devDependencies:
+      '@ai-sdk/provider-utils':
+        specifier: ^3.0.0
+        version: 3.0.9(zod@3.25.76)
       '@types/node':
         specifier: ^24.2.1
         version: 24.2.1
@@ -2060,6 +2054,9 @@ importers:
       '@vitest/coverage-v8':
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
+      ai:
+        specifier: ^5.0.12
+        version: 5.0.19(zod@3.25.76)
       tsup:
         specifier: ^8.5.0
         version: 8.5.0(@swc/core@1.5.29)(typescript@5.9.2)
@@ -2069,6 +2066,9 @@ importers:
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@24.2.1)(@vitest/ui@1.6.1)(jsdom@22.1.0)
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
 
   packages/create-voltagent-app:
     dependencies:
@@ -2702,7 +2702,7 @@ packages:
       '@standard-schema/spec': 1.0.0
       eventsource-parser: 3.0.6
       zod: 3.25.76
-    dev: false
+    dev: true
 
   /@ai-sdk/provider@2.0.0:
     resolution: {integrity: sha512-6o7Y2SeO9vFKB8lArHXehNuusnpddKPk7xqL7T2/b+OvXMRIXUO1rR4wcv1hAFUAT9avGZshty3Wlua/XA7TvA==}
