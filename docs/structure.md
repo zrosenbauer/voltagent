@@ -68,10 +68,6 @@ Documentation website built with Docusaurus:
 
 - **docs/** - Technical documentation
 - **blog/** - Blog posts and tutorials
-- **src/components/** - React components including:
-  - Console components (AgentChat, AgentDetailView, AgentListView)
-  - Marketplace components (agent listings and details)
-  - Blog widgets (interactive demos and comparisons)
 - **static/** - Static assets and images
 
 ### `docs/`
