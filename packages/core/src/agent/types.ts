@@ -22,6 +22,12 @@ import type { StreamEvent } from "../utils/streams";
 import type { Voice } from "../voice/types";
 import type { VoltOpsClient } from "../voltops/client";
 import type { Agent } from "./agent";
+import type {
+  AgentContext,
+  AgentContextHooks,
+  AgentContextInput,
+  AgentContextSchema,
+} from "./context";
 import type { CancellationError, MiddlewareAbortOptions, VoltAgentError } from "./errors";
 import type { LLMProvider } from "./providers";
 import type { BaseTool } from "./providers";
@@ -227,12 +233,17 @@ export interface AgentFullState {
 /**
  * Enhanced dynamic value for instructions that supports prompt management
  */
-export type InstructionsDynamicValue = string | DynamicValue<string | PromptContent>;
+export type InstructionsDynamicValue<
+  CONTEXT extends Map<string | symbol, unknown> = Map<string | symbol, unknown>,
+> = string | DynamicValue<string | PromptContent, CONTEXT>;
 
 /**
  * Enhanced dynamic value for models that supports static or dynamic values
  */
-export type ModelDynamicValue<T> = T | DynamicValue<T>;
+export type ModelDynamicValue<
+  T,
+  CONTEXT extends Map<string | symbol, unknown> = Map<string | symbol, unknown>,
+> = T | DynamicValue<T, CONTEXT>;
 
 /**
  * Supported model references for agents (AI SDK models or provider/model strings)
@@ -242,7 +253,9 @@ export type AgentModelReference = LanguageModel | ModelRouterModelId;
 /**
  * Model fallback configuration for agents.
  */
-export type AgentModelConfig = {
+export type AgentModelConfig<
+  CONTEXT extends Map<string | symbol, unknown> = Map<string | symbol, unknown>,
+> = {
   /**
    * Optional stable identifier for the model entry (useful for logging).
    */
@@ -250,9 +263,10 @@ export type AgentModelConfig = {
   /**
    * Model reference (static or dynamic).
    */
-  model: ModelDynamicValue<AgentModelReference>;
+  model: ModelDynamicValue<AgentModelReference, CONTEXT>;
   /**
-   * Maximum number of retries for this model before falling back.
+   * Maximum retries per provider call before falling back (non-negative integer).
+   * Completed tool steps are retained. The retry count resets for each new step.
    * Defaults to the agent's maxRetries.
    */
   maxRetries?: number;
@@ -266,7 +280,9 @@ export type AgentModelConfig = {
 /**
  * Agent model value that can be static, dynamic, or a fallback list.
  */
-export type AgentModelValue = ModelDynamicValue<AgentModelReference> | AgentModelConfig[];
+export type AgentModelValue<
+  CONTEXT extends Map<string | symbol, unknown> = Map<string | symbol, unknown>,
+> = ModelDynamicValue<AgentModelReference, CONTEXT> | AgentModelConfig<CONTEXT>[];
 
 export type AgentToolInput<TOOLS extends ToolSet = ToolSet> =
   | (Tool<any, any> | Toolkit | VercelTool)[]
@@ -684,18 +700,26 @@ export type AgentMessageMetadataPersistenceConfig =
 /**
  * Agent configuration options
  */
-export type AgentOptions<TOOLS extends ToolSet = ToolSet> = {
+export type AgentOptions<
+  TOOLS extends ToolSet = ToolSet,
+  CONTEXT_SCHEMA extends AgentContextSchema = AgentContextSchema,
+> = {
   // Identity
   id?: string;
   name: string;
   purpose?: string;
 
   // Core AI
-  model: AgentModelValue;
-  instructions: InstructionsDynamicValue;
+  model: AgentModelValue<AgentContext<NoInfer<CONTEXT_SCHEMA>>>;
+  instructions: InstructionsDynamicValue<AgentContext<NoInfer<CONTEXT_SCHEMA>>>;
+
+  /** Validates merged context before memory, middleware, hooks, and dynamic values run. */
+  contextSchema?: CONTEXT_SCHEMA;
 
   // Tools & Memory
-  tools?: AgentToolInput<TOOLS> | DynamicValue<AgentToolInput<TOOLS>>;
+  tools?:
+    | AgentToolInput<TOOLS>
+    | DynamicValue<AgentToolInput<TOOLS>, AgentContext<NoInfer<CONTEXT_SCHEMA>>>;
   toolkits?: Toolkit[];
   toolRouting?: ToolRoutingConfig | false;
   workspace?: Workspace | WorkspaceConfig | false;
@@ -724,7 +748,7 @@ export type AgentOptions<TOOLS extends ToolSet = ToolSet> = {
   maxHistoryEntries?: number;
 
   // Hooks
-  hooks?: AgentHooks;
+  hooks?: AgentContextHooks<NoInfer<CONTEXT_SCHEMA>>;
 
   // Guardrails
   inputGuardrails?: InputGuardrail[];
@@ -744,7 +768,8 @@ export type AgentOptions<TOOLS extends ToolSet = ToolSet> = {
   maxOutputTokens?: number;
   maxSteps?: number;
   /**
-   * Default retry count for model calls before falling back.
+   * Default retry count per model call before falling back (non-negative integer).
+   * Provider retries do not restart completed tool steps.
    * Overridden by per-model maxRetries or per-call maxRetries.
    */
   maxRetries?: number;
@@ -781,7 +806,7 @@ export type AgentOptions<TOOLS extends ToolSet = ToolSet> = {
   observability?: VoltAgentObservability;
 
   // User context
-  context?: ContextInput;
+  context?: AgentContextInput<NoInfer<CONTEXT_SCHEMA>>;
 
   // Live evaluation configuration
   eval?: AgentEvalConfig;

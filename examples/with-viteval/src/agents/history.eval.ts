@@ -1,6 +1,6 @@
 import { evaluate, scorers } from "viteval";
-import { historyAgent } from "./history";
-import historyDataset from "./history.dataset";
+import historyDataset from "./history.dataset.js";
+import { historyAgent } from "./history.js";
 
 evaluate("History Agent", {
   description: "Evaluates the history agent knowledge and accuracy",

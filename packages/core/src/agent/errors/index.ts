@@ -16,3 +16,4 @@ export { createBailError, isBailError } from "./bail-error";
 export { createMiddlewareAbortError, isMiddlewareAbortError } from "./middleware-abort-error";
 export { createVoltAgentError, isVoltAgentError } from "./voltagent-error";
 export type CancellationError = AbortError | ClientHTTPError;
+export { AgentContextValidationError } from "./context-validation-error";

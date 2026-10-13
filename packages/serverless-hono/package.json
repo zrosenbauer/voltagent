@@ -6,7 +6,7 @@
     "@voltagent/internal": "^2.0.0-next.0",
     "@voltagent/resumable-streams": "^3.0.0-next.0",
     "@voltagent/server-core": "^3.0.0-next.0",
-    "hono": "^4.7.7"
+    "hono": "^4.9.1"
   },
   "devDependencies": {},
   "exports": {

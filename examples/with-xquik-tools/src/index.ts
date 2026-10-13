@@ -1,7 +1,7 @@
 import { Agent, VoltAgent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
-import { xquikTools } from "./tools";
+import { xquikTools } from "./tools.js";
 
 const logger = createPinoLogger({
   name: "xquik-tools-agent",

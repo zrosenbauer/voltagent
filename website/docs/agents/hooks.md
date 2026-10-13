@@ -129,7 +129,7 @@ const myAgentHooks = createHooks({
   },
 
   /**
-   * Called only when a tool throws, before VoltAgent serializes the error payload.
+   * Called when a tool fails, before native error propagation or legacy error serialization.
    */
   onToolError: async (args: OnToolErrorHookArgs) => {
     const { tool, originalError } = args;
@@ -368,6 +368,8 @@ onEnd: async ({ agent, output, error, conversationId, context }) => {
 - **Argument Object (`OnRetryHookArgs`):** Includes `source`, `operation`, `context`, and retry details.
 - **Use Cases:** Retry metrics, alerts, tracking retry sources.
 
+For `source: "llm"`, retries apply to the failed provider call. `attempt` and `nextAttempt` count attempts within that call and reset for the next model step. Completed tool calls and SDK step callbacks are not replayed. Middleware retries keep their separate full-pipeline behavior.
+
 ```ts
 onRetry: async (args) => {
   if (args.source === "llm") {
@@ -387,6 +389,8 @@ onRetry: async (args) => {
 - **Triggered:** When VoltAgent selects the next model candidate.
 - **Argument Object (`OnFallbackHookArgs`):** Includes `stage`, `fromModel`, `fromModelIndex`, `nextModel`, and `error`.
 - **Use Cases:** Tracking model failover, audit logs, fallback diagnostics.
+
+Execution fallback carries the current step's prompt and completed tool results to the next model. Resolution fallback still reports `stage: "resolve"`. When `nextModel` is dynamic, the hook reports its configured ID (or `"dynamic"`) before resolving it.
 
 ```ts
 onFallback: async ({ stage, fromModel, nextModel, operation }) => {
@@ -415,6 +419,10 @@ onToolStart: async ({ agent, tool, args, context }) => {
 };
 ```
 
+For native tools, asynchronous VoltAgent start hooks are awaited before the SDK invokes `execute`. A thrown start-hook error prevents execution and goes through `onToolError`; it is not swallowed as an observer error. Start hooks receive the operation abort signal. The SDK creates its per-tool timeout signal after start callbacks; `execute` and VoltAgent end hooks receive that tool signal. Native `onToolExecutionStart`/`onToolExecutionEnd` callbacks retain the SDK's observer-error isolation and do not replace VoltAgent's output-changing hooks.
+
+Consequently, `timeout.toolMs` and `timeout.tools` do not include time spent in VoltAgent start hooks or waiting for parallel input guardrails. Earlier native wrappers performed this work inside the tool timeout. Bound asynchronous hook work with its own deadline where needed, and pass `options.toolContext.abortSignal` to operations that support cancellation. Signals require cooperation from the hook or tool; they do not forcibly interrupt arbitrary code.
+
 ### `onToolEnd`
 
 - **Triggered:** After a tool execution completes or throws an error.
@@ -425,7 +433,7 @@ onToolStart: async ({ agent, tool, args, context }) => {
   - `error`: VoltAgentError when tool throws (undefined on success)
   - `context`: Operation context for the current call
   - `options`: ToolExecuteOptions (includes `toolContext`, `abortController`, etc.)
-- **Return:** `{ output }` to replace the tool result. The replacement is validated again if the tool has an `outputSchema`.
+- **Return:** `{ output }` to replace the tool result. For native tools, the replacement is validated when `voltagent.validateOutput: true` and `outputSchema` are set. Legacy `createTool` keeps automatic validation.
 - **Use Cases:** Logging tool results or errors, post-processing output, triggering actions based on success or failure.
 
 ```ts
@@ -446,7 +454,7 @@ onToolEnd: async ({ agent, tool, output, error, context }) => {
 
 ### `onToolError`
 
-- **Triggered:** Only when a tool throws, before VoltAgent builds its default serialized error result.
+- **Triggered:** When tool execution, preparation, or output validation fails, before the failure reaches the SDK.
 - **Argument Object (`OnToolErrorHookArgs`):**
   - `agent`: Agent instance running the tool
   - `tool`: The tool that failed
@@ -455,7 +463,7 @@ onToolEnd: async ({ agent, tool, output, error, context }) => {
   - `originalError`: Original thrown error normalized to an `Error` instance
   - `context`: Operation context for the current call
   - `options`: ToolExecuteOptions (includes `toolContext`, `abortController`, etc.)
-- **Return:** Optional `{ output }` replacement payload. If omitted, VoltAgent returns its default serialized error payload.
+- **Return:** Optional `{ output }` recovery result. If omitted, native tools preserve the thrown value as an SDK `tool-error`; legacy `createTool` returns its serialized error payload. Recovery is a successful SDK tool result and can pass through `toModelOutput`. Native recovery outputs are validated if `voltagent.validateOutput: true` is set.
 - **Use Cases:** Centralized error normalization (for example Axios), redacting sensitive fields, shrinking error payload size before it is sent to the model.
 
 ```ts
@@ -479,7 +487,7 @@ onToolError: async ({ tool, error, originalError }) => {
 
 ### Tool-level hooks (per tool)
 
-Tool hooks run for a specific tool instance and are called before/after execution. Tool-level `onEnd` runs before agent-level `onToolEnd`. If both return `{ output }`, the agent hook wins. Any override is re-validated when `outputSchema` is present.
+Tool hooks run for a specific tool instance and are called before/after execution. Tool-level `onEnd` runs before agent-level `onToolEnd`. If both return `{ output }`, the agent hook wins. Native overrides are re-validated when `voltagent.validateOutput: true` and `outputSchema` are set. Legacy `createTool` keeps automatic validation. Streaming end hooks affect the final output and enable one-value buffering, even if a particular invocation returns no override. Use native `onToolExecutionEnd` for observation without this buffering.
 
 **Tool hook parameters:**
 
@@ -540,8 +548,10 @@ onHandoff: async ({ agent, sourceAgent }) => {
 
 ## Additional Hooks
 
+The call-level AI SDK `onError` callback is separate from VoltAgent's `hooks.onError`. With native `streamRetries` enabled on a supporting SDK version, the call-level callback can observe recoverable errors and return `{ retry: true }`. VoltAgent's error hook and error trace finalization apply only to terminal errors. Native stream retries do not produce VoltAgent `onRetry`/`onFallback` events; those hooks describe VoltAgent's own provider recovery policy. See [Native SDK Stream Retries](/docs/agents/retries-fallback#native-sdk-stream-retries).
+
 - **`onError`**: Called when an error occurs during agent execution. Receives `{ agent: Agent, error: Error, context: OperationContext }`.
-- **`onToolError`**: Called when a tool throws, before default tool error serialization. Receives `{ agent, tool, args, error, originalError, context }` and can return `{ output }`.
+- **`onToolError`**: Called when a tool fails, before native error propagation or legacy error serialization. Receives `{ agent, tool, args, error, originalError, context }` and can return `{ output }`.
 - **`onStepEnd`**: Called after each step in multi-step agent execution. Receives `{ agent: Agent, step: any, context: OperationContext }`.
 - **`onRetry`**: Called when VoltAgent schedules a retry. Receives `{ source, operation, ... }` with retry metadata.
 - **`onFallback`**: Called when VoltAgent selects the next model candidate. Receives `{ stage, fromModel, nextModel, error, ... }`.

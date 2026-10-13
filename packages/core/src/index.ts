@@ -56,6 +56,13 @@ export {
 export * from "./planagent";
 export * from "./workspace";
 export * from "./agent/hooks";
+export type {
+  AgentContextSchema,
+  InferAgentContextInput,
+  AgentContext,
+  AgentContextInput,
+  TypedContext,
+} from "./agent/context";
 export { createSubagent } from "./agent/subagent/types";
 export type {
   SubAgentConfig,
@@ -257,6 +264,7 @@ export type {
   MiddlewareAbortOptions,
 } from "./agent/errors";
 export { ToolDeniedError, ClientHTTPError } from "./agent/errors";
+export { AgentContextValidationError } from "./agent/errors";
 export { isAbortError, isMiddlewareAbortError, isVoltAgentError } from "./agent/errors";
 export type { AgentHooks } from "./agent/hooks";
 export * from "./types";

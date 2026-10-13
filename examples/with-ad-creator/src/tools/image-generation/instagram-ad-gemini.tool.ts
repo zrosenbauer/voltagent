@@ -96,7 +96,7 @@ Critical requirements:
             mediaType?: string;
           }
       )[] = [{ type: "text", text: imagePrompt }];
-      const screenshotPathValue = context?.context.get("screenshotPath");
+      const screenshotPathValue = context?.context?.get("screenshotPath");
 
       if (typeof screenshotPathValue === "string") {
         try {
@@ -132,12 +132,12 @@ Critical requirements:
           await fs.writeFile(referencePath, processedScreenshot);
 
           userContent.push({
-            type: "file",
-            data: processedScreenshot,
+            type: "image",
+            image: processedScreenshot,
             mediaType: "image/png",
           });
 
-          context?.context.set("referenceImagePath", referencePath);
+          context?.context?.set("referenceImagePath", referencePath);
         } catch (screenshotError) {
           console.warn(
             `Unable to process screenshot at ${screenshotPathValue}. Continuing without reference image.`,
@@ -184,8 +184,8 @@ Critical requirements:
 
       console.log(`Instagram ad generated with Gemini: ${filepath}`);
 
-      context?.context.set("instagramAdPath", filepath);
-      context?.context.set("instagramAdPrompt", imagePrompt);
+      context?.context?.set("instagramAdPath", filepath);
+      context?.context?.set("instagramAdPrompt", imagePrompt);
 
       const relativePath = path.relative(process.cwd(), filepath).replace(/\\+/g, "/");
       const baseUrl =

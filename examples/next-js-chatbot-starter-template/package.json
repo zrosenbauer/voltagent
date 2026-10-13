@@ -49,6 +49,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.4",
+    "@types/hast": "^3.0.4",
     "@types/node": "^24.2.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -64,8 +65,8 @@
     "directory": "examples/next-js-chatbot-starter-template"
   },
   "scripts": {
-    "build": "next build",
-    "dev": "next dev",
+    "build": "next build --webpack",
+    "dev": "next dev --webpack",
     "start": "next start",
     "volt": "volt",
     "voltagent:run": "tsx --env-file=.env ./voltagent/server.ts"

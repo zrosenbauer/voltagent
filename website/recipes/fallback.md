@@ -69,8 +69,13 @@ const agent = new Agent({
 
 - VoltAgent tries enabled models in order.
 - Each model retries up to `maxRetries` before moving to the next.
-- Fallback does not trigger for guardrail blocks, tool errors, or abort/bail conditions.
-- Streaming fallback only happens if the stream fails before the first chunk.
+- The fallback receives the current step's prepared prompt, completed tool results, tools, and call settings. Choose models compatible with those inputs and the requested output format.
+- Later steps stay on the successful fallback model; a new generation starts at the first enabled model again.
+- Fallback does not trigger for guardrail blocks, tool errors, abort/bail conditions, or parsing/schema validation failures after a successful provider call.
+- Streaming fallback can recover the current model step before it emits content, even after earlier steps have streamed or executed tools. Provider stream-start and response metadata do not commit an attempt; text/reasoning start events and tool input do.
+- An explicit `prepareStep` model selection uses that model with call-level or agent-level retries, without falling through to the agent's fallback list.
+
+Native SDK `streamRetries` is a separate, explicit opt-in on SDK releases that support it. It can recover after content starts; already emitted partial text remains in consumer streams. See [Native SDK Stream Retries](/docs/agents/retries-fallback#native-sdk-stream-retries).
 
 ## Learn More
 

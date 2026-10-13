@@ -125,7 +125,7 @@ import { z } from "zod";
           Please generate a list of 3 search queries that would be useful for writing a
           research report on ${topic}. These queries can be in various formats, from simple
           keywords to more complex phrases. Do not add any formatting or numbering to the queries.`,
-          { provider: { temperature: 1 } }
+          { temperature: 1 }
         );
 
         return { text: result.text };
@@ -280,7 +280,7 @@ The first workflow step generates search queries:
       Please generate a list of 3 search queries that would be useful for writing a
       research report on ${topic}. These queries can be in various formats, from simple
       keywords to more complex phrases. Do not add any formatting or numbering to the queries.`,
-      { provider: { temperature: 1 } }
+      { temperature: 1 }
     );
 
     return { text: result.text };

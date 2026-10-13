@@ -89,7 +89,8 @@ export interface OnToolErrorHookArgs {
 export interface OnToolErrorHookResult {
   /**
    * Optional replacement payload returned to the model for this tool error.
-   * When omitted, VoltAgent returns its default serialized error payload.
+   * When omitted, native AI SDK tools preserve the thrown error (tool-error).
+   * Legacy createTool tools return the default serialized error payload.
    */
   output?: unknown;
 }
@@ -151,6 +152,7 @@ export interface OnRetryLLMHookArgs extends OnRetryHookArgsBase {
   source: "llm";
   modelName: string;
   modelIndex: number;
+  /** One-based attempt within the current model call; resets on a new step. */
   attempt: number;
   nextAttempt: number;
   maxRetries: number;

@@ -98,6 +98,7 @@ const orderProcessingWorkflow = createWorkflow(
         reasoning: z.string(),
       }),
     },
+    (output) => output,
   ),
 
   // Step 3: Calculate discount for VIP customers
@@ -236,7 +237,7 @@ const expenseApprovalWorkflow = createWorkflow(
       }
 
       return {
-        status: data.approved ? "approved" : "rejected",
+        status: data.approved ? ("approved" as const) : ("rejected" as const),
         approvedBy: data.approvedBy,
         finalAmount: data.finalAmount,
       };
@@ -311,6 +312,7 @@ const contentAnalysisWorkflow = createWorkflow(
         summary: z.string(),
       }),
     },
+    (output) => output,
   ),
 
   // Step 4: Transform data using only inputSchema
@@ -390,6 +392,7 @@ const articleSummarizationWorkflow = createWorkflow(
         });
       },
     },
+    (output) => output,
   ),
 );
 
@@ -414,17 +417,21 @@ const timedReminderWorkflow = createWorkflow(
   },
   andSleep({
     id: "pause-briefly",
-    duration: ({ data }) => Math.max(0, data.waitMs),
+    duration: async ({ data }) => Math.max(0, data.waitMs),
   }),
-  andSleepUntil({
+  andSleepUntil<{ userId: string; waitMs: number }, { userId: string; waitMs: number }>({
     id: "align-to-next-second",
-    date: () => new Date(Date.now() + 1000),
+    date: async () => new Date(Date.now() + 1000),
   }),
-  andThen({
+  andThen<
+    { userId: string; waitMs: number },
+    { userId: string; waitMs: number },
+    { userId: string; status: "sent"; resumedAt: string }
+  >({
     id: "complete-reminder",
     execute: async ({ data }) => ({
       userId: data.userId,
-      status: "sent",
+      status: "sent" as const,
       resumedAt: new Date().toISOString(),
     }),
   }),
@@ -447,7 +454,7 @@ const batchTransformWorkflow = createWorkflow(
       total: z.number(),
     }),
   },
-  andForEach({
+  andForEach<number[], number[], number, number>({
     id: "double-each",
     step: andThen({
       id: "double",
@@ -462,11 +469,12 @@ const batchTransformWorkflow = createWorkflow(
       doubled: { source: "data" },
       count: {
         source: "fn",
-        fn: ({ data }) => (Array.isArray(data) ? data.length : 0),
+        fn: async ({ data }) => (Array.isArray(data) ? data.length : 0),
       },
       total: {
         source: "fn",
-        fn: ({ data }) => (Array.isArray(data) ? data.reduce((sum, value) => sum + value, 0) : 0),
+        fn: async ({ data }) =>
+          Array.isArray(data) ? data.reduce((sum, value) => sum + value, 0) : 0,
       },
     },
   }),
@@ -495,7 +503,7 @@ const loopAndBranchWorkflow = createWorkflow(
       id: "increment-warmup",
       execute: async ({ data }) => ({ ...data, counter: data.counter + 1 }),
     }),
-    condition: ({ data }) => data.counter < 1,
+    condition: async ({ data }) => data.counter < 1,
   }),
   andDoUntil({
     id: "retry-loop",
@@ -503,20 +511,20 @@ const loopAndBranchWorkflow = createWorkflow(
       id: "increment-retry",
       execute: async ({ data }) => ({ ...data, counter: data.counter + 1 }),
     }),
-    condition: ({ data }) => data.counter >= 3,
+    condition: async ({ data }) => data.counter >= 3,
   }),
   andBranch({
     id: "categorize-counter",
     branches: [
       {
-        condition: ({ data }) => data.counter >= 3,
+        condition: async ({ data }) => data.counter >= 3,
         step: andThen({
           id: "mark-ready",
           execute: async ({ data }) => ({ ...data, label: "ready" as const }),
         }),
       },
       {
-        condition: ({ data }) => data.counter < 3,
+        condition: async ({ data }) => data.counter < 3,
         step: andThen({
           id: "mark-warmup",
           execute: async ({ data }) => ({ ...data, label: "warmup" as const }),
@@ -533,7 +541,7 @@ const loopAndBranchWorkflow = createWorkflow(
         | undefined;
 
       if (!selected) {
-        return { counter: 0, label: "warmup" };
+        return { counter: 0, label: "warmup" as const };
       }
 
       return {
@@ -576,11 +584,11 @@ const guardrailWorkflow = createWorkflow(
     inputGuardrails: [trimInput],
     outputGuardrails: [redactNumbers],
   },
-  andGuardrail({
+  andGuardrail<string, string>({
     id: "sanitize-step",
     outputGuardrails: [redactNumbers],
   }),
-  andThen({
+  andThen<string, string, string>({
     id: "finish",
     execute: async ({ data }) => data,
   }),

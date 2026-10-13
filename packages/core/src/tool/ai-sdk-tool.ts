@@ -1,4 +1,9 @@
-import type { Context, ToolNeedsApprovalFunction } from "@ai-sdk/provider-utils";
+import type {
+  Context,
+  ExecutableTool,
+  ToolExecuteFunction,
+  ToolNeedsApprovalFunction,
+} from "@ai-sdk/provider-utils";
 import { tool as aiTool } from "ai";
 import type { Tool as VercelTool } from "ai";
 import type { ToolHooks } from "./index";
@@ -33,6 +38,12 @@ export type VoltAgentToolMetadata<INPUT = unknown, OUTPUT = unknown> = {
    * Optional tool-specific hooks for lifecycle events.
    */
   hooks?: ToolHooks;
+  /**
+   * Validate the final output (including onEnd overrides) with outputSchema.
+   * Native AI SDK tools do not validate outputs by default. Streaming progress
+   * values are not validated against the final output schema.
+   */
+  validateOutput?: boolean;
   /**
    * Free-form VoltAgent-only metadata. This is not sent to the model provider.
    */
@@ -221,13 +232,33 @@ export const enhanceTool = withVoltAgentMetadata;
  */
 export function tool<INPUT, OUTPUT, CONTEXT extends Context>(
   definition: VercelTool<INPUT, OUTPUT, CONTEXT> & {
+    execute: ToolExecuteFunction<INPUT, OUTPUT, CONTEXT>;
     voltagent?: VoltAgentToolMetadata<INPUT, OUTPUT>;
   },
-): VercelTool<INPUT, OUTPUT, CONTEXT> {
-  const { voltagent, ...toolDefinition } = definition as VercelTool<INPUT, OUTPUT, CONTEXT> & {
-    voltagent?: VoltAgentToolMetadata;
-  };
-  const createdTool = aiTool(toolDefinition as VercelTool<INPUT, OUTPUT, CONTEXT>);
+): ExecutableTool<VercelTool<INPUT, OUTPUT, CONTEXT>>;
+export function tool<INPUT, OUTPUT, CONTEXT extends Context>(
+  definition: VercelTool<INPUT, OUTPUT, CONTEXT> & {
+    voltagent?: VoltAgentToolMetadata<INPUT, OUTPUT>;
+  },
+): VercelTool<INPUT, OUTPUT, CONTEXT>;
+export function tool<INPUT, CONTEXT extends Context>(
+  definition: VercelTool<INPUT, never, CONTEXT> & {
+    voltagent?: VoltAgentToolMetadata<INPUT, never>;
+  },
+): VercelTool<INPUT, never, CONTEXT>;
+export function tool<OUTPUT, CONTEXT extends Context>(
+  definition: VercelTool<never, OUTPUT, CONTEXT> & {
+    voltagent?: VoltAgentToolMetadata<never, OUTPUT>;
+  },
+): VercelTool<never, OUTPUT, CONTEXT>;
+export function tool<CONTEXT extends Context>(
+  definition: VercelTool<never, never, CONTEXT> & {
+    voltagent?: VoltAgentToolMetadata<never, never>;
+  },
+): VercelTool<never, never, CONTEXT>;
+export function tool(definition: any): any {
+  const { voltagent, ...toolDefinition } = definition;
+  const createdTool = aiTool(toolDefinition);
   if (voltagent) {
     withVoltAgentMetadata(createdTool, voltagent);
   }

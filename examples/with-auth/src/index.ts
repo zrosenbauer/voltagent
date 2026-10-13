@@ -1,7 +1,7 @@
 import { Agent, Memory, VoltAgent } from "@voltagent/core";
 import { LibSQLMemoryAdapter, LibSQLVectorAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
-import { authNext, honoServer, jwtAuth } from "@voltagent/server-hono";
+import { honoServer, jwtAuth } from "@voltagent/server-hono";
 
 // Import tools
 import { weatherTool } from "./tools/index.js";

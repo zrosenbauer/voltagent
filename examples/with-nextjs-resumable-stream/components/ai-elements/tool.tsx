@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { safeStringify } from "@voltagent/internal/utils";
-import type { ToolUIPart } from "ai";
+import type { DynamicToolUIPart, ToolUIPart } from "ai";
 import {
   CheckCircleIcon,
   ChevronDownIcon,
@@ -25,7 +25,7 @@ export const Tool = ({ className, ...props }: ToolProps) => (
 
 export type ToolHeaderProps = {
   title?: string;
-  type: ToolUIPart["type"];
+  type: ToolUIPart["type"] | DynamicToolUIPart["type"];
   state: ToolUIPart["state"];
   className?: string;
 };

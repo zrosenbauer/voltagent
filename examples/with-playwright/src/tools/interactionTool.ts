@@ -4,9 +4,9 @@
  */
 
 import { createTool } from "@voltagent/core";
-import type { OperationContext } from "@voltagent/core";
+import type { ToolExecuteOptions } from "@voltagent/core";
 import { z } from "zod";
-import { safeBrowserOperation } from "./browserBaseTools";
+import { safeBrowserOperation } from "./browserBaseTools.js";
 
 /**
  * Tool for clicking on an element
@@ -25,9 +25,9 @@ export const clickTool = createTool({
     clickCount: z.number().positive().optional().default(1).describe("Number of clicks"),
     force: z.boolean().optional().default(false).describe("Bypass actionability checks"),
   }),
-  execute: async (args, oc?: OperationContext) => {
+  execute: async (args, oc?: ToolExecuteOptions) => {
     if (!oc?.context) {
-      throw new Error("OperationContext is missing or invalid.");
+      throw new Error("ToolExecuteOptions is missing or invalid.");
     }
     return safeBrowserOperation(oc, async (page) => {
       await page.click(args.selector, {
@@ -62,9 +62,9 @@ export const typeTool = createTool({
       .default(30000)
       .describe("Maximum time in milliseconds to wait for the element."),
   }),
-  execute: async (args, oc?: OperationContext) => {
+  execute: async (args, oc?: ToolExecuteOptions) => {
     if (!oc?.context) {
-      throw new Error("OperationContext is missing or invalid.");
+      throw new Error("ToolExecuteOptions is missing or invalid.");
     }
     return safeBrowserOperation(oc, async (page) => {
       await page.type(args.selector, args.text, { delay: args.delay, timeout: args.timeout });
@@ -85,9 +85,9 @@ export const getTextTool = createTool({
     selector: z.string().describe("CSS or XPath selector for the element"),
     timeout: z.number().positive().optional().default(30000).describe("Timeout in milliseconds"),
   }),
-  execute: async (args, oc?: OperationContext) => {
+  execute: async (args, oc?: ToolExecuteOptions) => {
     if (!oc?.context) {
-      throw new Error("OperationContext is missing or invalid.");
+      throw new Error("ToolExecuteOptions is missing or invalid.");
     }
     return safeBrowserOperation(oc, async (page) => {
       await page.waitForSelector(args.selector, { timeout: args.timeout });
@@ -118,9 +118,9 @@ export const selectOptionTool = createTool({
       .default(30000)
       .describe("Maximum time in milliseconds to wait for the element."),
   }),
-  execute: async (args, oc?: OperationContext) => {
+  execute: async (args, oc?: ToolExecuteOptions) => {
     if (!oc?.context) {
-      throw new Error("OperationContext is missing or invalid.");
+      throw new Error("ToolExecuteOptions is missing or invalid.");
     }
     const { selector, value, label, index, timeout } = args;
     let selectCriteria: { value: string } | { label: string } | { index: number };
@@ -149,9 +149,9 @@ export const checkTool = createTool({
     timeout: z.number().positive().optional().default(30000).describe("Timeout in milliseconds"),
     force: z.boolean().optional().default(false).describe("Bypass actionability checks"),
   }),
-  execute: async (args, oc?: OperationContext) => {
+  execute: async (args, oc?: ToolExecuteOptions) => {
     if (!oc?.context) {
-      throw new Error("OperationContext is missing or invalid.");
+      throw new Error("ToolExecuteOptions is missing or invalid.");
     }
     return safeBrowserOperation(oc, async (page) => {
       await page.check(args.selector, {
@@ -174,9 +174,9 @@ export const uncheckTool = createTool({
     timeout: z.number().positive().optional().default(30000).describe("Timeout in milliseconds"),
     force: z.boolean().optional().default(false).describe("Bypass actionability checks"),
   }),
-  execute: async (args, oc?: OperationContext) => {
+  execute: async (args, oc?: ToolExecuteOptions) => {
     if (!oc?.context) {
-      throw new Error("OperationContext is missing or invalid.");
+      throw new Error("ToolExecuteOptions is missing or invalid.");
     }
     return safeBrowserOperation(oc, async (page) => {
       await page.uncheck(args.selector, {
@@ -199,9 +199,9 @@ export const hoverTool = createTool({
     timeout: z.number().positive().optional().default(30000).describe("Timeout in milliseconds"),
     force: z.boolean().optional().default(false).describe("Bypass actionability checks"),
   }),
-  execute: async (args, oc?: OperationContext) => {
+  execute: async (args, oc?: ToolExecuteOptions) => {
     if (!oc?.context) {
-      throw new Error("OperationContext is missing or invalid.");
+      throw new Error("ToolExecuteOptions is missing or invalid.");
     }
     return safeBrowserOperation(oc, async (page) => {
       await page.hover(args.selector, {
@@ -225,9 +225,9 @@ export const pressKeyTool = createTool({
     delay: z.number().optional().default(0).describe("Delay between keystrokes in milliseconds"),
     timeout: z.number().positive().optional().default(30000).describe("Timeout in milliseconds"),
   }),
-  execute: async (args, oc?: OperationContext) => {
+  execute: async (args, oc?: ToolExecuteOptions) => {
     if (!oc?.context) {
-      throw new Error("OperationContext is missing or invalid.");
+      throw new Error("ToolExecuteOptions is missing or invalid.");
     }
     return safeBrowserOperation(oc, async (page) => {
       if (args.selector) {
@@ -259,9 +259,9 @@ export const waitForElementTool = createTool({
       .describe("Element state to wait for"),
     timeout: z.number().positive().optional().default(30000).describe("Timeout in milliseconds"),
   }),
-  execute: async (args, oc?: OperationContext) => {
+  execute: async (args, oc?: ToolExecuteOptions) => {
     if (!oc?.context) {
-      throw new Error("OperationContext is missing or invalid.");
+      throw new Error("ToolExecuteOptions is missing or invalid.");
     }
     return safeBrowserOperation(oc, async (page) => {
       await page.waitForSelector(args.selector, {

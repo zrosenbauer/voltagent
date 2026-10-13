@@ -7,6 +7,10 @@ env:
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
 
 jobs:
+  ai-sdk-compatibility:
+    if: ${{ !github.event.pull_request.draft }}
+    uses: ./.github/workflows/ai-sdk-compatibility.yml
+
   commit-lint:
     if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
@@ -22,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [20, 22, 24]
+        node-version: [22, 24]
     concurrency:
       group: ${{ github.ref }}-lint-${{ matrix.node-version }}
       cancel-in-progress: true
@@ -49,7 +53,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [20, 22, 24]
+        node-version: [22, 24]
     concurrency:
       group: ${{ github.ref }}-pr-build-${{ matrix.node-version }}
       cancel-in-progress: true
@@ -99,7 +103,7 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: "pnpm"
       - name: Install Dependencies
         run: pnpm install
@@ -162,7 +166,7 @@ jobs:
       - uses: actions/setup-node@v4
         if: steps.check_postgres.outputs.postgres_changed == 'true'
         with:
-          node-version: 20
+          node-version: 22
           cache: "pnpm"
 
       - name: Install Dependencies
@@ -220,7 +224,7 @@ jobs:
       - uses: actions/setup-node@v4
         if: steps.check_e2e.outputs.e2e_changed == 'true'
         with:
-          node-version: 20
+          node-version: 22
           cache: "pnpm"
 
       - name: Install Dependencies

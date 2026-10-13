@@ -141,13 +141,14 @@ Each AI SDK-style tool has:
 - **description**: Explains what the tool does (the model uses this to decide when to call it)
 - **inputSchema**: Input schema defined with Zod
 - **execute**: Function that runs when the tool is called
-- **outputSchema** (optional): Output schema for validating tool results
+- **outputSchema** (optional): Native AI SDK output schema; runtime validation requires `voltagent.validateOutput: true`
 - **contextSchema** (optional): AI SDK context schema for per-tool runtime context
 - **providerOptions** (optional): Provider-specific options for advanced features
 - **toModelOutput** (optional): Converts rich tool results into AI SDK model output
 - **VoltAgent metadata `name`** (optional): VoltAgent-facing name for display or metadata consumers. The ToolSet key remains the execution name.
 - **VoltAgent metadata `purpose`** (optional): VoltAgent-facing purpose for display or metadata consumers.
 - **VoltAgent metadata `tags`** (optional): Optional user-defined tags for organizing or labeling tools.
+- **VoltAgent metadata `validateOutput`** (optional): Validate the final output and hook replacements with `outputSchema`. Defaults to `false` for native tools.
 - **VoltAgent metadata `hooks`** (optional): VoltAgent lifecycle hooks for observing or post-processing tool execution.
 - **VoltAgent metadata `needsApproval`** (optional): Static approval metadata for existing VoltAgent approval or tool-policy flows. Prefer call-level `toolApproval` for new per-request approval flows.
 
@@ -194,6 +195,41 @@ const agent = new Agent({
 ```
 
 Provider-defined tools are passed through to the AI SDK unchanged. Use the exact `id` and `args` shape from your provider's AI SDK docs. They are not wrapped with VoltAgent tool hooks or `execute` handlers, so use user-defined AI SDK tools plus `enhanceTool()` for tools that need VoltAgent-managed lifecycle metadata or application-side execution.
+
+## Native Execution and Errors
+
+Raw `ai.tool()`, `tool()` from `@voltagent/core`, and `enhanceTool()` use the same native execution contract inside an agent. Adding a name, purpose, tags, or metadata does not change results, error handling, or streaming. VoltAgent still provides tracing and waits for parallel input guardrails before running the tool. Disabling AI SDK telemetry does not disable this protection.
+
+A thrown exception or rejected promise becomes an AI SDK `tool-error`, not a successful `tool-result` containing `{ error: true }`. The SDK sends an error output to the model, which can continue according to your stop conditions. UI streams emit `tool-output-error`; persisted UI messages retain `output-error`.
+
+```ts
+for (const part of result.content) {
+  if (part.type === "tool-error") {
+    console.error(part.toolName, part.error);
+  }
+}
+```
+
+Returning `{ error: true }` yourself is still a normal tool result. An agent `onToolError` hook can also return `{ output }` to explicitly recover. Returning nothing preserves the original thrown value in the SDK error event. `toModelOutput` runs for successful and recovered results; it is not called for unrecovered exceptions.
+
+Legacy `createTool` retains its serialized error result and automatic output validation. Tools called through routing's legacy `callTool` keep that outer tool's error envelope; hidden tool progress is consumed inside `callTool` rather than emitted as separate native tool events.
+
+### Explicit Output Validation
+
+Native `outputSchema` alone does not run VoltAgent validation or apply schema transforms/defaults. To enable it:
+
+```ts
+const lookup = tool({
+  inputSchema: z.object({ id: z.string() }),
+  outputSchema: z.object({ name: z.string().trim() }),
+  execute: async ({ id }) => lookupRecord(id),
+  voltagent: {
+    validateOutput: true,
+  },
+});
+```
+
+For an existing tool, use `enhanceTool(existingTool, { validateOutput: true })`. Validation uses the SDK's schema validator, including asynchronous schemas. Successful final outputs, `onEnd` overrides, and explicit `onToolError` recovery outputs are validated. Invalid outputs become native tool errors. Progress values are not validated against the final schema.
 
 ## Native Tool Approval
 
@@ -248,7 +284,7 @@ You can attach tool-specific hooks to observe or post-process a tool result. Too
 - `onStart`: `{ tool, args, options }`
 - `onEnd`: `{ tool, args, output, error, options }` (return `{ output }` to override the result)
 
-> Overrides are re-validated if the tool has an `outputSchema`. For streaming tools (AsyncIterable), overrides apply only to the final output.
+> Native tool overrides are validated when `voltagent.validateOutput: true` and `outputSchema` are set. Legacy `createTool` keeps automatic output validation. For streaming tools, overrides apply only to the final output.
 
 ```ts
 import { tool } from "@voltagent/core";
@@ -276,7 +312,23 @@ const summarizeTool = tool({
 ## Streaming Tool Results (Preliminary)
 
 If your tool can provide progress or intermediate status, return an `AsyncIterable` from `execute`.
-Each `yield` is emitted as a preliminary tool result, and the **last yielded value** is treated as the final result.
+Each `yield` is emitted as a preliminary tool result, and the **last yielded value** is emitted again as the final result. Both `async function*` and ordinary functions returning an `AsyncIterable` are supported. Ordinary values and promises produce a final result without extra preliminary events.
+
+Return the iterable directly. The SDK does not consume a `Promise<AsyncIterable>` as a stream: it treats the resolved iterable as the output value. If opening the stream requires asynchronous setup, put that setup inside an async generator:
+
+```ts
+const reportTool = tool({
+  inputSchema: z.object({ id: z.string() }),
+  async *execute({ id }) {
+    const report = await openReport(id);
+    yield* report.updates();
+  },
+});
+```
+
+This matters when migrating from an earlier VoltAgent wrapper that awaited and consumed a promised iterable. `async *execute` returns an iterable immediately, even when its body awaits setup before producing the first value.
+
+Tracing and display metadata do not buffer progress. Configuring a VoltAgent tool `onEnd`, agent `onToolEnd`, or `validateOutput` enables one-value lookahead so the final value can be transformed or validated before it is emitted. This can delay progress until the next value arrives. Output validation applies to the final value, not intermediate progress values. If an iterator throws, already-emitted progress remains visible and the SDK emits `tool-error` unless `onToolError` explicitly recovers.
 
 ```ts
 import { tool } from "@voltagent/core";

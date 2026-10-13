@@ -1,10 +1,11 @@
 import { tavily } from "@tavily/core";
-import { tool } from "@voltagent/core";
+import { createTool } from "@voltagent/core";
 import { z } from "zod";
 
-export const internetSearch = tool({
+export const internetSearch = createTool({
+  name: "internet_search",
   description: "Run a web search",
-  inputSchema: z.object({
+  parameters: z.object({
     query: z.string().describe("The search query"),
     maxResults: z.number().optional().default(5).describe("Maximum number of results to return"),
     topic: z

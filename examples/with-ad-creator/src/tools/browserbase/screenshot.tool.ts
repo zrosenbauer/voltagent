@@ -56,8 +56,8 @@ export const screenshotTool = createTool({
       console.log(`Screenshot saved to: ${filepath}`);
 
       // Persist the filepath so downstream tools can reuse the latest screenshot
-      context?.context.set("screenshotPath", filepath);
-      context?.context.set("screenshotFilename", finalFilename);
+      context?.context?.set("screenshotPath", filepath);
+      context?.context?.set("screenshotFilename", finalFilename);
 
       return {
         success: true,

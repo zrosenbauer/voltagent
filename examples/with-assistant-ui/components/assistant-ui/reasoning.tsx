@@ -1,7 +1,7 @@
 "use client";
 
 import { BrainIcon, ChevronDownIcon } from "lucide-react";
-import { type FC, type PropsWithChildren, memo, useCallback, useRef, useState } from "react";
+import { type CSSProperties, type FC, type PropsWithChildren, memo, useCallback, useRef, useState } from "react";
 
 import {
   type ReasoningGroupComponent,
@@ -50,7 +50,7 @@ const ReasoningRoot: FC<
         {
           "--animation-duration": `${ANIMATION_DURATION}ms`,
           "--shimmer-duration": `${SHIMMER_DURATION}ms`,
-        } as React.CSSProperties
+        } as CSSProperties
       }
     >
       {children}

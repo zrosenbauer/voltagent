@@ -239,7 +239,7 @@ export function createMockAgentWithStubs(options: CreateMockAgentOptions = {}) {
         },
       });
 
-      const result: StreamTextResultWithContext = {
+      const result: Partial<StreamTextResultWithContext> = {
         stream: stream as any,
         fullStream: stream as any,
         textStream: textStream as any,
@@ -257,7 +257,7 @@ export function createMockAgentWithStubs(options: CreateMockAgentOptions = {}) {
         toTextStreamResponse: vi.fn(),
       };
 
-      return result;
+      return result as StreamTextResultWithContext;
     },
   );
 

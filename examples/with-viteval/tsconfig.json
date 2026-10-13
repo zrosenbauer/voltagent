@@ -1,9 +1,8 @@
 {
-  "extends": "@tsconfig/node24/tsconfig.json",
   "compilerOptions": {
     "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,
@@ -11,23 +10,10 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
-    "declaration": true,
-    "declarationMap": true,
+    "declaration": false,
     "sourceMap": true,
-    "baseUrl": ".",
-    "types": ["node"],
-    "paths": {
-      "#models/*": ["./src/models/*"],
-      "#/*": ["./src/*"]
-    }
+    "types": ["node"]
   },
   "exclude": ["node_modules", "dist"],
-  "references": [
-    {
-      "path": "./tsconfig.lib.json"
-    },
-    {
-      "path": "./tsconfig.spec.json"
-    }
-  ]
+  "include": ["src"]
 }

@@ -2,7 +2,7 @@ import { A2AServer } from "@voltagent/a2a-server";
 import { VoltAgent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
-import { assistant } from "./agents/assistant";
+import { assistant } from "./agents/assistant.js";
 
 const logger = createPinoLogger({
   name: "with-a2a-server",

@@ -4,14 +4,14 @@
  */
 
 // Export browser base functionality
-export * from "./browserBaseTools";
+export * from "./browserBaseTools.js";
 
 // Export browser tools
-export * from "./navigationTool";
-export * from "./screenshotTool";
-export * from "./interactionTool";
-export * from "./responseTool";
+export * from "./navigationTool.js";
+export * from "./screenshotTool.js";
+export * from "./interactionTool.js";
+export * from "./responseTool.js";
 
-export * from "./outputTool";
+export * from "./outputTool.js";
 
-export * from "./visiblePageTool";
+export * from "./visiblePageTool.js";

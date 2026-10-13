@@ -26,15 +26,17 @@ console.log(result.text);
 
 ## PlanAgent quickstart
 
-PlanAgent works like `Agent`, but adds planning, filesystem, and subagent tooling by default.
+PlanAgent works like `Agent`, but adds planning, filesystem, and subagent tooling by default. Its `tools` option currently accepts an array of named tools; use `createTool` for this example. Plain `Agent` also accepts native AI SDK tool dictionaries.
 
 ```ts
-import { PlanAgent, tool } from "@voltagent/core";
+import { PlanAgent, createTool } from "@voltagent/core";
 import { z } from "zod";
+import { safeStringify } from "@voltagent/internal";
 
-const internetSearch = tool({
+const internetSearch = createTool({
+  name: "internet_search",
   description: "Search the web for information",
-  inputSchema: z.object({
+  parameters: z.object({
     query: z.string().describe("Search query"),
     maxResults: z.number().optional().default(5),
   }),
@@ -45,7 +47,7 @@ const internetSearch = tool({
         "Content-Type": "application/json",
         Authorization: `Bearer ${process.env.TAVILY_API_KEY}`,
       },
-      body: JSON.stringify({ query, maxResults }),
+      body: safeStringify({ query, max_results: maxResults }),
     });
     return response.json();
   },
@@ -55,9 +57,7 @@ const agent = new PlanAgent({
   name: "Researcher",
   systemPrompt: "You are an expert researcher. Produce clear, sourced answers.",
   model: "openai/gpt-4o",
-  tools: {
-    internet_search: internetSearch,
-  },
+  tools: [internetSearch],
 });
 
 const result = await agent.generateText("What is VoltAgent?");
@@ -166,9 +166,7 @@ const agent = new PlanAgent({
       name: "research-analyst",
       description: "Deep research and synthesis",
       systemPrompt: "Research thoroughly and return a concise report.",
-      tools: {
-        internet_search: internetSearch,
-      },
+      tools: [internetSearch],
     },
   ],
 });

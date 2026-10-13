@@ -4,13 +4,14 @@ This Next.js example demonstrates how to use client-side tools with VoltAgent, p
 
 ## Features
 
-- 🎨 **UI Tools**: Change theme, show notifications
 - 📊 **Data Tools**: Get location, read clipboard
-- 🤝 **Interactive Tools**: Ask for user confirmation
+- 🤝 **Interactive Tools**: Ask for confirmation before reading the clipboard
 - ⚡ **Smooth DX**: Uses Vercel AI SDK's `useChat` hook
-- 🔄 **Automatic Handling**: Tools without `execute` are automatically client-side
+- 🔄 **Client Execution**: Handle tools without `execute` in the browser and return their results
 
 ## Running the Example
+
+Use Node.js 22 or later. `pnpm build` and `pnpm start` run the production app. Keep the server package and workspace settings in `next.config.ts` when copying the example.
 
 1. Set your OpenAI API key:
 
@@ -65,10 +66,17 @@ const agent = new Agent({
 
 ### 2. Handle Client-Side Tools with useChat
 
-```typescript
+```tsx
+import { useChat } from "@ai-sdk/react";
+import type { ClientSideToolResult } from "@voltagent/core";
+import { DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls } from "ai";
+import { useEffect, useState } from "react";
+
+const [input, setInput] = useState("");
 const [result, setResult] = useState<ClientSideToolResult | null>(null);
 
-const { messages, input, handleSubmit, addToolResult } = useChat({
+const { messages, sendMessage, addToolResult } = useChat({
+  transport: new DefaultChatTransport({ api: "/api/chat" }),
   sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
   // Automatic client-side tool execution
   async onToolCall({ toolCall }) {
@@ -101,10 +109,11 @@ const { messages, input, handleSubmit, addToolResult } = useChat({
 });
 ```
 
-### 2. Sending back tool results to the model
+Keep the input value in React state. Submit it with `sendMessage({ text: input })`, then clear it with `setInput("")`. The complete component is in `app/page.tsx`.
 
-When a client-side tool is executed, you **MUST** call `addToolResult` to provide the tool result to the model. The model will then use the result to update the conversation state.
-Otherwise, the model will consider the tool call as a failure.
+### 3. Sending back tool results to the model
+
+After executing a client-side tool, call `addToolResult` with its output or an `output-error` result. This completes the pending tool call. With `sendAutomaticallyWhen` configured above, the chat continues when all tool results are available. Without a result, the tool call remains pending.
 
 ```ts
 useEffect(() => {
@@ -115,12 +124,9 @@ useEffect(() => {
 
 ## Tool Types
 
-1. **Client-side Tools**: Execute client-side, don't return data
-   - Change theme
-   - Show notifications
+1. **Client-side Tools**: Execute in the browser and return results through `addToolResult`
    - Get location
    - Read clipboard
-   - Ask for confirmation
 
 2. **Server Tools**: Traditional server-side execution
    - Get weather
@@ -130,7 +136,7 @@ useEffect(() => {
 
 The integration is designed to be as simple as possible:
 
-1. Tools without `execute` are automatically client-side
+1. Tools without `execute` can be handled in the browser
 2. `useChat` hook handles all the streaming complexity
 3. `onToolCall` callback invoked when a tool call is received
 4. You **must** call `addToolResult` to send back the tool result.

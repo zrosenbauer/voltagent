@@ -194,9 +194,10 @@ export async function handleStreamText(
       safeStringify({
         error: errorMessage,
         message: errorMessage,
+        ...(error instanceof ClientHTTPError ? { code: error.code, name: error.name } : {}),
       }),
       {
-        status: 500,
+        status: error instanceof ClientHTTPError ? error.httpStatus : 500,
         headers: {
           "Content-Type": "application/json",
         },
@@ -377,9 +378,10 @@ export async function handleChatStream(
       safeStringify({
         error: errorMessage,
         message: errorMessage,
+        ...(error instanceof ClientHTTPError ? { code: error.code, name: error.name } : {}),
       }),
       {
-        status: 500,
+        status: error instanceof ClientHTTPError ? error.httpStatus : 500,
         headers: {
           "Content-Type": "application/json",
         },
@@ -509,6 +511,9 @@ export async function handleGenerateObject(
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
+      ...(error instanceof ClientHTTPError
+        ? { httpStatus: error.httpStatus, code: error.code, name: error.name }
+        : {}),
     };
   }
 }
@@ -560,9 +565,10 @@ export async function handleStreamObject(
       safeStringify({
         error: errorMessage,
         message: errorMessage,
+        ...(error instanceof ClientHTTPError ? { code: error.code, name: error.name } : {}),
       }),
       {
-        status: 500,
+        status: error instanceof ClientHTTPError ? error.httpStatus : 500,
         headers: {
           "Content-Type": "application/json",
         },

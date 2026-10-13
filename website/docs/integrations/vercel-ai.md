@@ -1,458 +1,141 @@
 ---
-title: Vercel AI SDK Integration
+title: AI SDK Integration
 slug: /integrations/vercel-ai
 ---
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
+# AI SDK Integration
 
-VoltAgent now works framework-agnostic and provides direct integration with [Vercel AI SDK](https://ai-sdk.dev/docs/introduction). This allows you to add observability to your existing Vercel AI applications with minimal changes.
-
-![Vercel AI SDK Integration](https://cdn.voltagent.dev/docs/vercel-ai-observability-demo/vercel-ai-demo-with-multi-agent.gif)
+VoltAgent 3 uses AI SDK 7 directly. Bring your AI SDK model, tools, and output schema to a VoltAgent `Agent` to add memory, guardrails, tool routing, subagents, and observability.
 
 ## Installation
 
-First, install the required packages:
-
-<Tabs>
-  <TabItem value="npm" label="npm" default>
-    ```bash
-    npm install @voltagent/vercel-ai-exporter @opentelemetry/sdk-node @opentelemetry/auto-instrumentations-node
-    ```
-  </TabItem>
-  <TabItem value="pnpm" label="pnpm">
-    ```bash
-    pnpm add @voltagent/vercel-ai-exporter @opentelemetry/sdk-node @opentelemetry/auto-instrumentations-node
-    ```
-  </TabItem>
-  <TabItem value="yarn" label="yarn">
-    ```bash
-    yarn add @voltagent/vercel-ai-exporter @opentelemetry/sdk-node @opentelemetry/auto-instrumentations-node
-    ```
-  </TabItem>
-</Tabs>
-
-## Configuration
-
-### Get Your API Keys
-
-You'll need to get your API keys from VoltOps LLM Observability Platform:
-
-1. **Sign up** at [console.voltagent.dev](https://console.voltagent.dev)
-2. **Create an organization** for your team/company
-3. **Create a project** within your organization
-4. **Get your keys** from the project settings:
-   - `VOLTAGENT_PUBLIC_KEY` - For client identification
-   - `VOLTAGENT_SECRET_KEY` - For secure server communication
-
-### Setup VoltAgent Exporter
-
-Set up VoltAgent exporter in your application (typically in your main file):
-
-```typescript
-import { VoltAgentExporter } from "@voltagent/vercel-ai-exporter";
-import { NodeSDK } from "@opentelemetry/sdk-node";
-import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
-
-// Create VoltAgent exporter
-const voltAgentExporter = new VoltAgentExporter({
-  publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
-  secretKey: process.env.VOLTAGENT_SECRET_KEY,
-  baseUrl: "https://api.voltagent.dev", // default
-  debug: true, // set to true for development
-});
-
-// Initialize OpenTelemetry SDK
-const sdk = new NodeSDK({
-  traceExporter: voltAgentExporter,
-  instrumentations: [getNodeAutoInstrumentations()],
-});
-
-sdk.start();
-```
-
-## Basic Telemetry
-
-Start with the minimal setup - just enable telemetry in your existing Vercel AI calls:
-
-```typescript
-import { generateText } from "ai";
-
-const result = await generateText({
-  model: "openai/gpt-4o-mini",
-  prompt: "Hello, how are you?",
-  experimental_telemetry: {
-    isEnabled: true,
-    // That's it! VoltAgent will track this with a default agent
-  },
-});
-
-console.log("Assistant:", result.text);
-```
-
-![Vercel AI SDK Integration Basic Exampla](https://cdn.voltagent.dev/docs/vercel-ai-observability-demo/vercel-ai-demo-basic.gif)
-
-**✅ What you get:**
-
-- AI calls tracked in VoltOps LLM Observability Platform
-- Basic execution flow visibility
-- All activities grouped under "ai-assistant" (default)
-
-:::tip You'll see this helpful message
-
-```
-📋 VoltAgent: Using default agent for tracking.
-💡 For better tracking, add agentId to your metadata:
-   experimental_telemetry: {
-     isEnabled: true,
-     metadata: { agentId: 'my-agent' }
-   }
-```
-
-This is completely normal! VoltAgent automatically uses a default agent when no `agentId` is provided. We'll show you how to customize this in the next sections.
-:::
-
-<!-- GIF placeholder: Basic telemetry showing default agent in console -->
-<!-- ![Basic Telemetry](placeholder-basic-telemetry.gif) -->
-
-## With Tools
-
-Same minimal setup, but now with tools to see how tool usage is tracked:
-
-```typescript
-import { generateText } from "ai";
-import { z } from "zod";
-
-const result = await generateText({
-  model: "openai/gpt-4o-mini",
-  prompt: "What's the weather like in Tokyo?",
-  tools: {
-    weather: {
-      description: "Get the weather in a location",
-      inputSchema: z.object({
-        location: z.string().describe("The location to get the weather for"),
-      }),
-      execute: async ({ location }) => {
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        return {
-          location,
-          temperature: 72 + Math.floor(Math.random() * 21) - 10,
-        };
-      },
-    },
-  },
-  maxSteps: 5,
-  experimental_telemetry: {
-    isEnabled: true,
-    // Still using default agent, but now with tools
-  },
-});
-
-console.log("Assistant:", result.text);
-```
-
-**✅ What you get additionally:**
-
-- Tool calls tracked and visualized
-- Tool inputs and outputs visible
-- Tool execution timeline
-- Still grouped under default agent
-
-![Vercel AI SDK Integration Basic Exampla](https://cdn.voltagent.dev/docs/vercel-ai-observability-demo/vercel-ai-demo-with-tools.gif)
-
-## With Metadata
-
-Now make tracking much more powerful by adding an agent identifier:
-
-```typescript
-import { generateText } from "ai";
-import { z } from "zod";
-
-const result = await generateText({
-  model: "openai/gpt-4o-mini",
-  prompt: "What's the weather like in Paris?",
-  tools: {
-    weather: {
-      description: "Get the weather in a location",
-      inputSchema: z.object({
-        location: z.string().describe("The location to get the weather for"),
-      }),
-      execute: async ({ location }) => {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        return {
-          location,
-          temperature: 18 + Math.floor(Math.random() * 21) - 10,
-        };
-      },
-    },
-  },
-  maxSteps: 5,
-  experimental_telemetry: {
-    isEnabled: true,
-    metadata: {
-      agentId: "weather-assistant",
-      instructions: "You are a helpful weather assistant",
-    },
-  },
-});
-
-console.log("Assistant:", result.text);
-```
-
-![Vercel AI SDK Integration Basic Exampla](https://cdn.voltagent.dev/docs/vercel-ai-observability-demo/vercel-ai-demo-with-agentid.gif)
-
-**✅ What you get additionally:**
-
-- Your agent is now tracked under "weather-assistant" name
-- Instructions are visible in the console
-- Better organized execution history
-- More meaningful tracking data
-
-## With Additional Metadata
-
-You can provide additional context about the execution:
-
-```typescript
-import { generateText } from "ai";
-
-const result = await generateText({
-  model: "openai/gpt-4o-mini",
-  prompt: "Tell me a joke",
-  experimental_telemetry: {
-    isEnabled: true,
-    metadata: {
-      agentId: "comedy-assistant",
-      instructions: "You are a fun comedian assistant",
-      userId: "user123",
-      sessionId: "session456",
-      // Any additional context you want to track
-      environment: "production",
-      version: "1.2.0",
-    },
-  },
-});
-
-console.log("Assistant:", result.text);
-```
-
-![Vercel AI SDK Integration Basic Exampla](https://cdn.voltagent.dev/docs/vercel-ai-observability-demo/vercel-ai-demo-with-metadata.gif)
-
-**✅ What you get additionally:**
-
-- User and session tracking
-- Environment context
-- Version information
-- Custom metadata for filtering and analysis
-
-## Multi-Agent Workflows
-
-Track different agent roles within the same application:
-
-```typescript
-import { generateText } from "ai";
-
-// Research agent
-const researchResult = await generateText({
-  model: "openai/gpt-4o-mini",
-  prompt: "Research information about renewable energy trends",
-  experimental_telemetry: {
-    isEnabled: true,
-    metadata: {
-      agentId: "research-agent",
-      instructions: "You are a research specialist focused on gathering factual information",
-      role: "researcher",
-    },
-  },
-});
-
-// Writing agent
-const articleResult = await generateText({
-  model: "openai/gpt-4o-mini",
-  prompt: `Write an article based on this research: ${researchResult.text}`,
-  experimental_telemetry: {
-    isEnabled: true,
-    metadata: {
-      agentId: "writing-agent",
-      instructions: "You are a professional writer who creates engaging articles",
-      role: "writer",
-    },
-  },
-});
-
-// Review agent
-const reviewResult = await generateText({
-  model: "openai/gpt-4o-mini",
-  prompt: `Review and improve this article: ${articleResult.text}`,
-  experimental_telemetry: {
-    isEnabled: true,
-    metadata: {
-      agentId: "review-agent",
-      instructions: "You are an editor who reviews and improves content",
-      role: "editor",
-    },
-  },
-});
-
-console.log("Final article:", reviewResult.text);
-```
-
-![Vercel AI SDK Integration Basic Exampla](https://cdn.voltagent.dev/docs/vercel-ai-observability-demo/vercel-ai-demo-with-multi-agent.gif)
-
-**✅ What you get with multi-agent tracking:**
-
-- Each agent tracked separately in the console
-- Clear visualization of agent interactions
-- Role-based organization
-- Workflow understanding across agents
-
-## Advanced Features
-
-### Custom Spans
-
-Add custom spans to track specific operations:
-
-```typescript
-import { trace } from "@opentelemetry/api";
-
-const tracer = trace.getTracer("my-app");
-
-const result = await tracer.startActiveSpan("user-request-processing", async (span) => {
-  span.setAttributes({
-    "user.id": "user123",
-    "request.type": "question",
-  });
-
-  const response = await generateText({
-    model: "openai/gpt-4o-mini",
-    prompt: "What's the capital of France?",
-    experimental_telemetry: {
-      isEnabled: true,
-      metadata: { agentId: "geography-assistant" },
-    },
-  });
-
-  span.setAttributes({
-    "response.length": response.text.length,
-  });
-
-  span.end();
-  return response;
-});
-```
-
-### Error Tracking
-
-Automatically track errors in your AI workflows:
-
-```typescript
-import { trace } from "@opentelemetry/api";
-
-try {
-  const result = await generateText({
-    model: "openai/gpt-4o-mini",
-    prompt: "Some prompt that might fail",
-    experimental_telemetry: {
-      isEnabled: true,
-      metadata: { agentId: "error-prone-agent" },
-    },
-  });
-} catch (error) {
-  const span = trace.getActiveSpan();
-  if (span) {
-    span.recordException(error);
-    span.setStatus({ code: 2, message: error.message });
-  }
-  throw error;
-}
-```
-
-## Best Practices
-
-### 1. Use Meaningful Agent IDs
-
-```typescript
-// ❌ Not helpful
-metadata: {
-  agentId: "agent1";
-}
-
-// ✅ Descriptive and helpful
-metadata: {
-  agentId: "customer-support-agent";
-}
-metadata: {
-  agentId: "product-recommendation-agent";
-}
-metadata: {
-  agentId: "content-writer-agent";
-}
-```
-
-### 2. Include Context
-
-```typescript
-// ✅ Rich context for better tracking
-metadata: {
-  agentId: 'support-agent',
-  instructions: 'Help customers with technical issues',
-  userId: userId,
-  sessionId: sessionId,
-  category: 'technical-support',
-  priority: 'high'
-}
-```
-
-### 3. Environment Variables
+Use Node.js 22 or newer and an ESM project (`"type": "module"`). While VoltAgent 3 is in prerelease, install the `next` channel:
 
 ```bash
-# .env
-VOLTAGENT_PUBLIC_KEY=your_public_key
-VOLTAGENT_SECRET_KEY=your_secret_key
-VOLTAGENT_BASE_URL=https://api.voltagent.dev
+pnpm add @voltagent/core@next @voltagent/server-hono@next ai@^7 @ai-sdk/openai@^4 zod@^4
 ```
 
-### 4. Development vs Production
+After the stable v3 release, use the stable VoltAgent package versions. Provider package majors vary; see the [migration guide](../getting-started/migration-guide.md).
 
-```typescript
-const voltAgentExporter = new VoltAgentExporter({
-  publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
-  secretKey: process.env.VOLTAGENT_SECRET_KEY,
-  debug: process.env.NODE_ENV === "development", // Only debug in development
+## Bring an AI SDK model and tools
+
+Tools created with `tool` from `ai` work directly in the agent's `tools` object. The object keys are the tool names used by the model.
+
+```ts
+import { openai } from "@ai-sdk/openai";
+import { Agent, VoltAgent } from "@voltagent/core";
+import { honoServer } from "@voltagent/server-hono";
+import { isStepCount, tool } from "ai";
+import { z } from "zod";
+
+const agent = new Agent({
+  name: "Calculator",
+  instructions: "Use the calculator for arithmetic and explain the result.",
+  model: openai("gpt-4o-mini"),
+  tools: {
+    add: tool({
+      description: "Add two numbers",
+      inputSchema: z.object({ a: z.number(), b: z.number() }),
+      execute: ({ a, b }) => a + b,
+    }),
+  },
+});
+
+new VoltAgent({ agents: { agent }, server: honoServer() });
+
+const result = await agent.generateText({
+  prompt: "What is 21 + 34?",
+  stopWhen: isStepCount(5),
+  temperature: 0,
+  onStepEnd: (step) => console.log(step.finishReason),
+});
+
+console.log(result.text);
+```
+
+Call-level AI SDK options and callbacks stay at the top level. Use `voltagent` for framework options such as conversation tracking, context, and hooks:
+
+```ts
+const result = await agent.generateText({
+  prompt: "Add 10 and 20",
+  voltagent: {
+    userId: "user-123",
+    conversationId: "conversation-456",
+    context: { language: "en" },
+    hooks: {
+      onEnd: ({ output }) => console.log(output),
+    },
+  },
 });
 ```
 
-## Troubleshooting
+Configure [memory](../agents/memory.md) on the agent when calls should retain conversation history. For typed and validated invocation context, use the agent's [contextSchema](../agents/context.md). Native tool `contextSchema` and call-level `toolsContext` remain separate AI SDK features.
 
-### Common Issues
+## Add VoltAgent metadata to a tool
 
-1. **No data showing in console**: Verify your API keys and network connectivity
-2. **Missing spans**: Ensure telemetry is enabled and SDK is initialized
-3. **Performance impact**: Use batch processing in production
+Use `enhanceTool` for existing AI SDK tools, or `tool` from `@voltagent/core` to define a tool with a `voltagent` metadata namespace. Native execution semantics stay the same; metadata alone does not enable retries or output validation.
 
-### Debug Mode
+```ts
+import { enhanceTool } from "@voltagent/core";
+import { tool } from "ai";
+import { z } from "zod";
 
-Enable debug mode to see detailed logs:
+const lookup = enhanceTool(
+  tool({
+    inputSchema: z.object({ id: z.string() }),
+    execute: ({ id }) => ({ id, available: true }),
+  }),
+  { tags: ["catalog"] }
+);
+```
 
-```typescript
-const voltAgentExporter = new VoltAgentExporter({
-  // ... config
-  debug: true, // Enable detailed logging
+Client-side tools may omit both `execute` and `outputSchema`. Add an output schema when you want to declare the shape of the result supplied by your client. See [tools](../agents/tools.md) for approval, routing, and execution hooks.
+
+## Streaming and structured output
+
+Use the native output helpers with the agent methods:
+
+```ts
+import { Output } from "ai";
+import { z } from "zod";
+
+const result = await agent.generateText({
+  prompt: "Summarize the answer",
+  output: Output.object({ schema: z.object({ answer: z.string() }) }),
+});
+console.log(result.output.answer);
+
+const stream = await agent.streamText({ prompt: "Explain addition briefly" });
+for await (const text of stream.textStream) {
+  process.stdout.write(text);
+}
+```
+
+For a UI route, return `stream.toUIMessageStreamResponse()`. See the [AI SDK UI integration](../ui/ai-sdk-integration.md) for message conversion and `useChat` examples. Use `onChunk` and other streaming-only options on `streamText`.
+
+## Observability
+
+Register agents in `VoltAgent` to use the built-in OpenTelemetry observability pipeline. For VoltOps export, configure:
+
+```bash
+VOLTAGENT_PUBLIC_KEY=pk_...
+VOLTAGENT_SECRET_KEY=sk_...
+```
+
+See [observability](../observability/developer-console.md) for local tracing, persistent storage, and custom processors. The legacy `@voltagent/vercel-ai-exporter` setup is not the setup for VoltAgent 3 agents.
+
+## Direct AI SDK calls
+
+VoltAgent also re-exports common AI SDK functions. These are native calls; they do not run a VoltAgent agent's memory, guardrails, hooks, or model fallback pipeline:
+
+```ts
+import { generateText } from "@voltagent/core";
+import { openai } from "@ai-sdk/openai";
+
+const result = await generateText({
+  model: openai("gpt-4o-mini"),
+  prompt: "Hello",
 });
 ```
 
-You'll see helpful logs like:
-
-```
-[VoltAgent] Exporting span: ai.generateText
-[VoltAgent] Metadata: {"agentId":"my-agent"}
-[VoltAgent] Successfully exported to VoltAgent
-```
-
-## Next Steps
-
-- **[VoltOps Platform](../observability/developer-console.md)** - Learn about real-time debugging
-- **[Langfuse Integration](../observability/langfuse.md)** - Advanced analytics platform
-- **[Production Deployment](#)** - Best practices for production use
-
-Need help? Join our [Discord community](https://s.voltagent.dev/discord) or check out our [GitHub discussions](https://github.com/voltagent/voltagent/discussions).
+Configure native AI SDK telemetry separately for direct calls. Use `agent.generateText()` or `agent.streamText()` when you want VoltAgent orchestration. The [compatibility reference](../agents/overview.md) explains which fields VoltAgent composes and how guardrails affect delivered results.

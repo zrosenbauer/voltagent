@@ -13,6 +13,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  ai-sdk-compatibility:
+    uses: ./.github/workflows/ai-sdk-compatibility.yml
+
   test-packages:
     runs-on: ubuntu-latest
     strategy:
@@ -76,7 +79,7 @@ jobs:
 
   prerelease:
     name: Prerelease
-    needs: [test-packages, e2e-tests]
+    needs: [test-packages, e2e-tests, ai-sdk-compatibility]
     runs-on: ubuntu-latest
     permissions:
       contents: write

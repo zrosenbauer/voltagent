@@ -9,17 +9,17 @@
  * - Browser closing
  *
  * Each tool uses VoltAgent's named compatibility tool API because browser
- * operations need direct access to OperationContext:
+ * operations need direct access to ToolExecuteOptions:
  * - Zod validation schemas for parameters
  * - Safe browser operation handling
  * - Consistent error reporting
  */
 
 import { createTool } from "@voltagent/core";
-import type { OperationContext } from "@voltagent/core";
+import type { ToolExecuteOptions } from "@voltagent/core";
 import { z } from "zod";
-import { safeBrowserOperation } from "./browserBaseTools";
-import { resetBrowserState as resetBrowserStateInternal } from "./playwrightToolHandler";
+import { safeBrowserOperation } from "./browserBaseTools.js";
+import { resetBrowserState as resetBrowserStateInternal } from "./playwrightToolHandler.js";
 
 /**
  * Tool for navigating to URLs
@@ -39,9 +39,9 @@ export const navigationTool = createTool({
       .default("load")
       .describe("Navigation wait condition"),
   }),
-  execute: async (args, oc?: OperationContext) => {
+  execute: async (args, oc?: ToolExecuteOptions) => {
     if (!oc?.context) {
-      throw new Error("OperationContext is missing or invalid.");
+      throw new Error("ToolExecuteOptions is missing or invalid.");
     }
 
     return safeBrowserOperation(oc, async (page) => {
@@ -64,9 +64,9 @@ export const goBackTool = createTool({
   name: "goBack",
   description: "Navigate back in browser history",
   parameters: z.object({}),
-  execute: async (_args, oc?: OperationContext) => {
+  execute: async (_args, oc?: ToolExecuteOptions) => {
     if (!oc?.context) {
-      throw new Error("OperationContext is missing or invalid.");
+      throw new Error("ToolExecuteOptions is missing or invalid.");
     }
     return safeBrowserOperation(oc, async (page) => {
       await page.goBack();
@@ -82,9 +82,9 @@ export const goForwardTool = createTool({
   name: "goForward",
   description: "Navigate forward in browser history",
   parameters: z.object({}),
-  execute: async (_args, oc?: OperationContext) => {
+  execute: async (_args, oc?: ToolExecuteOptions) => {
     if (!oc?.context) {
-      throw new Error("OperationContext is missing or invalid.");
+      throw new Error("ToolExecuteOptions is missing or invalid.");
     }
     return safeBrowserOperation(oc, async (page) => {
       await page.goForward();
@@ -100,9 +100,9 @@ export const refreshPageTool = createTool({
   name: "refreshPage",
   description: "Refresh the current page",
   parameters: z.object({}),
-  execute: async (_args, oc?: OperationContext) => {
+  execute: async (_args, oc?: ToolExecuteOptions) => {
     if (!oc?.context) {
-      throw new Error("OperationContext is missing or invalid.");
+      throw new Error("ToolExecuteOptions is missing or invalid.");
     }
     return safeBrowserOperation(oc, async (page) => {
       await page.reload();
@@ -118,7 +118,7 @@ export const closeBrowserTool = createTool({
   name: "closeBrowser",
   description: "Close the current browser instance",
   parameters: z.object({}),
-  execute: async (_args, oc?: OperationContext) => {
+  execute: async (_args, oc?: ToolExecuteOptions) => {
     if (!oc) {
       console.warn("Attempting to close browser with missing operation context.");
       return { result: "Browser context missing, nothing to close." };

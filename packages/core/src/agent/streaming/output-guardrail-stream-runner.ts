@@ -60,6 +60,7 @@ export class OutputGuardrailStreamRunner {
   private readonly guardrailStates: GuardrailStreamState[];
 
   private sanitizedText = "";
+  private textSegments: { original: string; sanitized: string }[] = [];
   private originalText = "";
   private finalizedText: string | null = null;
   private finalized = false;
@@ -159,6 +160,13 @@ export class OutputGuardrailStreamRunner {
       currentPart = processed;
     }
 
+    if (isTextDelta(part)) {
+      this.textSegments.push({
+        original: originalText,
+        sanitized: currentPart ? extractChunkText(currentPart) : "",
+      });
+    }
+
     if (currentPart && isTextDelta(currentPart)) {
       const sanitizedChunk = extractChunkText(currentPart);
       if (sanitizedChunk) {
@@ -189,6 +197,24 @@ export class OutputGuardrailStreamRunner {
 
   getSanitizedText(): string {
     return this.finalizedText ?? this.sanitizedText;
+  }
+
+  /** Final values exclude earlier steps and abandoned SDK stream-retry attempts. */
+  useFinalStepText(text: string): void {
+    let original = "";
+    let sanitized = "";
+    for (let index = this.textSegments.length - 1; index >= 0 && original !== text; index--) {
+      const segment = this.textSegments[index];
+      original = segment.original + original;
+      sanitized = segment.sanitized + sanitized;
+    }
+    if (original !== text) {
+      throw createVoltAgentError("Unable to reconcile guarded text with the final model step", {
+        code: "GUARDRAIL_OUTPUT_BLOCKED",
+      });
+    }
+    this.originalText = original;
+    this.sanitizedText = sanitized;
   }
 
   private async performFinalize(metadata: OutputGuardrailMetadata): Promise<void> {

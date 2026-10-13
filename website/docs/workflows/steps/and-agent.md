@@ -152,11 +152,12 @@ createWorkflowChain({
 
 Retry behavior:
 
-- `maxRetries` controls LLM retries for the selected model (total attempts = `maxRetries + 1`).
+- `maxRetries` controls retries for each provider call within the agent's SDK loop (total attempts per model call = `maxRetries + 1`). Completed tool calls and model steps are retained; the retry counter resets for each new model step.
 - `maxMiddlewareRetries` controls retries triggered by `abort(..., { retry: true })`.
-- A middleware retry restarts the step: middlewares, guardrails, hooks, model selection, and fallback.
+- A middleware retry restarts the agent attempt within this workflow step: middlewares, guardrails, hooks, model selection, and fallback. Tools completed in that attempt can execute again.
 - Output middleware runs on the model text and can trigger retries. It does not change the parsed
   object returned by `andAgent`.
+- Schema validation failures after a successful provider call do not trigger model retry or fallback. See [Structured Output](/docs/agents/structured-output#handle-structured-output-failures) for handling these failures.
 
 ## Common Patterns
 

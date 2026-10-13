@@ -1,5 +1,7 @@
 import { createTool } from "@voltagent/core";
 import { z } from "zod";
+// Stagehand 2 expects Zod 3; keep that compatibility at the extraction boundary.
+import { z as stagehandSchema } from "zod/v3";
 import { sessionManager } from "../../stagehand-manager";
 
 export const pageExtractTool = createTool({
@@ -8,7 +10,10 @@ export const pageExtractTool = createTool({
   parameters: z.object({
     url: z.string().url().optional().describe("URL to navigate to (optional if already on a page)"),
     instruction: z.string().describe("What to extract (e.g., 'extract all product prices')"),
-    schema: z.record(z.any()).optional().describe("Zod schema definition for data extraction"),
+    schema: z
+      .record(z.string(), z.enum(["string", "number", "boolean"]))
+      .optional()
+      .describe("Optional extraction fields mapped to string, number, or boolean"),
     useTextExtract: z
       .boolean()
       .optional()
@@ -31,16 +36,25 @@ export const pageExtractTool = createTool({
 
       // Default schema for brand extraction if none provided
       const defaultBrandSchema = {
-        productName: z.string().describe("The product or service name"),
-        tagline: z.string().describe("The main tagline or headline"),
-        valueProposition: z.string().describe("The unique value proposition"),
-        targetAudience: z.string().describe("The target audience"),
-        features: z.array(z.string()).describe("Key features or benefits"),
-        callToAction: z.string().describe("Main call-to-action text"),
+        productName: stagehandSchema.string().describe("The product or service name"),
+        tagline: stagehandSchema.string().describe("The main tagline or headline"),
+        valueProposition: stagehandSchema.string().describe("The unique value proposition"),
+        targetAudience: stagehandSchema.string().describe("The target audience"),
+        features: stagehandSchema
+          .array(stagehandSchema.string())
+          .describe("Key features or benefits"),
+        callToAction: stagehandSchema.string().describe("Main call-to-action text"),
       };
 
-      const finalSchema = schema || defaultBrandSchema;
-      const schemaObject = z.object(finalSchema);
+      const fieldTypes = {
+        string: stagehandSchema.string(),
+        number: stagehandSchema.number(),
+        boolean: stagehandSchema.boolean(),
+      };
+      const finalSchema = schema
+        ? Object.fromEntries(Object.entries(schema).map(([name, type]) => [name, fieldTypes[type]]))
+        : defaultBrandSchema;
+      const schemaObject = stagehandSchema.object(finalSchema);
 
       console.log(`Extracting with instruction: ${instruction}`);
 

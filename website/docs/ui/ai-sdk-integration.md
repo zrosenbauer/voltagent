@@ -189,6 +189,8 @@ function ChatWithFiles() {
 
 ## Handling Stream States
 
+On the server, `result.toUIMessageStream({ onEnd })` and `result.toUIMessageStreamResponse({ onEnd })` preserve the SDK completion callback. With guardrails enabled, it receives the message actually delivered to the UI, including output redactions and parallel input-block replacements. The deprecated `onFinish` alias still works; if both are provided, `onEnd` wins. This UI callback is separate from the generation call's `onEnd` and VoltAgent's `hooks.onEnd`.
+
 ```typescript
 function StreamingChat() {
   const { messages, status, stop } = useChat({
@@ -432,19 +434,21 @@ curl "http://localhost:3141/api/memory/conversations/conv-1/messages?agentId=ass
 
 ### AI SDK Core Options
 
-| Option             | Type     | Default | Description                            |
-| ------------------ | -------- | ------- | -------------------------------------- |
-| `temperature`      | number   | 0.7     | Controls randomness (0-1)              |
-| `maxOutputTokens`  | number   | 4000    | Maximum tokens to generate             |
-| `maxTokens`        | number   | -       | Alias for maxOutputTokens              |
-| `maxSteps`         | number   | 5       | Maximum tool-use iterations            |
-| `topP`             | number   | -       | Nucleus sampling (0-1)                 |
-| `topK`             | number   | -       | Sample from top K options              |
-| `frequencyPenalty` | number   | 0       | Repeat penalty for words/phrases (0-2) |
-| `presencePenalty`  | number   | 0       | Repeat penalty for information (0-2)   |
-| `seed`             | number   | -       | Random seed for deterministic results  |
-| `stopSequences`    | string[] | -       | Sequences that halt generation         |
-| `maxRetries`       | number   | 2       | Number of retry attempts               |
+| Option             | Type     | Default | Description                                      |
+| ------------------ | -------- | ------- | ------------------------------------------------ |
+| `temperature`      | number   | 0.7     | Controls randomness (0-1)                        |
+| `maxOutputTokens`  | number   | 4000    | Maximum tokens to generate                       |
+| `maxTokens`        | number   | -       | Alias for maxOutputTokens                        |
+| `maxSteps`         | number   | 5       | Maximum tool-use iterations                      |
+| `topP`             | number   | -       | Nucleus sampling (0-1)                           |
+| `topK`             | number   | -       | Sample from top K options                        |
+| `frequencyPenalty` | number   | 0       | Repeat penalty for words/phrases (0-2)           |
+| `presencePenalty`  | number   | 0       | Repeat penalty for information (0-2)             |
+| `seed`             | number   | -       | Random seed for deterministic results            |
+| `stopSequences`    | string[] | -       | Sequences that halt generation                   |
+| `maxRetries`       | number   | 3       | Retries per provider call (non-negative integer) |
+
+`options.maxRetries` overrides the agent's per-model and agent-level retry settings. If omitted, those settings apply, with a default of `3`. VoltAgent retains completed steps and tool results during provider retries. Streaming recovery is available until the current model step starts emitting content; after that, surface the error in the UI unless you explicitly enable native SDK `streamRetries` on a supporting SDK release. Resubmitting the request starts a new agent call and can execute tools again. See [Retries and Fallbacks](/docs/agents/retries-fallback).
 
 ### Provider-Specific Options
 

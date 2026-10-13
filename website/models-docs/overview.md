@@ -181,7 +181,7 @@ const agent = new Agent({
 ```
 
 :::note
-VoltAgent does not include fallback chains yet. Implement retries or failover in your app if needed.
+VoltAgent supports ordered fallback lists through the agent's `model` array and retries through `maxRetries`. Recovery repeats only the failed provider call, preserving completed steps and tool results. Later steps stay on the successful fallback model. See [Retries and Fallbacks](/docs/agents/retries-fallback) for configuration and streaming limits.
 :::
 
 ## Use ai-sdk directly

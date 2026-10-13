@@ -6,4 +6,5 @@ export const TOOL_APPROVAL_CONTEXT_KEY = Symbol("toolApprovalConfig");
 export const AI_SDK_RUNTIME_CONTEXT_KEY = Symbol("aiSdkRuntimeContext");
 export const AI_SDK_TOOLS_CONTEXT_KEY = Symbol("aiSdkToolsContext");
 export const AI_SDK_TOOLS_KEY = Symbol("aiSdkTools");
+export const EFFECTIVE_MODEL_NAME_CONTEXT_KEY = Symbol("effectiveModelName");
 export const SPECULATIVE_INPUT_GUARDRAIL_CONTEXT_KEY = Symbol("speculativeInputGuardrail");

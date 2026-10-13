@@ -376,7 +376,10 @@ Use pandas and summarize findings.`.split("\n"),
 
       expect(ai.generateText).toHaveBeenCalled();
       const callArgs = vi.mocked(ai.generateText).mock.calls[0][0];
-      expect(callArgs.model).toBe(mockModel);
+      expect(callArgs.model).toMatchObject({
+        modelId: mockModel.modelId,
+        provider: mockModel.provider,
+      });
       expect(getSystemTexts(callArgs)).toContain("You are a helpful assistant");
       expect(callArgs.messages).toHaveLength(1);
       expect(callArgs.messages?.[0].role).toBe("user");
@@ -447,7 +450,10 @@ Use pandas and summarize findings.`.split("\n"),
       expect(callArgs.output).toBe(output);
       expect(callArgs.providerOptions).toBe(providerOptions);
       expect(callArgs.maxRetries).toBe(0);
-      expect(callArgs.model).toBe(mockModel);
+      expect(callArgs.model).toMatchObject({
+        modelId: mockModel.modelId,
+        provider: mockModel.provider,
+      });
 
       expect(result.text).toBe("Structured response");
       expect(result.output).toEqual({ answer: "ok", count: 2 });
@@ -521,7 +527,10 @@ Use pandas and summarize findings.`.split("\n"),
       });
 
       const callArgs = vi.mocked(ai.generateText).mock.calls[0][0];
-      expect(callArgs.model).toBe(mockModel);
+      expect(callArgs.model).toMatchObject({
+        modelId: mockModel.modelId,
+        provider: mockModel.provider,
+      });
       expect(callArgs.temperature).toBe(0.2);
       expect(callArgs.maxOutputTokens).toBe(256);
       expect(callArgs.topP).toBe(0.8);
@@ -607,7 +616,10 @@ Use pandas and summarize findings.`.split("\n"),
       });
 
       const callArgs = vi.mocked(ai.generateText).mock.calls[0][0];
-      expect(callArgs.model).toBe(mockModel);
+      expect(callArgs.model).toMatchObject({
+        modelId: mockModel.modelId,
+        provider: mockModel.provider,
+      });
       expect(callArgs.temperature).toBe(0.6);
       expect(callArgs.maxOutputTokens).toBe(64);
       expect(callArgs.providerOptions).toBe(providerOptions);
@@ -628,6 +640,7 @@ Use pandas and summarize findings.`.split("\n"),
       let capturedHeaders: Record<string, string> | undefined;
       const agent = new Agent({
         name: "NamespacedRuntimeTextAgent",
+        contextSchema: z.object({ requestId: z.string() }),
         instructions: async ({ headers }) => {
           capturedHeaders = headers;
           return "You are a helpful assistant";
@@ -694,6 +707,7 @@ Use pandas and summarize findings.`.split("\n"),
 
       const callArgs = vi.mocked(ai.generateText).mock.calls[0][0];
       expect(callArgs.temperature).toBe(0.3);
+      expect(Object.getOwnPropertySymbols(callArgs)).toEqual([]);
       expect(callArgs).not.toHaveProperty("voltagent");
       expect(callArgs).not.toHaveProperty("context");
       expect(callArgs).not.toHaveProperty("userId");
@@ -753,7 +767,10 @@ Use pandas and summarize findings.`.split("\n"),
       await agent.generateText("Hello, world!");
 
       const callArgs = vi.mocked(ai.generateText).mock.calls[0][0];
-      expect(callArgs.model).toBe(mockModel);
+      expect(callArgs.model).toMatchObject({
+        modelId: mockModel.modelId,
+        provider: mockModel.provider,
+      });
 
       registry.unregisterProvider("mock");
     });
@@ -1351,7 +1368,10 @@ Use pandas and summarize findings.`.split("\n"),
 
       expect(ai.streamText).toHaveBeenCalled();
       const callArgs = vi.mocked(ai.streamText).mock.calls[0][0];
-      expect(callArgs.model).toBe(mockModel);
+      expect(callArgs.model).toMatchObject({
+        modelId: mockModel.modelId,
+        provider: mockModel.provider,
+      });
       expect(getSystemTexts(callArgs)).toContain("You are a helpful assistant");
       expect(callArgs.messages).toHaveLength(1);
       expect(callArgs.messages?.[0].role).toBe("user");
@@ -1435,7 +1455,10 @@ Use pandas and summarize findings.`.split("\n"),
       });
 
       const callArgs = vi.mocked(ai.streamText).mock.calls[0][0];
-      expect(callArgs.model).toBe(mockModel);
+      expect(callArgs.model).toMatchObject({
+        modelId: mockModel.modelId,
+        provider: mockModel.provider,
+      });
       expect(callArgs.temperature).toBe(0.4);
       expect(callArgs.maxOutputTokens).toBe(128);
       expect(callArgs.topK).toBe(20);
@@ -1522,7 +1545,10 @@ Use pandas and summarize findings.`.split("\n"),
       });
 
       const callArgs = vi.mocked(ai.streamText).mock.calls[0][0];
-      expect(callArgs.model).toBe(mockModel);
+      expect(callArgs.model).toMatchObject({
+        modelId: mockModel.modelId,
+        provider: mockModel.provider,
+      });
       expect(callArgs.temperature).toBe(0.5);
       expect(callArgs.topP).toBe(0.9);
       expect(callArgs.providerOptions).toBe(providerOptions);
@@ -2943,7 +2969,10 @@ Use pandas and summarize findings.`.split("\n"),
       expect(result.usage).toBeDefined();
       expect(vi.mocked(ai.generateText)).toHaveBeenCalledWith(
         expect.objectContaining({
-          model: mockModel,
+          model: expect.objectContaining({
+            modelId: mockModel.modelId,
+            provider: mockModel.provider,
+          }),
         }),
       );
     });
@@ -4867,336 +4896,8 @@ Use pandas and summarize findings.`.split("\n"),
   });
 
   describe("Error Handling", () => {
-    it("should fall back to the next model when the primary fails", async () => {
-      const fallbackModel = new MockLanguageModelV3({
-        modelId: "fallback-model",
-        doGenerate: {
-          content: [{ type: "text", text: "Fallback response" }],
-          finishReason: "stop",
-          usage: {
-            inputTokens: 10,
-            outputTokens: 5,
-            totalTokens: 15,
-            inputTokenDetails: {
-              noCacheTokens: 10,
-              cacheReadTokens: 0,
-              cacheWriteTokens: 0,
-            },
-            outputTokenDetails: {
-              textTokens: 5,
-              reasoningTokens: 0,
-            },
-          },
-          warnings: [],
-        },
-      });
-
-      const agent = new Agent({
-        name: "TestAgent",
-        instructions: "Test",
-        model: [
-          { model: mockModel as any, maxRetries: 0 },
-          { model: fallbackModel as any, maxRetries: 1 },
-        ],
-      });
-
-      const mockResponse = {
-        text: "Fallback response",
-        content: [{ type: "text", text: "Fallback response" }],
-        reasoning: [],
-        files: [],
-        sources: [],
-        toolCalls: [],
-        toolResults: [],
-        finishReason: "stop",
-        usage: {
-          inputTokens: 10,
-          outputTokens: 5,
-          totalTokens: 15,
-        },
-        warnings: [],
-        request: {},
-        response: {
-          id: "test-response",
-          modelId: "fallback-model",
-          timestamp: new Date(),
-          messages: [],
-        },
-        steps: [],
-      };
-
-      vi.mocked(ai.generateText).mockImplementation(async (args: any) => {
-        if (args.model === mockModel) {
-          throw new Error("Primary model failed");
-        }
-        if (args.model === fallbackModel) {
-          return mockResponse as any;
-        }
-        throw new Error("Unexpected model");
-      });
-
-      const result = await agent.generateText("Test");
-
-      expect(result.text).toBe("Fallback response");
-      expect(vi.mocked(ai.generateText)).toHaveBeenCalledTimes(2);
-      expect(vi.mocked(ai.generateText).mock.calls[0][0].model).toBe(mockModel);
-      expect(vi.mocked(ai.generateText).mock.calls[1][0].model).toBe(fallbackModel);
-      expect(vi.mocked(ai.generateText).mock.calls[1][0].maxRetries).toBe(0);
-    });
-
-    it("should treat missing structured output as fallback-eligible and try next model", async () => {
-      const fallbackModel = new MockLanguageModelV3({
-        modelId: "fallback-model",
-        doGenerate: {
-          content: [{ type: "text", text: "Fallback structured response" }],
-          finishReason: "stop",
-          usage: {
-            inputTokens: 10,
-            outputTokens: 5,
-            totalTokens: 15,
-            inputTokenDetails: {
-              noCacheTokens: 10,
-              cacheReadTokens: 0,
-              cacheWriteTokens: 0,
-            },
-            outputTokenDetails: {
-              textTokens: 5,
-              reasoningTokens: 0,
-            },
-          },
-          warnings: [],
-        },
-      });
-
-      const tool = new Tool({
-        name: "echo_tool",
-        description: "Echo tool",
-        parameters: z.object({ value: z.string() }),
-        execute: async ({ value }) => ({ echoed: value }),
-      });
-
-      const agent = new Agent({
-        name: "StructuredFallbackAgent",
-        instructions: "Use tools and return structured output",
-        model: [
-          { model: mockModel as any, maxRetries: 0 },
-          { model: fallbackModel as any, maxRetries: 0 },
-        ],
-        tools: [tool],
-      });
-
-      const primaryResponse = {
-        text: "Tool call completed.",
-        content: [{ type: "text", text: "Tool call completed." }],
-        reasoning: [],
-        files: [],
-        sources: [],
-        toolCalls: [
-          {
-            type: "tool-call" as const,
-            toolCallId: "call-1",
-            toolName: "echo_tool",
-            input: { value: "hello" },
-          },
-        ],
-        toolResults: [
-          {
-            type: "tool-result" as const,
-            toolCallId: "call-1",
-            toolName: "echo_tool",
-            input: { value: "hello" },
-            output: { echoed: "hello" },
-          },
-        ],
-        finishReason: "tool-calls",
-        usage: {
-          inputTokens: 10,
-          outputTokens: 5,
-          totalTokens: 15,
-        },
-        warnings: [],
-        request: {},
-        response: {
-          id: "test-response-primary",
-          modelId: "test-model",
-          timestamp: new Date(),
-          messages: [],
-        },
-        steps: [],
-        get output() {
-          throw new ai.NoOutputGeneratedError();
-        },
-      };
-
-      const fallbackResponse = {
-        text: "Fallback structured response",
-        content: [{ type: "text", text: "Fallback structured response" }],
-        reasoning: [],
-        files: [],
-        sources: [],
-        toolCalls: [],
-        toolResults: [],
-        finishReason: "stop",
-        usage: {
-          inputTokens: 10,
-          outputTokens: 5,
-          totalTokens: 15,
-        },
-        warnings: [],
-        request: {},
-        response: {
-          id: "test-response-fallback",
-          modelId: "fallback-model",
-          timestamp: new Date(),
-          messages: [],
-        },
-        steps: [],
-        output: { message: "from fallback" },
-      };
-
-      vi.mocked(ai.generateText).mockImplementation(async (args: any) => {
-        if (args.model === mockModel) {
-          return primaryResponse as any;
-        }
-        if (args.model === fallbackModel) {
-          return fallbackResponse as any;
-        }
-        throw new Error("Unexpected model");
-      });
-
-      const result = await agent.generateText("Generate structured output", {
-        output: ai.Output.object({
-          schema: z.object({
-            message: z.string(),
-          }),
-        }),
-      });
-
-      expect(result.text).toBe("Fallback structured response");
-      expect(result.output).toEqual({ message: "from fallback" });
-      expect(vi.mocked(ai.generateText)).toHaveBeenCalledTimes(2);
-      expect(vi.mocked(ai.generateText).mock.calls[0][0].model).toBe(mockModel);
-      expect(vi.mocked(ai.generateText).mock.calls[1][0].model).toBe(fallbackModel);
-    });
-
-    it("should retry the same model before returning a response", async () => {
-      const agent = new Agent({
-        name: "RetryAgent",
-        instructions: "Test",
-        model: mockModel as any,
-        maxRetries: 2,
-      });
-
-      const mockResponse = {
-        text: "Retry response",
-        content: [{ type: "text", text: "Retry response" }],
-        reasoning: [],
-        files: [],
-        sources: [],
-        toolCalls: [],
-        toolResults: [],
-        finishReason: "stop",
-        usage: {
-          inputTokens: 10,
-          outputTokens: 5,
-          totalTokens: 15,
-        },
-        warnings: [],
-        request: {},
-        response: {
-          id: "retry-response",
-          modelId: "test-model",
-          timestamp: new Date(),
-          messages: [],
-        },
-        steps: [],
-      };
-
-      let callCount = 0;
-      vi.mocked(ai.generateText).mockImplementation(async () => {
-        callCount += 1;
-        if (callCount < 3) {
-          const error = new Error("Transient error");
-          (error as any).isRetryable = true;
-          throw error;
-        }
-        return mockResponse as any;
-      });
-
-      const result = await agent.generateText("Test");
-
-      expect(result.text).toBe("Retry response");
-      expect(vi.mocked(ai.generateText)).toHaveBeenCalledTimes(3);
-      for (const call of vi.mocked(ai.generateText).mock.calls) {
-        expect(call[0].maxRetries).toBe(0);
-      }
-    });
-
-    it("should honor the Retry-After header on retried model calls", async () => {
-      const agent = new Agent({
-        name: "RetryAfterAgent",
-        instructions: "Test",
-        model: mockModel as any,
-        maxRetries: 1,
-      });
-
-      const mockResponse = {
-        text: "Retry response",
-        content: [{ type: "text", text: "Retry response" }],
-        reasoning: [],
-        files: [],
-        sources: [],
-        toolCalls: [],
-        toolResults: [],
-        finishReason: "stop",
-        usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
-        warnings: [],
-        request: {},
-        response: {
-          id: "retry-after-response",
-          modelId: "test-model",
-          timestamp: new Date(),
-          messages: [],
-        },
-        steps: [],
-      };
-
-      const observedDelays: number[] = [];
-      const originalSetTimeout = global.setTimeout;
-      const setTimeoutSpy = vi.spyOn(global, "setTimeout").mockImplementation(((
-        cb: any,
-        delay: any,
-        ...args: any[]
-      ) => {
-        if (typeof delay === "number") observedDelays.push(delay);
-        return originalSetTimeout(cb, 0, ...args);
-      }) as typeof setTimeout);
-
-      let callCount = 0;
-      vi.mocked(ai.generateText).mockImplementation(async () => {
-        callCount += 1;
-        if (callCount < 2) {
-          const error = new Error("Rate limited");
-          (error as any).isRetryable = true;
-          (error as any).statusCode = 429;
-          (error as any).responseHeaders = { "retry-after": "30" };
-          throw error;
-        }
-        return mockResponse as any;
-      });
-
-      try {
-        const result = await agent.generateText("Test");
-
-        expect(result.text).toBe("Retry response");
-        expect(vi.mocked(ai.generateText)).toHaveBeenCalledTimes(2);
-        // attemptIndex=0: exponential floor=1000ms, server hint=30000ms ⇒ delay=30000.
-        expect(observedDelays).toContain(30_000);
-      } finally {
-        setTimeoutSpy.mockRestore();
-      }
-    });
-
+    // Retry/fallback contracts use real SDK loops in model-retry.spec.ts.
+    // Mocking generateText itself cannot exercise the provider-call boundary.
     it("should handle model errors gracefully", async () => {
       const agent = new Agent({
         name: "TestAgent",

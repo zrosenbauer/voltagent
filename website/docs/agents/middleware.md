@@ -9,6 +9,8 @@ Middleware runs before guardrails and hooks on each agent call. Use it to read o
 
 ## Execution Order
 
+When configured, `contextSchema` validates the merged context once before this pipeline. Middleware retries reuse that context without revalidating it. See [Schema Validation and Types](/docs/agents/context#schema-validation-and-types).
+
 `generateText` and `generateObject`:
 
 1. Input middlewares
@@ -91,15 +93,17 @@ Output middleware receives:
 
 Return a new value to replace the input or output; return `void` to keep the current value.
 
+For `generateText`, output middleware receives text even when you request structured output. After output middleware and guardrails finish, changed text is parsed with the requested `Output` specification so `result.text` and `result.output` stay consistent. Keep the replacement compatible with the schema; parsing failures reject the call without retrying the model or replaying tools. Unchanged text retains the original parsed output. See [Generated Output With Middleware and Guardrails](/docs/agents/structured-output#generated-output-with-middleware-and-guardrails).
+
 ## Retry Behavior
 
 Middleware retries are controlled by `maxMiddlewareRetries`. The default is `0`.
 
 - Call `abort("reason", { retry: true })` to request a retry.
-- Each retry restarts the full attempt: input middleware, guardrails, hooks, model selection, model retries/fallback, output middleware.
+- Each retry restarts the full attempt: input middleware, guardrails, hooks, model selection, model retries/fallback, output middleware. Tools completed during the previous attempt can execute again; use idempotency checks for actions with side effects.
 - The retry reason is added as a system message for the next attempt.
 - `retryCount` starts at `0` and increments after each middleware-triggered retry.
 - If `maxMiddlewareRetries` is exceeded, the middleware error is returned to the caller.
 - In streaming calls, retry can only happen before the stream starts, so only input middlewares can trigger it.
 
-Middleware retries are separate from model retries. Model retries use `maxRetries` and are evaluated per model call. For model fallback configuration, see [Retries and Fallbacks](/docs/agents/retries-fallback).
+Middleware retries are separate from model retries. Model retries use `maxRetries` to repeat only the failed provider call within the SDK loop, retaining completed steps and tool results. The retry counter resets for each new model step. For model fallback configuration, see [Retries and Fallbacks](/docs/agents/retries-fallback).

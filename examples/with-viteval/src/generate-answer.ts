@@ -1,6 +1,6 @@
-import { supervisorAgent } from "#/agents/supervisor";
-import type { Category } from "#/lib/categories";
-import { questionPrompt } from "#/lib/prompts";
+import { supervisorAgent } from "./agents/supervisor.js";
+import type { Category } from "./lib/categories.js";
+import { questionPrompt } from "./lib/prompts.js";
 
 /**
  * Generate an answer to a question.

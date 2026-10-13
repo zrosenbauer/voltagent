@@ -51,3 +51,27 @@ VoltAgent is an open-source TypeScript framework for creating and managing AI ag
 ```bash
 npm create voltagent-app@latest -- --example with-dynamic-parameters
 ```
+
+## Typed invocation context
+
+The agent declares `contextSchema` with `role`, `language`, and `tier`. The existing
+context Map is validated before dynamic instructions, model selection, or tool
+selection run. Defaults are `user`, `en`, and `free`.
+
+Inside `src/index.ts`, call the configured agent with:
+
+```ts
+const result = await dynamicAgent.generateText({
+  prompt: "Merhaba!",
+  voltagent: {
+    context: { role: "user", language: "tr", tier: "premium" },
+  },
+});
+```
+
+`context.get("language")` is inferred as `"tr" | "en" | undefined` in dynamic
+functions; no cast is needed. The `undefined` case remains because Map entries
+can be deleted. Invalid declared values fail validation before agent execution.
+
+The dynamic `tools` callback returns `ToolSet` explicitly so branches with
+different tool names satisfy the AI SDK tool dictionary type.

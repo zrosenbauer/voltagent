@@ -187,7 +187,8 @@ describe("Agent with Observability", () => {
       const llmSpan = endSpans.find(
         (span) =>
           span.attributes["span.type"] === "llm" &&
-          span.attributes["llm.operation"] === "generateText",
+          span.attributes["llm.operation"] === "generateText" &&
+          span.attributes["llm.provider_attempt"] !== true,
       );
       expect(llmSpan).toBeDefined();
       expect(llmSpan.attributes["usage.cost"]).toBe(0.0012);
@@ -246,7 +247,8 @@ describe("Agent with Observability", () => {
       const llmSpan = endSpans.find(
         (span) =>
           span.attributes["span.type"] === "llm" &&
-          span.attributes["llm.operation"] === "generateText",
+          span.attributes["llm.operation"] === "generateText" &&
+          span.attributes["llm.provider_attempt"] !== true,
       );
 
       expect(llmSpan).toBeDefined();
@@ -368,7 +370,8 @@ describe("Agent with Observability", () => {
       const llmSpan = endSpans.find(
         (span) =>
           span.attributes["span.type"] === "llm" &&
-          span.attributes["llm.operation"] === "generateText",
+          span.attributes["llm.operation"] === "generateText" &&
+          span.attributes["llm.provider_attempt"] !== true,
       );
       expect(llmSpan).toBeDefined();
       expect(llmSpan.status.code).toBe(SpanStatusCode.ERROR);

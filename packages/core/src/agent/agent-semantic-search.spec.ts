@@ -13,7 +13,8 @@ import { MemoryManager } from "../memory/manager/memory-manager";
 import { Agent } from "./agent";
 
 // Mock AI SDK functions
-vi.mock("ai", () => ({
+vi.mock("ai", async () => ({
+  ...(await vi.importActual<typeof import("ai")>("ai")),
   generateText: vi.fn(),
   streamText: vi.fn(),
   generateObject: vi.fn(),

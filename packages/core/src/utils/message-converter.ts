@@ -3,10 +3,27 @@
  */
 
 import type { AssistantModelMessage, ModelMessage, ToolModelMessage } from "@ai-sdk/provider-utils";
+import { safeStringify } from "@voltagent/internal";
 import type { FileUIPart, ReasoningUIPart, TextUIPart, ToolUIPart, UIMessage } from "ai";
 import { bytesToBase64 } from "./base64";
 import { randomUUID } from "./id";
 import { normalizeToolInputForModel } from "./tool-input";
+
+/** Model tool errors must survive conversion to persisted/UI tool parts. */
+function toolResultState(output: unknown) {
+  if (
+    output &&
+    typeof output === "object" &&
+    "type" in output &&
+    "value" in output &&
+    (output.type === "error-text" || output.type === "error-json")
+  ) {
+    const value = output.value;
+    const errorText = typeof value === "string" ? value : safeStringify(value);
+    return { state: "output-error" as const, errorText, output: undefined };
+  }
+  return { state: "output-available" as const, output, errorText: undefined };
+}
 
 const hasOpenAIReasoningProviderOptions = (providerOptions: unknown): boolean => {
   if (!providerOptions || typeof providerOptions !== "object") {
@@ -148,8 +165,7 @@ export async function convertResponseMessagesToUIMessages(
           }
           case "tool-result": {
             const assignOutput = (target: ToolUIPart) => {
-              target.state = "output-available";
-              target.output = contentPart.output;
+              Object.assign(target, toolResultState(contentPart.output));
               target.providerExecuted = true;
             };
 
@@ -169,9 +185,8 @@ export async function convertResponseMessagesToUIMessages(
             const resultPart = {
               type: `tool-${contentPart.toolName}` as const,
               toolCallId: contentPart.toolCallId,
-              state: "output-available" as const,
+              ...toolResultState(contentPart.output),
               input: {},
-              output: contentPart.output,
               providerExecuted: true,
             } satisfies ToolUIPart;
             uiMessage.parts.push(resultPart);
@@ -202,16 +217,14 @@ export async function convertResponseMessagesToUIMessages(
         if (toolResult.type === "tool-result") {
           const existing = toolPartsById.get(toolResult.toolCallId);
           if (existing) {
-            existing.state = "output-available";
-            existing.output = toolResult.output;
+            Object.assign(existing, toolResultState(toolResult.output));
             existing.providerExecuted = false;
           } else {
             const resultPart = {
               type: `tool-${toolResult.toolName}` as const,
               toolCallId: toolResult.toolCallId,
-              state: "output-available" as const,
+              ...toolResultState(toolResult.output),
               input: {},
-              output: toolResult.output,
               providerExecuted: false,
             } satisfies ToolUIPart;
             uiMessage.parts.push(resultPart);
@@ -245,7 +258,11 @@ function pushTextPart(
   providerOptions?: Record<string, any>,
 ) {
   const prev = parts.at(-1);
-  if (prev?.type?.startsWith("tool-") && "state" in prev && prev.state === "output-available") {
+  if (
+    prev?.type?.startsWith("tool-") &&
+    "state" in prev &&
+    (prev.state === "output-available" || prev.state === "output-error")
+  ) {
     parts.push({ type: "step-start" } satisfies UIMessage["parts"][number]);
   }
 
@@ -329,8 +346,7 @@ export function convertModelMessagesToUIMessages(messages: ModelMessage[]): UIMe
   ) => {
     const existing = toolPartsById.get(toolCallId);
     if (existing) {
-      existing.state = "output-available";
-      existing.output = output;
+      Object.assign(existing, toolResultState(output));
       existing.providerExecuted = providerExecuted;
       return true;
     }
@@ -338,8 +354,7 @@ export function convertModelMessagesToUIMessages(messages: ModelMessage[]): UIMe
     if (partsToSearch) {
       const fallback = findExistingToolPart(partsToSearch, toolCallId);
       if (fallback) {
-        fallback.state = "output-available";
-        fallback.output = output;
+        Object.assign(fallback, toolResultState(output));
         fallback.providerExecuted = providerExecuted;
         toolPartsById.set(toolCallId, fallback);
         return true;
@@ -351,8 +366,7 @@ export function convertModelMessagesToUIMessages(messages: ModelMessage[]): UIMe
       toolCallId,
     );
     if (globalFallback) {
-      globalFallback.state = "output-available";
-      globalFallback.output = output;
+      Object.assign(globalFallback, toolResultState(output));
       globalFallback.providerExecuted = providerExecuted;
       toolPartsById.set(toolCallId, globalFallback);
       return true;
@@ -380,9 +394,8 @@ export function convertModelMessagesToUIMessages(messages: ModelMessage[]): UIMe
                 {
                   type: `tool-${part.toolName}` as const,
                   toolCallId: part.toolCallId,
-                  state: "output-available" as const,
+                  ...toolResultState(part.output),
                   input: {},
-                  output: part.output,
                   providerExecuted: false,
                 } satisfies ToolUIPart,
               ],
@@ -526,9 +539,8 @@ export function convertModelMessagesToUIMessages(messages: ModelMessage[]): UIMe
             const resultPart = {
               type: `tool-${contentPart.toolName}` as const,
               toolCallId: contentPart.toolCallId,
-              state: "output-available" as const,
+              ...toolResultState(contentPart.output),
               input: {},
-              output: contentPart.output,
               providerExecuted: true,
             } satisfies ToolUIPart;
             ui.parts.push(resultPart);

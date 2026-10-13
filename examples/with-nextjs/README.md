@@ -62,3 +62,9 @@ pnpm voltagent:run
 ```
 
 Then open `https://console.voltagent.dev` and connect it to `http://localhost:3141`.
+
+## Runtime and production build
+
+Use Node.js 22 or later. Run `pnpm build` and `pnpm start` to test the production app.
+
+The development and build scripts select Webpack because the currently locked Next.js 16.0.7 Turbopack build fails when bundling the server runtime in this workspace. `next.config.ts` keeps server packages external and limits file tracing to this project or the VoltAgent workspace. Keep these settings when copying the example.

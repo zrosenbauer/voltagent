@@ -96,6 +96,7 @@ export function createGuardrailPipeline(
   _baseTextStream: AsyncIterableStream<string>,
   context: GuardrailStreamingContext | null,
   _fallbackTextId = "guardrailed-output",
+  getFinalStepText?: () => PromiseLike<string>,
 ): GuardrailPipeline {
   if (!context || context.guardrails.length === 0) {
     const stream = iterableToStream(baseFullStream);
@@ -151,6 +152,7 @@ export function createGuardrailPipeline(
           ? extractMetadataFromFinishPart(finishPart)
           : {};
 
+        if (getFinalStepText) runner.useFinalStepText(await getFinalStepText());
         await runner.finalize(finalizeMetadata);
 
         if (finishPart) {
@@ -205,7 +207,8 @@ export function createGuardrailPipeline(
   const createUIStream: GuardrailPipelineUIFactory = <UI_MESSAGE extends UIMessage>(
     options?: UIMessageStreamOptions<UI_MESSAGE>,
   ): AsyncIterableStream<InferUIMessageChunk<UI_MESSAGE>> => {
-    const streamOptions = options ?? {};
+    const streamOptions = (options ?? {}) as UIMessageStreamOptions<UI_MESSAGE> &
+      Pick<Parameters<typeof createUIMessageStream<UI_MESSAGE>>[0], "onStepEnd" | "onStepFinish">;
     const onError = streamOptions.onError ?? defaultUIStreamError;
 
     const [currentReadable, nextReadable] = uiReadable.tee();
@@ -214,7 +217,8 @@ export function createGuardrailPipeline(
     const uiStream = createUIMessageStream<UI_MESSAGE>({
       originalMessages: streamOptions.originalMessages,
       onError,
-      onEnd: streamOptions.onFinish,
+      onEnd: streamOptions.onEnd ?? streamOptions.onFinish,
+      onStepEnd: streamOptions.onStepEnd ?? streamOptions.onStepFinish,
       generateId: streamOptions.generateMessageId,
       execute: async ({ writer }) => {
         const reader = currentReadable.getReader();

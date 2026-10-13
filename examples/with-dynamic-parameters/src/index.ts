@@ -2,6 +2,7 @@ import { Agent, Memory, VoltAgent, tool } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
+import type { ToolSet } from "ai";
 import { z } from "zod";
 
 const greetingTool = tool({
@@ -33,9 +34,14 @@ const logger = createPinoLogger({
 
 const dynamicAgent = new Agent({
   name: "Simple Dynamic Agent",
+  contextSchema: z.object({
+    role: z.enum(["user", "admin"]).default("user"),
+    language: z.enum(["tr", "en"]).default("en"),
+    tier: z.enum(["free", "premium"]).default("free"),
+  }),
   instructions: ({ context }) => {
-    const role = (context.get("role") as string) || "user";
-    const language = (context.get("language") as string) || "English";
+    const role = context.get("role") ?? "user";
+    const language = context.get("language") ?? "en";
 
     if (role === "admin") {
       return `You are an admin assistant. Respond in ${language}. You have special privileges.`;
@@ -43,14 +49,14 @@ const dynamicAgent = new Agent({
     return `You are a helpful assistant. Respond in ${language}. You help with basic questions.`;
   },
   model: ({ context }) => {
-    const tier = (context.get("tier") as string) || "free";
+    const tier = context.get("tier") ?? "free";
     if (tier === "premium") {
       return "openai/gpt-4o-mini";
     }
     return "openai/gpt-3.5-turbo";
   },
-  tools: ({ context }) => {
-    const role = (context.get("role") as string) || "user";
+  tools: ({ context }): ToolSet => {
+    const role = context.get("role") ?? "user";
     if (role === "admin") {
       return {
         admin_action: adminTool,

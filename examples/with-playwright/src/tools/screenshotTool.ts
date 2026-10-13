@@ -6,9 +6,9 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import { createTool } from "@voltagent/core";
-import type { OperationContext } from "@voltagent/core";
+import type { ToolExecuteOptions } from "@voltagent/core";
 import { z } from "zod";
-import { safeBrowserOperation } from "./browserBaseTools";
+import { safeBrowserOperation } from "./browserBaseTools.js";
 
 /**
  * Tool for capturing a screenshot of the current page
@@ -42,9 +42,9 @@ export const screenshotTool = createTool({
       .default(30000)
       .describe("Maximum time in milliseconds for the screenshot operation."),
   }),
-  execute: async (args, oc?: OperationContext) => {
+  execute: async (args, oc?: ToolExecuteOptions) => {
     if (!oc?.context) {
-      throw new Error("OperationContext is missing or invalid.");
+      throw new Error("ToolExecuteOptions is missing or invalid.");
     }
     return safeBrowserOperation(oc, async (page) => {
       const screenshotOptions: Parameters<typeof page.screenshot>[0] = {

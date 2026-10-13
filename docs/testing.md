@@ -65,7 +65,7 @@ describe("YourType", () => {
 });
 ```
 
-[Type Test Documentation](https://vitest.dev/guide/testing-types.html
+[Type Test Documentation](https://vitest.dev/guide/testing-types.html)
 
 ### Mocking
 
@@ -92,23 +92,21 @@ const mockExecute = vi.fn();
 VoltAgent is built on top of the `ai` SDK, and uses the `ai/test` package to mock the AI SDK functions for testing.
 
 ```typescript
-import { MockLanguageModelV3 } from "ai/test";
+import { MockLanguageModelV4 } from "ai/test";
 import { Agent } from "./agent";
 
 describe("Agent", () => {
-  let mockModel: MockLanguageModelV3;
+  let mockModel: MockLanguageModelV4;
 
   beforeEach(() => {
-    mockModel = new MockLanguageModelV3({
+    mockModel = new MockLanguageModelV4({
       doGenerate: vi.fn().mockResolvedValue({
-        finishReason: "stop",
+        finishReason: { unified: "stop", raw: "stop" },
         content: [{ type: "text", text: "Hello, world!" }],
+        warnings: [],
         usage: {
-          inputTokens: 10,
-          outputTokens: 20,
-          totalTokens: 30,
-          inputTokenDetails: { noCacheTokens: 10, cacheReadTokens: 0, cacheWriteTokens: 0 },
-          outputTokenDetails: { textTokens: 20, reasoningTokens: 0 },
+          inputTokens: { total: 10, noCache: 10, cacheRead: 0, cacheWrite: 0 },
+          outputTokens: { total: 20, text: 20, reasoning: 0 },
         },
       }),
     });
@@ -147,3 +145,18 @@ describe("Tool", () => {
   });
 });
 ```
+
+## AI SDK Compatibility Matrix
+
+After building core and its dependencies, run:
+
+```bash
+pnpm test:ai-sdk 7.0.0  # Minimum supported AI SDK version
+pnpm test:ai-sdk 7      # Latest release in the supported major
+```
+
+The runner installs the selected SDK in a temporary directory, leaving workspace dependencies and the lockfile unchanged. It runs real-SDK agent contracts with mock providers, typechecks core and its type tests against that version, then compiles a consumer of the built `dist/index.d.ts`. Build core again after editing public types so the consumer sees the current declarations.
+
+The reusable `ai-sdk-compatibility.yml` workflow runs both versions on Node 22 and 24 for pull requests, prereleases, and stable releases. Publish jobs depend on it. These checks need no provider API credentials. A failure in the latest 7.x job identifies SDK compatibility drift before publishing.
+
+For an existing isolated SDK installation, set `VOLTAGENT_AI_SDK_NODE_MODULES` to its absolute `node_modules` directory. The runner verifies the installed SDK version matches the requested version (or belongs to major 7).

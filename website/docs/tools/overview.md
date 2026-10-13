@@ -14,9 +14,9 @@ A tool requires:
 
 - `description`: A clear description of what the tool does (used by the LLM to decide when to use it).
 - `inputSchema`: A Zod schema defining the input arguments the tool expects.
-- `execute`: An asynchronous function that contains the tool's logic, taking the validated arguments as input.
-- `outputSchema` (optional): A Zod schema defining the expected output format. When provided, the tool's output will be validated against this schema.
-- `voltagent` (optional): VoltAgent-only metadata such as tags, hooks, and static approval metadata.
+- `execute` (optional): The tool's logic, receiving validated arguments and native AI SDK execution options. It may return a value, a promise, or an async iterable. Omit it for client-side tools.
+- `outputSchema` (optional): A Zod schema defining the expected output format. Set `voltagent.validateOutput: true` to validate the final output against this schema at runtime.
+- `voltagent` (optional): VoltAgent extensions such as tags, hooks, `validateOutput`, and static approval metadata.
 
 ```typescript
 import { Agent, tool } from "@voltagent/core";
@@ -49,6 +49,23 @@ const agent = new Agent({
 
 // Now the agent can use the 'get_weather' tool when asked about weather.
 ```
+
+## Client-Side Tools
+
+Both `tool` from `ai` and `tool` from `@voltagent/core` accept definitions without `execute` or `outputSchema`:
+
+```ts
+import { tool } from "@voltagent/core";
+import { z } from "zod";
+
+const getLocation = tool({
+  description: "Ask the client for its location",
+  inputSchema: z.object({}),
+  voltagent: { tags: ["browser"] },
+});
+```
+
+Register it under `tools: { getLocation }` and supply its result from your client. An explicit `outputSchema` can describe that result when needed. Tools that define `execute` retain a directly callable, typed `execute` function. See the [client-side tools example](https://github.com/VoltAgent/voltagent/tree/next/examples/with-client-side-tools).
 
 ## Accessing Tool Context
 
@@ -117,7 +134,7 @@ For more details, see the [Tools documentation](/docs/agents/tools#accessing-too
 
 ## Tool Output Schema Validation
 
-VoltAgent supports optional output schema validation for tools. This feature ensures that tool outputs conform to a predefined structure, providing several benefits:
+VoltAgent supports explicit output schema validation for native tools with `voltagent.validateOutput: true`. Legacy `createTool` retains automatic validation when `outputSchema` is provided. This feature ensures that tool outputs conform to a predefined structure, providing several benefits:
 
 - **Type Safety**: Tool outputs are typed based on the schema
 - **Runtime Validation**: Invalid outputs are caught immediately
@@ -150,7 +167,8 @@ const weatherTool = tool({
   inputSchema: z.object({
     location: z.string().describe("City name"),
   }),
-  outputSchema: weatherOutputSchema, // Optional output schema
+  outputSchema: weatherOutputSchema,
+  voltagent: { validateOutput: true },
   execute: async ({ location }) => {
     // This output will be validated against weatherOutputSchema
     return {
@@ -170,18 +188,12 @@ const weatherTool = tool({
 
 ### How Output Validation Works
 
-1. When a tool is executed, its output is validated against the `outputSchema` if provided
-2. If validation succeeds, the validated output is returned
-3. If validation fails, an error object is returned to the LLM:
-   ```json
-   {
-     "error": true,
-     "message": "Output validation failed: Expected number, received string",
-     "validationErrors": [...],
-     "actualOutput": {...}
-   }
-   ```
-4. The LLM can see the validation error and potentially fix the issue by calling the tool again
+1. With `voltagent.validateOutput: true`, the final output is validated against `outputSchema` using the SDK's schema validator, including asynchronous schemas.
+2. Validated data is returned, including schema transformations and defaults. Final output overrides and error recovery outputs are also validated.
+3. Invalid output becomes an SDK `tool-error` unless an `onToolError` hook explicitly supplies a valid recovery result. The model receives an error output and can continue according to the configured stop conditions.
+4. Streaming progress values are not checked against the final schema. Validation buffers one value so the final value is checked before it is emitted.
+
+Without `validateOutput`, native tools keep AI SDK output semantics; `outputSchema` alone does not validate or transform their runtime values. See [Native Execution and Errors](/docs/agents/tools#native-execution-and-errors) for error handling and legacy compatibility.
 
 ### Best Practices
 

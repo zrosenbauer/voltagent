@@ -46,8 +46,8 @@
     "directory": "examples/with-assistant-ui"
   },
   "scripts": {
-    "build": "next build",
-    "dev": "next dev --turbopack",
+    "build": "next build --webpack",
+    "dev": "next dev --webpack",
     "start": "next start",
     "voltagent:run": "tsx --env-file=.env ./voltagent/server.ts"
   }

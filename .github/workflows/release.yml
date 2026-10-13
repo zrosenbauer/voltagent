@@ -9,6 +9,9 @@ env:
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
 
 jobs:
+  ai-sdk-compatibility:
+    uses: ./.github/workflows/ai-sdk-compatibility.yml
+
   test-packages:
     runs-on: ubuntu-latest
     strategy:
@@ -32,7 +35,7 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: "pnpm"
       - name: Install Dependencies
         run: pnpm install
@@ -59,7 +62,7 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: "pnpm"
       - name: Install Dependencies
         run: pnpm install
@@ -71,7 +74,7 @@ jobs:
         run: pnpm --filter @voltagent/e2e test
 
   publish:
-    needs: [test-packages, e2e-tests]
+    needs: [test-packages, e2e-tests, ai-sdk-compatibility]
     permissions:
       contents: write
       id-token: write
@@ -104,7 +107,7 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: "pnpm"
       - name: Creating .npmrc
         run: |

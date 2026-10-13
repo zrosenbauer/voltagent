@@ -48,9 +48,36 @@ Avoid when:
 - Non-technical team members need to edit prompts
 - You need prompt versioning outside of code commits
 
+## Per-call Prompts and Instructions
+
+Both `generateText` and `streamText` accept a string or native AI SDK `ModelMessage[]` in `prompt`. Use either `prompt` or `messages`, never both. `messages` also accepts VoltAgent's existing `UIMessage[]` input.
+
+```ts
+await agent.generateText({
+  prompt: [{ role: "user", content: "Summarize this conversation" }],
+  instructions: "Keep the answer under three sentences.",
+});
+```
+
+Call-level `instructions` takes precedence over its deprecated `system` alias, including when `instructions` is an empty string. These instructions are added to the agent's configured instructions, memory, and other framework context; they do not replace the constructor's instructions.
+
+Caller-provided system messages require `allowSystemInMessages: true`. Prefer `instructions` for application-owned system instructions. Only enable the flag for message histories you trust:
+
+```ts
+await agent.streamText({
+  messages: [
+    { role: "system", content: "Trusted application instructions" },
+    { role: "user", content: "Hello" },
+  ],
+  allowSystemInMessages: true,
+});
+```
+
+When enabled, the supplied system messages keep their position in the conversation. The flag applies to caller input, including positional calls and legacy object methods. VoltAgent's own instructions and memory preparation remain available without enabling it. Conflicting input fields, empty message arrays, and unapproved system messages throw AI SDK `InvalidPromptError` before context validation, memory preparation, or generation hooks.
+
 ## Dynamic Instructions
 
-Dynamic instructions are functions that receive runtime context and return instructions.
+Dynamic instructions are functions that receive runtime context and return instructions. Add an agent-level [`contextSchema`](/docs/agents/context#schema-validation-and-types) to infer the types returned by `context.get()` and validate the merged context before this function runs. The same schema also types dynamic model and tool functions.
 
 ### Returning Strings
 

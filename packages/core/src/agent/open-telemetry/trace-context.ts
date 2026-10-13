@@ -283,6 +283,17 @@ export class AgentTraceContext {
     }
   }
 
+  /** Preserve the return kind when invoking a native streaming tool. */
+  withSpanSync<T>(span: Span, fn: () => T): T {
+    const spanContext = trace.setSpan(this.activeContext, span);
+    pushActiveSpan(span);
+    try {
+      return context.with(spanContext, fn);
+    } finally {
+      popActiveSpan(span);
+    }
+  }
+
   /**
    * Get the root span
    */

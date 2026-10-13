@@ -92,6 +92,7 @@
     "start": "lerna run start",
     "sync:docs-mcp": "node scripts/sync-docs-mcp.js",
     "test": "lerna run test --stream",
+    "test:ai-sdk": "node scripts/test-ai-sdk-compatibility.mjs",
     "test:all": "lerna run test --stream --scope @voltagent/*",
     "test:all:coverage": "pnpm test:all -- -- --coverage",
     "test:coverage": "pnpm test -- -- --coverage",

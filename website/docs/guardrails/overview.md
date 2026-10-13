@@ -398,6 +398,10 @@ type OutputGuardrailStreamResult =
 
 ### Execution Flow
 
+For `generateText`, modifying the final text also reparses `result.output` with the requested output specification. Redactions must remain valid for the schema; otherwise the call rejects through the error hooks without retrying the model or replaying tools. With the default text output, `result.output` contains the guarded text, including an empty replacement. See [Generated Output With Middleware and Guardrails](/docs/agents/structured-output#generated-output-with-middleware-and-guardrails).
+
+For `streamText` structured output, final `output`, partial objects, and array elements wait for the output guardrail decision and are parsed from sanitized final-step text. They do not stream incrementally while output guardrails are active. Text/UI chunks still use `streamHandler`; a final-only `handler` cannot retract chunks already delivered. SDK diagnostic fields such as `content`, `steps`, and response messages retain their original records for both generation methods. See [Structured Output With Guardrails](/docs/agents/structured-output#structured-output-with-guardrails).
+
 1. An agent publishes each `text-delta` part to the guardrail runner.
 2. Every guardrail with a `streamHandler` is invoked sequentially for that part. The handler can:
    - Return the part (possibly modified) to forward it downstream.

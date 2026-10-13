@@ -79,19 +79,27 @@ For TypeScript projects, use a module resolution mode that matches your toolchai
 
 ### 3.1 Update VoltAgent packages
 
-Use the Volt CLI if your project already has it:
+While VoltAgent 3 is in prerelease, explicitly select the `next` channel:
+
+```bash
+pnpm add @voltagent/core@next @voltagent/server-hono@next @voltagent/logger@next
+# If you use LibSQL memory:
+pnpm add @voltagent/libsql@next
+```
+
+`@latest` follows the stable channel and does not select the v3 prerelease. After the stable v3 release, use the Volt CLI if your project already has it:
 
 ```bash
 npm run volt update
 ```
 
-Or update the packages manually:
+Or update the stable packages manually:
 
 ```bash
 pnpm add @voltagent/core@latest @voltagent/server-hono@latest @voltagent/logger@latest
 ```
 
-If you use memory/storage/server/protocol packages, update all `@voltagent/*` packages to the same major version.
+Update your memory, storage, server, and protocol packages to compatible versions from the same release channel. Package majors are not identical across the project: for example, the CLI has its own version series. Check each package's peer dependencies rather than forcing every `@voltagent/*` package to the same major.
 
 ### 3.2 Update AI SDK packages
 
@@ -138,13 +146,13 @@ VoltAgent 3.x is Zod 4-only. Remove Zod 3 pins from your app and templates:
 pnpm add zod@^4
 ```
 
-If you have custom code that imports Zod 3-specific internals or `zod/v3`, update it to the public Zod 4 API before upgrading VoltAgent.
+Use the public Zod 4 API for schemas passed to VoltAgent or AI SDK. A third-party integration that still requires Zod 3 can use `zod/v3` inside its own adapter, but must not pass those schemas to VoltAgent. For example, the ad-creator example accepts a serializable field definition through a Zod 4 tool schema, then constructs a separate Zod 3 schema for Stagehand 2 inside `execute`.
 
 ## Step 4. Keep using the AI SDK-style agent call shape
 
 The object-style call shape introduced in 2.x remains the preferred API. Keep AI SDK generation settings at the top level and VoltAgent runtime options under `voltagent`:
 
-VoltAgent 3.x derives most public generation options from AI SDK v7 `generateText` and `streamText`, so AI SDK settings such as `timeout`, `headers`, `include`, `activeTools`, `toolOrder`, `experimental_download`, `onChunk`, and stream lifecycle callbacks can be used directly on the agent call.
+VoltAgent 3.x derives public generation options from the corresponding AI SDK v7 method. Settings such as `timeout`, `headers`, `include`, `activeTools`, `toolOrder`, and `experimental_download` can be used directly on the agent call. Streaming-only options such as `onChunk` belong on `streamText`, not `generateText`.
 
 `@voltagent/core` also re-exports common AI SDK primitives and types such as `generateText`, `streamText`, `generateObject`, `streamObject`, `embed`, `embedMany`, `Output`, `ToolSet`, and `LanguageModel`. Direct function exports keep native AI SDK behavior. Use `agent.generateText()` and `agent.streamText()` when you want VoltAgent orchestration features such as memory, guardrails, middleware, retries, fallbacks, tracing, and tool routing.
 
@@ -195,7 +203,7 @@ const result = await agent.streamText({
 });
 ```
 
-VoltAgent composes only the fields it must own for framework behavior: `model`, `prompt`/`messages`, `tools`, `abortSignal`, and `maxRetries`. Call-level AI SDK callbacks such as `onStart`, `onStepStart`, `onChunk`, `onAbort`, `onStepEnd`, `onEnd`/`onFinish`, and `onError` are still passed at the top level and receive raw AI SDK events. Use `hooks.*` when you need VoltAgent's post-memory, post-middleware, post-guardrail, or tracing context.
+VoltAgent composes only the fields it must own for framework behavior: `model`, `prompt`/`messages`, `tools`, `abortSignal`, and `maxRetries`. Tool execution callbacks are composed with VoltAgent preparation and cleanup while preserving native event payloads. Call-level AI SDK callbacks such as `onStart`, `onStepStart`, `onChunk`, `onAbort`, `onStepEnd`, `onEnd`/`onFinish`, and `onError` are still passed at the top level and receive raw AI SDK events. Use `hooks.*` when you need VoltAgent's post-memory, post-middleware, post-guardrail, or tracing context.
 
 Top-level AI SDK `runtimeContext`, `toolsContext`, `telemetry`, and `experimental_telemetry` pass through on VoltAgent calls. Use `toolsContext` for native AI SDK tools that declare `contextSchema`. Use `voltagent.context` for VoltAgent runtime state that should be visible to memory, hooks, guardrails, middleware, and tools through VoltAgent's operation context.
 
@@ -571,10 +579,14 @@ const result = await agent.generateText({
 - rename `parameters` to `inputSchema`.
 - move `tags`, `hooks`, and other VoltAgent-only metadata to the `voltagent` namespace, or to `enhanceTool()` when decorating an existing AI SDK tool.
 - use VoltAgent metadata `name` only as display metadata. Telemetry and tool calls keep using the ToolSet key as canonical `tool.name`; metadata `name` is exposed as `tool.display_name`.
-- keep `execute`, `outputSchema`, `providerOptions`, and `toModelOutput` in the AI SDK tool definition.
+- keep `execute`, `outputSchema`, `providerOptions`, and `toModelOutput` in the AI SDK tool definition. Add `voltagent.validateOutput: true` if you relied on automatic output validation or schema transformations.
 - keep AI SDK `contextSchema` in the tool definition and pass matching per-tool values through call-level `toolsContext`.
 - use `runtimeContext`, `toolsContext`, telemetry, and other AI SDK options at the top level when you want native AI SDK behavior.
 - use `voltagent.context` on the agent call for VoltAgent runtime state that should be visible to memory, guardrails, middleware, hooks, and VoltAgent-managed tools.
+
+The `tool()` helper matches AI SDK's overloads. Client-side tools can omit both `execute` and `outputSchema`; handle their calls in the browser and return an output or error with `addToolResult`. When a definition includes `execute`, the returned tool retains a directly callable, typed `execute` function. These inference fixes do not change tool execution behavior.
+
+`PlanAgent` still accepts an array of named `createTool()` tools. Keep that format for `PlanAgent`; the `Agent` ToolSet migration does not apply to its `tools` option.
 
 Use call-level `toolApproval` when approval should be controlled per request, per user, or per runtime context. Use `voltagent.needsApproval` only for static tool metadata or compatibility with existing VoltAgent tool policies.
 
@@ -609,6 +621,176 @@ const screenshotTool = tool({
 `tool()` from `@voltagent/core` is AI SDK-compatible and is the recommended import when defining new VoltAgent tools. Raw AI SDK tools are still first-class and do not require a VoltAgent wrapper. Use `enhanceTool()` only when you want VoltAgent metadata around a prebuilt raw AI SDK tool.
 
 Provider-defined AI SDK tools can also be passed in the same `tools` object. Provider-owned tools are still passed through to AI SDK unchanged; use `enhanceTool()` when VoltAgent should apply hooks, preserve tags, or attach approval/API metadata around a user-executed AI SDK tool created elsewhere.
+
+### Tool execution behavior changes
+
+These changes apply to native tools: raw `ai.tool()`, `tool()` from `@voltagent/core`, and tools decorated with `enhanceTool()`. Existing `createTool` tools retain their legacy execution context, automatic output validation, and serialized error results.
+
+| Behavior                                    | Native tools in VoltAgent 3.x                                                                                             | Migration action                                                                                                                      |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Thrown errors and rejected promises         | SDK `tool-error`; model messages carry an error output and UI streams emit `tool-output-error`.                           | Read errors from `result.content` / each step's `content`, or stream events, rather than looking for `output.error` in `toolResults`. |
+| `onToolError` returns `{ output }`          | Explicit recovery produces a normal tool result. Returning nothing preserves the original exception.                      | Keep existing recovery hooks if you intentionally return fallback or structured error data.                                           |
+| `toModelOutput`                             | Runs for successful/recovered results, not unrecovered exceptions.                                                        | Move exception formatting to explicit recovery if your converter depended on VoltAgent's old error object.                            |
+| `outputSchema`                              | Does not implicitly validate, trim, transform, apply defaults, or remove fields.                                          | Enable `voltagent.validateOutput: true` to validate final outputs and replacements.                                                   |
+| `AsyncIterable` outputs                     | Every yield is preliminary and the last yield is also the final result, including ordinary functions returning iterables. | Handle preliminary results if your UI previously saw only the final value.                                                            |
+| `Promise<AsyncIterable>` outputs            | The resolved iterable is an ordinary output value; the SDK does not consume it as a stream.                               | Return an iterable directly, using an async generator for asynchronous setup.                                                         |
+| VoltAgent end hooks / validation on streams | One-value lookahead keeps the final value available for transformation or validation.                                     | Use SDK `onToolExecutionEnd` for observation without buffering. Final schemas are not applied to progress values.                     |
+| Start-hook / guardrail timeout coverage     | Preparation finishes before the SDK starts `timeout.toolMs` or a per-tool timeout.                                        | Give long-running hooks their own deadline and honor the operation abort signal.                                                      |
+
+An ordinary thrown tool error does not inherently terminate the agent: the SDK can send it to the model and continue according to the stop conditions. An explicit `return { error: true }` remains a normal result.
+
+Update error consumers:
+
+```ts
+const result = await agent.generateText({ prompt: "Check the order" });
+
+for (const step of result.steps) {
+  for (const part of step.content) {
+    if (part.type === "tool-error") {
+      console.error(part.toolName, part.error);
+    }
+  }
+}
+```
+
+Native validation failures use the SDK schema-validation error shape. If you inspected legacy `validationErrors` or `actualOutput` fields, update that handling when migrating.
+
+Enable validation explicitly when moving from `createTool` or an earlier `next` build:
+
+```ts
+import { tool, enhanceTool } from "@voltagent/core";
+import { z } from "zod";
+
+const lookup = tool({
+  inputSchema: z.object({ id: z.string() }),
+  outputSchema: z.object({ name: z.string().trim() }),
+  execute: async ({ id }) => lookupRecord(id),
+  voltagent: { validateOutput: true },
+});
+
+// For a tool created by another package:
+const validatedExternalTool = enhanceTool(externalTool, { validateOutput: true });
+```
+
+With `validateOutput` enabled, validation covers the successful final output, output-changing end hooks, and explicit error-recovery output. Progress values are not checked against the final output schema. If you relied on the earlier wrapper validating every yield, validate progress explicitly inside your generator. Recovery output must now satisfy the schema too.
+
+Move asynchronous stream setup into the generator body:
+
+```ts
+// Before: resolves to an iterable; earlier VoltAgent wrappers consumed it.
+const before = tool({
+  inputSchema: z.object({ id: z.string() }),
+  execute: async ({ id }) => {
+    const report = await openReport(id);
+    return report.updates();
+  },
+});
+
+// After: returns an iterable directly, as required for native SDK streaming.
+const after = tool({
+  inputSchema: z.object({ id: z.string() }),
+  async *execute({ id }) {
+    const report = await openReport(id);
+    yield* report.updates();
+  },
+});
+```
+
+Tracing, tool/agent hooks, explicit recovery, approval, parallel input guardrails, and legacy workspace/memory access remain available. VoltAgent start hooks are awaited before native `execute`; start hooks use the operation abort signal, while `execute` and end hooks receive the SDK's per-tool signal. Disabling SDK telemetry does not disable guardrail enforcement.
+
+Start hooks and the parallel guardrail wait now run outside the SDK's per-tool timeout. Use an explicit deadline for long-running hook work if you previously relied on `timeout.toolMs` or `timeout.tools` covering it. Pass the hook's `options.toolContext.abortSignal` to cancellable operations; an abort signal alone cannot stop code that ignores it.
+
+`prepareStep` updates to `toolsContext` and `runtimeContext` also reach routed tools. Routing still uses the legacy outer `callTool`: hidden tool progress is consumed inside that call, and its error envelope remains the legacy one.
+
+### Model retry and fallback changes
+
+`maxRetries` now applies to each provider call within the SDK loop. Earlier VoltAgent versions could restart the entire generation, replay completed tools, and omit earlier successful steps from the returned result when a later model call failed. Retries and fallback now reuse the current step's prepared prompt and retain completed tools, step results, and memory records.
+
+| Behavior                          | VoltAgent 3.x                                                                                                   | Migration action                                                                                                                                                        |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Retry scope                       | Only the failed provider call is repeated; the retry counter resets per step.                                   | Expect `onRetry.attempt` to restart at `1` for a new model step.                                                                                                        |
+| Model fallback                    | Continues with the current prompt and tool results; subsequent steps stay on the successful fallback.           | Ensure fallback models accept the same prepared inputs, tools, and output format.                                                                                       |
+| Streaming                         | Recovery is possible before content starts in the current step, even after earlier steps streamed successfully. | After the current step emits content, handle the error without expecting VoltAgent to replay that stream.                                                               |
+| Missing/invalid structured output | Parsing and validation failures after a successful provider call do not retry or fall back automatically.       | Handle the validation failure explicitly. For tools plus structured output, allow a final model step or use a separate formatting call with the completed tool results. |
+| `prepareStep` model overrides     | The selected model receives call/agent retries, without falling through to the configured agent model list.     | Keep explicit per-step model selection intentional; the callback runs once per SDK step, not per retry.                                                                 |
+| Invalid retry counts              | Negative, fractional, `NaN`, and infinite `maxRetries` values are rejected.                                     | Supply a non-negative integer.                                                                                                                                          |
+
+`onRetry`, `onFallback`, per-model retry settings, dynamic model references, `Retry-After` backoff, and tracing remain available. Abort and SDK step/total timeouts interrupt backoff. Provider stream-start/response metadata are buffered until the attempt begins producing content; text/reasoning start events and tool input commit that attempt.
+
+Middleware retries remain a separate, explicit full-pipeline restart and can replay tools. Likewise, a model can request the same business action again in a later response; this change prevents replay caused by provider retry, not all duplicate business actions. See [Retries and Fallbacks](/docs/agents/retries-fallback) for details.
+
+### Native call inputs and method-specific options
+
+`generateText` and `streamText` now accept a call-level `model` and `prompt: ModelMessage[]`:
+
+```ts
+await agent.generateText({
+  model: "openai/gpt-4o-mini",
+  prompt: [{ role: "user", content: "Hello" }],
+});
+```
+
+The override replaces the constructor model/fallback list for one invocation and participates in retries and tracing. It does not change later calls. Previously, the public types rejected `model`, and forcing it through JavaScript could bypass provider retries.
+
+Review these input behavior changes:
+
+- Supplying both `prompt` and `messages` now throws `InvalidPromptError`; previously, `prompt` silently won.
+- `instructions` now takes precedence over deprecated `system`; previously, both were concatenated. An empty `instructions` string also suppresses the alias. Agent-level instructions remain additive.
+- Caller-provided system messages require `allowSystemInMessages: true`, including positional calls and deprecated object methods. Prefer moving application-owned system text into `instructions`. Only enable the flag for trusted histories; allowed system messages retain their position.
+- Empty message arrays are rejected before memory can fill them. Input validation runs before context validation and generation hooks.
+- `generateText` no longer accepts stream-only options such as `onChunk`, `onError`, and `experimental_transform`. Use `streamText` for native streaming callbacks, or `voltagent.hooks.onError` for framework failures.
+- Native callback signatures follow the installed SDK version. Upgrade AI SDK before using newer features such as `streamRetries` and an `onError` retry decision; older SDK types no longer imply support for them.
+
+### Typed and validated context
+
+Add an optional `contextSchema` to an agent to type and validate the existing `context` Map. Continue using dynamic `instructions`, `model`, and `tools` functions. Inline agent hooks and generation results also infer declared context fields. No separate invocation-data field or preparation callback is required.
+
+Plain-object constructor and call inputs use the schema's input types; callbacks read validated output types. Inputs may be partial because defaults and parent context are merged first. Missing required fields are checked at runtime on that merged context. Invalid context throws `AgentContextValidationError` (`INVALID_CONTEXT`, HTTP `400` through server adapters) before generation hooks run.
+
+Explicit Maps and parent context retain their shared identity; successful validation writes parsed values/defaults into them. Unknown entries and symbols remain available. Constructor-only defaults are copied per invocation when a schema is configured. Agents without `contextSchema` keep their existing behavior. Runtime mutations are not revalidated automatically, and typed `get()` still includes `undefined` because Map entries can be deleted.
+
+See [Schema Validation and Types](/docs/agents/context#schema-validation-and-types) for precedence, transforms, subagents, and HTTP examples.
+
+### Generated result changes
+
+`agent.generateText()` now keeps `result.output` consistent with the final `result.text` after output middleware and guardrails. Previously, `text` could be redacted while `output` still contained the original model value.
+
+- Changed text is parsed with the same `Output` specification. Keep transformations compatible with the schema; invalid transformed output now rejects the call before VoltAgent's success hook and invokes error hooks. It does not trigger provider retries, fallback, or tool replay.
+- Without an explicit `output`, the result infers a string. Empty replacements remain empty. Subagent early termination (`bail`) also supplies a parsed `output` and validates structured replacements.
+- Unchanged text preserves the native parsed value. Custom parsers and schema transforms run a second time only when the final text changed. The SDK still parses the original model response before output middleware and guardrails run.
+- `runtimeContext` retains its inferred type in `steps` and `finalStep` instead of being widened to `any`.
+- Native SDK callbacks and diagnostic fields (`content`, `steps`, `finalStep`, `response`, and `responseMessages`) retain original records. Use `text` and `output` for processed content displayed to users.
+
+See [Generated Output With Middleware and Guardrails](/docs/agents/structured-output#generated-output-with-middleware-and-guardrails) for details.
+
+### Streaming result and callback changes
+
+`agent.streamText()` now retains the native AI SDK result interface, including `output`, `elementStream`, `content`, `warnings`, `finalStep`, `responseMessages`, provider metadata, and tool-call/result aggregates. Structured output, tool types, and `runtimeContext` are inferred in the result. VoltAgent's `context` and `feedback` remain available.
+
+| Surface                                  | VoltAgent 3.x behavior                                                                                                                      | Migration action                                                                                                        |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `stream` / `fullStream`                  | Both async iterable and `ReadableStream`; separate getter accesses create independent branches. VoltAgent subagent events remain available. | Existing `for await` loops keep working. Use `getReader()`, `pipeTo()`, or `consumeStream()` when useful.               |
+| Structured values with output guardrails | `output`, partial values, and elements wait for final validation and are parsed from sanitized final-step text.                             | Expect delayed partial/element delivery when guardrails are enabled. Keep redactions compatible with the output schema. |
+| Final guarded text                       | Uses the final model step and excludes abandoned native stream-retry attempts. Filtering all text preserves an empty result.                | Do not rely on final text including earlier tool-step narration or restoring filtered text.                             |
+| Diagnostic result fields                 | Preserve original SDK records, including unredacted content and response messages.                                                          | Display guarded `text`, `output`, or text/UI streams; treat diagnostic records separately.                              |
+| UI stream `onEnd`                        | Runs with the delivered guarded message, including parallel input-block replacements. Takes precedence over deprecated `onFinish`.          | Prefer `onEnd` in `toUIMessageStream()` and response helper options.                                                    |
+| Native stream retries                    | `streamRetries` and call-level `onError` return values reach the SDK. Recovered errors do not end the VoltAgent trace.                      | Use an SDK release supporting this API (verified with 7.0.137); 7.0.18 does not support it. Opt in explicitly.          |
+
+For example, you can now consume typed elements and then read the completed array:
+
+```ts
+const result = await agent.streamText({
+  prompt: "List three cities",
+  output: Output.array({ element: z.object({ city: z.string() }) }),
+});
+
+for await (const item of result.elementStream) {
+  console.log(item.city);
+}
+const cities = await result.output;
+```
+
+Native `streamRetries` can recover after content starts, independently of VoltAgent's pre-content provider retry/fallback policy. Failed-attempt text already delivered to consumers cannot be retracted. See [Retries and Fallbacks](/docs/agents/retries-fallback#native-sdk-stream-retries) and [Structured Output](/docs/agents/structured-output#structured-output-with-guardrails).
 
 ## Step 11. Update direct AI SDK tests and mocks
 
@@ -728,7 +910,7 @@ Notes:
 
 - If you use other providers, upgrade them to `@ai-sdk/*@^3` (e.g., `@ai-sdk/anthropic`, `@ai-sdk/google`, `@ai-sdk/azure`).
 - If you use `useChat` or other UI helpers, upgrade `@ai-sdk/react` to `^3`.
-- If you are in a monorepo, update all `@voltagent/*` packages to the same major version.
+- If you are in a monorepo, update the `@voltagent/*` packages together to compatible versions, checking their peer dependencies. CLI and internal package majors may differ from the framework major.
 
 ## Step 2. Adopt object-style agent calls (recommended)
 

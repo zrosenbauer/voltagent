@@ -22,3 +22,9 @@ Then open `https://console.voltagent.dev` and connect it to `http://localhost:31
 - The agent includes a `getWeather` tool (mock data) to demonstrate tool calls from the UI.
 - `app/api/chat/route.ts` streams responses from the VoltAgent agent using `toUIMessageStreamResponse`, so Assistant UI receives tool/reasoning aware events.
 - `app/assistant.tsx` uses `AssistantChatTransport` pointing to `/api/chat` to keep the UI runtime in sync with the agent.
+
+## Runtime and production build
+
+Use Node.js 22 or later. Run `pnpm build` and `pnpm start` to test the production app.
+
+The development and build scripts select Webpack because the currently locked Next.js 16.0.7 Turbopack build fails when bundling the server runtime in this workspace. `next.config.ts` keeps server packages external and limits file tracing to this project or the VoltAgent workspace. Keep these settings when copying the example.

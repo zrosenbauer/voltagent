@@ -1,4 +1,9 @@
-import VoltAgent, { Agent, Memory, type OperationContext, type AgentHooks } from "@voltagent/core";
+import VoltAgent, {
+  Agent,
+  Memory,
+  type ToolExecuteOptions,
+  type AgentHooks,
+} from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -27,8 +32,8 @@ import {
   typeTool,
   uncheckTool,
   waitForElementTool,
-} from "./tools";
-import { resetBrowserState as resetBrowserStateInternal } from "./tools/playwrightToolHandler";
+} from "./tools/index.js";
+import { resetBrowserState as resetBrowserStateInternal } from "./tools/playwrightToolHandler.js";
 
 // Create logger
 const logger = createPinoLogger({

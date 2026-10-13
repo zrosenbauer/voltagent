@@ -48,7 +48,7 @@ const agent = new Agent({
 const response1 = await agent.generateText("Hello!");
 console.log("Environment:", response1.context?.get("environment")); // "production"
 
-// Override with execution context (replaces default completely)
+// Override supplied keys; missing keys retain constructor defaults
 const response2 = await agent.generateText("Debug this", {
   context: new Map([
     ["environment", "development"],
@@ -98,6 +98,84 @@ console.log("Language:", response.context?.get("language"));
 ```
 
 Legacy top-level `context` is still supported, but `voltagent.context` is preferred for new object-style calls. If both are supplied, `voltagent.context` takes precedence.
+
+## Schema Validation and Types
+
+Add `contextSchema` to an agent to validate its existing context and infer types in dynamic `instructions`, `model`, and `tools` functions, inline agent hooks, and returned results. Continue passing data through `voltagent.context` or the legacy top-level `context` field.
+
+```typescript
+import { Agent } from "@voltagent/core";
+import { z } from "zod";
+
+const support = new Agent({
+  name: "Support",
+  contextSchema: z.object({
+    tenantId: z.string().min(1),
+    language: z.enum(["tr", "en"]).default("tr"),
+    plan: z.enum(["free", "pro"]).default("free"),
+  }),
+  model: ({ context }) => (context.get("plan") === "pro" ? "openai/gpt-4o" : "openai/gpt-4o-mini"),
+  instructions: ({ context }) => `Reply in ${context.get("language") ?? "tr"}.`,
+  hooks: {
+    onStart: ({ context }) => {
+      // Inferred as "tr" | "en" | undefined, without a cast.
+      const language = context.context.get("language");
+      // context.context.set("language", "de"); // TypeScript error.
+    },
+  },
+});
+
+const result = await support.generateText({
+  prompt: "How can I change my subscription?",
+  voltagent: { context: { tenantId: "acme", language: "tr" } },
+});
+
+const tenantId = result.context.get("tenantId"); // string | undefined
+```
+
+The Map API remains unchanged. Declared keys have typed reads and writes. `get()` includes `undefined` because hooks and tools can delete entries; context remains mutable. Additional keys and symbols remain available as `unknown`, so existing runtime state can coexist with schema fields. This means an undeclared or misspelled key is not rejected by TypeScript; its value is `unknown`.
+
+### Input Types and Validation
+
+Plain-object context fields are checked against the schema's **input** type. Dynamic callbacks and results use its **output** type, including defaults and transforms. Async validators and transforms are supported. A supplied Map is validated at runtime; the standard Map type cannot express required keys or a separate value type for every key.
+
+Constructor and per-call inputs can be partial, and the entire per-call context can be omitted. Required values may come from constructor defaults or a parent agent, so **missing required fields are rejected at runtime after merging**, not necessarily at compile time. Wrong types in supplied object fields are caught by TypeScript. Field defaults apply even when context is omitted. The schema must return an object; validation receives the merged context object, including an empty object when no entries exist.
+
+Validation follows the existing precedence:
+
+1. A parent operation's context is authoritative.
+2. Per-call context fills missing parent keys, or supplies the initial context without a parent.
+3. Constructor context fills remaining missing keys.
+4. Active trigger context fills any remaining missing keys.
+
+Validation runs once before memory loading, middleware, guardrails, hooks, and dynamic values. Provider retries, fallback, and explicit middleware retries reuse the validated context. Later Map mutations are not automatically revalidated. Validation failures throw `AgentContextValidationError` with code `INVALID_CONTEXT`; the underlying validation error is available as `cause`. Generation hooks do not run for these failures.
+
+### Shared Maps and Defaults
+
+Explicit per-call Maps and parent Maps retain their identity. Successful validation writes defaults and transformed fields into that shared Map, making them visible to hooks, tools, and subagents. Validation failures do not commit merged defaults or parsed values. As with other context writes, avoid concurrently sharing the same mutable Map between unrelated requests. When reusing a transformed Map in another invocation, the transformed values must also be valid schema inputs.
+
+With `contextSchema`, constructor-only defaults are copied for each invocation so validation and subsequent writes cannot change the defaults for future calls. Agents without `contextSchema` keep their existing reference behavior. Unknown entries and symbols are preserved; a schema's usual stripping of unknown object properties does not remove them from the shared context Map. Context validation is not a sanitization step.
+
+Subagents inherit the existing shared context and validate it against their own schema when invoked. You can also configure agent-tool defaults with `support.toTool({ context: { tenantId: "acme" } })`; inherited parent values still take precedence. Registries and server references may erase agent-specific compile-time types, but runtime validation remains active.
+
+### HTTP Requests and Native Tool Context
+
+Send context through the existing HTTP options envelope:
+
+```json
+{
+  "input": "How can I change my subscription?",
+  "options": {
+    "voltagent": {
+      "context": { "tenantId": "acme", "language": "tr" }
+    }
+  }
+}
+```
+
+Invalid context returns HTTP `400` with code `INVALID_CONTEXT` through text, streaming, chat, and legacy object endpoints. Validation completes before a response stream starts. Cancellation is checked before and after asynchronous validation; AI SDK generation timeouts do not cover this validation stage.
+
+Agent `contextSchema` describes VoltAgent's shared Map. A native AI SDK tool's `contextSchema` still describes that tool's separate `toolsContext` input. The agent schema does not automatically supply or infer a standalone tool's context. Dynamic tools can capture the typed agent context in their closure; native `toolsContext` remains independently typed and validated.
 
 ## Sending User Information
 

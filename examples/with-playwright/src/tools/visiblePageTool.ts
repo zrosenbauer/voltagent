@@ -4,9 +4,9 @@
  */
 
 import { createTool } from "@voltagent/core";
-import type { OperationContext } from "@voltagent/core";
+import type { ToolExecuteOptions } from "@voltagent/core";
 import { z } from "zod";
-import { safeBrowserOperation } from "./browserBaseTools";
+import { safeBrowserOperation } from "./browserBaseTools.js";
 
 /**
  * Tool for getting all visible text on a page
@@ -15,9 +15,9 @@ export const getVisibleTextTool = createTool({
   name: "getVisibleText",
   description: "Extracts all visible text content from the current page body.",
   parameters: z.object({}),
-  execute: async (_args, oc?: OperationContext) => {
+  execute: async (_args, oc?: ToolExecuteOptions) => {
     if (!oc?.context) {
-      throw new Error("OperationContext is missing or invalid.");
+      throw new Error("ToolExecuteOptions is missing or invalid.");
     }
     return safeBrowserOperation(oc, async (page) => {
       const visibleText = await page.evaluate(() => document.body.innerText);
@@ -36,9 +36,9 @@ export const getVisibleHtmlTool = createTool({
   name: "getVisibleHtml",
   description: "Gets the HTML structure of the page body.",
   parameters: z.object({}),
-  execute: async (_args, oc?: OperationContext) => {
+  execute: async (_args, oc?: ToolExecuteOptions) => {
     if (!oc?.context) {
-      throw new Error("OperationContext is missing or invalid.");
+      throw new Error("ToolExecuteOptions is missing or invalid.");
     }
     return safeBrowserOperation(oc, async (page) => {
       const pageHtml = await page.content();
@@ -57,9 +57,9 @@ export const listInteractiveElementsTool = createTool({
   name: "listInteractiveElements",
   description: "Lists interactive elements like buttons, links, and inputs visible on the page.",
   parameters: z.object({}),
-  execute: async (_args, oc?: OperationContext) => {
+  execute: async (_args, oc?: ToolExecuteOptions) => {
     if (!oc?.context) {
-      throw new Error("OperationContext is missing or invalid.");
+      throw new Error("ToolExecuteOptions is missing or invalid.");
     }
     return safeBrowserOperation(oc, async (page) => {
       const interactiveElements = await page.evaluate(() => {
@@ -90,9 +90,9 @@ export const getUserAgentTool = createTool({
   name: "getUserAgent",
   description: "Gets the current user agent string of the browser.",
   parameters: z.object({}),
-  execute: async (_args, oc?: OperationContext) => {
+  execute: async (_args, oc?: ToolExecuteOptions) => {
     if (!oc?.context) {
-      throw new Error("OperationContext is missing or invalid.");
+      throw new Error("ToolExecuteOptions is missing or invalid.");
     }
     return safeBrowserOperation(oc, async (page) => {
       const userAgent = await page.evaluate(() => navigator.userAgent);

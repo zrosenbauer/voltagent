@@ -4,9 +4,9 @@
  */
 
 import { createTool } from "@voltagent/core";
-import type { OperationContext } from "@voltagent/core";
+import type { ToolExecuteOptions } from "@voltagent/core";
 import { z } from "zod";
-import { safeBrowserOperation } from "./browserBaseTools";
+import { safeBrowserOperation } from "./browserBaseTools.js";
 
 /**
  * Tool for setting up response wait operations
@@ -26,9 +26,9 @@ export const expectResponseTool = createTool({
       .describe("Maximum time in milliseconds to wait for the response."),
     // status: z.number().optional().describe("Expected status code of the response."), // Predicate function is more flexible
   }),
-  execute: async (args, oc?: OperationContext) => {
+  execute: async (args, oc?: ToolExecuteOptions) => {
     if (!oc?.context) {
-      throw new Error("OperationContext is missing or invalid.");
+      throw new Error("ToolExecuteOptions is missing or invalid.");
     }
     return safeBrowserOperation(oc, async (page) => {
       try {
@@ -80,9 +80,9 @@ export const assertResponseTool = createTool({
       .default(5000)
       .describe("Timeout if waiting for a specific response."),
   }),
-  execute: async (args, oc?: OperationContext) => {
+  execute: async (args, oc?: ToolExecuteOptions) => {
     if (!oc?.context) {
-      throw new Error("OperationContext is missing or invalid.");
+      throw new Error("ToolExecuteOptions is missing or invalid.");
     }
     return safeBrowserOperation(oc, async (page) => {
       let targetResponse: any = null; // Consider using Playwright's Response type

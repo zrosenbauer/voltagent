@@ -53,9 +53,11 @@ export type PromptHelper = {
 /**
  * Enhanced dynamic value options with prompts support
  */
-export interface DynamicValueOptions {
+export interface DynamicValueOptions<
+  CONTEXT extends Map<string | symbol, unknown> = Map<string | symbol, unknown>,
+> {
   /** User context map */
-  context: Map<string | symbol, unknown>;
+  context: CONTEXT;
   /** HTTP request headers for server-triggered agent calls, when available */
   headers?: Record<string, string>;
   /** Prompt helper (available when VoltOpsClient is configured) */
@@ -65,7 +67,10 @@ export interface DynamicValueOptions {
 /**
  * Dynamic value type for agent configuration
  */
-export type DynamicValue<T> = (options: DynamicValueOptions) => Promise<T> | T;
+export type DynamicValue<
+  T,
+  CONTEXT extends Map<string | symbol, unknown> = Map<string | symbol, unknown>,
+> = (options: DynamicValueOptions<CONTEXT>) => Promise<T> | T;
 
 /**
  * VoltOps client configuration options

@@ -360,6 +360,9 @@ importers:
       '@tailwindcss/postcss':
         specifier: ^4.1.4
         version: 4.1.14
+      '@types/hast':
+        specifier: ^3.0.4
+        version: 3.0.4
       '@types/node':
         specifier: ^24.2.1
         version: 24.6.2
@@ -430,6 +433,9 @@ importers:
       '@google/generative-ai':
         specifier: ^0.24.1
         version: 0.24.1
+      '@hono/node-server':
+        specifier: ^1.14.0
+        version: 1.18.2(hono@4.9.1)
       '@voltagent/cli':
         specifier: ^1.0.0-next.0
         version: link:../../packages/cli
@@ -771,6 +777,9 @@ importers:
         specifier: ^4.1.11
         version: 4.3.5
     devDependencies:
+      '@types/express':
+        specifier: ^5.0.3
+        version: 5.0.4
       '@types/node':
         specifier: ^24.2.1
         version: 24.6.2
@@ -931,7 +940,7 @@ importers:
         specifier: ^7.0.0
         version: 7.0.18(zod@4.3.5)
       hono:
-        specifier: ^4.7.7
+        specifier: ^4.9.1
         version: 4.9.1
       zod:
         specifier: ^4.1.11
@@ -1280,7 +1289,7 @@ importers:
         specifier: ^0.5.33
         version: 0.5.39(@ai-sdk/openai@4.0.9)(@cloudflare/workers-types@4.20250813.0)(@langchain/core@0.3.70)(@langchain/openai@0.6.7)(ai@7.0.18)(langchain@0.3.30)(openai@4.104.0)
       hono:
-        specifier: ^4.7.7
+        specifier: ^4.9.1
         version: 4.9.1
       zod:
         specifier: ^4.1.11
@@ -1784,7 +1793,7 @@ importers:
         specifier: ^3.0.0-next.0
         version: link:../../packages/server-hono
       hono:
-        specifier: ^4.7.7
+        specifier: ^4.9.1
         version: 4.9.1
       reflect-metadata:
         specifier: ^0.2.0
@@ -1806,7 +1815,7 @@ importers:
         specifier: ^11.0.0
         version: 11.0.9(typescript@5.9.2)
       '@types/express':
-        specifier: ^5.0.0
+        specifier: ^5.0.3
         version: 5.0.4
       '@types/node':
         specifier: ^24.2.1
@@ -1830,7 +1839,7 @@ importers:
         specifier: ^7.0.0
         version: 7.0.18(zod@4.3.5)
       hono:
-        specifier: ^4.7.7
+        specifier: ^4.9.1
         version: 4.9.1
       zod:
         specifier: ^4.1.11
@@ -2054,6 +2063,9 @@ importers:
       '@tailwindcss/postcss':
         specifier: ^4.1.4
         version: 4.1.14
+      '@types/hast':
+        specifier: ^3.0.4
+        version: 3.0.4
       '@types/node':
         specifier: ^24.2.1
         version: 24.6.2
@@ -3411,7 +3423,7 @@ importers:
         specifier: ^16.4.5
         version: 16.6.1
       hono:
-        specifier: 4.9.1
+        specifier: ^4.9.1
         version: 4.9.1
       zod:
         specifier: ^4.1.11
@@ -4460,7 +4472,7 @@ importers:
         specifier: ^2.1.0
         version: 2.1.0
       hono:
-        specifier: ^4.7.7
+        specifier: ^4.9.1
         version: 4.9.1
       openapi3-ts:
         specifier: ^4.5.0
@@ -4488,7 +4500,7 @@ importers:
         specifier: ^3.0.0-next.0
         version: link:../server-core
       hono:
-        specifier: ^4.7.7
+        specifier: ^4.9.1
         version: 4.9.1
 
   packages/supabase:

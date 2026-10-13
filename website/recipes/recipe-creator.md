@@ -84,7 +84,7 @@ const mcpConfig = new MCPConfiguration({
 
 const agent = new Agent({
   name: "Recipe Assistant",
-  description: `You are a culinary expert AI assistant. Help users create delicious recipes.
+  instructions: `You are a culinary expert AI assistant. Help users create delicious recipes.
 
         Core Capabilities:
         • Analyze available ingredients and suggest recipes

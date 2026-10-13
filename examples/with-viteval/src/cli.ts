@@ -2,8 +2,8 @@ import consola from "consola";
 import dotenv from "dotenv";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import generateAnswer from "#/generate-answer";
-import { categories } from "#/lib/categories";
+import generateAnswer from "./generate-answer.js";
+import { categories } from "./lib/categories.js";
 
 dotenv.config({ quiet: true });
 
@@ -31,7 +31,7 @@ dotenv.config({ quiet: true });
             placeholder: "What is the capital of France?",
           });
 
-          const answer = await generateAnswer(question, category);
+          const answer = await generateAnswer(category, question);
           consola.success(answer);
         },
       },

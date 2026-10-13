@@ -224,7 +224,7 @@ const expenseApprovalWorkflow = createWorkflowChain({
       }
 
       return {
-        status: data.approved ? "approved" : "rejected",
+        status: data.approved ? ("approved" as const) : ("rejected" as const),
         approvedBy: data.approvedBy,
         finalAmount: data.finalAmount,
       };
@@ -395,17 +395,17 @@ const timedReminderWorkflow = createWorkflowChain({
 })
   .andSleep({
     id: "pause-briefly",
-    duration: ({ data }) => Math.max(0, data.waitMs),
+    duration: async ({ data }) => Math.max(0, data.waitMs),
   })
   .andSleepUntil({
     id: "align-to-next-second",
-    date: () => new Date(Date.now() + 1000),
+    date: async () => new Date(Date.now() + 1000),
   })
   .andThen({
     id: "complete-reminder",
     execute: async ({ data }) => ({
       userId: data.userId,
-      status: "sent",
+      status: "sent" as const,
       resumedAt: new Date().toISOString(),
     }),
   });
@@ -426,7 +426,7 @@ const batchTransformWorkflow = createWorkflowChain({
     total: z.number(),
   }),
 })
-  .andForEach({
+  .andForEach<number, number>({
     id: "double-each",
     step: andThen({
       id: "double",
@@ -441,11 +441,12 @@ const batchTransformWorkflow = createWorkflowChain({
       doubled: { source: "data" },
       count: {
         source: "fn",
-        fn: ({ data }) => (Array.isArray(data) ? data.length : 0),
+        fn: async ({ data }) => (Array.isArray(data) ? data.length : 0),
       },
       total: {
         source: "fn",
-        fn: ({ data }) => (Array.isArray(data) ? data.reduce((sum, value) => sum + value, 0) : 0),
+        fn: async ({ data }) =>
+          Array.isArray(data) ? data.reduce((sum, value) => sum + value, 0) : 0,
       },
     },
   });
@@ -472,7 +473,7 @@ const loopAndBranchWorkflow = createWorkflowChain({
       id: "increment-warmup",
       execute: async ({ data }) => ({ ...data, counter: data.counter + 1 }),
     }),
-    condition: ({ data }) => data.counter < 1,
+    condition: async ({ data }) => data.counter < 1,
   })
   .andDoUntil({
     id: "retry-loop",
@@ -480,20 +481,20 @@ const loopAndBranchWorkflow = createWorkflowChain({
       id: "increment-retry",
       execute: async ({ data }) => ({ ...data, counter: data.counter + 1 }),
     }),
-    condition: ({ data }) => data.counter >= 3,
+    condition: async ({ data }) => data.counter >= 3,
   })
-  .andBranch({
+  .andBranch<{ counter: number; label: "ready" | "warmup" }>({
     id: "categorize-counter",
     branches: [
       {
-        condition: ({ data }) => data.counter >= 3,
+        condition: async ({ data }) => data.counter >= 3,
         step: andThen({
           id: "mark-ready",
           execute: async ({ data }) => ({ ...data, label: "ready" as const }),
         }),
       },
       {
-        condition: ({ data }) => data.counter < 3,
+        condition: async ({ data }) => data.counter < 3,
         step: andThen({
           id: "mark-warmup",
           execute: async ({ data }) => ({ ...data, label: "warmup" as const }),
@@ -510,7 +511,7 @@ const loopAndBranchWorkflow = createWorkflowChain({
         | undefined;
 
       if (!selected) {
-        return { counter: 0, label: "warmup" };
+        return { counter: 0, label: "warmup" as const };
       }
 
       return {

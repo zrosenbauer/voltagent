@@ -161,6 +161,65 @@ const createServerDeps = (agent: Agent, overrides: Record<string, unknown> = {})
   }) as any;
 
 describe("Agent runtime e2e", () => {
+  it("validates typed context and resolves dynamic instructions through HTTP", async () => {
+    const model = createModel(textGenerate("Prepared text."), () => textStream("Prepared stream."));
+    const instructions = vi.fn(
+      ({ context }: { context: Map<string | symbol, unknown> }) =>
+        `Reply in ${context.get("language")}`,
+    );
+    const agent = new Agent({
+      id: "prepared-http",
+      name: "Prepared HTTP",
+      instructions,
+      model,
+      memory: false,
+      contextSchema: z.object({ tenantId: z.string(), language: z.string().default("tr") }),
+    });
+    const { app } = await createVoltAgentApp(createServerDeps(agent), {});
+    for (const route of ["text", "stream", "chat"]) {
+      const valid = await app.request(`/agents/prepared-http/${route}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: safeStringify({
+          input: "hi",
+          options: { voltagent: { context: { tenantId: "acme" } } },
+        }),
+      });
+      expect(valid.status).toBe(200);
+      expect(await valid.text()).toContain("Prepared");
+      const invalid = await app.request(`/agents/prepared-http/${route}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: safeStringify({
+          input: "hi",
+          options: { voltagent: { context: { tenantId: 123 } } },
+        }),
+      });
+      expect(invalid.status).toBe(400);
+      expect(await invalid.json()).toMatchObject({ code: "INVALID_CONTEXT" });
+    }
+    for (const route of ["object", "stream-object"]) {
+      const invalid = await app.request(`/agents/prepared-http/${route}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: safeStringify({
+          input: "hi",
+          schema: { type: "object", properties: { answer: { type: "string" } } },
+          options: { voltagent: { context: { tenantId: 123 } } },
+        }),
+      });
+      expect(invalid.status).toBe(400);
+      expect(await invalid.json()).toMatchObject({ code: "INVALID_CONTEXT" });
+    }
+    expect(instructions).toHaveBeenCalledTimes(3);
+    expect(Object.fromEntries(instructions.mock.calls[0][0].context)).toMatchObject({
+      tenantId: "acme",
+      language: "tr",
+    });
+    expect(model.doGenerateCalls).toHaveLength(1);
+    expect(model.doStreamCalls).toHaveLength(2);
+  });
+
   it("runs generateText through an AI SDK native tool", async () => {
     const execute = vi.fn(async ({ city }: { city: string }) => ({ city, tempC: 18 }));
     const getWeather = tool({

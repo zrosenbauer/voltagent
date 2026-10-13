@@ -1,6 +1,6 @@
 import { evaluate, scorers } from "viteval";
-import { supervisorAgent } from "./supervisor";
-import supervisorDataset from "./supervisor.dataset";
+import supervisorDataset from "./supervisor.dataset.js";
+import { supervisorAgent } from "./supervisor.js";
 
 evaluate("Supervisor Agent", {
   description: "Evaluates the supervisor agent routing decisions",

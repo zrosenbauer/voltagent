@@ -373,12 +373,58 @@ Important constraints:
 Exit criteria:
 
 - Internal code is easier to reason about.
-- Public behavior remains unchanged.
+- Public behavior remains unchanged except for native tool execution and model-call recovery changes explicitly documented in the 3.x migration guide.
 - Parity tests remain green.
 
 Progress:
 
 - [x] Extracted AI SDK call option normalization so VoltAgent runtime fields are stripped in one place before `generateText`/`streamText` calls.
+- [x] Native tool execution preserves SDK thrown-error and preliminary/final-result semantics. Metadata alone does not enable output validation or streaming buffering.
+- [x] Asynchronous guardrail/start-hook preparation is composed with native tool callbacks; preparation failures are propagated from execution rather than swallowed by SDK observer callbacks. This remains active with telemetry disabled.
+- [x] Added `voltagent.validateOutput` for explicit final-output validation, including output overrides/recovery. Legacy `createTool` retains automatic validation and serialized errors.
+- [x] Kept final-output transforms with one-value lookahead only when VoltAgent end hooks or validation are configured.
+- [x] Synchronized routed tool contexts with `prepareStep`; retained routing's existing outer `callTool` behavior.
+- [x] Preserved native errors in UI/message conversion and execution-history records; added real-SDK contract tests with mock providers.
+- [x] Documented promised-iterable migration, final-only validation, and start-hook/guardrail timeout coverage; tested promised outputs and timeout signals through both generation and streaming.
+- [x] Moved model retries/fallback below the SDK loop to individual provider calls; retained completed tools, steps, memory, retry/fallback hooks, and per-attempt tracing.
+- [x] Added per-step streaming recovery before content is emitted, abortable backoff, explicit prepareStep model retry handling, and retry-count validation.
+- [x] Delegated native stream-result fields and methods, restored typed structured output and runtime context, and exposed readable/replayable streams while preserving VoltAgent events.
+- [x] Guarded structured values wait for final validation and parse sanitized final-step text; native diagnostic records remain unchanged.
+- [x] Preserved SDK stream-retry callback return values and terminal-only error finalization; UI completion callbacks receive the delivered guarded message.
+- [x] Kept `generateText.output` consistent with final middleware/guardrail text, validated structured bail replacements, and preserved native output/context types. Unchanged text retains the native parsed value; invalid transformed output fails without provider/tool replay.
+- [x] Added optional `contextSchema` to the existing shared context API, including typed dynamic values/hooks/results, asynchronous validation, preserved parent/Map sharing, and HTTP validation errors. Kept existing dynamic configuration functions instead of adding separate call-options or preparation APIs.
+
+The native error format, removal of implicit output validation, promised-iterable handling, preparation outside per-tool timeouts, provider-call recovery boundary, and guarded structured-stream timing are intentional behavior changes documented in the 3.x migration guide. Parsing/structured-output errors outside the provider call no longer restart the tool loop. Explicit middleware retries retain full-pipeline behavior. Native SDK stream retries remain opt-in and require a supporting SDK release.
+
+### Follow-up: Native Call Inputs and Continuous Compatibility
+
+- [x] Added call-level `model` overrides through provider retries/tracing; overrides replace the constructor model/fallback list for one invocation.
+- [x] Accepted `prompt: ModelMessage[]` and enforced conflicting/empty input checks before orchestration.
+- [x] Matched native `instructions` precedence over `system` and required explicit trust for caller-provided system messages while preserving framework instructions.
+- [x] Derived each text method's settings and callback signatures from the corresponding installed AI SDK function.
+- [x] Added native input/runtime/type contracts and a built-declaration consumer fixture.
+- [x] Added a reusable minimum/latest AI SDK 7 compatibility gate for Node 22/24; aligned PR and stable-release jobs with Node 22+.
+- [x] Updated call, prompt, retry, migration, and contributor testing documentation.
+- [x] Verified 1,573 core tests/type tests, 130 server tests, 25 runtime/LibSQL E2E tests, and the runtime/source/declaration matrix on AI SDK 7.0.0, 7.0.137, and 7.0.138.
+- [x] Verified builds for all 29 build targets, tests for 25 package targets, publint for all 14 configured targets, website build, and lint (existing warnings only).
+- [ ] Run Docker-backed PostgreSQL E2E before release; Docker was unavailable during this local validation. The full `test:all` command was not claimed as passed; package checks excluded E2E and the deprecated Vercel exporter.
+
+### Follow-up: Release Documentation and Example Audit
+
+- [x] Matched AI SDK's five `tool()` overloads, including client tools without `execute`/`outputSchema` and executable tools with a directly callable `execute`. Added runtime/type regressions and built-declaration consumer checks.
+- [x] Revalidated all 89 example TypeScript projects. Fixed the 20 failures from the release audit plus declaration-emission issues in the Tavily and Xquik application examples exposed by the narrower tool return type.
+- [x] Built all 22 affected examples successfully. Four Next.js examples select Webpack for development and production because the locked Next.js 16.0.7 Turbopack build fails on server dependencies in this workspace. Next.js configs also support workspace and standalone file-tracing roots.
+- [x] Started those four Next.js examples in production mode and verified that their home pages and chat route handlers load without making model calls.
+- [x] Added a `contextSchema` example with typed role, language, and subscription tier; documented shared Map semantics and the dynamic ToolSet annotation.
+- [x] Rewrote the Calling Agents recipe and AI SDK integration guide; compiled their 15 TypeScript/TSX snippets against the built packages. Updated tool, PlanAgent, research, recipe, ad-creator, client-side tool, and testing documentation.
+- [x] Clarified prerelease package installation, compatible package version ranges, tool inference, PlanAgent's named-tool array, and the Stagehand 2 schema adapter in the migration guide.
+- [x] Revalidated 1,578 core tests/type tests and the minimum/latest AI SDK 7 matrix: 136 runtime tests per version plus source and built-declaration checks on AI SDK 7.0.0 and 7.0.138 (Node.js 22). Node.js 24 remains part of the CI matrix.
+- [x] Core package export validation, changed-file lint, frozen-lockfile installation, and the website build pass. Existing non-fatal warnings remain.
+- [x] Aligned Hono runtime dependency ranges to `^4.9.1` and Express type dependencies to `^5.0.3`, preserving installed versions. Syncpack and frozen-lockfile installation pass; both Hono adapters' 97 tests, the server-hono typecheck, and six affected example typechecks pass.
+- [ ] Fix the independent serverless-hono source typecheck failures: 20 JSON response status arguments use `number` where Hono requires a contentful status code, and the workflow resume request is missing its required typed `stepId`. Runtime tests pass, but this package's source typecheck does not.
+- [ ] Run the Docker-backed PostgreSQL E2E release gate. External provider/browser integrations were not exercised against live services during the example build audit.
+
+CLI example branch/channel selection was explicitly deferred from this follow-up.
 
 ### Phase 5: Provider Dependency Decoupling (Deferred)
 
@@ -1150,7 +1196,7 @@ Progress:
 - [x] Added e2e coverage for routed raw AI SDK tools receiving `toolsContext` and named `toolApproval` receiving `toolContext`/`runtimeContext`.
 - [x] Added runtime e2e coverage for raw `tool()` from `ai` using native `contextSchema` and call-level `toolsContext` without VoltAgent metadata.
 - [x] Documented the AI SDK compatibility matrix for direct re-exports vs `agent.generateText()`/`agent.streamText()` and VoltAgent-owned fields.
-- [x] Follow-up audit cleanup for remaining v2-era examples and website docs is complete.
+- [x] Follow-up audit cleanup covers the identified v2-era examples and website docs; the release audit above records the subsequent type, build, and documentation corrections.
 - [x] `pnpm --filter @voltagent/core typecheck` passes.
 - [x] `pnpm --filter @voltagent/core test` passes.
 - [x] `pnpm --filter @voltagent/e2e exec vitest run --config vitest.config.mts src/agent-runtime.e2e.spec.ts` passes.
@@ -1161,7 +1207,9 @@ Progress:
 - [x] `pnpm --filter @voltagent/e2e lint` passes.
 - [x] `pnpm build:all` passes.
 - [x] `pnpm lint` passes with existing warnings only.
-- [ ] Remaining release gates: `pnpm test:all`, `pnpm publint:all`, and `pnpm --dir website build`.
+- [x] `pnpm publint:all` passes for all 14 configured targets; core was rechecked after the tool overload correction.
+- [x] Syncpack's Hono and Express type dependency mismatches are resolved; `pnpm sp lint` passes.
+- [ ] Remaining release gates: fix the serverless-hono source typecheck failures and run Docker-backed PostgreSQL E2E. `pnpm test:all` is not yet claimed as passing.
 - [ ] AI SDK 7 validation gates pass.
 
 ## Suggested PR Slices
@@ -1203,24 +1251,24 @@ Each PR should include focused tests and avoid mixing refactors with behavior ch
 
 ## Risk Register
 
-| Risk                                                             | Impact | Mitigation                                                                                         |
-| ---------------------------------------------------------------- | ------ | -------------------------------------------------------------------------------------------------- |
-| Stream part changes break AG-UI/server/resumable streams         | High   | Add stream contract tests before refactor                                                          |
-| AI SDK 7 `stream` rename breaks VoltAgent `fullStream` consumers | High   | Use `stream` in docs/server code and keep a deprecated `fullStream` alias during transition        |
-| AI SDK 7 callback renames break hooks                            | High   | Rename public hooks to `onEnd`/`onStepEnd` for vNext and document the breaking change              |
-| Tool approval semantics regress during `needsApproval` migration | High   | Preserve VoltAgent tool normalization and map to AI SDK 7 approval semantics in one place          |
-| Tool metadata lost when accepting raw AI SDK tools               | High   | Preserve VoltAgent tool normalization and manager APIs                                             |
-| Memory step persistence silently regresses                       | High   | Add tests around conversation steps and subagent metadata                                          |
-| Guardrail streaming redaction breaks across chunk boundaries     | High   | Keep streaming guardrail tests and runner isolated                                                 |
-| Model retry/fallback behavior changes                            | High   | Keep VoltAgent retry loop and add retry/fallback tests                                             |
-| CommonJS users break on vNext                                    | High   | Make ESM-only and Node.js 22 requirements explicit in package metadata and migration docs          |
-| Package exports or publint fail after removing CJS output        | High   | Update export maps package-by-package and run `pnpm publint:all`                                   |
-| Zod 3 compatibility fallback hides broken app dependencies       | Medium | Make VoltAgent 3 Zod 4-only in peer deps, examples, templates, docs, and converter code paths      |
-| Third-party providers are not AI SDK 7 compatible                | Medium | Audit third-party providers, document incompatibilities, and isolate unsupported provider builders |
-| Provider dependency decoupling expands scope                     | Medium | Deferred; keep existing router and provider dependency behavior unchanged in this plan             |
-| Server request schemas diverge from core API                     | Medium | Update schemas and processAgentOptions in same slice                                               |
-| Deprecated wrappers become maintenance burden                    | Medium | Keep wrappers thin and document removal timeline                                                   |
-| Docs/examples accidentally show AI SDK 6 or CommonJS patterns    | Medium | Update migration guide, templates, and examples after package migration                            |
+| Risk                                                             | Impact | Mitigation                                                                                                |
+| ---------------------------------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------- |
+| Stream part changes break AG-UI/server/resumable streams         | High   | Add stream contract tests before refactor                                                                 |
+| AI SDK 7 `stream` rename breaks VoltAgent `fullStream` consumers | High   | Use `stream` in docs/server code and keep a deprecated `fullStream` alias during transition               |
+| AI SDK 7 callback renames break hooks                            | High   | Rename public hooks to `onEnd`/`onStepEnd` for vNext and document the breaking change                     |
+| Tool approval semantics regress during `needsApproval` migration | High   | Preserve VoltAgent tool normalization and map to AI SDK 7 approval semantics in one place                 |
+| Tool metadata lost when accepting raw AI SDK tools               | High   | Preserve VoltAgent tool normalization and manager APIs                                                    |
+| Memory step persistence silently regresses                       | High   | Add tests around conversation steps and subagent metadata                                                 |
+| Guardrail streaming redaction breaks across chunk boundaries     | High   | Keep streaming guardrail tests and runner isolated                                                        |
+| Model retry/fallback behavior changes                            | High   | Retry individual provider calls; test retained tools/steps, hooks, streaming boundaries, and cancellation |
+| CommonJS users break on vNext                                    | High   | Make ESM-only and Node.js 22 requirements explicit in package metadata and migration docs                 |
+| Package exports or publint fail after removing CJS output        | High   | Update export maps package-by-package and run `pnpm publint:all`                                          |
+| Zod 3 compatibility fallback hides broken app dependencies       | Medium | Make VoltAgent 3 Zod 4-only in peer deps, examples, templates, docs, and converter code paths             |
+| Third-party providers are not AI SDK 7 compatible                | Medium | Audit third-party providers, document incompatibilities, and isolate unsupported provider builders        |
+| Provider dependency decoupling expands scope                     | Medium | Deferred; keep existing router and provider dependency behavior unchanged in this plan                    |
+| Server request schemas diverge from core API                     | Medium | Update schemas and processAgentOptions in same slice                                                      |
+| Deprecated wrappers become maintenance burden                    | Medium | Keep wrappers thin and document removal timeline                                                          |
+| Docs/examples accidentally show AI SDK 6 or CommonJS patterns    | Medium | Update migration guide, templates, and examples after package migration                                   |
 
 ## Working Checklist
 

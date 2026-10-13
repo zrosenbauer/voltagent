@@ -235,7 +235,6 @@ export function CalculatorChat() {
           // Tool parts
           if (isToolUIPart(part)) {
             const toolName = getToolName(part);
-            // @ts-expect-error input/output may vary
             const input = "input" in part ? part.input : "args" in part ? part.args : undefined;
             const output =
               "output" in part ? part.output : "result" in part ? part.result : undefined;
@@ -254,7 +253,7 @@ export function CalculatorChat() {
                   <span className="font-mono">{toolName}</span>
                   {state && <span className="text-gray-500">({state})</span>}
                 </div>
-                {input && (
+                {input !== undefined && (
                   <details className="mt-1">
                     <summary className="text-xs text-blue-400 cursor-pointer">Input</summary>
                     <pre className="text-xs text-gray-300 mt-1 p-1 bg-black/20 rounded overflow-x-auto">
@@ -262,7 +261,7 @@ export function CalculatorChat() {
                     </pre>
                   </details>
                 )}
-                {output && (
+                {output !== undefined && (
                   <details className="mt-1">
                     <summary className="text-xs text-green-400 cursor-pointer">Output</summary>
                     <pre className="text-xs text-gray-300 mt-1 p-1 bg-black/20 rounded overflow-x-auto">

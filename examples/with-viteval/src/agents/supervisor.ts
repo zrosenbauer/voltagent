@@ -1,9 +1,9 @@
 import { Agent } from "@voltagent/core";
-import { generalAgent } from "./general";
-import { geographyAgent } from "./geography";
-import { historyAgent } from "./history";
-import { mathAgent } from "./math";
-import { scienceAgent } from "./science";
+import { generalAgent } from "./general.js";
+import { geographyAgent } from "./geography.js";
+import { historyAgent } from "./history.js";
+import { mathAgent } from "./math.js";
+import { scienceAgent } from "./science.js";
 
 export interface SupervisorInput {
   userQuery: string;

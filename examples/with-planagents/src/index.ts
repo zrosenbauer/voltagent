@@ -27,9 +27,7 @@ const agent = new PlanAgent({
   name: "deep-research-agent",
   systemPrompt: researchInstructions,
   model: "openai/gpt-4o-mini",
-  tools: {
-    internet_search: internetSearch,
-  },
+  tools: [internetSearch],
   memory,
   maxSteps: 100,
   summarization: {

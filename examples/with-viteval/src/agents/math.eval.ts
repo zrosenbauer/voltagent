@@ -1,6 +1,6 @@
 import { evaluate, scorers } from "viteval";
-import { mathAgent } from "./math";
-import mathDataset from "./math.dataset";
+import mathDataset from "./math.dataset.js";
+import { mathAgent } from "./math.js";
 
 evaluate("Math Agent", {
   description: "Evaluates the math agent problem-solving capabilities",

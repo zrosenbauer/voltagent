@@ -63,10 +63,15 @@ const agent = new Agent({
 
 ## Notes
 
-- Total attempts = `maxRetries + 1`.
+- Total attempts per provider call = `maxRetries + 1`. The count resets for each new model step; completed steps and tool results are retained.
 - Default `maxRetries` is `3` if you do not configure it.
+- `maxRetries` must be a non-negative integer. `0` disables retries but still allows configured fallback models.
 - Errors marked `isRetryable: false` skip retries.
-- Streaming retries only happen if the stream fails before the first chunk.
+- Streaming retries can recover the current model step before it emits content, even if earlier steps have streamed or executed tools. Provider stream-start and response metadata do not commit an attempt; text/reasoning start events and tool input do.
+- Parsing or schema validation failures after a successful provider call do not trigger model retries.
+- Middleware retries restart the full pipeline and can execute tools again. A model can also request the same action in a later response; keep normal business idempotency checks.
+
+Native SDK `streamRetries` is a separate, explicit opt-in on SDK releases that support it. It can recover after content starts; already emitted partial text remains in consumer streams. See [Native SDK Stream Retries](/docs/agents/retries-fallback#native-sdk-stream-retries).
 
 ## Learn More
 

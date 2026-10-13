@@ -2,353 +2,232 @@
 id: calling-agents
 title: Calling Agents
 slug: calling-agents
-description: Different ways to invoke VoltAgent agents - programmatic, REST API, and framework integrations.
+description: Call VoltAgent agents from TypeScript, HTTP routes, workflows, and tools using AI SDK 7.
 ---
 
 # Calling Agents
 
-VoltAgent agents can be invoked in multiple ways depending on your use case.
+VoltAgent 3 accepts AI SDK models and tools directly. Use Node.js 22 or newer with ESM. During the v3 prerelease, install VoltAgent packages from the `next` channel; see the [migration guide](/docs/getting-started/migration-guide/).
 
-## Programmatic Usage
+## Programmatic calls
 
-The most direct way to call an agent is through its methods in your TypeScript code.
-
-### generateText
-
-Returns a complete text response after the agent finishes processing.
-
-```typescript
+```ts
 import { Agent } from "@voltagent/core";
-import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 
-const agent = new Agent({
+export const agent = new Agent({
+  id: "assistant",
   name: "Assistant",
   instructions: "You are a helpful assistant.",
-  llm: new VercelAIProvider(),
+  model: openai("gpt-4o-mini"),
+});
+
+const result = await agent.generateText({
+  prompt: "What is the capital of France?",
+  maxOutputTokens: 500,
+  temperature: 0.7,
+});
+console.log(result.text);
+```
+
+The positional form, `agent.generateText("Hello", options)`, also works. In the object form, provide either `prompt` or `messages`. A prompt may be a string or an array of model messages. Caller-supplied system messages require `allowSystemInMessages: true`; prefer `instructions` for call-level instructions.
+
+Pass AI SDK settings at the top level and framework settings under `voltagent`:
+
+```ts
+const result = await agent.generateText({
+  prompt: "Remember that my name is John",
+  voltagent: {
+    userId: "user-123",
+    conversationId: "conversation-456",
+    context: { language: "en" },
+  },
+});
+```
+
+Configure [memory](/docs/agents/memory/) on the agent to persist conversation history. Add [contextSchema](/docs/agents/context/) to infer and validate context values in dynamic instructions, models, and tools.
+
+A call-level model overrides the agent's model and fallback list for that invocation:
+
+```ts
+import { openai } from "@ai-sdk/openai";
+
+await agent.generateText({
   model: openai("gpt-4o"),
-});
-
-const response = await agent.generateText("What is the capital of France?");
-console.log(response.text); // "The capital of France is Paris."
-```
-
-With options for conversation tracking:
-
-```typescript
-const response = await agent.generateText("Remember my name is John", {
-  userId: "user-123",
-  conversationId: "conv-456",
+  instructions: "Answer in one sentence.",
+  prompt: "Explain photosynthesis.",
 });
 ```
 
-### streamText
+The agent's configured instructions remain additive. Future calls still use its configured model.
 
-Returns a streaming response for real-time output.
+## Streaming
 
-```typescript
-const result = await agent.streamText("Write a short story about a robot.");
+```ts
+const result = await agent.streamText({
+  prompt: "Write a short story about a robot.",
+  onChunk: ({ chunk }) => {
+    if (chunk.type === "text-delta") console.log(chunk.text);
+  },
+});
 
-// Option 1: Iterate over text chunks
-for await (const chunk of result.textStream) {
-  process.stdout.write(chunk);
+for await (const text of result.textStream) {
+  process.stdout.write(text);
 }
-
-// Option 2: Get full text after stream completes
-const fullText = await result.text;
+console.log(await result.text);
 ```
 
-For UI frameworks, use the built-in response helpers:
+Use `result.stream` for detailed events or `result.toUIMessageStreamResponse()` for an AI SDK UI response. These streams also support Web Stream methods. Stream-only callbacks belong on `streamText`.
 
-```typescript
-// Next.js API route
-export async function POST(req: Request) {
-  const { messages } = await req.json();
+## Structured output
 
-  const result = await agent.streamText(messages, {
-    userId: "user-id",
-    conversationId: "thread-id",
-  });
-
-  // Returns SSE stream compatible with AI SDK UI
-  return result.toUIMessageStreamResponse();
-}
-```
-
-### generateObject
-
-Returns a structured object matching a Zod schema.
-
-```typescript
+```ts
+import { Output } from "ai";
 import { z } from "zod";
 
-const WeatherSchema = z.object({
-  location: z.string(),
-  temperature: z.number(),
-  unit: z.enum(["celsius", "fahrenheit"]),
-  conditions: z.string(),
+const profileSchema = z.object({
+  name: z.string(),
+  interests: z.array(z.string()),
 });
 
-const response = await agent.generateObject("What's the weather in Tokyo?", WeatherSchema);
+const result = await agent.generateText({
+  prompt: "Create a fictional user profile",
+  output: Output.object({ schema: profileSchema }),
+});
+console.log(result.output.name);
 
-console.log(response.object);
-// { location: "Tokyo", temperature: 18, unit: "celsius", conditions: "partly cloudy" }
-```
-
-### streamObject
-
-Streams a structured object for progressive UI updates.
-
-```typescript
-const result = await agent.streamObject("Generate a user profile", UserProfileSchema);
-
-for await (const partial of result.partialObjectStream) {
-  // Receive partial object as it builds
+const stream = await agent.streamText({
+  prompt: "Create another fictional user profile",
+  output: Output.object({ schema: profileSchema }),
+});
+for await (const partial of stream.partialOutputStream) {
   console.log(partial);
 }
-
-const finalObject = await result.object;
+console.log(await stream.output);
 ```
 
-## REST API
+`generateObject` and `streamObject` remain deprecated compatibility wrappers. Use the output-based methods for new code.
 
-When using `@voltagent/server-hono`, agents are exposed via REST endpoints.
+## HTTP endpoints
 
-### Generate Text
+Register the agent with a server:
+
+```ts
+import { VoltAgent } from "@voltagent/core";
+import { honoServer } from "@voltagent/server-hono";
+import { agent } from "./agent.js";
+
+new VoltAgent({ agents: { assistant: agent }, server: honoServer() });
+```
+
+The default agent endpoint prefix is `/agents`, without `/api`:
 
 ```bash
-curl -X POST http://localhost:3141/api/agents/assistant/text \
-  -H "Content-Type: application/json" \
-  -d '{
-    "input": "What is VoltAgent?",
-    "userId": "user-123",
-    "conversationId": "conv-456"
-  }'
+curl -X POST http://localhost:3141/agents/assistant/text \
+  -H 'Content-Type: application/json' \
+  -d '{"input":"Hello","options":{"maxOutputTokens":500,"userId":"user-123","conversationId":"conversation-456"}}'
 ```
 
-Response:
+Use `/agents/assistant/stream` for detailed SSE events and `/agents/assistant/chat` for the AI SDK UI protocol. HTTP requests use `input` or `messages` plus JSON-serializable `options`; JavaScript callbacks and provider model objects belong in application code. See the [agent endpoint reference](/docs/api/endpoints/agents/) for request and response schemas.
 
-```json
-{
-  "text": "VoltAgent is an open-source TypeScript framework for building AI agents...",
-  "usage": { "promptTokens": 25, "completionTokens": 150 }
-}
-```
+## Next.js and AI SDK UI
 
-### Stream Text
+Convert UI messages to model messages in your route:
 
-```bash
-curl -X POST http://localhost:3141/api/agents/assistant/stream \
-  -H "Content-Type: application/json" \
-  -d '{
-    "input": "Write a haiku about coding"
-  }'
-```
-
-Returns Server-Sent Events (SSE):
-
-```
-data: {"type":"text-delta","text":"Lines"}
-data: {"type":"text-delta","text":" of"}
-data: {"type":"text-delta","text":" code"}
-...
-data: {"type":"finish","usage":{"promptTokens":20,"completionTokens":30}}
-```
-
-### Chat Stream (UI Compatible)
-
-For frontend integrations with `@ai-sdk/react` or similar:
-
-```bash
-curl -X POST http://localhost:3141/api/agents/assistant/chat \
-  -H "Content-Type: application/json" \
-  -d '{
-    "messages": [
-      {"role": "user", "content": "Hello!"}
-    ]
-  }'
-```
-
-### Generate Object
-
-```bash
-curl -X POST http://localhost:3141/api/agents/assistant/object \
-  -H "Content-Type: application/json" \
-  -d '{
-    "input": "Extract user info from: John Doe, john@example.com",
-    "schema": {
-      "type": "object",
-      "properties": {
-        "name": {"type": "string"},
-        "email": {"type": "string"}
-      }
-    }
-  }'
-```
-
-### Stream Object
-
-```bash
-curl -X POST http://localhost:3141/api/agents/assistant/stream-object \
-  -H "Content-Type: application/json" \
-  -d '{
-    "input": "Generate a product listing",
-    "schema": { ... }
-  }'
-```
-
-## Framework Integrations
-
-### Next.js API Routes
-
-```typescript
+```ts
 // app/api/chat/route.ts
+import { convertToModelMessages, type UIMessage } from "ai";
 import { agent } from "@/lib/agent";
 
 export async function POST(req: Request) {
-  const { messages } = await req.json();
-
-  const result = await agent.streamText(messages, {
-    userId: req.headers.get("x-user-id") || "anonymous",
-    conversationId: req.headers.get("x-conversation-id"),
+  const { messages }: { messages: UIMessage[] } = await req.json();
+  const result = await agent.streamText({
+    messages: await convertToModelMessages(messages),
   });
-
   return result.toUIMessageStreamResponse();
 }
 ```
 
-Frontend with `@ai-sdk/react`:
+Use a transport and local input state on the client:
 
 ```tsx
 "use client";
 import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
+import { useState } from "react";
 
 export function Chat() {
-  const { messages, input, handleInputChange, handleSubmit } = useChat({
-    api: "/api/chat",
+  const [input, setInput] = useState("");
+  const { messages, sendMessage, status } = useChat({
+    transport: new DefaultChatTransport({ api: "/api/chat" }),
   });
 
   return (
     <div>
-      {messages.map((m) => (
-        <div key={m.id}>{m.content}</div>
+      {messages.map((message) => (
+        <div key={message.id}>
+          {message.parts.map((part, index) =>
+            part.type === "text" ? <span key={index}>{part.text}</span> : null
+          )}
+        </div>
       ))}
-      <form onSubmit={handleSubmit}>
-        <input value={input} onChange={handleInputChange} />
-        <button type="submit">Send</button>
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!input.trim()) return;
+          void sendMessage({ text: input });
+          setInput("");
+        }}
+      >
+        <input value={input} onChange={(event) => setInput(event.target.value)} />
+        <button type="submit" disabled={status === "submitted" || status === "streaming"}>
+          Send
+        </button>
       </form>
     </div>
   );
 }
 ```
 
-### Webhook Handlers
+## Calling from workflows
 
-Handle incoming webhooks (Slack, WhatsApp, etc.):
+```ts
+import { createWorkflowChain } from "@voltagent/core";
+import { z } from "zod";
+import { agent } from "./agent.js";
 
-```typescript
-import { Hono } from "hono";
-import { agent } from "./agent";
-
-const app = new Hono();
-
-app.post("/webhook/whatsapp", async (c) => {
-  const { from, body } = await c.req.json();
-
-  const response = await agent.generateText(body, {
-    userId: from,
-    conversationId: `whatsapp_${from}`,
-  });
-
-  // Send response back via WhatsApp API
-  await sendWhatsAppMessage(from, response.text);
-
-  return c.json({ success: true });
+const workflow = createWorkflowChain({
+  id: "research",
+  name: "Research workflow",
+  input: z.object({ topic: z.string() }),
+  result: z.object({ summary: z.string() }),
+}).andAgent(async ({ data }) => `Write a short overview of ${data.topic}`, agent, {
+  schema: z.object({ summary: z.string() }),
 });
+
+const result = await workflow.run({ topic: "AI agents" });
+console.log(result);
 ```
 
-## Calling from Workflows
+## Calling from tools
 
-Use `.andAgent()` to include agent calls in workflows:
+Use the agent's tool adapter when one agent should consult another:
 
-```typescript
-import { Workflow } from "@voltagent/core";
+```ts
+import { Agent } from "@voltagent/core";
 
-const workflow = new Workflow("research-workflow")
-  .addStep("fetch", async (input) => {
-    const data = await fetchData(input.topic);
-    return { data };
-  })
-  .andAgent(researchAgent, {
-    inputMapper: (prev) => `Analyze this data: ${JSON.stringify(prev.data)}`,
-    outputMapper: (result) => ({ analysis: result.text }),
-  })
-  .addStep("format", async (input) => {
-    return formatReport(input.analysis);
-  });
-
-const result = await workflow.run({ topic: "AI trends" });
-```
-
-## Calling from Tools
-
-Agents can call other agents through tools:
-
-```typescript
-import { createTool, Agent } from "@voltagent/core";
-
-const expertAgent = new Agent({
+const expert = new Agent({
   name: "Expert",
-  instructions: "You are a domain expert.",
-  // ...
+  instructions: "Explain technical concepts accurately.",
+  model: "openai/gpt-4o-mini",
 });
 
-const consultExpert = createTool({
-  name: "consult_expert",
-  description: "Consult with a domain expert",
-  parameters: z.object({
-    question: z.string(),
-  }),
-  execute: async ({ question }) => {
-    const response = await expertAgent.generateText(question);
-    return response.text;
-  },
-});
-
-const mainAgent = new Agent({
+const coordinator = new Agent({
   name: "Coordinator",
-  instructions: "You coordinate with experts when needed.",
-  tools: [consultExpert],
-  // ...
+  instructions: "Consult the expert for technical questions.",
+  model: "openai/gpt-4o-mini",
+  tools: [expert.toTool()],
 });
 ```
 
-## Options Reference
-
-All agent methods accept an options object:
-
-| Option           | Type     | Description                               |
-| ---------------- | -------- | ----------------------------------------- |
-| `userId`         | `string` | User identifier for conversation tracking |
-| `conversationId` | `string` | Conversation thread identifier            |
-| `context`        | `object` | Additional context passed to the agent    |
-| `maxTokens`      | `number` | Maximum tokens in response                |
-| `temperature`    | `number` | Response randomness (0-1)                 |
-
-```typescript
-const response = await agent.generateText("Hello", {
-  userId: "user-123",
-  conversationId: "conv-456",
-  context: { userName: "John", preferredLanguage: "en" },
-  maxTokens: 500,
-  temperature: 0.7,
-});
-```
-
-## Full Example
-
-See the complete examples:
-
-- [with-assistant-ui](https://github.com/VoltAgent/voltagent/tree/main/examples/with-assistant-ui) - Next.js + AI SDK UI
-- [with-whatsapp](https://github.com/VoltAgent/voltagent/tree/main/examples/with-whatsapp) - WhatsApp webhook handler
-- [with-guardrails](https://github.com/VoltAgent/voltagent/tree/main/examples/with-guardrails) - Programmatic usage with guardrails
+See [agent tools](/docs/agents/tools/) and [subagents](/docs/agents/sub-agents/) for delegation and shared context behavior.

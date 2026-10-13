@@ -1,8 +1,10 @@
 import type { ModelMessage } from "@ai-sdk/provider-utils";
 import {
   type FinishReason,
+  type GenerateTextResult,
   type LanguageModelUsage,
   Output,
+  type StreamTextResult,
   type UIMessage,
   tool as rawAiTool,
   type generateText as rawGenerateText,
@@ -288,6 +290,27 @@ describe("Agent Type System", () => {
       expectTypeOf(agent).toMatchTypeOf<Agent>();
     });
 
+    it("supports explicit native output validation without changing tool inference", () => {
+      const nativeTool = rawAiTool({
+        inputSchema: z.object({ name: z.string() }),
+        outputSchema: z.string(),
+        execute: ({ name }) => name,
+      });
+      const enhanced = enhanceTool(nativeTool, { validateOutput: true });
+      expectTypeOf(enhanced).toEqualTypeOf<typeof nativeTool>();
+      aiSdkTool({
+        inputSchema: z.object({ name: z.string() }),
+        outputSchema: z.string(),
+        execute: ({ name }) => {
+          expectTypeOf(name).toEqualTypeOf<string>();
+          return name;
+        },
+        voltagent: { validateOutput: true },
+      });
+      // @ts-expect-error output validation is an explicit boolean option
+      enhanceTool(nativeTool, { validateOutput: "yes" });
+    });
+
     it("should accept AI SDK contextSchema on AI SDK-style tools", () => {
       const weatherTool = aiSdkTool({
         description: "Get weather",
@@ -553,6 +576,7 @@ describe("Agent Type System", () => {
 
       const result = await agent.generateText("Test input");
       expectTypeOf(result.text).toEqualTypeOf<string>();
+      expectTypeOf(result.output).toEqualTypeOf<string>();
       expectTypeOf(result.context).toEqualTypeOf<Map<string | symbol, unknown>>();
       expectTypeOf(result.text).toBeString();
       expectTypeOf(result.context).toEqualTypeOf<Map<string | symbol, unknown>>();
@@ -611,6 +635,35 @@ describe("Agent Type System", () => {
       result.output.missing;
     });
 
+    it("preserves native generate result fields and output/context inference", async () => {
+      const agent = new Agent({
+        name: "Generate Types",
+        instructions: "List cities",
+        model: mockModel,
+      });
+      const runtimeContext = { requestId: "request-1", nested: { attempt: 1 } };
+      const result = await agent.generateText({
+        prompt: "List cities",
+        output: Output.array({ element: z.object({ city: z.string() }) }),
+        runtimeContext,
+      });
+      expectTypeOf<
+        Exclude<keyof GenerateTextResult<any, any, any>, keyof typeof result>
+      >().toEqualTypeOf<never>();
+      expectTypeOf(result.output).toEqualTypeOf<{ city: string }[]>();
+      expectTypeOf(result.finalStep.runtimeContext).toEqualTypeOf<typeof runtimeContext>();
+      expectTypeOf(result.steps[0].runtimeContext).toEqualTypeOf<typeof runtimeContext>();
+      // @ts-expect-error - runtime context must not be widened to any
+      result.finalStep.runtimeContext.missing;
+
+      const textResult = await agent.generateText({ prompt: "hi", runtimeContext });
+      expectTypeOf(textResult.output).toEqualTypeOf<string>();
+      expectTypeOf(textResult.finalStep.runtimeContext).toEqualTypeOf<typeof runtimeContext>();
+      const positionalResult = await agent.generateText("hi", { runtimeContext });
+      expectTypeOf(positionalResult.output).toEqualTypeOf<string>();
+      expectTypeOf(positionalResult.steps[0].runtimeContext).toEqualTypeOf<typeof runtimeContext>();
+    });
+
     it("should accept native toolApproval options", async () => {
       const agent = new Agent({
         name: "Test",
@@ -649,6 +702,7 @@ describe("Agent Type System", () => {
       const result = await agent.streamText("Test input");
       expectTypeOf(result).toMatchTypeOf<StreamTextResultWithContext>();
       expectTypeOf(result.textStream).not.toBeUndefined();
+      expectTypeOf(await result.output).toEqualTypeOf<string>();
       expectTypeOf(result.context).toEqualTypeOf<Map<string | symbol, unknown>>();
     });
 
@@ -675,6 +729,32 @@ describe("Agent Type System", () => {
       expectTypeOf(result).toMatchTypeOf<StreamTextResultWithContext>();
       expectTypeOf(result.textStream).not.toBeUndefined();
       expectTypeOf(result.context).toEqualTypeOf<Map<string | symbol, unknown>>();
+    });
+
+    it("preserves native stream result fields and output/context inference", async () => {
+      const agent = new Agent({
+        name: "Stream Types",
+        instructions: "List cities",
+        model: mockModel,
+      });
+      const result = await agent.streamText({
+        prompt: "List cities",
+        output: Output.array({ element: z.object({ city: z.string() }) }),
+        runtimeContext: { requestId: "request-1" },
+        onError: async () => {},
+      });
+      expectTypeOf<
+        Exclude<keyof StreamTextResult<any, any, any>, keyof typeof result>
+      >().toEqualTypeOf<never>();
+      expectTypeOf(await result.output).toEqualTypeOf<{ city: string }[]>();
+      expectTypeOf(await result.elementStream.getReader().read()).toMatchTypeOf<
+        ReadableStreamReadResult<{ city: string }>
+      >();
+      expectTypeOf(result.stream).toMatchTypeOf<ReadableStream<unknown>>();
+      expectTypeOf(result.fullStream).toMatchTypeOf<ReadableStream<unknown>>();
+      expectTypeOf((await result.finalStep).runtimeContext.requestId).toEqualTypeOf<string>();
+      expectTypeOf((await result.steps)[0].runtimeContext.requestId).toEqualTypeOf<string>();
+      expectTypeOf(result.consumeStream).toBeFunction();
     });
 
     it("should accept native toolApproval options for streamText", async () => {

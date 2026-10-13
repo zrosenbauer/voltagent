@@ -1,4 +1,4 @@
-import { type Category, getCategoryDescription } from "./categories";
+import { type Category, getCategoryDescription } from "./categories.js";
 
 /**
  * Create a prompt for a question.

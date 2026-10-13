@@ -1,7 +1,7 @@
 import { generateObject } from "ai";
 import { defineDataset } from "viteval/dataset";
 import { z } from "zod";
-import { categories } from "#/lib/categories";
+import { categories } from "../lib/categories.js";
 
 export default defineDataset({
   name: "supervisor",

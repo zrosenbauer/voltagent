@@ -10,7 +10,7 @@
  * - Preserves browser state between tool invocations when possible
  */
 
-import type { OperationContext } from "@voltagent/core";
+import type { ToolExecuteOptions } from "@voltagent/core";
 import { type Browser, type Page, chromium, firefox, webkit } from "playwright";
 
 // Define keys for storing browser/page in context
@@ -24,9 +24,10 @@ const INITIALIZING_KEY = Symbol("playwrightInitializing");
  * Manages initialization lock within the context.
  */
 export async function ensureBrowser(
-  context: OperationContext,
+  context: ToolExecuteOptions,
 ): Promise<{ browser: Browser; page: Page }> {
   const userCtx = context.context;
+  if (!userCtx) throw new Error("Tool context is required to manage browser state.");
 
   // Use context-specific lock
   if (userCtx.get(INITIALIZING_KEY)) {
@@ -101,8 +102,9 @@ export async function ensureBrowser(
 /**
  * Function to reset/close browser state for a specific operation context
  */
-export async function resetBrowserState(context: OperationContext): Promise<void> {
+export async function resetBrowserState(context: ToolExecuteOptions): Promise<void> {
   const userCtx = context.context;
+  if (!userCtx) throw new Error("Tool context is required to manage browser state.");
   const browser = userCtx.get(BROWSER_INSTANCE_KEY) as Browser | undefined;
 
   console.log(`[${context.operationId}] Resetting browser state for context...`);
