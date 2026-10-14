@@ -1,4 +1,4 @@
-import { tool } from "@voltagent/core";
+import { defineTool } from "@voltagent/core";
 import { z } from "zod";
 
 // Mock calendar database for demonstration
@@ -29,7 +29,7 @@ const mockCalendar = [
 /**
  * A tool for checking calendar events
  */
-export const checkCalendarTool = tool({
+export const checkCalendarTool = defineTool({
   description: "Check calendar events for a specific date",
   inputSchema: z.object({
     date: z.string().describe("The date to check calendar events for (YYYY-MM-DD)"),
@@ -56,7 +56,7 @@ export const checkCalendarTool = tool({
 /**
  * A tool for adding a calendar event
  */
-export const addCalendarEventTool = tool({
+export const addCalendarEventTool = defineTool({
   description: "Add a new event to the calendar",
   inputSchema: z.object({
     title: z.string().describe("The title of the event"),

@@ -62,7 +62,7 @@ npm create voltagent-app@latest -- --example with-working-memory
 ## Snippet
 
 ```ts
-import { Agent, Memory, VoltAgent } from "@voltagent/core";
+import { defineAgent, Memory, voltagent } from "@voltagent/core";
 import { LibSQLMemoryAdapter, LibSQLVectorAdapter } from "@voltagent/libsql";
 import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
@@ -79,9 +79,9 @@ const memory = new Memory({
   workingMemory: { enabled: true, scope: "conversation", schema: workingMemorySchema },
 });
 
-const agent = new Agent({ name: "Working Memory Agent", model: "openai/gpt-4o-mini", memory });
+const agent = defineAgent({ name: "Working Memory Agent", model: "openai/gpt-4o-mini", memory });
 
-new VoltAgent({ agents: { agent }, server: honoServer({ port: 3141 }) });
+voltagent({ agents: { agent }, server: honoServer({ port: 3141 }) });
 ```
 
 ## Run Locally

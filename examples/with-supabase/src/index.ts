@@ -1,4 +1,4 @@
-import { Agent, Memory, VoltAgent } from "@voltagent/core";
+import { Memory, defineAgent, voltagent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
 import { SupabaseMemoryAdapter } from "@voltagent/supabase"; // Import SupabaseMemory
@@ -21,7 +21,7 @@ const memory = new Memory({
   }),
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Asistant",
   instructions: "A helpful assistant that answers questions without using tools",
   model: "openai/gpt-4o-mini",
@@ -34,10 +34,10 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-new VoltAgent({
+await voltagent({
   agents: {
     agent,
   },
   logger,
   server: honoServer({ port: 3141 }),
-});
+}).ready();

@@ -1,5 +1,5 @@
 import { Octokit } from "@octokit/rest";
-import { tool } from "@voltagent/core";
+import { defineTool } from "@voltagent/core";
 import { z } from "zod";
 
 const octokit = new Octokit({
@@ -7,7 +7,7 @@ const octokit = new Octokit({
 });
 
 // Tool to fetch repository stars
-export const fetchRepoStarsTool = tool({
+export const fetchRepoStarsTool = defineTool({
   description: "Fetches the number of stars for a GitHub repository",
   inputSchema: z.object({
     owner: z.string().describe("The owner of the repository"),
@@ -35,7 +35,7 @@ export const fetchRepoStarsTool = tool({
 });
 
 // Tool to fetch repository contributors
-export const fetchRepoContributorsTool = tool({
+export const fetchRepoContributorsTool = defineTool({
   description: "Fetches the list of contributors for a GitHub repository",
   inputSchema: z.object({
     owner: z.string().describe("The owner of the repository"),

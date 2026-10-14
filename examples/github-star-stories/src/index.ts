@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { Agent, VoltAgent, VoltOpsClient, createTriggers } from "@voltagent/core";
+import { VoltOpsClient, createTriggers, defineAgent, voltagent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 /* import { honoServer } from "@voltagent/server-hono"; */
 import { serverlessHono } from "@voltagent/serverless-hono";
@@ -10,7 +10,7 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-const storytellerAgent = new Agent({
+const storytellerAgent = defineAgent({
   name: "StarStoryAgent",
   model: "openai/gpt-4o-mini",
   tools: {
@@ -39,7 +39,7 @@ interface GitHubStarPayload {
 }
 
 // For Serverless
-const voltAgent = new VoltAgent({
+const voltAgent = voltagent({
   agents: {
     storyteller: storytellerAgent,
   },
@@ -55,5 +55,6 @@ const voltAgent = new VoltAgent({
   // For REST Server
   // server: honoServer(),
 });
+await voltAgent.ready();
 
 export default voltAgent.serverless().toCloudflareWorker();

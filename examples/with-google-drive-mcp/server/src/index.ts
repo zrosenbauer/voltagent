@@ -1,5 +1,5 @@
 import { serve } from "@hono/node-server";
-import { tool } from "@voltagent/core";
+import { defineTool } from "@voltagent/core";
 import { type Context, Hono } from "hono";
 import { cors } from "hono/cors";
 import { convertJsonSchemaToZod } from "zod-from-json-schema";
@@ -138,7 +138,7 @@ const handleStream = async (c: Context) => {
     const tools = Object.fromEntries(
       googleDriveToolsSpec.map((toolSpec) => [
         toolSpec.function.name,
-        tool({
+        defineTool({
           description: toolSpec.function.description || "",
           inputSchema: convertJsonSchemaToZod(
             toolSpec.function.parameters as any,

@@ -1,4 +1,10 @@
-import { Agent, Memory, type Toolkit, VoltAgent, createReasoningTools } from "@voltagent/core";
+import {
+  Memory,
+  type Toolkit,
+  createReasoningTools,
+  defineAgent,
+  voltagent,
+} from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -13,7 +19,7 @@ const reasoningToolkit: Toolkit = createReasoningTools({
   addInstructions: true,
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "ThinkingAssistant",
   instructions: `
   You are an AI assistant designed for complex problem-solving and structured reasoning.
@@ -36,10 +42,10 @@ const agent = new Agent({
   }),
 });
 
-new VoltAgent({
+await voltagent({
   agents: {
     agent,
   },
   logger,
   server: honoServer({ port: 3141 }),
-});
+}).ready();

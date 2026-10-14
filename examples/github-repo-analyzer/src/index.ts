@@ -1,4 +1,4 @@
-import { Agent, InMemoryVectorAdapter, Memory, VoltAgent } from "@voltagent/core";
+import { InMemoryVectorAdapter, Memory, defineAgent, voltagent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -18,7 +18,7 @@ const memory = new Memory({
 });
 
 // Create the stars fetcher agent
-const starsFetcherAgent = new Agent({
+const starsFetcherAgent = defineAgent({
   name: "Stars Fetcher",
   instructions: "Fetches the number of stars for a GitHub repository using the GitHub API",
   model: "openai/gpt-4o-mini",
@@ -29,7 +29,7 @@ const starsFetcherAgent = new Agent({
 });
 
 // Create the contributors fetcher agent
-const contributorsFetcherAgent = new Agent({
+const contributorsFetcherAgent = defineAgent({
   name: "Contributors Fetcher",
   instructions: "Fetches the list of contributors for a GitHub repository using the GitHub API",
   model: "openai/gpt-4o-mini",
@@ -40,7 +40,7 @@ const contributorsFetcherAgent = new Agent({
 });
 
 // Create the analyzer agent
-const analyzerAgent = new Agent({
+const analyzerAgent = defineAgent({
   name: "Repo Analyzer",
   instructions: "Analyzes repository statistics and provides insights",
   model: "openai/gpt-4o-mini",
@@ -48,7 +48,7 @@ const analyzerAgent = new Agent({
 });
 
 // Create the supervisor agent that coordinates all the sub-agents
-const supervisorAgent = new Agent({
+const supervisorAgent = defineAgent({
   name: "Supervisor",
   instructions: `You are a GitHub repository analyzer. When given a GitHub repository URL or owner/repo format, you will:
 1. Use the StarsFetcher agent to get the repository's star count
@@ -63,10 +63,10 @@ Example input: https://github.com/vercel/ai-sdk or vercel/ai-sdk
 });
 
 // Initialize the VoltAgent with the agent hierarchy and server
-new VoltAgent({
+await voltagent({
   agents: {
     supervisorAgent,
   },
   logger,
   server: honoServer({ port: 3141 }),
-});
+}).ready();

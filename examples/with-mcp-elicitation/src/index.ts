@@ -1,4 +1,4 @@
-import { Agent, MCPConfiguration } from "@voltagent/core";
+import { MCPConfiguration, defineAgent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { startMcpServer } from "./mcp-server.js";
 
@@ -22,7 +22,7 @@ const mcpConfig = new MCPConfiguration({
 
 const tools = await mcpConfig.getTools();
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "ElicitationAgent",
   instructions: [
     "You are a tool-routing assistant.",

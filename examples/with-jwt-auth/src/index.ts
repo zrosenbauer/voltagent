@@ -1,4 +1,4 @@
-import { Agent, VoltAgent } from "@voltagent/core";
+import { defineAgent, voltagent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer, jwtAuth } from "@voltagent/server-hono";
 import jwt from "jsonwebtoken";
@@ -13,7 +13,7 @@ const logger = createPinoLogger({
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
 
 // Create an agent that uses auth context
-const agent = new Agent({
+const agent = defineAgent({
   name: "agent",
   instructions: "You are a helpful assistant that knows who is talking to you.",
   model: "openai/gpt-4o-mini",
@@ -38,7 +38,7 @@ const agent = new Agent({
 });
 
 // Create VoltAgent with JWT authentication
-new VoltAgent({
+await voltagent({
   agents: {
     agent,
   },
@@ -72,7 +72,7 @@ new VoltAgent({
       },
     }),
   }),
-});
+}).ready();
 
 // Helper function to create a test JWT token
 export function createTestToken(user: {

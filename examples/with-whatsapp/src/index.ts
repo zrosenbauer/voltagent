@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { Agent, Memory, VoltAgent, VoltOpsClient } from "@voltagent/core";
+import { Memory, VoltOpsClient, defineAgent, voltagent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -43,7 +43,7 @@ const memory = new Memory({
   },
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "with-whatsapp",
   instructions: `You are a WhatsApp ordering bot. Your task is to take food orders from customers.
 
@@ -74,7 +74,7 @@ Order Flow:
   memory,
 });
 
-new VoltAgent({
+await voltagent({
   agents: {
     agent,
   },
@@ -108,4 +108,4 @@ new VoltAgent({
     publicKey: process.env.VOLTAGENT_PUBLIC_KEY || "",
     secretKey: process.env.VOLTAGENT_SECRET_KEY || "",
   }),
-});
+}).ready();

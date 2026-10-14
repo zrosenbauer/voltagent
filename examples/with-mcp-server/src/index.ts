@@ -1,4 +1,4 @@
-import { Agent, VoltAgent, createTool, createWorkflowChain } from "@voltagent/core";
+import { createTool, createWorkflowChain, defineAgent, voltagent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { MCPServer } from "@voltagent/mcp-server";
 import { honoServer } from "@voltagent/server-hono";
@@ -78,21 +78,21 @@ const approvalTool = createTool({
   },
 });
 
-const storyWriter = new Agent({
+const storyWriter = defineAgent({
   name: "StoryWriterAgent",
   purpose: "Craft imaginative short stories on request.",
   instructions: "You are a creative story writer.",
   model: "openai/gpt-4o-mini",
 });
 
-const translatorAgent = new Agent({
+const translatorAgent = defineAgent({
   name: "TranslatorAgent",
   purpose: "Translate content between languages while keeping tone and intent.",
   instructions: "You are a skilled translator.",
   model: "openai/gpt-4o-mini",
 });
 
-const supervisorAgent = new Agent({
+const supervisorAgent = defineAgent({
   name: "SupervisorAgent",
   purpose: "Decide whether a task should be written or translated and delegate accordingly.",
   instructions:
@@ -101,7 +101,7 @@ const supervisorAgent = new Agent({
   subAgents: [storyWriter, translatorAgent],
 });
 
-const assistant = new Agent({
+const assistant = defineAgent({
   name: "AssistantAgent",
   purpose: "Answer general questions and call helper tools such as current time or approval.",
   instructions:
@@ -271,7 +271,7 @@ const mcpServer = new MCPServer({
   },
 });
 
-new VoltAgent({
+await voltagent({
   agents: {
     supervisorAgent,
     translatorAgent,
@@ -283,4 +283,4 @@ new VoltAgent({
   },
   server: honoServer({ port: 3141 }),
   logger,
-});
+}).ready();

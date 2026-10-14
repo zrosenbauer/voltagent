@@ -1,4 +1,4 @@
-import { Agent, Memory, VoltAgent, VoltOpsClient } from "@voltagent/core";
+import { Memory, VoltOpsClient, defineAgent, voltagent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -10,7 +10,7 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Base Agent",
   instructions: "You are a helpful assistant",
   model: "openai/gpt-4o-mini",
@@ -27,7 +27,7 @@ const agent = new Agent({
   }),
 });
 
-new VoltAgent({
+await voltagent({
   agents: {
     agent,
   },
@@ -37,4 +37,4 @@ new VoltAgent({
     publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
     secretKey: process.env.VOLTAGENT_SECRET_KEY,
   }),
-});
+}).ready();

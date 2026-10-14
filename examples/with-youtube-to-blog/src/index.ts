@@ -1,9 +1,9 @@
 import {
-  Agent,
   MCPConfiguration,
   Memory,
-  VoltAgent,
   VoltAgentObservability,
+  defineAgent,
+  voltagent,
 } from "@voltagent/core";
 import { LibSQLMemoryAdapter, LibSQLObservabilityAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
@@ -35,7 +35,7 @@ const memory = new Memory({
   const youtubeTools = await youtubeMcpConfig.getTools();
 
   // Create TranscriptFetcher subagent
-  const transcriptFetcherAgent = new Agent({
+  const transcriptFetcherAgent = defineAgent({
     name: "TranscriptFetcher",
     instructions: `You are a transcript fetcher. Your ONLY job is to fetch transcripts from YouTube videos.
 
@@ -52,7 +52,7 @@ IMPORTANT:
   });
 
   // Create BlogWriter subagent
-  const blogWriterAgent = new Agent({
+  const blogWriterAgent = defineAgent({
     name: "BlogWriter",
     instructions: `You are an expert blog writer. When given a YouTube transcript, convert it into a well-structured, engaging blog post with:
 - A catchy, SEO-friendly title
@@ -66,7 +66,7 @@ Format the output in Markdown.`,
   });
 
   // Create Coordinator supervisor agent
-  const coordinatorAgent = new Agent({
+  const coordinatorAgent = defineAgent({
     name: "YouTubeToBlogCoordinator",
     instructions: `You are a coordinator that orchestrates the process of converting YouTube videos to blog posts. You DO NOT write the blog post yourself - that is the BlogWriter's job.
 
@@ -102,7 +102,7 @@ CRITICAL RULES:
     },
   });
 
-  new VoltAgent({
+  await voltagent({
     agents: {
       coordinatorAgent,
       transcriptFetcherAgent,
@@ -113,5 +113,5 @@ CRITICAL RULES:
     observability: new VoltAgentObservability({
       storage: new LibSQLObservabilityAdapter(),
     }),
-  });
+  }).ready();
 })(); // IGNORE

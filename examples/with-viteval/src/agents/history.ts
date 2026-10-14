@@ -1,4 +1,4 @@
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
 export interface HistoryInput {
   question: string;
@@ -12,7 +12,7 @@ export interface HistoryOutput {
   confidence: number;
 }
 
-export const historyAgent = new Agent({
+export const historyAgent = defineAgent({
   name: "history-agent",
   instructions: `You are a specialized history agent with expertise in historical events, people, and places.
 Your knowledge covers:

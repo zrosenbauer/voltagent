@@ -1,10 +1,10 @@
 import {
-  Agent,
   InMemoryVectorAdapter,
   Memory,
-  VoltAgent,
   VoltAgentObservability,
-  tool,
+  defineAgent,
+  defineTool,
+  voltagent,
 } from "@voltagent/core";
 import { LibSQLMemoryAdapter, LibSQLObservabilityAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
@@ -23,7 +23,7 @@ const memory = new Memory({
   vector: new InMemoryVectorAdapter(),
 });
 
-const uppercaseTool = tool({
+const uppercaseTool = defineTool({
   description: "Converts text to uppercase",
   inputSchema: z.object({
     text: z.string().describe("The text to convert to uppercase"),
@@ -34,7 +34,7 @@ const uppercaseTool = tool({
 });
 
 // Create two simple specialized subagents
-const contentCreatorAgent = new Agent({
+const contentCreatorAgent = defineAgent({
   name: "ContentCreator",
   purpose: "Drafts short content",
   instructions: "Creates short text content on requested topics",
@@ -42,7 +42,7 @@ const contentCreatorAgent = new Agent({
   memory,
 });
 
-const formatterAgent = new Agent({
+const formatterAgent = defineAgent({
   name: "Formatter",
   purpose: "Cleans and formats text",
   instructions: "Formats and styles text content",
@@ -54,7 +54,7 @@ const formatterAgent = new Agent({
 });
 
 // Create a simple supervisor agent
-const supervisorAgent = new Agent({
+const supervisorAgent = defineAgent({
   name: "Supervisor",
   instructions: "Coordinates between content creation and formatting agents",
   model: "openai/gpt-4o-mini",
@@ -68,7 +68,7 @@ const supervisorAgent = new Agent({
 });
 
 // Create VoltAgent with the new server provider pattern
-new VoltAgent({
+await voltagent({
   agents: {
     supervisorAgent,
     formatterAgent,
@@ -80,4 +80,4 @@ new VoltAgent({
   observability: new VoltAgentObservability({
     storage: new LibSQLObservabilityAdapter(),
   }),
-});
+}).ready();

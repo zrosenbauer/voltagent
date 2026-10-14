@@ -1,4 +1,4 @@
-import { Agent, Memory, VoltAgent } from "@voltagent/core";
+import { Memory, defineAgent, voltagent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -12,7 +12,7 @@ const memory = new Memory({
   storage: new LibSQLMemoryAdapter(),
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "RetriesFallbackAgent",
   instructions: "Answer support questions with short, direct replies.",
   model: "openai/gpt-4o-mini",
@@ -20,8 +20,8 @@ const agent = new Agent({
   memory,
 });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer(),
   logger,
-});
+}).ready();

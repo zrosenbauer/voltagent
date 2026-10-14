@@ -1,4 +1,4 @@
-import { tool } from "@voltagent/core";
+import { defineTool } from "@voltagent/core";
 import { z } from "zod";
 
 // Define output schema for search results
@@ -17,7 +17,7 @@ const searchOutputSchema = z.object({
  * A tool for performing web searches
  * With output schema validation to ensure consistent response format
  */
-export const searchTool = tool({
+export const searchTool = defineTool({
   description: "Search the web for information",
   inputSchema: z.object({
     query: z.string().describe("The search query"),

@@ -1,4 +1,4 @@
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
 export interface ScienceInput {
   question: string;
@@ -12,7 +12,7 @@ export interface ScienceOutput {
   confidence: number;
 }
 
-export const scienceAgent = new Agent({
+export const scienceAgent = defineAgent({
   name: "science-agent",
   instructions: `You are a specialized science agent with expertise in physics, chemistry, biology, and other scientific disciplines.
 Your knowledge covers:

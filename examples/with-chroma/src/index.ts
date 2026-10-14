@@ -1,4 +1,4 @@
-import { Agent, Memory, VoltAgent } from "@voltagent/core";
+import { Memory, defineAgent, voltagent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -19,7 +19,7 @@ const memory = new Memory({
 });
 
 // Agent 1: Using retriever directly
-const agentWithRetriever = new Agent({
+const agentWithRetriever = defineAgent({
   name: "Assistant with Retriever",
   instructions:
     "A helpful assistant that can retrieve information from the Chroma knowledge base using semantic search to provide better answers. I automatically search for relevant information when needed.",
@@ -29,7 +29,7 @@ const agentWithRetriever = new Agent({
 });
 
 // Agent 2: Using retriever as tool
-const agentWithTools = new Agent({
+const agentWithTools = defineAgent({
   name: "Assistant with Tools",
   instructions:
     "A helpful assistant that can search the Chroma knowledge base using tools. The agent will decide when to search for information based on user questions.",
@@ -39,14 +39,14 @@ const agentWithTools = new Agent({
 });
 
 // Initialize VoltAgent with both agents and server
-new VoltAgent({
+await voltagent({
   agents: {
     agentWithRetriever,
     agentWithTools,
   },
   logger,
   server: honoServer({ port: 3141 }),
-});
+}).ready();
 
 console.log("🚀 VoltAgent with Chroma is running!");
 console.log("📚 Two different agents are ready:");

@@ -1,4 +1,4 @@
-import { Agent, Memory, VoltAgent } from "@voltagent/core";
+import { Memory, defineAgent, voltagent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
 
@@ -17,7 +17,7 @@ const memory = new Memory({
 });
 
 // Create the agent with retrieval tool
-const agent = new Agent({
+const agent = defineAgent({
   name: "Assistant with Retrieval",
   instructions:
     "A helpful assistant that can retrieve information from documents using keyword-based search to provide better answers",
@@ -27,7 +27,7 @@ const agent = new Agent({
 });
 
 // Create the agent with retrieval tool
-const agentWithTools = new Agent({
+const agentWithTools = defineAgent({
   name: "Assistant with Retrieval and Tools",
   instructions:
     "A helpful assistant that can retrieve information from documents using keyword-based search to provide better answers",
@@ -37,11 +37,11 @@ const agentWithTools = new Agent({
 });
 
 // Initialize the VoltAgent
-new VoltAgent({
+await voltagent({
   agents: {
     agent,
     agentWithTools,
   },
   logger,
   server: honoServer({ port: 3141 }),
-});
+}).ready();

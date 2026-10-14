@@ -1,4 +1,4 @@
-import { Agent, VoltAgent } from "@voltagent/core";
+import { defineAgent, voltagent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
 
@@ -7,7 +7,7 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-const thumbsAgent = new Agent({
+const thumbsAgent = defineAgent({
   name: "Thumbs Feedback Agent",
   instructions: "You are a helpful assistant. Keep replies short and clear.",
   model: "openai/gpt-4o-mini",
@@ -23,7 +23,7 @@ const thumbsAgent = new Agent({
   },
 });
 
-const ratingAgent = new Agent({
+const ratingAgent = defineAgent({
   name: "Rating Feedback Agent",
   instructions: "Respond in concise bullet points.",
   model: "openai/gpt-4o-mini",
@@ -37,7 +37,7 @@ const ratingAgent = new Agent({
   },
 });
 
-const issuesAgent = new Agent({
+const issuesAgent = defineAgent({
   name: "Issue Tagging Agent",
   instructions: "Answer clearly and include a short summary.",
   model: "openai/gpt-4o-mini",
@@ -55,7 +55,7 @@ const issuesAgent = new Agent({
   },
 });
 
-new VoltAgent({
+await voltagent({
   agents: {
     thumbs: thumbsAgent,
     rating: ratingAgent,
@@ -63,4 +63,4 @@ new VoltAgent({
   },
   server: honoServer(),
   logger,
-});
+}).ready();

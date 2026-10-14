@@ -1,4 +1,4 @@
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import type { Memory } from "@voltagent/core";
 import { createAdCreatorAgent } from "./ad-creator.agent";
 import { createLandingPageAnalyzer } from "./landing-page-analyzer.agent";
@@ -8,7 +8,7 @@ export const createSupervisorAgent = (memory: Memory) => {
   const landingPageAnalyzer = createLandingPageAnalyzer(memory);
   const adCreator = createAdCreatorAgent(memory);
 
-  return new Agent({
+  return defineAgent({
     name: "InstagramAdSupervisor",
     purpose:
       "Orchestrate Instagram ad generation workflow from website analysis to final ad creation",

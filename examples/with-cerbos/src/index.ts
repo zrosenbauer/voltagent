@@ -1,5 +1,5 @@
 import { GRPC } from "@cerbos/grpc";
-import { Agent, MCPConfiguration, VoltAgent } from "@voltagent/core";
+import { MCPConfiguration, defineAgent, voltagent } from "@voltagent/core";
 import type { MCPCanParams } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 import { startMCPServer } from "./mcp-server.js";
@@ -72,7 +72,7 @@ const mcp = new MCPConfiguration({
   });
 
   // Create the agent with MCP tools
-  const agent = new Agent({
+  const agent = defineAgent({
     name: "Finance Assistant",
     instructions: `You are a helpful finance assistant that helps users manage expenses.
 Available actions depend on the user's role:
@@ -86,8 +86,8 @@ Always be helpful and explain what actions are available.`,
   });
 
   // Initialize VoltAgent with honoServer
-  new VoltAgent({
+  await voltagent({
     agents: { agent },
     server: honoServer(),
-  });
+  }).ready();
 })();

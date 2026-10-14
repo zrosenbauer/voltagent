@@ -64,7 +64,7 @@ This example demonstrates how to integrate VoltAgent with a Zapier Model Context
 If you prefer to use OpenAI instead of Amazon Bedrock, update `src/index.ts` to use a model string and set `OPENAI_API_KEY`:
 
 ```ts
-const agent = new Agent({
+const agent = defineAgent({
   // ...
   model: "openai/gpt-4o-mini",
 });

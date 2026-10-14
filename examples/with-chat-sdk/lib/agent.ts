@@ -1,7 +1,7 @@
-import { Agent, tool } from "@voltagent/core";
+import { defineAgent, defineTool } from "@voltagent/core";
 import { z } from "zod";
 
-const getCurrentTimeTool = tool({
+const getCurrentTimeTool = defineTool({
   description: "Get the current date and time for a given IANA timezone.",
   inputSchema: z.object({
     timeZone: z
@@ -36,7 +36,7 @@ const getCurrentTimeTool = tool({
   },
 });
 
-export const slackAssistantAgent = new Agent({
+export const slackAssistantAgent = defineAgent({
   name: "ChatSDKSlackAssistant",
   instructions: [
     "You are a helpful assistant inside Slack.",

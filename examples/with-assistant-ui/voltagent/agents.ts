@@ -1,4 +1,4 @@
-import { Agent, tool } from "@voltagent/core";
+import { defineTool, defineAgent } from "@voltagent/core";
 import { z } from "zod";
 import { sharedMemory } from "./memory";
 
@@ -13,7 +13,7 @@ const weatherOutputSchema = z.object({
   message: z.string(),
 });
 
-const weatherTool = tool({
+const weatherTool = defineTool({
   description: "Get the current weather for a specific location",
   inputSchema: z.object({
     location: z.string().describe("The city or location to get weather for"),
@@ -37,7 +37,7 @@ const weatherTool = tool({
   },
 });
 
-export const assistantAgent = new Agent({
+export const assistantAgent = defineAgent({
   name: "AssistantUIAgent",
   instructions:
     "You are a helpful AI that keeps responses concise, explains reasoning when useful, can gracefully describe any image or file attachments the user provides, and can call the getWeather tool for weather questions. Ask clarifying questions when context is missing.",

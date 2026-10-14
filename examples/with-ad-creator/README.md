@@ -260,10 +260,10 @@ docker-compose up
 Create a new tool in `src/tools/image-generation/`:
 
 ```typescript
-import { tool } from "@voltagent/core";
+import { defineTool } from "@voltagent/core";
 import { z } from "zod";
 
-export const generateLinkedInAdTool = tool({
+export const generateLinkedInAdTool = defineTool({
   description: "Generate LinkedIn ad (1200x627)",
   inputSchema: z.object({
     productName: z.string(),
@@ -284,7 +284,7 @@ Modify agent instructions in `src/agents/`:
 
 ```typescript
 export const createAdCreatorAgent = (memory: Memory) => {
-  return new Agent({
+  return defineAgent({
     name: "AdCreator",
     instructions: `Your custom instructions here...`,
     // Add your custom tools

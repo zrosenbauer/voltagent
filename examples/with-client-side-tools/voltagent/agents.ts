@@ -1,22 +1,22 @@
-import { Agent, tool } from "@voltagent/core";
+import { defineAgent, defineTool } from "@voltagent/core";
 import { z } from "zod";
 
 // Tools definitions - those without execute are automatically client-side
 const tools = {
-  // Client-side automatic tool (no execute function)
-  getLocation: tool({
+  // Client-side automatic defineTool (no execute function)
+  getLocation: defineTool({
     description: "Get the user's current location",
     inputSchema: z.object({}),
   }),
 
   // Client-side interactive tool
-  readClipboard: tool({
+  readClipboard: defineTool({
     description: "Read the content from the user's clipboard (requires permission)",
     inputSchema: z.object({}),
   }),
 
-  // Server-side tool (has execute function)
-  getWeather: tool({
+  // Server-side defineTool (has execute function)
+  getWeather: defineTool({
     description: "Get current weather for a city",
     inputSchema: z.object({
       city: z.string().describe("City name"),
@@ -33,7 +33,7 @@ const tools = {
   }),
 };
 
-export const agent = new Agent({
+export const agent = defineAgent({
   id: "assistant",
   name: "Assistant",
   instructions: "You are a helpful assistant that demonstrates client-side tools in VoltAgent.",

@@ -1,10 +1,10 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
-import { Agent, createTool } from "@voltagent/core";
+import { createTool, defineAgent } from "@voltagent/core";
 import sharp from "sharp";
 import { z } from "zod";
 
-const creativeBriefAgent = new Agent({
+const creativeBriefAgent = defineAgent({
   name: "GeminiCreativeBrief",
   purpose: "Transform product information into rich Instagram creative direction",
   instructions:
@@ -12,7 +12,7 @@ const creativeBriefAgent = new Agent({
   model: "google/gemini-2.0-flash-exp",
 });
 
-const imageGenerationAgent = new Agent({
+const imageGenerationAgent = defineAgent({
   name: "GeminiImageGenerator",
   purpose: "Generate high-converting Instagram visuals",
   instructions:

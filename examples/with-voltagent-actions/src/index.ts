@@ -1,4 +1,4 @@
-import { Agent, MCPConfiguration, VoltAgent } from "@voltagent/core";
+import { MCPConfiguration, defineAgent, voltagent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
 import { createComposio, createVoltOpsMcpServer } from "./config";
@@ -15,7 +15,7 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-const airtableAgent = new Agent({
+const airtableAgent = defineAgent({
   name: "Airtable Actions Assistant",
   instructions:
     "You are an operations assistant who manages Airtable records using the provided actions. List, inspect, create, update, or delete rows exactly as requested.",
@@ -40,7 +40,7 @@ async function bootstrap() {
 
   const voltopsTools = await actionsMcp.getToolsets();
 
-  const mcpActionsAgent = new Agent({
+  const mcpActionsAgent = defineAgent({
     name: "VoltOps MCP Actions Agent",
     instructions:
       "You orchestrate Airtable syncs exclusively through the VoltOps MCP tools (airtable_create_record, airtable_list_records, etc.). Always pick the appropriate tool and feed it the payload requested by the user.",
@@ -48,7 +48,7 @@ async function bootstrap() {
     tools: voltopsTools.airtable.getTools(),
   });
 
-  const slackActionsAgent = new Agent({
+  const slackActionsAgent = defineAgent({
     name: "VoltOps Slack MCP Agent",
     instructions:
       "You orchestrate Slack workflows exclusively through the VoltOps Slack MCP tools (slack_post_message, slack_get_message_permalink, etc.). Always use the tool that best matches the user's request.",
@@ -56,7 +56,7 @@ async function bootstrap() {
     tools: voltopsTools.slack.getTools(),
   });
 
-  const composioActionsAgent = new Agent({
+  const composioActionsAgent = defineAgent({
     name: "Composio MCP Actions Agent",
     instructions:
       "You orchestrate Airtable syncs exclusively through the VoltOps MCP tools (airtable_create_record, airtable_list_records, etc.). Always pick the appropriate tool and feed it the payload requested by the user.",
@@ -64,7 +64,7 @@ async function bootstrap() {
     tools: voltopsTools.composio.getTools(),
   });
 
-  new VoltAgent({
+  await voltagent({
     agents: {
       airtableAgent,
       mcpActionsAgent,
@@ -73,7 +73,7 @@ async function bootstrap() {
     },
     logger,
     server: honoServer(),
-  });
+  }).ready();
 }
 
 bootstrap().catch((error) => {

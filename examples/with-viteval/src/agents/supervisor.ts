@@ -1,4 +1,4 @@
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import { generalAgent } from "./general.js";
 import { geographyAgent } from "./geography.js";
 import { historyAgent } from "./history.js";
@@ -14,7 +14,7 @@ export interface SupervisorOutput {
   agentUsed: string;
 }
 
-export const supervisorAgent = new Agent({
+export const supervisorAgent = defineAgent({
   name: "supervisor-agent",
   instructions: `You are a supervisor agent that has a team of specialized agents for answering questions. Your task is to route the user query to the appropriate specialized agent and then return the response from the specialized agent to the user.
 

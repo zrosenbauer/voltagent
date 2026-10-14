@@ -1,6 +1,5 @@
 import {
-  Agent,
-  VoltAgent,
+  type Agent,
   andAgent,
   andBranch,
   andDoUntil,
@@ -14,20 +13,22 @@ import {
   andThen,
   createInputGuardrail,
   createOutputGuardrail,
-  createWorkflow,
+  defineAgent,
+  defineWorkflow,
+  voltagent,
 } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
 
 // Define reusable agents
-const analysisAgent = new Agent({
+const analysisAgent = defineAgent({
   name: "AnalysisAgent",
   model: "openai/gpt-4o-mini",
   instructions: "You are a data analyst. Provide clear, structured analysis.",
 });
 
-const contentAgent = new Agent({
+const contentAgent = defineAgent({
   name: "ContentAgent",
   model: "openai/gpt-4o-mini",
   instructions: "You are a content creator. Generate engaging and accurate content.",
@@ -37,7 +38,7 @@ const contentAgent = new Agent({
 // Example 1: Basic Order Processing Workflow
 // Concepts: Basic steps (andThen), AI agent (andAgent), conditional logic (andWhen)
 // ==============================================================================
-const orderProcessingWorkflow = createWorkflow(
+const orderProcessingWorkflow = defineWorkflow(
   {
     id: "order-processing",
     name: "Order Processing Workflow",
@@ -164,7 +165,7 @@ const orderProcessingWorkflow = createWorkflow(
 // Example 2: Human-in-the-Loop Approval Workflow
 // Concepts: Suspend/resume, step-level schemas, human intervention
 // ==============================================================================
-const expenseApprovalWorkflow = createWorkflow(
+const expenseApprovalWorkflow = defineWorkflow(
   {
     id: "expense-approval",
     name: "Expense Approval Workflow",
@@ -249,7 +250,7 @@ const expenseApprovalWorkflow = createWorkflow(
 // Example 3: Multi-Step Content Analysis Workflow
 // Concepts: Step schemas, data transformation, logging with andTap
 // ==============================================================================
-const contentAnalysisWorkflow = createWorkflow(
+const contentAnalysisWorkflow = defineWorkflow(
   {
     id: "content-analysis",
     name: "Content Analysis Workflow",
@@ -360,7 +361,7 @@ const contentAnalysisWorkflow = createWorkflow(
 // Example 4: Article Summarization with Dynamic Schema
 // Concepts: Dynamic schema generation based on workflow input
 // ==============================================================================
-const articleSummarizationWorkflow = createWorkflow(
+const articleSummarizationWorkflow = defineWorkflow(
   {
     id: "article-summarizer",
     name: "Article Summarization Workflow",
@@ -400,7 +401,7 @@ const articleSummarizationWorkflow = createWorkflow(
 // Example 5: Timed Reminder Workflow
 // Concepts: andSleep, andSleepUntil
 // ==============================================================================
-const timedReminderWorkflow = createWorkflow(
+const timedReminderWorkflow = defineWorkflow(
   {
     id: "timed-reminder",
     name: "Timed Reminder Workflow",
@@ -441,7 +442,7 @@ const timedReminderWorkflow = createWorkflow(
 // Example 6: Batch Transform Workflow
 // Concepts: andForEach, andMap
 // ==============================================================================
-const batchTransformWorkflow = createWorkflow(
+const batchTransformWorkflow = defineWorkflow(
   {
     id: "batch-transform",
     name: "Batch Transform Workflow",
@@ -484,7 +485,7 @@ const batchTransformWorkflow = createWorkflow(
 // Example 7: Loop + Branch Workflow
 // Concepts: andDoWhile, andDoUntil, andBranch
 // ==============================================================================
-const loopAndBranchWorkflow = createWorkflow(
+const loopAndBranchWorkflow = defineWorkflow(
   {
     id: "loop-and-branch",
     name: "Loop + Branch Workflow",
@@ -574,7 +575,7 @@ const redactNumbers = createOutputGuardrail<string>({
   }),
 });
 
-const guardrailWorkflow = createWorkflow(
+const guardrailWorkflow = defineWorkflow(
   {
     id: "guardrail-workflow",
     name: "Guardrail Workflow",
@@ -598,7 +599,7 @@ const guardrailWorkflow = createWorkflow(
 // Example 9: Wrapped Agent Call Workflow
 // Concepts: Agent call inside andThen; parent span inheritance
 // ==============================================================================
-const wrappedAgentWorkflow = createWorkflow(
+const wrappedAgentWorkflow = defineWorkflow(
   {
     id: "wrapped-agent-call",
     name: "Wrapped Agent Call Workflow",
@@ -642,7 +643,7 @@ const logger = createPinoLogger({
   level: "debug",
 });
 
-new VoltAgent({
+await voltagent({
   agents: {
     analysisAgent,
     contentAgent,
@@ -660,4 +661,4 @@ new VoltAgent({
     guardrailWorkflow,
     wrappedAgentWorkflow,
   },
-});
+}).ready();

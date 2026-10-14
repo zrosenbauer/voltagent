@@ -1,4 +1,4 @@
-import { tool } from "@voltagent/core";
+import { defineTool } from "@voltagent/core";
 import { z } from "zod";
 import { supabase } from "../../lib/supabase";
 
@@ -6,7 +6,7 @@ const customerContextSchema = z.object({
   customerPhone: z.string(),
 });
 
-export const createOrderTool = tool({
+export const createOrderTool = defineTool({
   description: "Creates a new order with the items and delivery address from working memory",
   inputSchema: z.object({
     items: z

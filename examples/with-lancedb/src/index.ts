@@ -1,4 +1,4 @@
-import { Agent, Memory, VoltAgent } from "@voltagent/core";
+import { Memory, defineAgent, voltagent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -19,7 +19,7 @@ const memory = new Memory({
 });
 
 // Agent 1: Automatic Retrieval
-const agentWithRetriever = new Agent({
+const agentWithRetriever = defineAgent({
   name: "Assistant with Retriever",
   instructions:
     "You are a helpful assistant. You have access to a knowledge base about VoltAgent and LanceDB. You automatically retrieve relevant information to answer user questions.",
@@ -29,7 +29,7 @@ const agentWithRetriever = new Agent({
 });
 
 // Agent 2: Tool-based Retrieval
-const agentWithTools = new Agent({
+const agentWithTools = defineAgent({
   name: "Assistant with Tools",
   instructions:
     "You represent a helpful assistant that can search the knowledge base using tools. Decide when to search based on the user's question.",
@@ -39,14 +39,14 @@ const agentWithTools = new Agent({
 });
 
 // Initialize VoltAgent
-new VoltAgent({
+await voltagent({
   agents: {
     agentWithRetriever,
     agentWithTools,
   },
   logger,
   server: honoServer({ port: 3000 }),
-});
+}).ready();
 
 console.log("🚀 VoltAgent with LanceDB is running!");
 console.log("Try asking: 'What is VoltAgent?' or 'Tell me about LanceDB'");

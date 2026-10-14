@@ -1,4 +1,4 @@
-import { tool } from "@voltagent/core";
+import { defineTool } from "@voltagent/core";
 import { z } from "zod";
 import { supabase } from "../../lib/supabase";
 
@@ -6,7 +6,7 @@ const customerContextSchema = z.object({
   customerPhone: z.string(),
 });
 
-export const checkOrderStatusTool = tool({
+export const checkOrderStatusTool = defineTool({
   description: "Checks the status of a customer's order(s) from the database",
   inputSchema: z.object({
     orderId: z.number().optional().describe("Specific order ID to check"),

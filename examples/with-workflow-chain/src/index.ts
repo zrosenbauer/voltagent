@@ -1,24 +1,25 @@
 import {
-  Agent,
-  VoltAgent,
+  type Agent,
   andGuardrail,
   andThen,
   createInputGuardrail,
   createOutputGuardrail,
   createWorkflowChain,
+  defineAgent,
+  voltagent,
 } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
 
 // Define reusable agents
-const analysisAgent = new Agent({
+const analysisAgent = defineAgent({
   name: "AnalysisAgent",
   model: "openai/gpt-4o-mini",
   instructions: "You are a data analyst. Provide clear, structured analysis.",
 });
 
-const contentAgent = new Agent({
+const contentAgent = defineAgent({
   name: "ContentAgent",
   model: "openai/gpt-4o-mini",
   instructions: "You are a content creator. Generate engaging and accurate content.",
@@ -606,7 +607,7 @@ const logger = createPinoLogger({
   level: "debug",
 });
 
-new VoltAgent({
+await voltagent({
   agents: {
     analysisAgent,
     contentAgent,
@@ -624,4 +625,4 @@ new VoltAgent({
     guardrailWorkflow,
     wrappedAgentWorkflow,
   },
-});
+}).ready();

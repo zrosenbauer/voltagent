@@ -1,4 +1,4 @@
-import { Agent, Memory, VoltAgent, VoltOpsClient } from "@voltagent/core";
+import { Memory, VoltOpsClient, defineAgent, voltagent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
 import { ManagedMemoryAdapter, ManagedMemoryVectorAdapter } from "@voltagent/voltagent-memory";
@@ -17,7 +17,7 @@ const managedVector = new ManagedMemoryVectorAdapter({
   databaseName: "us-test",
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Managed Memory Agent",
   instructions:
     "A helpful assistant that stores conversations in VoltAgent Managed Memory via VoltOps.",
@@ -34,13 +34,13 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-new VoltAgent({
+await voltagent({
   agents: {
     managed: agent,
   },
   logger,
   server: honoServer({ port: Number(process.env.PORT || 3141) }),
-});
+}).ready();
 
 (async () => {
   const connection = await managedMemory.getConnectionInfo();

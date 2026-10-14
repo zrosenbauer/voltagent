@@ -1,4 +1,4 @@
-import { Agent, VoltAgent } from "@voltagent/core";
+import { defineAgent, voltagent } from "@voltagent/core";
 import { elysiaServer } from "@voltagent/server-elysia";
 
 // Mock model to avoid API keys requirement for the example
@@ -33,14 +33,14 @@ const mockModel = {
 } as any;
 
 // Define a simple agent
-const agent = new Agent({
+const agent = defineAgent({
   name: "example-agent",
   instructions: "You are a helpful assistant.",
   model: mockModel,
 });
 
 // Initialize VoltAgent with Elysia server
-const _client = new VoltAgent({
+const _client = voltagent({
   agents: {
     agent,
   },
@@ -48,3 +48,4 @@ const _client = new VoltAgent({
     port: 3000,
   }),
 });
+await _client.ready();

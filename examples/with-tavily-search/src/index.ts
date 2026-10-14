@@ -1,4 +1,4 @@
-import { Agent, Memory, VoltAgent } from "@voltagent/core";
+import { Memory, defineAgent, voltagent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -16,7 +16,7 @@ const memory = new Memory({
 });
 
 // Create the search agent with Tavily tools
-const searchAgent = new Agent({
+const searchAgent = defineAgent({
   name: "Web Search Agent",
   instructions: `You are a web search agent powered by Tavily's advanced search API. You can:
 
@@ -43,10 +43,10 @@ Example queries you can handle:
 });
 
 // Initialize the VoltAgent with the search agent and server
-new VoltAgent({
+await voltagent({
   agents: {
     searchAgent,
   },
   logger,
   server: honoServer(),
-});
+}).ready();

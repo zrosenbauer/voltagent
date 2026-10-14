@@ -1,12 +1,12 @@
 import path from "node:path";
 import {
-  Agent,
   InMemoryVectorAdapter,
   LocalSandbox,
   Memory,
   NodeFilesystemBackend,
-  VoltAgent,
   Workspace,
+  defineAgent,
+  voltagent,
 } from "@voltagent/core";
 import { LibSQLMemoryAdapter, LibSQLVectorAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
@@ -50,7 +50,7 @@ const workspace = new Workspace({
   },
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Workspace Playwright Agent",
   instructions: ["You are a helpful browser automation assistant."].join(" "),
   model: "openai/gpt-4o-mini",
@@ -62,8 +62,8 @@ const agent = new Agent({
   },
 });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer(),
   logger,
-});
+}).ready();

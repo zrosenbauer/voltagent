@@ -46,17 +46,17 @@ To inspect runs, open `https://console.voltagent.dev` and connect it to `http://
 ### 1. Define Tools (No Execute = Client-Side)
 
 ```typescript
-import { Agent, tool } from "@voltagent/core";
+import { defineAgent, defineTool } from "@voltagent/core";
 import { z } from "zod";
 
-// Client-side tool (no execute function)
-const getLocationTool = tool({
+// Client-side defineTool (no execute function)
+const getLocationTool = defineTool({
   description: "Get user's current location",
   inputSchema: z.object({}),
   // No execute = automatically client-side
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   // ...
   tools: {
     getLocation: getLocationTool,

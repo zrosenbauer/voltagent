@@ -1,4 +1,4 @@
-import { tool } from "@voltagent/core";
+import { defineTool } from "@voltagent/core";
 import { z } from "zod";
 import { actionsClient, actionsConfig } from "../config";
 
@@ -51,7 +51,7 @@ function wrapActionResult(
   };
 }
 
-export const createAirtableRecordTool = tool({
+export const createAirtableRecordTool = defineTool({
   description:
     "Create a new Airtable record by sending the payload through VoltOps Actions. Fields should map to Airtable column names.",
   inputSchema: z.object({
@@ -90,7 +90,7 @@ export const createAirtableRecordTool = tool({
   },
 });
 
-export const listAirtableRecordsTool = tool({
+export const listAirtableRecordsTool = defineTool({
   description:
     "Retrieve Airtable records through VoltOps Actions. Supports standard Airtable filter, view, field, and sorting options.",
   inputSchema: z.object({
@@ -150,7 +150,7 @@ export const listAirtableRecordsTool = tool({
   },
 });
 
-export const updateAirtableRecordTool = tool({
+export const updateAirtableRecordTool = defineTool({
   description:
     "Update an existing Airtable record via VoltOps Actions. Provide the record ID and any fields that should change.",
   inputSchema: z.object({
@@ -191,7 +191,7 @@ export const updateAirtableRecordTool = tool({
   },
 });
 
-export const deleteAirtableRecordTool = tool({
+export const deleteAirtableRecordTool = defineTool({
   description:
     "Delete an Airtable record by ID using VoltOps Actions. Be careful—this permanently removes the row.",
   inputSchema: z.object({
@@ -226,7 +226,7 @@ export const deleteAirtableRecordTool = tool({
   },
 });
 
-export const getAirtableRecordTool = tool({
+export const getAirtableRecordTool = defineTool({
   description:
     "Fetch a single Airtable record by ID via VoltOps Actions. Supports returning fields keyed by ID.",
   inputSchema: z.object({

@@ -1,4 +1,4 @@
-import { Agent, Memory, VoltAgent } from "@voltagent/core";
+import { Memory, defineAgent, voltagent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -8,7 +8,7 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Google Vertex AI Agent",
   instructions: "A helpful assistant powered by Google Gemini and Vertex AI",
   model: "google-vertex/gemini-2.0-flash",
@@ -19,10 +19,10 @@ const agent = new Agent({
   }),
 });
 
-new VoltAgent({
+await voltagent({
   agents: {
     agent,
   },
   logger,
   server: honoServer({ port: 3141 }),
-});
+}).ready();

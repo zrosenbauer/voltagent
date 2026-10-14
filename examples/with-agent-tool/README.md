@@ -22,7 +22,7 @@ The example creates three agents:
 3. **Publisher Agent** - Coordinator that uses both as tools
 
 ```typescript
-const publisher = new Agent({
+const publisher = defineAgent({
   tools: [
     writerAgent.toTool(), // Convert to tool
     editorAgent.toTool(),

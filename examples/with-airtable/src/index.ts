@@ -1,4 +1,4 @@
-import { Agent, VoltAgent, createTriggers, tool } from "@voltagent/core";
+import { createTriggers, defineAgent, defineTool, voltagent } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal";
 import { createPinoLogger } from "@voltagent/logger";
 import { VoltOpsClient } from "@voltagent/sdk";
@@ -24,7 +24,7 @@ const voltOps = new VoltOpsClient({
   secretKey: process.env.VOLTAGENT_SECRET_KEY ?? "",
 });
 
-const updateAirtableRecord = tool({
+const updateAirtableRecord = defineTool({
   description: "Update an Airtable record with summary, priority, status, and next steps.",
   inputSchema: z.object({
     recordId: z.string().describe("Airtable record ID to update"),
@@ -59,7 +59,7 @@ const updateAirtableRecord = tool({
   },
 });
 
-const airtableAgent = new Agent({
+const airtableAgent = defineAgent({
   name: "airtable-agent",
   instructions: `You process newly created Airtable records.
 Create a concise summary, assign a priority (High/Medium/Low), set a status (New/In Progress/Blocked/Done), and list next steps.`,
@@ -69,7 +69,7 @@ Create a concise summary, assign a priority (High/Medium/Low), set a status (New
   model: "openai/gpt-4o-mini",
 });
 
-new VoltAgent({
+await voltagent({
   agents: { airtableAgent },
   server: honoServer(),
   logger,
@@ -97,4 +97,4 @@ Update the same record with:
 - Next steps (short bullet list as a single string) -> field name: Next steps`);
     });
   }),
-});
+}).ready();

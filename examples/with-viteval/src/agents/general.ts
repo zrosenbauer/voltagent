@@ -1,4 +1,4 @@
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
 export interface QuestionAnsweringInput {
   question: string;
@@ -10,7 +10,7 @@ export interface QuestionAnsweringOutput {
   confidence: number;
 }
 
-export const generalAgent = new Agent({
+export const generalAgent = defineAgent({
   name: "question-answering-agent",
   instructions: `You are a helpful question-answering agent. 
 Your job is to answer questions accurately and concisely.

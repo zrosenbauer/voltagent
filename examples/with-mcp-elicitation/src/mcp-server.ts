@@ -1,4 +1,4 @@
-import { VoltAgent, createTool } from "@voltagent/core";
+import { type VoltAgent, createTool, voltagent } from "@voltagent/core";
 import type { Logger } from "@voltagent/logger";
 import { MCPServer } from "@voltagent/mcp-server";
 import { honoServer } from "@voltagent/server-hono";
@@ -84,13 +84,14 @@ export async function startMcpServer(port = 3142, logger?: Logger): Promise<{ ur
     },
   });
 
-  const voltAgent = new VoltAgent({
+  const voltAgent = voltagent({
     logger,
     mcpServers: {
       demo: mcpServer,
     },
     server: honoServer({ port }),
   });
+  await voltAgent.ready();
 
   await waitForServerReady(voltAgent);
 

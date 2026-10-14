@@ -94,7 +94,7 @@ The process stays attached to stdin/stdout so an MCP client can negotiate transp
 
 ```ts title="src/mcp/server.ts"
 import { MCPServer } from "@voltagent/mcp-server";
-import { Agent, createTool } from "@voltagent/core";
+import { defineAgent, createTool } from "@voltagent/core";
 import { z } from "zod";
 
 // MCP-only named tools can use createTool when they need compatibility with
@@ -108,7 +108,7 @@ const status = createTool({
   },
 });
 
-const assistant = new Agent({
+const assistant = defineAgent({
   name: "Support Agent",
   instructions: "Route customer tickets to the correct queue.",
   model: "openai/gpt-4o-mini",

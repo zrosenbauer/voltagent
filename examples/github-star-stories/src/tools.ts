@@ -1,7 +1,7 @@
-import { VoltOpsClient, tool } from "@voltagent/core";
+import { VoltOpsClient, defineTool } from "@voltagent/core";
 import { z } from "zod";
 
-export const fetchGithubProfileTool = tool({
+export const fetchGithubProfileTool = defineTool({
   description: "Fetch GitHub profile metadata (followers, repos, location, etc.)",
   inputSchema: z.object({
     username: z.string().describe("GitHub username to inspect"),
@@ -39,7 +39,7 @@ export const fetchGithubProfileTool = tool({
   },
 });
 
-export const shareDiscordStoryTool = tool({
+export const shareDiscordStoryTool = defineTool({
   description: "Send the celebration story to Discord via VoltOps Actions.",
   inputSchema: z.object({
     headline: z.string().describe("Short headline announcing the star"),

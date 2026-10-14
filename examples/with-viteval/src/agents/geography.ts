@@ -1,4 +1,4 @@
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
 export interface GeographyInput {
   question: string;
@@ -12,7 +12,7 @@ export interface GeographyOutput {
   confidence: number;
 }
 
-export const geographyAgent = new Agent({
+export const geographyAgent = defineAgent({
   name: "geography-agent",
   instructions: `You are a specialized geography agent with expertise in countries, cities, landmarks, and geographical features.
 Your knowledge covers:

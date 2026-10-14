@@ -1,9 +1,9 @@
 import {
-  Agent,
   Memory,
-  VoltAgent,
   createInputMiddleware,
   createOutputMiddleware,
+  defineAgent,
+  voltagent,
 } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
@@ -44,7 +44,7 @@ const requireSignature = createOutputMiddleware<string>({
   },
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "MiddlewareAgent",
   instructions: "Answer support questions with short, direct replies. ",
   model: "openai/gpt-4o-mini",
@@ -54,8 +54,8 @@ const agent = new Agent({
   maxMiddlewareRetries: 1,
 });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer(),
   logger,
-});
+}).ready();

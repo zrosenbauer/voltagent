@@ -1,9 +1,9 @@
-import { Agent, VoltAgent, tool } from "@voltagent/core";
+import { defineAgent, defineTool, voltagent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
 
-const weatherTool = tool({
+const weatherTool = defineTool({
   description: "Get the current weather for a city",
   inputSchema: z.object({
     location: z.string().describe("City name, e.g. Berlin"),
@@ -21,7 +21,7 @@ const weatherTool = tool({
   },
 });
 
-const convertCurrencyTool = tool({
+const convertCurrencyTool = defineTool({
   description: "Convert money between currencies using a sample rate table",
   inputSchema: z.object({
     amount: z.number().describe("Amount to convert"),
@@ -54,7 +54,7 @@ const convertCurrencyTool = tool({
   },
 });
 
-const timeZoneTool = tool({
+const timeZoneTool = defineTool({
   description: "Get the time zone offset for a city",
   inputSchema: z.object({
     location: z.string().describe("City name"),
@@ -75,7 +75,7 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Tool Routing Agent",
   instructions:
     "You are a helpful assistant. When you need a tool, call searchTools with the user request, then call callTool with the exact tool name and schema-compliant arguments.",
@@ -91,8 +91,8 @@ const agent = new Agent({
   },
 });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer(),
   logger,
-});
+}).ready();

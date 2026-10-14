@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { Memory, NodeFilesystemBackend, PlanAgent, VoltAgent } from "@voltagent/core";
+import { Memory, NodeFilesystemBackend, PlanAgent, voltagent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -43,13 +43,13 @@ const agent = new PlanAgent({
   },
 });
 
-new VoltAgent({
+await voltagent({
   agents: {
     agent,
   },
   server: honoServer(),
   logger,
-});
+}).ready();
 
 const runSummaryDemo = async () => {
   const conversationId = "observability-summary-demo";

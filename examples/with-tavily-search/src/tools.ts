@@ -1,7 +1,7 @@
-import { tool } from "@voltagent/core";
+import { defineTool } from "@voltagent/core";
 import { z } from "zod";
 
-export const tavilySearchTool = tool({
+export const tavilySearchTool = defineTool({
   description:
     "Search the web for real-time information using Tavily's advanced search API. This tool provides comprehensive web search results with content extraction and AI-powered answers. IMPORTANT: This tool should ONLY be used when the user explicitly requests web search or when you need to verify information from your database. Do NOT use this tool automatically - always ask the user first if they want you to search the web for additional information.",
   inputSchema: z.object({
@@ -132,7 +132,7 @@ export const tavilySearchTool = tool({
   },
 });
 
-export const tavilyExtractTool = tool({
+export const tavilyExtractTool = defineTool({
   description:
     "Extract content from a specific URL using Tavily's content extraction API. Useful for getting detailed information from any website, news articles, or documents.",
   inputSchema: z.object({

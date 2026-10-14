@@ -1,4 +1,4 @@
-import { Agent, MCPConfiguration, VoltAgent } from "@voltagent/core";
+import { MCPConfiguration, defineAgent, voltagent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
 
@@ -12,7 +12,7 @@ const mcpConfig = new MCPConfiguration({
   },
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Recipe Assistant",
   instructions: `You are a culinary expert AI assistant. Help users create delicious recipes.
 
@@ -56,10 +56,10 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-new VoltAgent({
+await voltagent({
   agents: {
     agent,
   },
   logger,
   server: honoServer({ port: 3141 }),
-});
+}).ready();

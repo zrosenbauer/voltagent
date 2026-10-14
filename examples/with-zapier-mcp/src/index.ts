@@ -1,4 +1,4 @@
-import { Agent, MCPConfiguration, Memory, VoltAgent } from "@voltagent/core";
+import { MCPConfiguration, Memory, defineAgent, voltagent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -23,7 +23,7 @@ async function main() {
 
     const zapierTools = await zapierMcpConfig.getTools();
 
-    const agent = new Agent({
+    const agent = defineAgent({
       id: "zapier-mcp",
       name: "Zapier MCP Agent",
       instructions: "A helpful assistant using a lightweight provider",
@@ -37,13 +37,13 @@ async function main() {
       }),
     });
 
-    new VoltAgent({
+    await voltagent({
       agents: {
         agent,
       },
       logger,
       server: honoServer({ port: 3141 }),
-    });
+    }).ready();
   } catch (error) {
     console.error("Failed to initialize VoltAgent:", error);
   }

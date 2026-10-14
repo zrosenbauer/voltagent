@@ -1,11 +1,11 @@
-import { Agent, Memory, VoltAgent, tool } from "@voltagent/core";
+import { Memory, defineAgent, defineTool, voltagent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
 
 // Example tool to demonstrate capabilities
-const weatherTool = tool({
+const weatherTool = defineTool({
   description: "Get the current weather in a location",
   inputSchema: z.object({
     location: z.string().describe("The location to get weather for"),
@@ -36,7 +36,7 @@ const logger = createPinoLogger({
 // - Llama 3.2: "meta.llama3-2-1b-instruct-v1:0", "meta.llama3-2-3b-instruct-v1:0"
 // - Mistral: "mistral.mistral-large-2407-v1:0", "mistral.mistral-small-2402-v1:0"
 // - Titan: "amazon.titan-text-premier-v1:0", "amazon.titan-text-express-v1"
-const agent = new Agent({
+const agent = defineAgent({
   name: "bedrock-assistant",
   instructions: "An AI assistant powered by Amazon Bedrock",
   // Credentials are resolved from AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION,
@@ -53,10 +53,10 @@ const agent = new Agent({
 });
 
 // Initialize VoltAgent with server
-new VoltAgent({
+await voltagent({
   agents: {
     agent,
   },
   logger,
   server: honoServer({ port: 3141 }),
-});
+}).ready();

@@ -1,4 +1,4 @@
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import { getAIModel } from "../ai/config";
 import { defaultTools } from "../tools";
 import { sharedMemory } from "./memory";
@@ -9,7 +9,7 @@ import { sharedMemory } from "./memory";
  * This agent uses the AI model configured in environment variables
  * and comes with default tools for common tasks.
  */
-export const chatbotAgent = new Agent({
+export const chatbotAgent = defineAgent({
   name: "ChatbotAssistant",
   instructions: `You are a helpful and friendly AI assistant built with VoltAgent. 
 

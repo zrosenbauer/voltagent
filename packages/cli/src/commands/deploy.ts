@@ -88,7 +88,7 @@ async function handleVercelDeploy() {
   console.log("\nNext steps:");
   console.log('  1. Build your project: "pnpm build"');
   console.log(
-    '  2. Ensure you have a serverless entry (example: api/voltagent.ts) that exports "voltAgent.serverless().toVercelEdge()".',
+    '  2. Ensure you have a serverless entry (example: api/voltagent.ts) that awaits "voltAgent.ready()" before exporting "voltAgent.serverless().toVercelEdge()".',
   );
   console.log('  3. Authenticate if needed: "pnpm vercel login" (or "vercel login")');
   console.log('  4. Deploy: "pnpm vercel deploy" (or "vercel deploy")');
@@ -114,7 +114,7 @@ async function handleNetlifyDeploy() {
   console.log("\nNext steps:");
   console.log('  1. Build your project: "pnpm build"');
   console.log(
-    '  2. Add a function file (example: netlify/functions/voltagent.ts) that exports "createNetlifyFunctionHandler(getVoltAgent())".',
+    '  2. Add a function file (example: netlify/functions/voltagent.ts) that awaits "voltAgent.ready()" before exporting "createNetlifyFunctionHandler(voltAgent)".',
   );
   console.log('  3. Authenticate if needed: "pnpm netlify login" (or "netlify login")');
   console.log('  4. Deploy: "pnpm netlify deploy --prod" (or "netlify deploy --prod")');

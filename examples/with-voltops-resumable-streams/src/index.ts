@@ -1,4 +1,4 @@
-import { Agent, VoltAgent } from "@voltagent/core";
+import { defineAgent, voltagent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import {
   createResumableStreamAdapter,
@@ -15,20 +15,20 @@ async function start() {
   const streamStore = await createResumableStreamVoltOpsStore();
   const resumableStreamAdapter = await createResumableStreamAdapter({ streamStore });
 
-  const agent = new Agent({
+  const agent = defineAgent({
     id: "assistant",
     name: "Resumable Stream Agent",
     instructions: "You are a helpful assistant.",
     model: "openai/gpt-4o-mini",
   });
 
-  new VoltAgent({
+  await voltagent({
     agents: { assistant: agent },
     logger,
     server: honoServer({
       resumableStream: { adapter: resumableStreamAdapter },
     }),
-  });
+  }).ready();
 }
 
 start().catch((error) => {

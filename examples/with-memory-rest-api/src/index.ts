@@ -1,4 +1,4 @@
-import { Agent, Memory, VoltAgent } from "@voltagent/core";
+import { Memory, defineAgent, voltagent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { PostgreSQLMemoryAdapter } from "@voltagent/postgres";
 import { honoServer } from "@voltagent/server-hono";
@@ -17,7 +17,7 @@ const memoryAdapter = new PostgreSQLMemoryAdapter({
 });
 
 // Create agent with PostgreSQL memory
-const agent = new Agent({
+const agent = defineAgent({
   name: "Memory REST API Agent",
   instructions: "You are a helpful assistant.",
   model: "openai/gpt-4o-mini",
@@ -27,7 +27,7 @@ const agent = new Agent({
 });
 
 // Create VoltAgent with custom endpoints
-new VoltAgent({
+await voltagent({
   agents: {
     "memory-agent": agent,
   },
@@ -124,4 +124,4 @@ new VoltAgent({
       logger.info("Custom memory endpoints registered successfully");
     },
   }),
-});
+}).ready();

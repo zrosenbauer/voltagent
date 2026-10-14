@@ -1,5 +1,5 @@
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
-import { Agent, Memory, VoltAgent } from "@voltagent/core";
+import { Memory, defineAgent, voltagent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -17,7 +17,7 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "OpenRouter Assistant",
   instructions: "You are a helpful assistant powered by OpenRouter.",
   model: openrouter("openai/gpt-4o-mini", {
@@ -30,13 +30,13 @@ const agent = new Agent({
   }),
 });
 
-new VoltAgent({
+await voltagent({
   agents: {
     agent,
   },
   logger,
   server: honoServer(),
-});
+}).ready();
 
 (async () => {
   const result = await agent.generateText("Explain how observability helps with AI cost control.");

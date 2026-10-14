@@ -231,11 +231,11 @@ Fetches menu from Supabase with pagination support.
 **📄 src/tools/list-menu-items.ts**
 
 ```typescript
-import { tool } from "@voltagent/core";
+import { defineTool } from "@voltagent/core";
 import { z } from "zod";
 import { supabase } from "../../lib/supabase";
 
-export const listMenuItemsTool = tool({
+export const listMenuItemsTool = defineTool({
   description: "Lists all menu items from the Supabase database",
   inputSchema: z.object({
     limit: z.number().optional().default(100).describe("Number of items to fetch"),
@@ -281,7 +281,7 @@ Takes cart items and saves everything to database.
 **📄 src/tools/create-order.ts**
 
 ```typescript
-import { tool } from "@voltagent/core";
+import { defineTool } from "@voltagent/core";
 import { z } from "zod";
 import { supabase } from "../../lib/supabase";
 
@@ -289,7 +289,7 @@ const customerContextSchema = z.object({
   customerPhone: z.string(),
 });
 
-export const createOrderTool = tool({
+export const createOrderTool = defineTool({
   description: "Creates a new order with the items and delivery address from working memory",
   inputSchema: z.object({
     items: z
@@ -376,7 +376,7 @@ Retrieves order history for the current customer.
 **📄 src/tools/check-order-status.ts**
 
 ```typescript
-import { tool } from "@voltagent/core";
+import { defineTool } from "@voltagent/core";
 import { z } from "zod";
 import { supabase } from "../../lib/supabase";
 
@@ -384,7 +384,7 @@ const customerContextSchema = z.object({
   customerPhone: z.string(),
 });
 
-export const checkOrderStatusTool = tool({
+export const checkOrderStatusTool = defineTool({
   description: "Checks the status of a customer's order(s) from the database",
   inputSchema: z.object({
     orderId: z.number().optional().describe("Specific order ID to check"),
@@ -477,7 +477,7 @@ Here's how `src/index.ts` wires everything up:
 
 ```typescript
 import "dotenv/config";
-import { VoltAgent, VoltOpsClient, Agent, Memory } from "@voltagent/core";
+import { voltagent, VoltOpsClient, defineAgent, Memory } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -521,7 +521,7 @@ const memory = new Memory({
   },
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "with-whatsapp",
   instructions: `You are a WhatsApp ordering AI agent. Your task is to take food orders from customers.
 
@@ -539,7 +539,7 @@ Order Flow:
    - Ask for delivery address
    - Update deliveryAddress field when received
    - Change orderStatus to "completed"
-   - Execute createOrder tool (with orders and deliveryAddress)
+   - Execute createOrder defineTool (with orders and deliveryAddress)
   - Confirm order and clear working memory
 
 Always be friendly and helpful. Start with "Welcome!" greeting.`,
@@ -552,7 +552,7 @@ Always be friendly and helpful. Start with "Welcome!" greeting.`,
   memory,
 });
 
-new VoltAgent({
+await voltagent({
   agents: {
     agent,
   },
@@ -584,7 +584,7 @@ new VoltAgent({
     publicKey: process.env.VOLTAGENT_PUBLIC_KEY || "",
     secretKey: process.env.VOLTAGENT_SECRET_KEY || "",
   }),
-});
+}).ready();
 ```
 
 ### Key Components Breakdown
@@ -628,7 +628,7 @@ const memory = new Memory({
 #### Agent Setup
 
 ```typescript
-const agent = new Agent({
+const agent = defineAgent({
   name: "with-whatsapp",
   instructions: `You are a WhatsApp ordering AI agent...`,
   model: "openai/gpt-4o-mini", // Fast and cheap
@@ -662,7 +662,7 @@ Get your WhatsApp tokens from [Meta for Developers](https://developers.facebook.
 
 ```typescript
 import { Context } from "hono";
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import { WhatsAppWebhookBody } from "../types/whatsapp";
 
 // Send message back to WhatsApp

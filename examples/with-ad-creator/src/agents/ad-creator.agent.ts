@@ -1,9 +1,9 @@
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import type { Memory } from "@voltagent/core";
 import { generateInstagramAdGeminiTool } from "../tools/image-generation/instagram-ad-gemini.tool";
 
 export const createAdCreatorAgent = (memory: Memory) => {
-  return new Agent({
+  return defineAgent({
     name: "InstagramAdCreator",
     purpose: "Create compelling Instagram ad visuals using Google Gemini AI",
     instructions: `You are an Instagram advertising specialist using Google's Gemini AI for ad creation.

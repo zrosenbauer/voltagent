@@ -1,4 +1,4 @@
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import type { Memory } from "@voltagent/core";
 import { pageExtractTool } from "../tools/browserbase/page-extract.tool";
 import { pageNavigateTool } from "../tools/browserbase/page-navigate.tool";
@@ -6,7 +6,7 @@ import { pageObserveTool } from "../tools/browserbase/page-observe.tool";
 import { screenshotTool } from "../tools/browserbase/screenshot.tool";
 
 export const createLandingPageAnalyzer = (memory: Memory) => {
-  return new Agent({
+  return defineAgent({
     name: "LandingPageAnalyzer",
     purpose: "Analyze landing pages to extract brand information and marketing insights",
     instructions: `You are a landing page analysis expert specializing in extracting brand information for ad creation.

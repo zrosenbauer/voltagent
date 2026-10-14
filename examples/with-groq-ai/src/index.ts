@@ -1,4 +1,4 @@
-import { Agent, Memory, VoltAgent } from "@voltagent/core";
+import { Memory, defineAgent, voltagent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -9,7 +9,7 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Assistant",
   instructions: "A helpful assistant that answers questions",
   model: "groq/meta-llama/llama-4-scout-17b-16e-instruct",
@@ -20,10 +20,10 @@ const agent = new Agent({
   }),
 });
 
-new VoltAgent({
+await voltagent({
   agents: {
     agent,
   },
   logger,
   server: honoServer({ port: 3141 }),
-});
+}).ready();

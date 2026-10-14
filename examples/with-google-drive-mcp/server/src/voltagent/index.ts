@@ -1,4 +1,4 @@
-import { Agent, Memory, VoltAgent } from "@voltagent/core";
+import { Memory, defineAgent, voltagent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -9,7 +9,7 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-export const agent = new Agent({
+export const agent = defineAgent({
   name: "Base Agent",
   instructions: "You are a helpful assistant that can search Google Drive.",
   model: "openai/gpt-4o-mini",
@@ -21,10 +21,10 @@ export const agent = new Agent({
   }),
 });
 
-new VoltAgent({
+await voltagent({
   agents: {
     agent,
   },
   logger,
   server: honoServer({ port: 3141 }),
-});
+}).ready();

@@ -1,5 +1,5 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { Agent, VoltAgent, tool } from "@voltagent/core";
+import { type Agent, type VoltAgent, defineAgent, defineTool, voltagent } from "@voltagent/core";
 import type { ServerProviderDeps } from "@voltagent/core";
 import { createVoltAgentApp } from "@voltagent/server-hono";
 import type { Hono } from "hono";
@@ -8,7 +8,7 @@ import { z } from "zod";
 /**
  * Example tool that converts text to uppercase
  */
-const upperCaseTool = tool({
+const upperCaseTool = defineTool({
   description: "Convert text to uppercase",
   inputSchema: z.object({
     text: z.string().describe("Text to convert to uppercase"),
@@ -41,7 +41,7 @@ export class VoltAgentService {
 
   constructor() {
     // Initialize the text processing agent
-    this.textAgent = new Agent({
+    this.textAgent = defineAgent({
       name: "TextAgent",
       instructions:
         "You are a helpful text processing assistant. When users ask you to process text, use the uppercase tool to convert it to uppercase and explain what you did.",
@@ -53,7 +53,7 @@ export class VoltAgentService {
 
     // Initialize VoltAgent WITHOUT a server
     // We'll use middleware integration instead for same-port deployment
-    this.voltAgent = new VoltAgent({
+    this.voltAgent = voltagent({
       agents: {
         textAgent: this.textAgent,
       },
@@ -68,6 +68,7 @@ export class VoltAgentService {
    * This allows VoltAgent console to be served via NestJS at /voltagent/*
    */
   async getHonoApp(): Promise<Hono> {
+    await this.voltAgent.ready();
     if (!this.honoApp) {
       this.honoApp = (
         await createVoltAgentApp(this.getDeps(), {

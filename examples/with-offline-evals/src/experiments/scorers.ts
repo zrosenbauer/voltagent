@@ -1,4 +1,4 @@
-import { Agent, type AgentModelReference, buildScorer } from "@voltagent/core";
+import { type AgentModelReference, buildScorer, defineAgent } from "@voltagent/core";
 import type { ExperimentRuntimePayload, ExperimentScorerConfig } from "@voltagent/evals";
 import {
   createAnswerCorrectnessScorer,
@@ -73,7 +73,7 @@ function createKeywordMatchScorer() {
 }
 
 function createHelpfulnessJudgeScorer(judgeModel: AgentModelReference) {
-  const agent = new Agent({
+  const agent = defineAgent({
     name: "helpfulness-judge",
     model: judgeModel,
     instructions: "You evaluate helpfulness of responses",

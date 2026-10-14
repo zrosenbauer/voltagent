@@ -1,4 +1,4 @@
-import { Agent, MCPConfiguration, Memory, VoltAgent } from "@voltagent/core";
+import { MCPConfiguration, Memory, defineAgent, voltagent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -21,7 +21,7 @@ const mcp = new MCPConfiguration({
   });
 
   const tools = await mcp.getTools();
-  const agent = new Agent({
+  const agent = defineAgent({
     name: "Peaka Data Assistant",
     instructions: "An assistant that can query Peaka's sample data.",
     model: "openai/gpt-4o-mini",
@@ -34,11 +34,11 @@ const mcp = new MCPConfiguration({
     }),
   });
 
-  new VoltAgent({
+  await voltagent({
     agents: {
       agent,
     },
     logger,
     server: honoServer({ port: 3141 }),
-  });
+  }).ready();
 })();

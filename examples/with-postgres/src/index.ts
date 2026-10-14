@@ -1,4 +1,4 @@
-import { Agent, Memory, VoltAgent } from "@voltagent/core";
+import { Memory, defineAgent, voltagent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { PostgreSQLMemoryAdapter } from "@voltagent/postgres";
 import { honoServer } from "@voltagent/server-hono";
@@ -27,7 +27,7 @@ const memoryStorage = new PostgreSQLMemoryAdapter({
   debug: process.env.NODE_ENV === "development",
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "PostgreSQL Memory Agent",
   instructions: "A helpful assistant that remembers conversations using PostgreSQL.",
   model: "openai/gpt-4o-mini",
@@ -42,10 +42,10 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-new VoltAgent({
+await voltagent({
   agents: {
     agent,
   },
   logger,
   server: honoServer({ port: 3141 }),
-});
+}).ready();

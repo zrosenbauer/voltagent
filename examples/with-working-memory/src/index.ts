@@ -1,4 +1,4 @@
-import { Agent, Memory, VoltAgent, VoltAgentObservability } from "@voltagent/core";
+import { Memory, VoltAgentObservability, defineAgent, voltagent } from "@voltagent/core";
 import {
   LibSQLMemoryAdapter,
   LibSQLObservabilityAdapter,
@@ -52,7 +52,7 @@ const jsonMemory = new Memory({
 });
 
 // JSON agent with structured memory
-const jsonAgent = new Agent({
+const jsonAgent = defineAgent({
   name: "JSON Memory Agent",
   instructions: "You are a helpful assistant",
   model: "openai/gpt-4o-mini",
@@ -94,14 +94,14 @@ const markdownMemory = new Memory({
 });
 
 // Markdown agent with free-form memory
-const markdownAgent = new Agent({
+const markdownAgent = defineAgent({
   name: "Markdown Memory Agent",
   instructions: "You are a helpful assistant.",
   model: "openai/gpt-4o-mini",
   memory: markdownMemory,
 });
 
-new VoltAgent({
+await voltagent({
   agents: {
     jsonAgent,
     markdownAgent,
@@ -118,4 +118,4 @@ new VoltAgent({
       // authToken: process.env.TURSO_AUTH_TOKEN,
     }),
   }),
-});
+}).ready();

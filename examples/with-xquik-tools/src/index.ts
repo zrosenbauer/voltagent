@@ -1,4 +1,4 @@
-import { Agent, VoltAgent } from "@voltagent/core";
+import { defineAgent, voltagent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
 import { xquikTools } from "./tools.js";
@@ -8,7 +8,7 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-const xquikResearchAgent = new Agent({
+const xquikResearchAgent = defineAgent({
   name: "xquik-research-agent",
   instructions: `You help developers research public X/Twitter activity with Xquik tools.
 
@@ -19,10 +19,10 @@ If a tool reports a missing API key or HTTP error, explain the setup or retry pa
   tools: xquikTools,
 });
 
-new VoltAgent({
+await voltagent({
   agents: {
     xquikResearchAgent,
   },
   logger,
   server: honoServer(),
-});
+}).ready();

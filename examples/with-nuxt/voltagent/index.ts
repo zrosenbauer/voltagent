@@ -1,4 +1,4 @@
-import { Agent, VoltAgent, tool } from "@voltagent/core";
+import { type VoltAgent, voltagent, defineTool, defineAgent } from "@voltagent/core";
 import honoServer from "@voltagent/server-hono";
 import { z } from "zod";
 import { sharedMemory } from "./memory";
@@ -10,7 +10,7 @@ if (process.env.AI_GATEWAY_API_KEY) {
   console.log("ℹ️  AI_GATEWAY_API_KEY not set (optional)");
 }
 
-const uppercaseTool = tool({
+const uppercaseTool = defineTool({
   description: "Convert text to uppercase",
   inputSchema: z.object({
     text: z.string().describe("Text to convert to uppercase"),
@@ -20,7 +20,7 @@ const uppercaseTool = tool({
   },
 });
 
-const wordCountTool = tool({
+const wordCountTool = defineTool({
   description: "Count words in text",
   inputSchema: z.object({
     text: z.string().describe("Text to count words in"),
@@ -34,7 +34,7 @@ const wordCountTool = tool({
   },
 });
 
-const storyWriterTool = tool({
+const storyWriterTool = defineTool({
   description: "Write a 50-word story about the given text",
   inputSchema: z.object({
     text: z.string().describe("Text to write a story about"),
@@ -45,7 +45,7 @@ const storyWriterTool = tool({
   },
 });
 
-const uppercaseAgent = new Agent({
+const uppercaseAgent = defineAgent({
   name: "UppercaseAgent",
   instructions:
     "You are a text transformer. When given text, use the uppercase tool to convert it to uppercase and return the result.",
@@ -56,7 +56,7 @@ const uppercaseAgent = new Agent({
   memory: sharedMemory,
 });
 
-const wordCountAgent = new Agent({
+const wordCountAgent = defineAgent({
   name: "WordCountAgent",
   instructions:
     "You are a text analyzer. When given text, use the countWords tool to count the words and return the count.",
@@ -67,7 +67,7 @@ const wordCountAgent = new Agent({
   memory: sharedMemory,
 });
 
-const storyWriterAgent = new Agent({
+const storyWriterAgent = defineAgent({
   name: "StoryWriterAgent",
   instructions:
     "You are a creative story writer. When given text, use the writeStory tool to acknowledge the topic, then write EXACTLY a 50-word story about or inspired by that text. Be creative and engaging. Make sure your story is exactly 50 words, no more, no less.",
@@ -79,7 +79,7 @@ const storyWriterAgent = new Agent({
 });
 
 // Supervisor agent that uses all tools directly
-export const supervisorAgent = new Agent({
+export const supervisorAgent = defineAgent({
   name: "Supervisor",
   instructions: `You are a text processing supervisor. When given any text input, you MUST use ALL THREE tools: uppercase, countWords, and writeStory. Use all of them to process the text. 
 
@@ -112,7 +112,7 @@ declare global {
 // Singleton initialization function
 function getVoltAgentInstance() {
   if (!globalThis.voltAgentInstance) {
-    globalThis.voltAgentInstance = new VoltAgent({
+    globalThis.voltAgentInstance = voltagent({
       agents: {
         supervisorAgent,
         storyWriterAgent,
@@ -127,6 +127,7 @@ function getVoltAgentInstance() {
 
 // Initialize the singleton after all agents are defined
 export const voltAgent = getVoltAgentInstance();
+await voltAgent.ready();
 
 // Export the supervisor as the main agent
 export const agent = supervisorAgent;

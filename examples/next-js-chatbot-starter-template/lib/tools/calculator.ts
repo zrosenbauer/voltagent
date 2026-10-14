@@ -1,11 +1,11 @@
-import { tool } from "@voltagent/core";
+import { defineTool } from "@voltagent/core";
 import { z } from "zod";
 
 /**
  * Calculator Tool
  * Performs basic arithmetic calculations
  */
-export const calculatorTool = tool({
+export const calculatorTool = defineTool({
   description:
     "Perform basic arithmetic calculations (addition, subtraction, multiplication, division, exponents, etc.)",
   inputSchema: z.object({

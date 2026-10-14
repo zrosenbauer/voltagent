@@ -1,4 +1,4 @@
-import { Agent, Memory, VoltAgent } from "@voltagent/core";
+import { Memory, defineAgent, voltagent } from "@voltagent/core";
 import { LibSQLMemoryAdapter, LibSQLVectorAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -21,7 +21,7 @@ const memory = new Memory({
 });
 
 // Agent: semantic memory is auto-enabled when vector support exists
-const agent = new Agent({
+const agent = defineAgent({
   name: "Semantic Memory Agent",
   instructions:
     "You are a helpful assistant. Use semantic memory to recall relevant past messages when answering.",
@@ -29,11 +29,11 @@ const agent = new Agent({
   memory,
 });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer({ port: 3142 }),
   logger,
-});
+}).ready();
 
 // Optional: quick demo to seed messages and test semantic recall
 // Uncomment to run locally once

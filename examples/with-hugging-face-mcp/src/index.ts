@@ -1,4 +1,4 @@
-import { Agent, MCPConfiguration, Memory, VoltAgent } from "@voltagent/core";
+import { MCPConfiguration, Memory, defineAgent, voltagent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -22,7 +22,7 @@ async function main() {
       },
     });
 
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "Hugging Face MCP Agent",
       instructions: "You are a helpful assistant with access to Hugging Face MCP tools.",
       tools: await mcpConfig.getTools(),
@@ -34,13 +34,13 @@ async function main() {
       }),
     });
 
-    new VoltAgent({
+    await voltagent({
       agents: {
         agent,
       },
       logger,
       server: honoServer({ port: 3141 }),
-    });
+    }).ready();
   } catch (error) {
     console.error("Failed to initialize VoltAgent:", error);
   }

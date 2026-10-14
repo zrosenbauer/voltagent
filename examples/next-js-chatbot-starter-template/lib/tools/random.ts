@@ -1,11 +1,11 @@
-import { tool } from "@voltagent/core";
+import { defineTool } from "@voltagent/core";
 import { z } from "zod";
 
 /**
  * Random Number Tool
  * Generates random numbers within a specified range
  */
-export const randomNumberTool = tool({
+export const randomNumberTool = defineTool({
   description:
     "Generate a random number within a specified range. Can generate single numbers or arrays of random numbers.",
   inputSchema: z.object({

@@ -1,11 +1,11 @@
-import { Agent, Memory, VoltAgent, tool } from "@voltagent/core";
+import { Memory, defineAgent, defineTool, voltagent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
 import type { ToolSet } from "ai";
 import { z } from "zod";
 
-const greetingTool = tool({
+const greetingTool = defineTool({
   description: "Get a personalized greeting",
   inputSchema: z.object({
     name: z.string().describe("Person's name"),
@@ -16,7 +16,7 @@ const greetingTool = tool({
 });
 
 // Admin-only tool
-const adminTool = tool({
+const adminTool = defineTool({
   description: "Perform admin actions (admin only)",
   inputSchema: z.object({
     action: z.string().describe("Action to perform"),
@@ -32,7 +32,7 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-const dynamicAgent = new Agent({
+const dynamicAgent = defineAgent({
   name: "Simple Dynamic Agent",
   contextSchema: z.object({
     role: z.enum(["user", "admin"]).default("user"),
@@ -73,10 +73,10 @@ const dynamicAgent = new Agent({
   }),
 });
 
-new VoltAgent({
+await voltagent({
   agents: {
     dynamicAgent,
   },
   logger,
   server: honoServer({ port: 3141 }),
-});
+}).ready();

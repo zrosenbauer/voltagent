@@ -1,9 +1,9 @@
-import { Agent, tool } from "@voltagent/core";
+import { defineAgent, defineTool } from "@voltagent/core";
 import { z } from "zod";
 import { sharedMemory } from "./memory";
 
 // Uppercase conversion tool
-const uppercaseTool = tool({
+const uppercaseTool = defineTool({
   description: "Convert text to uppercase",
   inputSchema: z.object({
     text: z.string().describe("Text to convert to uppercase"),
@@ -14,7 +14,7 @@ const uppercaseTool = tool({
 });
 
 // Word count tool
-const wordCountTool = tool({
+const wordCountTool = defineTool({
   description: "Count words in text",
   inputSchema: z.object({
     text: z.string().describe("Text to count words in"),
@@ -29,7 +29,7 @@ const wordCountTool = tool({
 });
 
 // Story writing tool
-const storyWriterTool = tool({
+const storyWriterTool = defineTool({
   description: "Write a 50-word story about the given text",
   inputSchema: z.object({
     text: z.string().describe("Text to write a story about"),
@@ -41,7 +41,7 @@ const storyWriterTool = tool({
 });
 
 // Uppercase agent
-export const uppercaseAgent = new Agent({
+export const uppercaseAgent = defineAgent({
   name: "UppercaseAgent",
   instructions:
     "You are a text transformer. When given text, use the uppercase tool to convert it to uppercase and return the result.",
@@ -53,7 +53,7 @@ export const uppercaseAgent = new Agent({
 });
 
 // Word count agent
-export const wordCountAgent = new Agent({
+export const wordCountAgent = defineAgent({
   name: "WordCountAgent",
   instructions:
     "You are a text analyzer. When given text, use the countWords tool to count the words and return the count.",
@@ -65,7 +65,7 @@ export const wordCountAgent = new Agent({
 });
 
 // Story writer agent
-export const storyWriterAgent = new Agent({
+export const storyWriterAgent = defineAgent({
   name: "StoryWriterAgent",
   instructions:
     "You are a creative story writer. When given text, use the writeStory tool to acknowledge the topic, then write EXACTLY a 50-word story about or inspired by that text. Be creative and engaging. Make sure your story is exactly 50 words, no more, no less.",
@@ -77,7 +77,7 @@ export const storyWriterAgent = new Agent({
 });
 
 // Supervisor agent that delegates to sub-agents
-export const supervisorAgent = new Agent({
+export const supervisorAgent = defineAgent({
   name: "Supervisor",
   instructions:
     "You are a text processing supervisor. When given any text input, you MUST delegate to ALL THREE agents: UppercaseAgent, WordCountAgent, AND StoryWriterAgent. Delegate to all of them to process the text in parallel. Then combine and present all three results to the user: the uppercase version, the word count, and the 50-word story.",

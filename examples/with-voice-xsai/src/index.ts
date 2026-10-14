@@ -1,6 +1,6 @@
 import { createReadStream, createWriteStream } from "node:fs";
 import { join } from "node:path";
-import { Agent, Memory, VoltAgent } from "@voltagent/core";
+import { Memory, defineAgent, voltagent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -16,7 +16,7 @@ const voiceProvider = new XSAIVoiceProvider({
   apiKey: process.env.OPENAI_API_KEY || "",
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Voice Assistant",
   instructions: "Speaks & listens via xsAI",
   model: "openai/gpt-4o-mini",
@@ -29,13 +29,13 @@ const agent = new Agent({
 });
 
 // Create the VoltAgent with our voice-enabled agent
-new VoltAgent({
+await voltagent({
   agents: {
     agent,
   },
   logger,
   server: honoServer({ port: 3141 }),
-});
+}).ready();
 
 (async () => {
   const voices = await agent.voice?.getVoices();

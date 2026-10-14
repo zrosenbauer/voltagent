@@ -1,5 +1,5 @@
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent } from "@voltagent/core";
+import { Agent, voltagent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
 
@@ -15,10 +15,10 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-new VoltAgent({
+await voltagent({
   agents: {
     agent,
   },
   server: honoServer(),
   logger,
-});
+}).ready();

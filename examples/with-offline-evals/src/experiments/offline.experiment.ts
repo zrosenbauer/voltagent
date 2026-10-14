@@ -1,10 +1,10 @@
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import { createExperiment } from "@voltagent/evals";
 
 import { SUPPORT_DATASET_NAME, type SupportDatasetItem, supportDatasetItems } from "./dataset.js";
 import { createSupportExperimentScorers } from "./scorers.js";
 
-const supportAgent = new Agent({
+const supportAgent = defineAgent({
   name: "offline-evals-support",
   instructions:
     "You are a helpful assistant that answers questions about VoltAgent concisely and accurately.",

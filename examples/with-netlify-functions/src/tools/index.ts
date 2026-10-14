@@ -1,7 +1,7 @@
-import { tool } from "@voltagent/core";
+import { defineTool } from "@voltagent/core";
 import z from "zod";
 
-export const weatherTool = tool({
+export const weatherTool = defineTool({
   description: "Return a mock weather report for the requested location",
   inputSchema: z.object({
     location: z.string().describe("City or location to look up"),

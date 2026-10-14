@@ -187,10 +187,10 @@ id = "your-namespace-id"
 Add custom tools to your agent:
 
 ```typescript
-import { Agent, tool } from "@voltagent/core";
+import { defineAgent, defineTool } from "@voltagent/core";
 import { z } from "zod";
 
-const customTool = tool({
+const customTool = defineTool({
   description: "Tool description",
   inputSchema: z.object({
     param: z.string(),
@@ -201,7 +201,7 @@ const customTool = tool({
   },
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   // ...
   tools: {
     getWeather: weatherTool,

@@ -1,4 +1,4 @@
-import { Agent, Memory, VoltAgent } from "@voltagent/core";
+import { Memory, defineAgent, voltagent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -14,7 +14,7 @@ const memoryStorage = new LibSQLMemoryAdapter({
   // debug: true,
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Turso Memory Agent",
   instructions: "A helpful assistant that remembers conversations using Turso/LibSQL.",
   model: "openai/gpt-4o-mini",
@@ -29,10 +29,10 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-new VoltAgent({
+await voltagent({
   agents: {
     agent,
   },
   logger,
   server: honoServer({ port: 3141 }),
-});
+}).ready();

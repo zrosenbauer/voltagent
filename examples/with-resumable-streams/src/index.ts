@@ -1,4 +1,4 @@
-import { Agent, VoltAgent } from "@voltagent/core";
+import { defineAgent, voltagent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import {
   createResumableStreamAdapter,
@@ -15,7 +15,7 @@ async function start() {
   const streamStore = await createResumableStreamRedisStore();
   const resumableStreamAdapter = await createResumableStreamAdapter({ streamStore });
 
-  const agent = new Agent({
+  const agent = defineAgent({
     id: "assistant",
     name: "Resumable Stream Agent",
     instructions: "You are a helpful assistant.",
@@ -24,14 +24,14 @@ async function start() {
 
   const port = Number(process.env.PORT ?? 3141);
 
-  new VoltAgent({
+  await voltagent({
     agents: { assistant: agent },
     logger,
     server: honoServer({
       port,
       resumableStream: { adapter: resumableStreamAdapter },
     }),
-  });
+  }).ready();
 
   logger.info(`Server running at http://localhost:${port}`);
 }

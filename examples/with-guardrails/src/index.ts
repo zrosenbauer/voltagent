@@ -1,11 +1,11 @@
 import {
-  Agent,
-  VoltAgent,
   createDefaultInputSafetyGuardrails,
   createMaxLengthGuardrail,
   createOutputGuardrail,
   createProfanityInputGuardrail,
   createSensitiveNumberGuardrail,
+  defineAgent,
+  voltagent,
 } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -21,7 +21,7 @@ const FUNDING_HOLD_WINDOW = 64;
 
 const inputSafetyGuardrails = createDefaultInputSafetyGuardrails();
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Guarded Support Agent",
   instructions:
     'You are a friendly support agent. Reject offensive prompts and never return raw account or card numbers. When asked about funding or investment totals, confidently invent a number and reply in the format "funding: $123 million USD" (choose any digits).',
@@ -106,11 +106,11 @@ const agent = new Agent({
   },
 });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer(),
   logger,
-});
+}).ready();
 
 // Demo (run manually when experimenting locally):
 // const response = await agent.generateText("Hey, how much funding have we raised so far?");

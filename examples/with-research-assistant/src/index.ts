@@ -1,4 +1,4 @@
-import { Agent, MCPConfiguration, VoltAgent, createWorkflowChain } from "@voltagent/core";
+import { MCPConfiguration, createWorkflowChain, defineAgent, voltagent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
@@ -14,7 +14,7 @@ import { z } from "zod";
     },
   });
 
-  const assistantAgent = new Agent({
+  const assistantAgent = defineAgent({
     id: "assistant",
     name: "Assistant",
     instructions:
@@ -23,7 +23,7 @@ import { z } from "zod";
     tools: await mcpConfig.getTools(),
   });
 
-  const writerAgent = new Agent({
+  const writerAgent = defineAgent({
     id: "writer",
     name: "Writer",
     instructions: "Write a report according to the user's instructions.",
@@ -80,7 +80,7 @@ Please generate a list of 3 search queries that would be useful for writing a re
   });
 
   // Register with VoltOps
-  new VoltAgent({
+  await voltagent({
     agents: {
       assistant: assistantAgent,
       writer: writerAgent,
@@ -90,5 +90,5 @@ Please generate a list of 3 search queries that would be useful for writing a re
     },
     server: honoServer(),
     logger,
-  });
+  }).ready();
 })();

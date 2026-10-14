@@ -1,4 +1,4 @@
-import { VoltAgent, VoltOpsClient } from "@voltagent/core";
+import { VoltOpsClient, voltagent as bootstrapVoltagent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 
 import { cleanEnv, str } from "envalid";
@@ -14,7 +14,7 @@ const env = cleanEnv(process.env, {
   VOLTAGENT_SECRET_KEY: str(),
 });
 
-export const voltagent = new VoltAgent({
+export const voltagent = bootstrapVoltagent({
   agents: {
     supervisor: supervisorAgent,
     general: generalAgent,
@@ -29,3 +29,4 @@ export const voltagent = new VoltAgent({
   }),
   server: honoServer(),
 });
+await voltagent.ready();

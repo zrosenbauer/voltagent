@@ -43,7 +43,7 @@ Escape the limitations of no-code builders and the complexity of starting from s
 </div>
 
 > [!TIP]
-> Looking for the **functional API**? See the [with-workflow](../with-workflow) example which uses `createWorkflow` with step functions passed as arguments.
+> Looking for the **functional API**? See the [with-workflow](../with-workflow) example which uses `defineWorkflow` with step functions passed as arguments.
 
 ## VoltAgent: Build AI Agents Fast and Flexibly
 

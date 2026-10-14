@@ -1,4 +1,4 @@
-import { Agent, Memory, VoltAgent } from "@voltagent/core";
+import { Memory, defineAgent, voltagent } from "@voltagent/core";
 import { LibSQLMemoryAdapter, LibSQLVectorAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer, jwtAuth } from "@voltagent/server-hono";
@@ -19,7 +19,7 @@ const memory = new Memory({
   vector: new LibSQLVectorAdapter(),
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Base Agent",
   instructions: "You are a helpful assistant that can provide weather information",
   model: "openai/gpt-4o-mini",
@@ -29,7 +29,7 @@ const agent = new Agent({
   },
 });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer({
     authNext: {
@@ -44,4 +44,4 @@ new VoltAgent({
     },
   }),
   logger,
-});
+}).ready();

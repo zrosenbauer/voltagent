@@ -1,5 +1,5 @@
 import { A2AServer } from "@voltagent/a2a-server";
-import { VoltAgent } from "@voltagent/core";
+import { voltagent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
 import { assistant } from "./agents/assistant.js";
@@ -15,7 +15,7 @@ const a2aServer = new A2AServer({
   description: "Expose VoltAgent over the Agent-to-Agent protocol",
 });
 
-new VoltAgent({
+await voltagent({
   agents: {
     assistant,
   },
@@ -24,6 +24,6 @@ new VoltAgent({
   },
   server: honoServer({ port: 3141 }),
   logger,
-});
+}).ready();
 
 logger.info("VoltAgent A2A example is running on http://localhost:3141");

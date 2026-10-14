@@ -1,6 +1,6 @@
 import { createReadStream, createWriteStream } from "node:fs";
 import path, { join } from "node:path";
-import { Agent, Memory, VoltAgent } from "@voltagent/core";
+import { Memory, defineAgent, voltagent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -20,7 +20,7 @@ const voiceProvider = new OpenAIVoiceProvider({
 });
 
 // Initialize agent with voice capabilities
-const agent = new Agent({
+const agent = defineAgent({
   name: "Voice Assistant",
   instructions: "A helpful assistant that can speak and listen using OpenAI's voice API",
   model: "openai/gpt-4o-mini",
@@ -33,13 +33,13 @@ const agent = new Agent({
 });
 
 // Create the VoltAgent with our voice-enabled agent
-new VoltAgent({
+await voltagent({
   agents: {
     agent,
   },
   logger,
   server: honoServer({ port: 3141 }),
-});
+}).ready();
 
 (async () => {
   const voices = await agent.voice?.getVoices();

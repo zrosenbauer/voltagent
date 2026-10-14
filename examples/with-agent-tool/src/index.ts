@@ -1,4 +1,4 @@
-import VoltAgent, { Agent } from "@voltagent/core";
+import voltagent, { defineAgent } from "@voltagent/core";
 
 /**
  * This example demonstrates multi-agent coordination using agent.toTool()
@@ -13,7 +13,7 @@ import VoltAgent, { Agent } from "@voltagent/core";
  */
 
 // Create a writer agent that writes blog posts
-const writerAgent = new Agent({
+const writerAgent = defineAgent({
   id: "writer",
   name: "Blog Writer",
   purpose: "Writes engaging blog post content on any topic",
@@ -28,7 +28,7 @@ const writerAgent = new Agent({
 });
 
 // Create an editor agent that improves and polishes content
-const editorAgent = new Agent({
+const editorAgent = defineAgent({
   id: "editor",
   name: "Content Editor",
   purpose: "Edits and improves blog post content for clarity and engagement",
@@ -44,7 +44,7 @@ const editorAgent = new Agent({
 });
 
 // Create a publisher agent that coordinates the workflow
-const publisherAgent = new Agent({
+const publisherAgent = defineAgent({
   id: "publisher",
   name: "Publishing Coordinator",
   instructions: `You are a publishing coordinator who manages the blog creation workflow.
@@ -61,6 +61,6 @@ const publisherAgent = new Agent({
   maxSteps: 10, // Allow enough steps for tool calls
 });
 
-new VoltAgent({
+await voltagent({
   agents: { publisherAgent, editorAgent, writerAgent },
-});
+}).ready();

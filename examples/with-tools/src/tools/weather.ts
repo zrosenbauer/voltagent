@@ -1,4 +1,4 @@
-import { tool } from "@voltagent/core";
+import { defineTool } from "@voltagent/core";
 import { z } from "zod";
 
 // Define the output schema for weather data (supports preliminary updates)
@@ -25,7 +25,7 @@ const weatherOutputSchema = z.discriminatedUnion("status", [
  * A tool for fetching weather information for a given location
  * Now with output schema validation to ensure consistent response format
  */
-export const weatherTool = tool({
+export const weatherTool = defineTool({
   description: "Get the current weather for a specific location",
   inputSchema: z.object({
     location: z.string().describe("The city or location to get weather for"),

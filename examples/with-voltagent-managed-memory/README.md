@@ -40,7 +40,7 @@ const managedMemory = new ManagedMemoryAdapter({
   voltOpsClient,
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   model: "openai/gpt-4o-mini",
   memory: new Memory({ storage: managedMemory }),
 });

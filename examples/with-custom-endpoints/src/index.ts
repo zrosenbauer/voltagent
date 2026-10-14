@@ -1,4 +1,4 @@
-import { Agent, Memory, VoltAgent } from "@voltagent/core";
+import { Memory, defineAgent, voltagent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -10,7 +10,7 @@ const logger = createPinoLogger({
 });
 
 // Create the agent
-const agent = new Agent({
+const agent = defineAgent({
   name: "Simple Custom Endpoints Agent",
   instructions:
     "You are a helpful assistant with access to simple custom endpoints: /api/health, /api/hello/:name, /api/calculate, and /api/delete-all",
@@ -24,7 +24,7 @@ const agent = new Agent({
 
 // Create VoltAgent with custom endpoints using configureApp
 // This gives you full access to the Hono app instance
-new VoltAgent({
+await voltagent({
   agents: {
     agent,
   },
@@ -127,4 +127,4 @@ new VoltAgent({
       });
     },
   }),
-});
+}).ready();

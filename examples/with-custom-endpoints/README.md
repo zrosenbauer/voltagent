@@ -69,7 +69,7 @@ Custom endpoints are registered through the `configureApp` callback, which gives
 import { honoServer } from "@voltagent/server-hono";
 import { jwtAuth } from "@voltagent/server-core";
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer({
     port: 3141,
@@ -106,7 +106,7 @@ new VoltAgent({
       api.get("/users", getUsersHandler);
     },
   }),
-});
+}).ready();
 ```
 
 With `configureApp`, you get:

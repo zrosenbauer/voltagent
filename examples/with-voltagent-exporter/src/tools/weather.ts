@@ -1,10 +1,10 @@
-import { tool } from "@voltagent/core";
+import { defineTool } from "@voltagent/core";
 import { z } from "zod";
 
 /**
  * A tool for fetching weather information for a given location
  */
-export const weatherTool = tool({
+export const weatherTool = defineTool({
   description: "Get the current weather for a specific location",
   inputSchema: z.object({
     location: z.string().describe("The city or location to get weather for"),

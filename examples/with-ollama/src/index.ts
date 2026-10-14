@@ -1,4 +1,4 @@
-import { Agent, VoltAgent, tool } from "@voltagent/core";
+import { defineAgent, defineTool, voltagent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
 import { createOllama } from "ollama-ai-provider-v2";
@@ -13,7 +13,7 @@ const ollama = createOllama({
   baseURL: process.env.OLLAMA_HOST ?? "http://localhost:11434/api",
 });
 
-const getCurrentWeather = tool({
+const getCurrentWeather = defineTool({
   description: "Fetch the current weather conditions for a given city",
   inputSchema: z.object({
     location: z.string().describe("City or location to inspect"),
@@ -29,7 +29,7 @@ const getCurrentWeather = tool({
   },
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "ollama-tool-agent",
   instructions: "You are a helpful assistant",
   model: ollama("llama3.2:latest"),
@@ -39,10 +39,10 @@ const agent = new Agent({
   logger,
 });
 
-new VoltAgent({
+await voltagent({
   agents: {
     agent,
   },
   logger,
   server: honoServer(),
-});
+}).ready();

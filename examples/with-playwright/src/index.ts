@@ -1,5 +1,5 @@
-import VoltAgent, {
-  Agent,
+import voltagent, {
+  defineAgent,
   Memory,
   type ToolExecuteOptions,
   type AgentHooks,
@@ -49,7 +49,7 @@ const memory = new Memory({
 });
 
 // Create a specialized agent for browsing
-export const browserAgent = new Agent({
+export const browserAgent = defineAgent({
   name: "Browser Agent",
   instructions: "You are an AI agent specialized in web automation with Playwright.",
   model: "mistral/mistral-large-latest",
@@ -103,10 +103,10 @@ export const browserAgent = new Agent({
   memory,
 });
 
-new VoltAgent({
+await voltagent({
   agents: {
     agent: browserAgent,
   },
   logger,
   server: honoServer({ port: 3141 }),
-});
+}).ready();

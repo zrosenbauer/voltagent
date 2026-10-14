@@ -1,4 +1,4 @@
-import { Agent, tool } from "@voltagent/core";
+import { defineAgent, defineTool } from "@voltagent/core";
 import { z } from "zod";
 
 export interface MathInput {
@@ -11,7 +11,7 @@ export interface MathOutput {
   steps: string[];
 }
 
-const calculatorTool = tool({
+const calculatorTool = defineTool({
   description: "Perform basic arithmetic operations",
   inputSchema: z.object({
     operation: z.string().describe("The mathematical operation to perform"),
@@ -33,7 +33,7 @@ const calculatorTool = tool({
   },
 });
 
-export const mathAgent = new Agent({
+export const mathAgent = defineAgent({
   name: "math-agent",
   instructions: `You are a mathematical problem-solving agent.
 Solve math problems step by step using the calculator tool when needed.

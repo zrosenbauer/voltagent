@@ -1,4 +1,9 @@
-import VoltAgent, { Agent, VoltAgentObservability, buildScorer, tool } from "@voltagent/core";
+import voltagent, {
+  defineAgent,
+  VoltAgentObservability,
+  buildScorer,
+  defineTool,
+} from "@voltagent/core";
 import {
   createAnswerCorrectnessScorer,
   createAnswerRelevancyScorer,
@@ -21,7 +26,7 @@ const observability = new VoltAgentObservability();
 
 const judgeModel = "openai/gpt-4o-mini";
 const moderationModel = "openai/gpt-4o-mini";
-const helpfulnessJudgeAgent = new Agent({
+const helpfulnessJudgeAgent = defineAgent({
   name: "helpfulness-judge",
   model: judgeModel,
   instructions: "You evaluate helpfulness of responses",
@@ -81,7 +86,7 @@ const productCatalog = [
   { id: "office-monitor-27", name: "Office Monitor 27", price: 299, inStock: 0 },
 ];
 
-const searchProductsTool = tool({
+const searchProductsTool = defineTool({
   description: "Searches a small product catalog by query and returns product candidates.",
   inputSchema: z.object({
     query: z.string().describe("Product search query"),
@@ -100,7 +105,7 @@ const searchProductsTool = tool({
   },
 });
 
-const checkInventoryTool = tool({
+const checkInventoryTool = defineTool({
   description: "Checks stock status for a product id.",
   inputSchema: z.object({
     productId: z.string().describe("Product id from searchProducts result"),
@@ -262,7 +267,7 @@ Provide a score from 0 to 1 and explain your reasoning.`;
   })
   .build();
 
-const supportAgent = new Agent({
+const supportAgent = defineAgent({
   name: "live-scorer-demo",
   instructions:
     "You are a helpful assistant that answers questions about VoltAgent concisely and accurately.",
@@ -403,7 +408,7 @@ const supportAgent = new Agent({
   },
 });
 
-const toolEvalAgent = new Agent({
+const toolEvalAgent = defineAgent({
   name: "tool-eval-demo",
   instructions: `You are a product assistant.
 Always call searchProducts first, then call checkInventory for a selected product before finalizing your answer.
@@ -426,7 +431,7 @@ If no products are found, explain that clearly.`,
   },
 });
 
-const singleEvalAgent = new Agent({
+const singleEvalAgent = defineAgent({
   name: "single-eval-demo",
   instructions: "You are a helpful assistant that answers questions about VoltAgent.",
   model: "openai/gpt-4o-mini",
@@ -440,7 +445,7 @@ const singleEvalAgent = new Agent({
   },
 });
 
-const scorerFeedbackAgent = new Agent({
+const scorerFeedbackAgent = defineAgent({
   name: "scorer-feedback-demo",
   instructions: "You are a helpful assistant that answers questions about VoltAgent.",
   model: "openai/gpt-4o-mini",
@@ -468,7 +473,7 @@ const scorerFeedbackAgent = new Agent({
   },
 });
 
-new VoltAgent({
+await voltagent({
   agents: {
     support: supportAgent,
     toolEval: toolEvalAgent,
@@ -477,7 +482,7 @@ new VoltAgent({
   },
   server: honoServer(),
   observability,
-});
+}).ready();
 
 (async () => {
   const question = "How can I enable live eval scorers in VoltAgent?";

@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { serveStatic } from "@hono/node-server/serve-static";
-import { Memory, VoltAgent, VoltAgentObservability } from "@voltagent/core";
+import { Memory, VoltAgentObservability, voltagent } from "@voltagent/core";
 import { LibSQLMemoryAdapter, LibSQLObservabilityAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -24,7 +24,7 @@ const memory = new Memory({
 const supervisorAgent = createSupervisorAgent(memory);
 
 // Initialize VoltAgent with Instagram ad generation system using Gemini AI
-new VoltAgent({
+await voltagent({
   agents: {
     InstagramAdSupervisor: supervisorAgent,
   },
@@ -39,4 +39,4 @@ new VoltAgent({
       url: "file:./.voltagent/observability.db",
     }),
   }),
-});
+}).ready();

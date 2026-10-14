@@ -1,9 +1,9 @@
-import { Agent, VoltAgent } from "@voltagent/core";
+import { defineAgent, voltagent } from "@voltagent/core";
 import { serverlessHono } from "@voltagent/serverless-hono";
 
 import { weatherTool } from "./tools";
 
-const assistant = new Agent({
+const assistant = defineAgent({
   name: "serverless-assistant",
   instructions: "You are a helpful assistant.",
   model: "openai/gpt-4o-mini",
@@ -12,9 +12,10 @@ const assistant = new Agent({
   },
 });
 
-const voltAgent = new VoltAgent({
+const voltAgent = voltagent({
   agents: { assistant },
   serverless: serverlessHono(),
 });
+await voltAgent.ready();
 
 export default voltAgent.serverless().toCloudflareWorker();
