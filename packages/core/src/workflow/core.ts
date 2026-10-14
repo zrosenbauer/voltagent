@@ -336,7 +336,7 @@ const getRestartCheckpointFromMetadata = (
  *
  * @example
  * ```ts
- * const workflow = createWorkflow({
+ * const workflow = defineWorkflow({
  *   id: "user-processing",
  *   name: "User Processing Workflow",
  *   purpose: "Process user data and generate personalized content",
@@ -381,7 +381,7 @@ const getRestartCheckpointFromMetadata = (
  * @param steps - Variable number of and* functions to execute
  * @returns A configured workflow instance
  */
-export function createWorkflow<
+export function defineWorkflow<
   INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
   RESULT_SCHEMA extends z.ZodTypeAny,
 >(
@@ -392,7 +392,7 @@ export function createWorkflow<
     z.infer<RESULT_SCHEMA>
   >,
 ): Workflow<INPUT_SCHEMA, RESULT_SCHEMA>;
-export function createWorkflow<
+export function defineWorkflow<
   INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
   RESULT_SCHEMA extends z.ZodTypeAny,
   S1,
@@ -401,7 +401,7 @@ export function createWorkflow<
   s1: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, WorkflowInput<INPUT_SCHEMA>, S1>,
   s2: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S1, z.infer<RESULT_SCHEMA>>,
 ): Workflow<INPUT_SCHEMA, RESULT_SCHEMA>;
-export function createWorkflow<
+export function defineWorkflow<
   INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
   RESULT_SCHEMA extends z.ZodTypeAny,
   S1,
@@ -412,7 +412,7 @@ export function createWorkflow<
   s2: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S1, S2>,
   s3: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S2, z.infer<RESULT_SCHEMA>>,
 ): Workflow<INPUT_SCHEMA, RESULT_SCHEMA>;
-export function createWorkflow<
+export function defineWorkflow<
   INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
   RESULT_SCHEMA extends z.ZodTypeAny,
   S1,
@@ -425,7 +425,7 @@ export function createWorkflow<
   s3: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S2, S3>,
   s4: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S3, z.infer<RESULT_SCHEMA>>,
 ): Workflow<INPUT_SCHEMA, RESULT_SCHEMA>;
-export function createWorkflow<
+export function defineWorkflow<
   INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
   RESULT_SCHEMA extends z.ZodTypeAny,
   S1,
@@ -440,7 +440,7 @@ export function createWorkflow<
   s4: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S3, S4>,
   s5: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S4, z.infer<RESULT_SCHEMA>>,
 ): Workflow<INPUT_SCHEMA, RESULT_SCHEMA>;
-export function createWorkflow<
+export function defineWorkflow<
   INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
   RESULT_SCHEMA extends z.ZodTypeAny,
   S1,
@@ -457,7 +457,7 @@ export function createWorkflow<
   s5: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S4, S5>,
   s6: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S5, z.infer<RESULT_SCHEMA>>,
 ): Workflow<INPUT_SCHEMA, RESULT_SCHEMA>;
-export function createWorkflow<
+export function defineWorkflow<
   INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
   RESULT_SCHEMA extends z.ZodTypeAny,
   S1,
@@ -476,7 +476,7 @@ export function createWorkflow<
   s6: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S5, S6>,
   s7: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S6, z.infer<RESULT_SCHEMA>>,
 ): Workflow<INPUT_SCHEMA, RESULT_SCHEMA>;
-export function createWorkflow<
+export function defineWorkflow<
   INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
   RESULT_SCHEMA extends z.ZodTypeAny,
   S1,
@@ -497,7 +497,7 @@ export function createWorkflow<
   s7: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S6, S7>,
   s8: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S7, z.infer<RESULT_SCHEMA>>,
 ): Workflow<INPUT_SCHEMA, RESULT_SCHEMA>;
-export function createWorkflow<
+export function defineWorkflow<
   INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
   RESULT_SCHEMA extends z.ZodTypeAny,
   S1,
@@ -520,7 +520,7 @@ export function createWorkflow<
   s8: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S7, S8>,
   s9: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S8, z.infer<RESULT_SCHEMA>>,
 ): Workflow<INPUT_SCHEMA, RESULT_SCHEMA>;
-export function createWorkflow<
+export function defineWorkflow<
   INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
   RESULT_SCHEMA extends z.ZodTypeAny,
   S1,
@@ -545,7 +545,7 @@ export function createWorkflow<
   s9: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S8, S9>,
   s10: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S9, z.infer<RESULT_SCHEMA>>,
 ): Workflow<INPUT_SCHEMA, RESULT_SCHEMA>;
-export function createWorkflow<
+export function defineWorkflow<
   INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
   RESULT_SCHEMA extends z.ZodTypeAny,
   S1,
@@ -572,7 +572,7 @@ export function createWorkflow<
   s10: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S9, S10>,
   s11: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S10, z.infer<RESULT_SCHEMA>>,
 ): Workflow<INPUT_SCHEMA, RESULT_SCHEMA>;
-export function createWorkflow<
+export function defineWorkflow<
   INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
   RESULT_SCHEMA extends z.ZodTypeAny,
   S1,
@@ -601,7 +601,7 @@ export function createWorkflow<
   s11: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S10, S11>,
   s12: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S11, z.infer<RESULT_SCHEMA>>,
 ): Workflow<INPUT_SCHEMA, RESULT_SCHEMA>;
-export function createWorkflow<
+export function defineWorkflow<
   INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
   RESULT_SCHEMA extends z.ZodTypeAny,
   S1,
@@ -632,7 +632,7 @@ export function createWorkflow<
   s12: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S11, S12>,
   s13: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S12, z.infer<RESULT_SCHEMA>>,
 ): Workflow<INPUT_SCHEMA, RESULT_SCHEMA>;
-export function createWorkflow<
+export function defineWorkflow<
   INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
   RESULT_SCHEMA extends z.ZodTypeAny,
   S1,
@@ -665,7 +665,7 @@ export function createWorkflow<
   s13: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S12, S13>,
   s14: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S13, z.infer<RESULT_SCHEMA>>,
 ): Workflow<INPUT_SCHEMA, RESULT_SCHEMA>;
-export function createWorkflow<
+export function defineWorkflow<
   INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
   RESULT_SCHEMA extends z.ZodTypeAny,
   S1,
@@ -700,7 +700,7 @@ export function createWorkflow<
   s14: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S13, S14>,
   s15: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S14, z.infer<RESULT_SCHEMA>>,
 ): Workflow<INPUT_SCHEMA, RESULT_SCHEMA>;
-export function createWorkflow<
+export function defineWorkflow<
   INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
   RESULT_SCHEMA extends z.ZodTypeAny,
   S1,
@@ -737,7 +737,7 @@ export function createWorkflow<
   s15: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S14, S15>,
   s16: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S15, WorkflowResult<RESULT_SCHEMA>>,
 ): Workflow<INPUT_SCHEMA, RESULT_SCHEMA>;
-export function createWorkflow<
+export function defineWorkflow<
   INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
   RESULT_SCHEMA extends z.ZodTypeAny,
   S1,
@@ -776,7 +776,7 @@ export function createWorkflow<
   s16: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S15, S16>,
   s17: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S16, z.infer<RESULT_SCHEMA>>,
 ): Workflow<INPUT_SCHEMA, RESULT_SCHEMA>;
-export function createWorkflow<
+export function defineWorkflow<
   INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
   RESULT_SCHEMA extends z.ZodTypeAny,
   S1,
@@ -817,7 +817,7 @@ export function createWorkflow<
   s17: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S16, S17>,
   s18: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S17, z.infer<RESULT_SCHEMA>>,
 ): Workflow<INPUT_SCHEMA, RESULT_SCHEMA>;
-export function createWorkflow<
+export function defineWorkflow<
   INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
   RESULT_SCHEMA extends z.ZodTypeAny,
   S1,
@@ -860,7 +860,7 @@ export function createWorkflow<
   s18: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S17, S18>,
   s19: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S18, z.infer<RESULT_SCHEMA>>,
 ): Workflow<INPUT_SCHEMA, RESULT_SCHEMA>;
-export function createWorkflow<
+export function defineWorkflow<
   INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
   RESULT_SCHEMA extends z.ZodTypeAny,
   S1,
@@ -905,7 +905,7 @@ export function createWorkflow<
   s19: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S18, S19>,
   s20: WorkflowStep<WorkflowInput<INPUT_SCHEMA>, S19, z.infer<RESULT_SCHEMA>>,
 ): Workflow<INPUT_SCHEMA, RESULT_SCHEMA>;
-export function createWorkflow<
+export function defineWorkflow<
   INPUT_SCHEMA extends InternalBaseWorkflowInputSchema,
   RESULT_SCHEMA extends z.ZodTypeAny,
   SUSPEND_SCHEMA extends z.ZodTypeAny = z.ZodAny,
@@ -1322,7 +1322,7 @@ export function createWorkflow<
         }
       }
 
-      // ✅ Memory is always available (created with defaults in createWorkflow)
+      // ✅ Memory is always available (created with defaults in defineWorkflow)
       // No need for managers - use them directly like Agent system
 
       // Create stream writer - real one for streaming, no-op for regular execution

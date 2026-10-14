@@ -1,10 +1,10 @@
 import {
-  Agent,
   type AgentModelReference,
   type BuilderPrepareContext,
   type BuilderScoreContext,
   type LocalScorerDefinition,
   buildScorer,
+  defineAgent,
 } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
 import { z } from "zod";
@@ -117,7 +117,7 @@ export function createAnswerRelevancyScorer<
   const generateQuestions = async (
     context: AnswerRelevancyPrepareContext<Payload, Params>,
   ): Promise<GeneratedQuestion[]> => {
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "question-generator",
       model,
       instructions: "You generate questions from answers to evaluate relevancy",

@@ -3,7 +3,7 @@ import type { InferToolInput, InferToolOutput } from "ai";
 import { tool as aiTool } from "ai";
 import { describe, expectTypeOf, it } from "vitest";
 import { z } from "zod";
-import { tool } from "./ai-sdk-tool";
+import { defineTool } from "./ai-sdk-tool";
 
 describe("AI SDK tool inference", () => {
   it("accepts client tools without execute or outputSchema like the native helper", () => {
@@ -13,7 +13,7 @@ describe("AI SDK tool inference", () => {
       contextSchema: z.object({ userId: z.string() }),
     };
     const native = aiTool(definition);
-    const client = tool({ ...definition, voltagent: { tags: ["browser"] } });
+    const client = defineTool({ ...definition, voltagent: { tags: ["browser"] } });
 
     expectTypeOf(client).toEqualTypeOf(native);
     expectTypeOf<InferToolInput<typeof client>>().toEqualTypeOf<{ precise: boolean }>();
@@ -26,11 +26,11 @@ describe("AI SDK tool inference", () => {
       inputSchema: z.object({}),
       outputSchema: z.object({ latitude: z.number(), longitude: z.number() }),
     };
-    expectTypeOf(tool(definition)).toEqualTypeOf(aiTool(definition));
+    expectTypeOf(defineTool(definition)).toEqualTypeOf(aiTool(definition));
   });
 
   it("keeps execute callable and infers input, output, and context", () => {
-    const executable = tool({
+    const executable = defineTool({
       inputSchema: z.object({ id: z.string() }),
       contextSchema: z.object({ token: z.string() }),
       execute: ({ id }, { context }) => {

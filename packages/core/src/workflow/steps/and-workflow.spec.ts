@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { z } from "zod";
 import { Memory } from "../../memory";
 import { InMemoryStorageAdapter } from "../../memory/adapters/storage/in-memory";
-import { createWorkflow } from "../core";
+import { defineWorkflow } from "../core";
 import { WorkflowRegistry } from "../registry";
 import { andThen } from "./and-then";
 import { andWorkflow } from "./and-workflow";
@@ -28,7 +28,7 @@ describe.sequential("andWorkflow", () => {
   });
 
   it("should run the nested workflow", async () => {
-    const nestedWorkflow = createWorkflow(
+    const nestedWorkflow = defineWorkflow(
       {
         id: "nested",
         name: "nested",
@@ -53,7 +53,7 @@ describe.sequential("andWorkflow", () => {
       }),
     );
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "root",
         name: "root",

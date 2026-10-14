@@ -1,9 +1,9 @@
 import {
-  Agent,
   type AgentModelReference,
   type BuilderScoreContext,
   type LocalScorerDefinition,
   buildScorer,
+  defineAgent,
 } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
 import { z } from "zod";
@@ -118,7 +118,7 @@ export function createContextRecallScorer<
     }),
   })
     .score(async (context) => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "context-recall-evaluator",
         model,
         instructions: "You evaluate how well provided context supports factual statements",

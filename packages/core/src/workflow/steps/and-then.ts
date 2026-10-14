@@ -8,7 +8,7 @@ import type { WorkflowStepFunc, WorkflowStepFuncConfig } from "./types";
  *
  * @example
  * ```ts
- * const w = createWorkflow(
+ * const w = defineWorkflow(
  *   andThen({
  *     id: "process-data",
  *     execute: async ({ data }) => {

@@ -1,5 +1,5 @@
 import {
-  Agent,
+  type Agent,
   InMemoryStorageAdapter,
   Memory,
   createInputGuardrail,
@@ -8,7 +8,8 @@ import {
   createOutputMiddleware,
   createSubagent,
   createTool,
-  tool,
+  defineAgent,
+  defineTool,
   withVoltAgentMetadata,
 } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal";
@@ -167,7 +168,7 @@ describe("Agent runtime e2e", () => {
       ({ context }: { context: Map<string | symbol, unknown> }) =>
         `Reply in ${context.get("language")}`,
     );
-    const agent = new Agent({
+    const agent = defineAgent({
       id: "prepared-http",
       name: "Prepared HTTP",
       instructions,
@@ -222,7 +223,7 @@ describe("Agent runtime e2e", () => {
 
   it("runs generateText through an AI SDK native tool", async () => {
     const execute = vi.fn(async ({ city }: { city: string }) => ({ city, tempC: 18 }));
-    const getWeather = tool({
+    const getWeather = defineTool({
       description: "Get current weather",
       inputSchema: z.object({
         city: z.string(),
@@ -238,7 +239,7 @@ describe("Agent runtime e2e", () => {
         : textGenerate("Paris is 18C.");
     });
 
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "NativeToolAgent",
       instructions: "Use tools when useful.",
       model,
@@ -289,7 +290,7 @@ describe("Agent runtime e2e", () => {
         : textGenerate("Madrid is warm.");
     });
 
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "RawAiSdkToolAgent",
       instructions: "Use tools when useful.",
       model,
@@ -323,7 +324,7 @@ describe("Agent runtime e2e", () => {
 
   it("streams through a tool call and final text", async () => {
     const execute = vi.fn(async ({ city }: { city: string }) => ({ city, tempC: 12 }));
-    const getWeather = tool({
+    const getWeather = defineTool({
       description: "Get current weather",
       inputSchema: z.object({
         city: z.string(),
@@ -339,7 +340,7 @@ describe("Agent runtime e2e", () => {
         : textStream("Berlin is 12C.");
     });
 
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "StreamingToolAgent",
       instructions: "Use tools and answer briefly.",
       model,
@@ -375,7 +376,7 @@ describe("Agent runtime e2e", () => {
       }),
       execute: multiplyExecute,
     });
-    const lookup = tool({
+    const lookup = defineTool({
       description: "Lookup a value",
       inputSchema: z.object({
         key: z.string(),
@@ -402,7 +403,7 @@ describe("Agent runtime e2e", () => {
         : textGenerate("Mixed tools completed.");
     });
 
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "MixedToolAgent",
       instructions: "Use all relevant tools.",
       model,
@@ -457,7 +458,7 @@ describe("Agent runtime e2e", () => {
     });
     const approve = vi.fn(async () => "approved" as const);
 
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "ApprovalAgent",
       instructions: "Ask for approval before sensitive tools.",
       model,
@@ -502,7 +503,7 @@ describe("Agent runtime e2e", () => {
         ? toolCallGenerate("deleteAccount", { accountId: "acct-123" })
         : textGenerate("Deletion was not performed.");
     });
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "ApprovalDeniedAgent",
       instructions: "Never execute denied tools.",
       model,
@@ -528,7 +529,7 @@ describe("Agent runtime e2e", () => {
       count: z.number(),
     });
     const model = createModel(textGenerate(safeStringify({ answer: "ok", count: 2 })));
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "StructuredAgent",
       instructions: "Return structured data.",
       model,
@@ -570,7 +571,7 @@ describe("Agent runtime e2e", () => {
     });
 
     const model = createModel(textGenerate("base secret"));
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "MiddlewareGuardrailAgent",
       instructions: "Return a guarded answer.",
       model,
@@ -596,7 +597,7 @@ describe("Agent runtime e2e", () => {
         message: "Input blocked by e2e policy.",
       })),
     });
-    const inputBlockedAgent = new Agent({
+    const inputBlockedAgent = defineAgent({
       name: "InputBlockedAgent",
       instructions: "Should not call model.",
       model: createModel(textGenerate("unreachable")),
@@ -618,7 +619,7 @@ describe("Agent runtime e2e", () => {
         message: "Output blocked by e2e policy.",
       })),
     });
-    const outputBlockedAgent = new Agent({
+    const outputBlockedAgent = defineAgent({
       name: "OutputBlockedAgent",
       instructions: "Return guarded output.",
       model: createModel(textGenerate("unsafe output")),
@@ -642,7 +643,7 @@ describe("Agent runtime e2e", () => {
         message: "Stream input blocked.",
       })),
     });
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "StreamBlockedAgent",
       instructions: "Stream response.",
       model: createModel(textGenerate("unused"), textStream("unsafe stream output")),
@@ -656,7 +657,7 @@ describe("Agent runtime e2e", () => {
   });
 
   it("delegates work to a subagent through delegate_task", async () => {
-    const childAgent = new Agent({
+    const childAgent = defineAgent({
       name: "Research Agent",
       instructions: "Research the delegated task.",
       model: createModel(textGenerate("Child answer.")),
@@ -673,7 +674,7 @@ describe("Agent runtime e2e", () => {
           })
         : textGenerate("Supervisor used Child answer.");
     });
-    const supervisorAgent = new Agent({
+    const supervisorAgent = defineAgent({
       name: "SupervisorAgent",
       instructions: "Delegate research when useful.",
       model: supervisorModel,
@@ -693,7 +694,7 @@ describe("Agent runtime e2e", () => {
 
   it("delegates streaming work to a subagent through delegate_task", async () => {
     const childModel = createModel(textGenerate("unused"), textStream("Child streamed answer."));
-    const childAgent = new Agent({
+    const childAgent = defineAgent({
       name: "Streaming Research Agent",
       instructions: "Stream delegated answers.",
       model: childModel,
@@ -710,7 +711,7 @@ describe("Agent runtime e2e", () => {
           })
         : textGenerate("Supervisor used streamed child answer.");
     });
-    const supervisorAgent = new Agent({
+    const supervisorAgent = defineAgent({
       name: "StreamingSupervisorAgent",
       instructions: "Delegate streaming research when useful.",
       model: supervisorModel,
@@ -742,7 +743,7 @@ describe("Agent runtime e2e", () => {
     });
     const fallbackModel = createModel(textGenerate("Fallback model response."));
     const onFallback = vi.fn();
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "FallbackAgent",
       instructions: "Use fallback when needed.",
       model: [
@@ -768,7 +769,7 @@ describe("Agent runtime e2e", () => {
     const agentToolStart = vi.fn();
     const agentToolEnd = vi.fn();
     const execute = vi.fn(async ({ city }: { city: string }) => ({ city, tempC: 22 }));
-    const getWeather = tool({
+    const getWeather = defineTool({
       description: "Get current weather",
       inputSchema: z.object({
         city: z.string(),
@@ -789,7 +790,7 @@ describe("Agent runtime e2e", () => {
         ? toolCallGenerate("getWeather", { city: "Rome" })
         : textGenerate("Rome is 22C.");
     });
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "AiSdkToolHooksAgent",
       instructions: "Use tools.",
       model,
@@ -869,7 +870,7 @@ describe("Agent runtime e2e", () => {
           })
         : textGenerate("Refund completed.");
     });
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "RawAiSdkToolMetadataAgent",
       instructions: "Use refund tools when allowed.",
       model,
@@ -925,7 +926,7 @@ describe("Agent runtime e2e", () => {
 
   it("serves generateText and streamText through server-hono routes", async () => {
     const model = createModel(textGenerate("HTTP text response."), textStream("HTTP stream."));
-    const agent = new Agent({
+    const agent = defineAgent({
       id: "http-agent",
       name: "HttpAgent",
       instructions: "Answer HTTP requests.",
@@ -977,7 +978,7 @@ describe("Agent runtime e2e", () => {
         }
       | undefined;
     const model = createModel(textGenerate(safeStringify({ answer: "server-ok", count: 3 })));
-    const agent = new Agent({
+    const agent = defineAgent({
       id: "server-options-agent",
       name: "ServerOptionsAgent",
       instructions: "Return structured data.",
@@ -1042,7 +1043,7 @@ describe("Agent runtime e2e", () => {
 
   it("serves streamed tool calls through server-hono stream route", async () => {
     const execute = vi.fn(async ({ city }: { city: string }) => ({ city, tempC: 19 }));
-    const getWeather = tool({
+    const getWeather = defineTool({
       description: "Get current weather",
       inputSchema: z.object({
         city: z.string(),
@@ -1057,7 +1058,7 @@ describe("Agent runtime e2e", () => {
         ? toolCallStream("getWeather", { city: "Madrid" })
         : textStream("Madrid is 19C.");
     });
-    const agent = new Agent({
+    const agent = defineAgent({
       id: "server-stream-tool-agent",
       name: "ServerStreamToolAgent",
       instructions: "Use tools in streams.",
@@ -1103,7 +1104,7 @@ describe("Agent runtime e2e", () => {
           })
         : textGenerate("Remembered.");
     });
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "WorkingMemoryAgent",
       instructions: "Remember useful user preferences.",
       model,
@@ -1158,7 +1159,7 @@ describe("Agent runtime e2e", () => {
       }
       return textGenerate("Routed result ready.");
     });
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "ToolRoutingAgent",
       instructions: "Use routed tools.",
       model,
@@ -1204,7 +1205,7 @@ describe("Agent runtime e2e", () => {
       }
       return textGenerate("Hidden tool was not executed.");
     });
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "ToolRoutingApprovalAgent",
       instructions: "Use routed tools with approval.",
       model,
@@ -1282,7 +1283,7 @@ describe("Agent runtime e2e", () => {
       }
       return textGenerate("Routed refund complete.");
     });
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "RawAiSdkRoutingContextAgent",
       instructions: "Use routed refund tools.",
       model,

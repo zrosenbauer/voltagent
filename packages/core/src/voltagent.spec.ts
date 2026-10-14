@@ -6,9 +6,9 @@ import { Memory } from "./memory";
 import { InMemoryStorageAdapter } from "./memory/adapters/storage/in-memory";
 import { ServerlessVoltAgentObservability } from "./observability";
 import { AgentRegistry } from "./registries/agent-registry";
-import { VoltAgent } from "./voltagent";
+import { voltagent } from "./voltagent";
 import { VoltOpsClient } from "./voltops/client";
-import { createWorkflow } from "./workflow";
+import { defineWorkflow } from "./workflow";
 import { WorkflowRegistry } from "./workflow/registry";
 import { andThen } from "./workflow/steps";
 import { Workspace } from "./workspace";
@@ -51,7 +51,7 @@ describe("VoltAgent defaults", () => {
       model: "openai/gpt-4o-mini",
     });
 
-    new VoltAgent({
+    voltagent({
       agents: { assistant: agent },
       agentMemory,
       checkDependencies: false,
@@ -93,7 +93,7 @@ describe("VoltAgent defaults", () => {
       model: model as any,
     });
 
-    const voltAgent = new VoltAgent({
+    const voltAgent = voltagent({
       agents: { assistant: agent },
       memory: agentMemory,
       checkDependencies: false,
@@ -131,7 +131,7 @@ describe("VoltAgent defaults", () => {
     expect(agent.getWorkspace()).toBeUndefined();
     expect(agent.getTools()).toHaveLength(0);
 
-    const voltAgent = new VoltAgent({
+    const voltAgent = voltagent({
       agents: { assistant: agent },
       workspace,
       checkDependencies: false,
@@ -156,7 +156,7 @@ describe("VoltAgent defaults", () => {
 
   it("applies workflowMemory to registered workflows without explicit memory", () => {
     const workflowMemory = new Memory({ storage: new InMemoryStorageAdapter() });
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "workflow-default-memory",
         name: "Workflow Default Memory",
@@ -169,7 +169,7 @@ describe("VoltAgent defaults", () => {
       }),
     );
 
-    new VoltAgent({
+    voltagent({
       workflows: { workflow },
       workflowMemory,
       checkDependencies: false,
@@ -185,7 +185,7 @@ describe("VoltAgent defaults", () => {
       instructions: "Be helpful.",
       model: "openai/gpt-4o-mini",
     });
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "workflow-shared-memory",
         name: "Workflow Shared Memory",
@@ -198,7 +198,7 @@ describe("VoltAgent defaults", () => {
       }),
     );
 
-    new VoltAgent({
+    voltagent({
       agents: { assistant: agent },
       workflows: { workflow },
       memory: sharedMemory,
@@ -216,7 +216,7 @@ describe("VoltAgent defaults", () => {
       model: "openai/gpt-4o-mini",
     });
 
-    new VoltAgent({
+    voltagent({
       agents: { assistant: agent },
       agentConversationPersistence: {
         mode: "finish",
@@ -245,7 +245,7 @@ describe("VoltAgent defaults", () => {
       },
     });
 
-    new VoltAgent({
+    voltagent({
       agents: { assistant: agent },
       agentConversationPersistence: {
         mode: "finish",
@@ -274,7 +274,7 @@ describe("VoltAgent defaults", () => {
 
     let ensureEnvironmentHook: ((env?: Record<string, unknown>) => void) | undefined;
 
-    const voltAgent = new VoltAgent({
+    const voltAgent = voltagent({
       observability,
       voltOpsClient: mockVoltOpsClient,
       checkDependencies: false,
@@ -301,6 +301,6 @@ describe("VoltAgent defaults", () => {
     ensureEnvironmentHook?.();
 
     expect(updateSpy).toHaveBeenCalledTimes(1);
-    await observability.shutdown();
+    await voltAgent.shutdown();
   });
 });

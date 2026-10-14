@@ -1,9 +1,9 @@
 import {
-  Agent,
   type AgentModelReference,
   type BuilderScoreContext,
   type LocalScorerDefinition,
   buildScorer,
+  defineAgent,
 } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
 import { z } from "zod";
@@ -107,7 +107,7 @@ export function createContextPrecisionScorer<
     }),
   })
     .score(async (context) => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "context-precision-evaluator",
         model,
         instructions: "You evaluate if context was useful for arriving at the answer",

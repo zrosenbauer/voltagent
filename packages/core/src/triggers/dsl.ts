@@ -16,7 +16,7 @@ type TriggerDsl = {
  *
  * Example:
  * ```ts
- * const volt = new VoltAgent({
+ * const volt = voltagent({
  *   triggers: createTriggers((on) => {
  *     on.github.star(async ({ payload }) => {
  *       // ...

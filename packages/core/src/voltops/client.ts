@@ -1082,9 +1082,9 @@ export class VoltOpsClient implements IVoltOpsClient {
    });
    
    // Option B: Global (lower priority)
-   new VoltAgent({
+   await voltagent({
      voltOpsClient: new VoltOpsClient({ ... })
-   });
+   }).ready();
 
    To use local prompt pull:
    1. Run: volt prompts pull

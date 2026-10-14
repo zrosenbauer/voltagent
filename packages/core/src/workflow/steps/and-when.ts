@@ -7,7 +7,7 @@ import type { WorkflowStepConditionalWhen, WorkflowStepConditionalWhenConfig } f
  *
  * @example
  * ```ts
- * const w = createWorkflow(
+ * const w = defineWorkflow(
  *   andWhen({
  *     id: "admin-permissions",
  *     condition: async ({ data }) => data.userType === "admin",

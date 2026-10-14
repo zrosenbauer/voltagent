@@ -13,7 +13,7 @@ import type { WorkflowStepParallelRace } from "./types";
  *
  * @example
  * ```ts
- * const w = createWorkflow(
+ * const w = defineWorkflow(
  *   andRace({
  *     id: "race-data-sources",
  *     steps: [

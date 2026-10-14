@@ -47,7 +47,7 @@ const isOutputSpec = (value: unknown): value is OutputSpec => {
  *
  * @example
  * ```ts
- * const w = createWorkflow(
+ * const w = defineWorkflow(
  *   andAgent(
  *     ({ data }) => `Generate a greeting for the user ${data.name}`,
  *     agent,

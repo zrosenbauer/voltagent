@@ -1,6 +1,5 @@
-import type { ToolSchema } from "../agent/providers/base/types";
 import { LoggerProxy } from "../logger";
-import type { Tool, VercelTool } from "./index";
+import type { AgentTool, VercelTool } from "./index";
 
 /**
  * Represents a collection of related tools with optional shared instructions.
@@ -33,9 +32,9 @@ export type Toolkit = {
   addInstructions?: boolean;
 
   /**
-   * An array of Tool instances that belong to this toolkit.
+   * Tools with independently inferred schemas that belong to this toolkit.
    */
-  tools: (Tool<ToolSchema, ToolSchema | undefined> | VercelTool)[];
+  tools: (AgentTool | VercelTool)[];
 };
 
 /**

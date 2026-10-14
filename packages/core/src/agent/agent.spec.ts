@@ -14,7 +14,7 @@ import { Memory } from "../memory";
 import { InMemoryStorageAdapter } from "../memory/adapters/storage/in-memory";
 import { AgentRegistry } from "../registries/agent-registry";
 import { ModelProviderRegistry } from "../registries/model-provider-registry";
-import { Tool, tool as aiSdkTool, enhanceTool } from "../tool";
+import { type Tool, defineTool as aiSdkTool, createTool, enhanceTool } from "../tool";
 import { Workspace } from "../workspace";
 import { Agent, renameProviderOptions } from "./agent";
 import { SPECULATIVE_INPUT_GUARDRAIL_CONTEXT_KEY } from "./context-keys";
@@ -1171,7 +1171,7 @@ Use pandas and summarize findings.`.split("\n"),
     it("should throw a descriptive error when structured output is missing", async () => {
       const onEnd = vi.fn();
       const onError = vi.fn();
-      const tool = new Tool({
+      const tool = createTool({
         name: "echo_tool",
         description: "Echo tool",
         parameters: z.object({ value: z.string() }),
@@ -2304,7 +2304,7 @@ Use pandas and summarize findings.`.split("\n"),
         model: mockModel as any,
       });
 
-      const tool = new Tool({
+      const tool = createTool({
         name: "testTool",
         description: "A test tool",
         parameters: z.object({ input: z.string() }),
@@ -2343,7 +2343,7 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("should remove tools", () => {
-      const tool = new Tool({
+      const tool = createTool({
         name: "testTool",
         description: "A test tool",
         parameters: z.object({ input: z.string() }),
@@ -2371,7 +2371,7 @@ Use pandas and summarize findings.`.split("\n"),
         model: mockModel as any,
       });
 
-      const tool = new Tool({
+      const tool = createTool({
         name: "testTool",
         description: "A test tool",
         parameters: z.object({ input: z.string() }),
@@ -2457,7 +2457,7 @@ Use pandas and summarize findings.`.split("\n"),
         hooks: createHooks({ onToolEnd }),
       });
 
-      const failingTool = new Tool({
+      const failingTool = createTool({
         name: "failing-tool",
         description: "Always throws",
         parameters: z.object({}),
@@ -2507,7 +2507,7 @@ Use pandas and summarize findings.`.split("\n"),
         hooks: createHooks({ onToolError, onToolEnd }),
       });
 
-      const failingTool = new Tool({
+      const failingTool = createTool({
         name: "failing-tool",
         description: "Always throws",
         parameters: z.object({}),
@@ -2565,7 +2565,7 @@ Use pandas and summarize findings.`.split("\n"),
         hooks: createHooks({ onToolError }),
       });
 
-      const failingTool = new Tool({
+      const failingTool = createTool({
         name: "failing-tool",
         description: "Always throws",
         parameters: z.object({}),
@@ -2605,7 +2605,7 @@ Use pandas and summarize findings.`.split("\n"),
       const circular: any = {};
       circular.self = circular;
 
-      const failingTool = new Tool({
+      const failingTool = createTool({
         name: "circular-tool",
         description: "Throws with circular payload",
         parameters: z.object({}),
@@ -2645,7 +2645,7 @@ Use pandas and summarize findings.`.split("\n"),
         hooks: createHooks({ onToolEnd }),
       });
 
-      const tool = new Tool({
+      const tool = createTool({
         name: "text-tool",
         description: "Returns text",
         parameters: z.object({}),
@@ -2684,7 +2684,7 @@ Use pandas and summarize findings.`.split("\n"),
         instructions: "Test",
         model: mockModel as any,
       });
-      const tool = new Tool({
+      const tool = createTool({
         name: "guarded-tool",
         description: "Must wait for input guardrail.",
         parameters: z.object({}),
@@ -2720,7 +2720,7 @@ Use pandas and summarize findings.`.split("\n"),
         instructions: "Test",
         model: mockModel as any,
       });
-      const tool = new Tool({
+      const tool = createTool({
         name: "blocked-tool",
         description: "Must not run after input block.",
         parameters: z.object({}),
@@ -2765,7 +2765,7 @@ Use pandas and summarize findings.`.split("\n"),
         hooks: createHooks({ onToolEnd }),
       });
 
-      const tool = new Tool({
+      const tool = createTool({
         name: "hooked-tool",
         description: "Returns text",
         parameters: z.object({}),
@@ -2831,7 +2831,7 @@ Use pandas and summarize findings.`.split("\n"),
       });
       await workspace.filesystem.write("/docs/report.txt", "workspace-content");
 
-      const tool = new Tool({
+      const tool = createTool({
         name: "workspace-fetch-tool",
         description: "Reads from workspace filesystem and sandbox",
         parameters: z.object({}),
@@ -4682,7 +4682,7 @@ Use pandas and summarize findings.`.split("\n"),
 
     it("should abort with ToolDeniedError passed to abortController", async () => {
       const mockExecute = vi.fn().mockResolvedValue("42");
-      const tool = new Tool({
+      const tool = createTool({
         name: "calculator",
         description: "Calculate math",
         parameters: z.object({ expression: z.string() }),
@@ -5060,7 +5060,7 @@ Use pandas and summarize findings.`.split("\n"),
 
   describe("Tool Execution", () => {
     it("should include instructions from dynamic toolkits in the system prompt", async () => {
-      const toolkitTool = new Tool({
+      const toolkitTool = createTool({
         name: "test-tool",
         description: "Test tool",
         parameters: z.object({}),
@@ -5123,7 +5123,7 @@ Use pandas and summarize findings.`.split("\n"),
 
     it("should execute tools during generation", async () => {
       const mockExecute = vi.fn().mockResolvedValue("Tool result");
-      const tool = new Tool({
+      const tool = createTool({
         name: "calculator",
         description: "Calculate math",
         parameters: z.object({ expression: z.string() }),
@@ -5179,14 +5179,14 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("should handle toolkit", () => {
-      const addTool = new Tool({
+      const addTool = createTool({
         name: "add",
         description: "Add numbers",
         parameters: z.object({ a: z.number(), b: z.number() }),
         execute: async ({ a, b }) => a + b,
       });
 
-      const multiplyTool = new Tool({
+      const multiplyTool = createTool({
         name: "multiply",
         description: "Multiply numbers",
         parameters: z.object({ a: z.number(), b: z.number() }),
@@ -5213,7 +5213,7 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("should remove toolkit", () => {
-      const tool1 = new Tool({
+      const tool1 = createTool({
         name: "tool1",
         description: "Tool 1",
         parameters: z.object({}),
@@ -5259,13 +5259,13 @@ Use pandas and summarize findings.`.split("\n"),
     };
 
     it("should merge static and runtime tools with runtime overrides", async () => {
-      const staticOnlyTool = new Tool({
+      const staticOnlyTool = createTool({
         name: "static-only",
         description: "Static only tool",
         parameters: z.object({}),
         execute: vi.fn().mockResolvedValue("static-only"),
       });
-      const staticSharedTool = new Tool({
+      const staticSharedTool = createTool({
         name: "shared-tool",
         description: "Static shared tool",
         parameters: z.object({}),
@@ -5279,13 +5279,13 @@ Use pandas and summarize findings.`.split("\n"),
         tools: [staticOnlyTool, staticSharedTool],
       });
 
-      const runtimeOnlyTool = new Tool({
+      const runtimeOnlyTool = createTool({
         name: "runtime-only",
         description: "Runtime only tool",
         parameters: z.object({}),
         execute: vi.fn().mockResolvedValue("runtime-only"),
       });
-      const runtimeOverrideTool = new Tool({
+      const runtimeOverrideTool = createTool({
         name: "shared-tool",
         description: "Runtime override tool",
         parameters: z.object({}),
@@ -5406,7 +5406,7 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("should prefer user-defined callTool/searchTools when tool routing is enabled", async () => {
-      const callTool = new Tool({
+      const callTool = createTool({
         name: "callTool",
         description: "Custom callTool",
         parameters: z.object({
@@ -5414,7 +5414,7 @@ Use pandas and summarize findings.`.split("\n"),
         }),
         execute: async ({ toolName }) => `called:${toolName}`,
       });
-      const searchTools = new Tool({
+      const searchTools = createTool({
         name: "searchTools",
         description: "Custom searchTools",
         parameters: z.object({
@@ -5422,7 +5422,7 @@ Use pandas and summarize findings.`.split("\n"),
         }),
         execute: async ({ query }) => `searched:${query}`,
       });
-      const normalTool = new Tool({
+      const normalTool = createTool({
         name: "normalTool",
         description: "Normal tool",
         parameters: z.object({}),
@@ -5453,7 +5453,7 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("should allow user-defined callTool/searchTools when tool routing is disabled per request", async () => {
-      const callTool = new Tool({
+      const callTool = createTool({
         name: "callTool",
         description: "Custom callTool",
         parameters: z.object({
@@ -5461,7 +5461,7 @@ Use pandas and summarize findings.`.split("\n"),
         }),
         execute: async ({ toolName }) => `called:${toolName}`,
       });
-      const searchTools = new Tool({
+      const searchTools = createTool({
         name: "searchTools",
         description: "Custom searchTools",
         parameters: z.object({
@@ -5494,7 +5494,7 @@ Use pandas and summarize findings.`.split("\n"),
 
     it("should apply native toolApproval to tool routing pool calls", async () => {
       const execute = vi.fn().mockResolvedValue("sensitive-result");
-      const sensitiveTool = new Tool({
+      const sensitiveTool = createTool({
         name: "sensitiveTool",
         description: "Sensitive tool",
         parameters: z.object({
@@ -5544,7 +5544,7 @@ Use pandas and summarize findings.`.split("\n"),
         model: mockModel as any,
       });
 
-      const delegateTool = new Tool({
+      const delegateTool = createTool({
         name: "delegate-tool",
         description: "Delegate tool",
         parameters: z.object({}),
@@ -5589,7 +5589,7 @@ Use pandas and summarize findings.`.split("\n"),
         model: mockModel as any,
       });
 
-      const delegateTool = new Tool({
+      const delegateTool = createTool({
         name: "delegate-tool",
         description: "Delegate tool",
         parameters: z.object({}),
@@ -5629,7 +5629,7 @@ Use pandas and summarize findings.`.split("\n"),
         model: mockModel as any,
       });
 
-      const workingMemoryTool = new Tool({
+      const workingMemoryTool = createTool({
         name: "get_working_memory",
         description: "Working memory accessor",
         parameters: z.object({}),
@@ -5825,7 +5825,7 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("should get tools for API", () => {
-      const tool = new Tool({
+      const tool = createTool({
         name: "apiTool",
         description: "API tool",
         parameters: z.object({ data: z.string() }),
@@ -5965,7 +5965,7 @@ Use pandas and summarize findings.`.split("\n"),
         addInstructions: true,
         instructions: "Toolkit specific instructions",
         tools: [
-          new Tool({
+          createTool({
             name: "toolkit-tool",
             description: "A tool from toolkit",
             parameters: z.object({}),
@@ -6078,7 +6078,7 @@ Use pandas and summarize findings.`.split("\n"),
         addInstructions: true,
         instructions: "Toolkit instructions",
         tools: [
-          new Tool({
+          createTool({
             name: "toolkit-tool",
             description: "Tool",
             parameters: z.object({}),
@@ -6126,7 +6126,7 @@ Use pandas and summarize findings.`.split("\n"),
         addInstructions: true,
         instructions: "Static toolkit instructions",
         tools: [
-          new Tool({
+          createTool({
             name: "static-tool",
             description: "Static tool",
             parameters: z.object({}),
@@ -6147,7 +6147,7 @@ Use pandas and summarize findings.`.split("\n"),
         addInstructions: true,
         instructions: "Runtime toolkit instructions",
         tools: [
-          new Tool({
+          createTool({
             name: "runtime-tool",
             description: "Runtime tool",
             parameters: z.object({}),

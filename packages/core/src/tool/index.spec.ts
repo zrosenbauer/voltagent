@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { Tool, createTool } from "./index";
+import { createTool } from "./index";
 
 describe("Tool", () => {
-  describe("constructor", () => {
+  describe("factory", () => {
     it("should initialize with provided options", () => {
       const options = {
         id: "test-tool-id",
@@ -20,7 +20,7 @@ describe("Tool", () => {
         execute: vi.fn(),
       };
 
-      const tool = new Tool(options);
+      const tool = createTool(options);
 
       expect(tool.id).toBe("test-tool-id");
       expect(tool.name).toBe("testTool");
@@ -38,7 +38,7 @@ describe("Tool", () => {
         execute: vi.fn(),
       };
 
-      const tool = new Tool(options);
+      const tool = createTool(options);
 
       expect(tool.id).toBe("testTool");
     });
@@ -51,7 +51,7 @@ describe("Tool", () => {
         execute: vi.fn(),
       };
 
-      const tool = new Tool(options);
+      const tool = createTool(options);
 
       expect(tool.name).toBe("testTool");
       expect(tool.description).toBe("A test tool");
@@ -69,7 +69,7 @@ describe("Tool", () => {
         execute: vi.fn(),
       };
 
-      const tool = new Tool(options);
+      const tool = createTool(options);
 
       expect(tool.needsApproval).toBe(true);
     });
@@ -85,7 +85,7 @@ describe("Tool", () => {
         hooks: { onStart, onEnd },
       };
 
-      const tool = new Tool(options);
+      const tool = createTool(options);
 
       expect(tool.hooks?.onStart).toBe(onStart);
       expect(tool.hooks?.onEnd).toBe(onEnd);
@@ -98,7 +98,7 @@ describe("Tool", () => {
         execute: vi.fn(),
       } as any;
 
-      expect(() => new Tool(options)).toThrow("Tool name is required");
+      expect(() => createTool(options)).toThrow("Tool name is required");
     });
 
     it("should throw error if parameters is missing", () => {
@@ -108,7 +108,7 @@ describe("Tool", () => {
         execute: vi.fn(),
       } as any;
 
-      expect(() => new Tool(options)).toThrow("Tool 'testTool' parameters schema is required");
+      expect(() => createTool(options)).toThrow("Tool 'testTool' parameters schema is required");
     });
 
     it("should create tool without execute function (client-side tool)", () => {
@@ -118,7 +118,7 @@ describe("Tool", () => {
         description: "A test tool",
       };
 
-      const tool = new Tool(options);
+      const tool = createTool(options);
       expect(tool.name).toBe("testTool");
       expect(tool.execute).toBeUndefined();
       expect(tool.isClientSide()).toBe(true);
@@ -335,7 +335,7 @@ describe("Tool", () => {
     });
 
     it("should have undefined tags when not provided", () => {
-      const tool = new Tool({
+      const tool = createTool({
         name: "untaggedTool",
         description: "tool without tags",
         parameters: z.object({}),

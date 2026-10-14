@@ -3,7 +3,7 @@ import { describe, expectTypeOf, it } from "vitest";
 import { z } from "zod";
 import type { Agent } from "../agent/agent";
 import { createWorkflowChain } from "./chain";
-import { createWorkflow } from "./core";
+import { defineWorkflow } from "./core";
 import { andThen } from "./steps";
 
 describe("workflow chain - type inference", () => {
@@ -47,8 +47,8 @@ describe("workflow chain - type inference", () => {
       expectTypeOf(workflow).not.toBeNever();
     });
 
-    it("should handle type inference with createWorkflow variadic args", () => {
-      const workflow = createWorkflow(
+    it("should handle type inference with defineWorkflow variadic args", () => {
+      const workflow = defineWorkflow(
         {
           id: "test-variadic",
           name: "Test Variadic",

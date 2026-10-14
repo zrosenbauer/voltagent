@@ -18,7 +18,7 @@ import type {
  *
  * @example
  * ```ts
- * const w = createWorkflow(
+ * const w = defineWorkflow(
  *   andAll({
  *     id: "parallel-fetch",
  *     steps: [

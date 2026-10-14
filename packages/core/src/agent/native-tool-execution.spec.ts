@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { Memory } from "../memory";
 import { InMemoryStorageAdapter } from "../memory/adapters/storage/in-memory";
-import { createTool, enhanceTool, tool as voltTool } from "../tool";
+import { createTool, enhanceTool, defineTool as voltTool } from "../tool";
 import {
   convertModelMessagesToUIMessages,
   convertResponseMessagesToUIMessages,

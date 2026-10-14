@@ -3,11 +3,15 @@ import { type ModelMessage, Output, type generateText, type streamText, tool } f
 import { MockLanguageModelV4 } from "ai/test";
 import { z } from "zod";
 import {
-  Agent,
   type GenerateTextOptions,
   type StreamTextOptions,
+  type VoltAgent,
+  andThen,
+  defineAgent,
+  defineWorkflow,
   enhanceTool,
-  tool as voltTool,
+  defineTool as voltTool,
+  voltagent,
 } from "../dist/index";
 
 const model = new MockLanguageModelV4();
@@ -20,7 +24,7 @@ const serverTool = voltTool({
   execute: ({ id }) => id.length,
 });
 serverTool.execute({ id: "1" }, { toolCallId: "call", messages: [], context: {} });
-const clientAgent = new Agent({
+const clientAgent = defineAgent({
   name: "client",
   instructions: "Use the client tools when needed.",
   model,
@@ -37,7 +41,7 @@ const lookup = enhanceTool(
 );
 const tools = { lookup };
 const output = Output.object({ schema: z.object({ answer: z.string() }) });
-const agent = new Agent({
+const agent = defineAgent({
   name: "consumer",
   instructions: ({ context }) => context.get("language") ?? "en",
   contextSchema: z.object({ language: z.enum(["en", "tr"]).default("en") }),
@@ -79,3 +83,25 @@ await agent.streamText({ ...request, onError: nativeOnError });
 await agent.generateText({ ...request, onChunk: () => {} });
 // @ts-expect-error - toolsContext is still required by the native tool schema
 await agent.generateText({ model, prompt: messages });
+
+const workflow = defineWorkflow(
+  {
+    id: "consumer-workflow",
+    name: "Consumer workflow",
+    input: z.object({ prompt: z.string() }),
+    result: z.object({ answer: z.string() }),
+  },
+  andThen({
+    id: "answer",
+    execute: async ({ data }) => {
+      const response = await agent.generateText({ ...request, prompt: data.prompt });
+      return response.output;
+    },
+  }),
+);
+const app: VoltAgent = voltagent({ agents: { agent }, workflows: { workflow } });
+const ready: Promise<void> = app.ready;
+void ready;
+const execution = await workflow.run({ prompt: "hello" });
+const workflowAnswer: string | undefined = execution.result?.answer;
+void workflowAnswer;

@@ -1,9 +1,9 @@
 import {
-  Agent,
   type AgentModelReference,
   type BuilderScoreContext,
   type LocalScorerDefinition,
   buildScorer,
+  defineAgent,
 } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
 import { z } from "zod";
@@ -142,7 +142,7 @@ export function createContextRelevancyScorer<
     }),
   })
     .score(async (context) => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "context-relevancy-evaluator",
         model,
         instructions: "You evaluate how relevant provided context is to answering questions",

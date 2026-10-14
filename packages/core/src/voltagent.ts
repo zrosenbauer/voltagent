@@ -867,3 +867,12 @@ export class VoltAgent {
     }
   }
 }
+
+/**
+ * Creates an application with the existing runtime configuration.
+ * @param options - Registration, server, memory, and observability configuration.
+ * @returns A runtime exposing registration and shutdown APIs.
+ */
+export function voltagent(options: VoltAgentOptions): VoltAgent {
+  return new VoltAgent(options);
+}

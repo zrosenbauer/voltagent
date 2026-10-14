@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { Memory } from "../memory";
 import { InMemoryStorageAdapter } from "../memory/adapters/storage/in-memory";
-import { createWorkflow } from "./core";
+import { defineWorkflow } from "./core";
 import { WorkflowRegistry } from "./registry";
 import { andThen, andWhen } from "./steps";
 
@@ -20,7 +20,7 @@ describe.sequential("workflow hooks", () => {
       onSuspend: vi.fn(),
     };
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "hook-success",
         name: "Hook Success",
@@ -76,7 +76,7 @@ describe.sequential("workflow hooks", () => {
       onError: vi.fn(),
     };
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "hook-error",
         name: "Hook Error",
@@ -118,7 +118,7 @@ describe.sequential("workflow hooks", () => {
       onSuspend: vi.fn(),
     };
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "hook-suspend",
         name: "Hook Suspend",

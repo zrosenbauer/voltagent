@@ -194,7 +194,7 @@ export interface ServerApiResponse<T> {
 }
 
 /**
- * VoltAgent constructor options
+ * VoltAgent bootstrap options
  */
 export type VoltAgentOptions = {
   /**

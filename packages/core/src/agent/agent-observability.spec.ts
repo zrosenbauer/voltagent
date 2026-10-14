@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { NodeVoltAgentObservability, WebSocketEventEmitter } from "../observability";
 import { SpanKind, SpanStatusCode } from "../observability/types";
-import { Tool } from "../tool";
+import { createTool } from "../tool";
 import { Agent } from "./agent";
 import { createOutputGuardrail } from "./guardrail";
 
@@ -322,7 +322,7 @@ describe("Agent with Observability", () => {
         events.push(event);
       });
 
-      const tool = new Tool({
+      const tool = createTool({
         name: "echo_tool",
         description: "Echo tool",
         parameters: z.object({ value: z.string() }),

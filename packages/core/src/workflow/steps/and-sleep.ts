@@ -8,7 +8,7 @@ import type { WorkflowStepSleep, WorkflowStepSleepConfig } from "./types";
  *
  * @example
  * ```ts
- * const w = createWorkflow(
+ * const w = defineWorkflow(
  *   andSleep({ id: "pause", duration: 500 }),
  *   andThen({ id: "next", execute: async ({ data }) => ({ ...data }) })
  * );

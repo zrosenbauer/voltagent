@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
 import { Memory } from "../memory";
 import { InMemoryStorageAdapter } from "../memory/adapters/storage/in-memory";
-import { createWorkflow } from "./core";
+import { defineWorkflow } from "./core";
 import { WorkflowRegistry } from "./registry";
 import { andAll, andThen, andWhen } from "./steps";
 import { createSuspendController } from "./suspend-controller";
@@ -28,7 +28,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
   it("should suspend workflow when abort signal is triggered", async () => {
     const { memory } = createTestStores();
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "test-suspend",
         name: "Test Suspend Workflow",
@@ -89,7 +89,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
     const stepExecutions: string[] = [];
     const { memory } = createTestStores();
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "test-resume",
         name: "Test Resume Workflow",
@@ -167,7 +167,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
     let capturedState: any = null;
     const { memory } = createTestStores();
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "test-state-preservation",
         name: "Test State Preservation",
@@ -245,7 +245,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
   it("should handle suspension during parallel steps", async () => {
     const { memory } = createTestStores();
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "test-parallel-suspend",
         name: "Test Parallel Suspend",
@@ -306,7 +306,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
     let conditionalExecuted = false;
     const { memory } = createTestStores();
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "test-conditional-suspend",
         name: "Test Conditional Suspend",
@@ -366,7 +366,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
   it("should list all suspended workflows", async () => {
     const { memory } = createTestStores();
 
-    const workflow1 = createWorkflow(
+    const workflow1 = defineWorkflow(
       {
         id: "suspended-1",
         name: "Suspended Workflow 1",
@@ -392,7 +392,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
       }),
     );
 
-    const workflow2 = createWorkflow(
+    const workflow2 = defineWorkflow(
       {
         id: "suspended-2",
         name: "Suspended Workflow 2",
@@ -458,7 +458,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
   it("should handle resume with no suspension metadata gracefully", async () => {
     const { memory } = createTestStores();
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "test-no-metadata",
         name: "Test No Metadata",
@@ -484,7 +484,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
   it("should not allow resuming non-suspended workflow", async () => {
     const { memory } = createTestStores();
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "test-completed",
         name: "Test Completed",
@@ -529,7 +529,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
   it("should handle suspension checkpoint data correctly", async () => {
     const { memory } = createTestStores();
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "test-checkpoint",
         name: "Test Checkpoint",
@@ -603,7 +603,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
   it("should allow suspending from within step execution via context", async () => {
     const { memory } = createTestStores();
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "test-suspend-api",
         name: "Test Suspend API",
@@ -647,7 +647,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
   it("should allow cancelling a running workflow", async () => {
     const { memory } = createTestStores();
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "test-cancel-api",
         name: "Test Cancel API",
@@ -690,7 +690,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
   it("should emit cancelled step event and end span when cancelling via controller", async () => {
     const { memory } = createTestStores();
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "test-cancel-stream",
         name: "Test Cancel Stream",
@@ -754,7 +754,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
     let stepExecutions = 0;
     const { memory } = createTestStores();
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "test-resume-api",
         name: "Test Resume API",
@@ -804,7 +804,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
     let executionCount = 0;
     const { memory } = createTestStores();
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "test-distributed",
         name: "Test Distributed",
@@ -854,7 +854,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
     const { memory } = createTestStores();
     let firstRun = true;
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "test-resume-input-from-events",
         name: "Test Resume Input From Events",
@@ -900,7 +900,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
     const { memory } = createTestStores();
 
     let firstRunA = true;
-    const workflowA = createWorkflow(
+    const workflowA = defineWorkflow(
       {
         id: "test-resume-user-context-precedence",
         name: "Test Resume User Context Precedence",
@@ -949,7 +949,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
     });
 
     let firstRunB = true;
-    const workflowB = createWorkflow(
+    const workflowB = defineWorkflow(
       {
         id: "test-resume-user-context-metadata-fallback",
         name: "Test Resume User Context Metadata Fallback",
@@ -1002,7 +1002,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
     const { memory } = createTestStores();
     let firstRun = true;
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "test-resume-missing-input-sources",
         name: "Test Resume Missing Input Sources",
@@ -1061,7 +1061,7 @@ describe.sequential("workflow suspend/resume functionality", () => {
     const { memory } = createTestStores();
     let executions = 0;
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "test-registry-restart-all-active",
         name: "Test Registry Restart All Active",

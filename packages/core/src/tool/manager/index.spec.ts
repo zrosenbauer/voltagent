@@ -3,10 +3,9 @@ import type { ToolExecuteOptions } from "../../agent/providers/base/types";
 import {
   type AgentTool,
   type ProviderTool,
-  Tool,
   type ToolExecutionResult,
   ToolManager,
-  tool as aiSdkTool,
+  defineTool as aiSdkTool,
   createTool,
   withVoltAgentMetadata,
 } from "../index";
@@ -87,7 +86,7 @@ describe("ToolManager", () => {
     });
 
     it("should add client-side tool without execute function", () => {
-      const clientSideTool = new Tool({
+      const clientSideTool = createTool({
         name: "clientSideTool",
         description: "Client-side tool",
         parameters: z.object({}),
@@ -259,7 +258,7 @@ describe("ToolManager", () => {
     });
 
     it("should skip execute wrapper for client-side tools", () => {
-      const clientTool = new Tool({
+      const clientTool = createTool({
         name: "client-only-tool",
         description: "Client-side tool without execute handler",
         parameters: z.object({}),

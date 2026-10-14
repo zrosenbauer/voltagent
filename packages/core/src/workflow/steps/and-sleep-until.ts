@@ -8,7 +8,7 @@ import type { WorkflowStepSleepUntil, WorkflowStepSleepUntilConfig } from "./typ
  *
  * @example
  * ```ts
- * const w = createWorkflow(
+ * const w = defineWorkflow(
  *   andSleepUntil({ id: "pause-until", date: new Date(Date.now() + 1000) }),
  *   andThen({ id: "next", execute: async ({ data }) => ({ ...data }) })
  * );

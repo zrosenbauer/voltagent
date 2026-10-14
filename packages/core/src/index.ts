@@ -1,5 +1,5 @@
 export {
-  createWorkflow,
+  defineWorkflow,
   createWorkflowChain,
   createSuspendController,
   andAgent,
@@ -39,21 +39,23 @@ export type {
   WorkflowTimelineEvent,
   RegisteredWorkflow,
 } from "./workflow";
-// Export new Agent from agent.ts
-export {
+// Export Agent execution types.
+export type {
   Agent,
-  type BaseGenerationOptions,
-  type OutputSpec,
-  type GenerateTextOptions,
-  type StreamTextOptions,
-  type GenerateObjectOptions,
-  type StreamObjectOptions,
-  type GenerateTextResultWithContext,
-  type StreamTextResultWithContext,
-  type GenerateObjectResultWithContext,
-  type StreamObjectResultWithContext,
+  BaseGenerationOptions,
+  OutputSpec,
+  GenerateTextOptions,
+  StreamTextOptions,
+  GenerateObjectOptions,
+  StreamObjectOptions,
+  GenerateTextResultWithContext,
+  StreamTextResultWithContext,
+  GenerateObjectResultWithContext,
+  StreamObjectResultWithContext,
 } from "./agent/agent";
 export * from "./planagent";
+export { defineAgent } from "./agent/define-agent";
+export type { DefineAgentOptions, DefinedAgent } from "./agent/define-agent";
 export * from "./workspace";
 export * from "./agent/hooks";
 export type {
@@ -303,8 +305,8 @@ export type {
   ServerWorkflowResponse,
   ServerApiResponse,
 } from "./types";
-export { VoltAgent } from "./voltagent";
-export { VoltAgent as default } from "./voltagent";
+export { voltagent, voltagent as default } from "./voltagent";
+export type { VoltAgent } from "./voltagent";
 
 // Logger exports - only export what core owns
 export { LoggerProxy, getGlobalLogger, getGlobalLogBuffer } from "./logger";
@@ -317,7 +319,7 @@ export { convertUsage } from "./utils/usage-converter";
 export { createAsyncIterableStream, type AsyncIterableStream } from "@voltagent/internal/utils";
 
 // Convenience re-exports from AI SDK so apps can use core AI primitives from
-// @voltagent/core. `tool` is exported from ./tool as an AI SDK-compatible
+// @voltagent/core. `defineTool` is exported from ./tool as an AI SDK-compatible
 // helper with an optional VoltAgent metadata namespace.
 export {
   Output,

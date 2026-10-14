@@ -9,7 +9,7 @@ import type { WorkflowStepTap, WorkflowStepTapConfig } from "./types";
  *
  * @example
  * ```ts
- * const w = createWorkflow(
+ * const w = defineWorkflow(
  *   andTap({
  *     id: "log-processing",
  *     execute: async ({ data }) => {

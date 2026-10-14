@@ -1,9 +1,9 @@
 import {
-  Agent,
   type AgentModelReference,
   type BuilderScoreContext,
   type LocalScorerDefinition,
   buildScorer,
+  defineAgent,
 } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
 import { z } from "zod";
@@ -256,7 +256,7 @@ async function runModerationJudge(args: {
 
   context.results.raw.moderationInput = normalizedOutput;
 
-  const agent = new Agent({
+  const agent = defineAgent({
     name: "moderation-judge",
     model,
     instructions:

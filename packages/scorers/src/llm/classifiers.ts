@@ -1,9 +1,9 @@
 import {
-  Agent,
   type AgentModelReference,
   type BuilderScoreContext,
   type LocalScorerDefinition,
   buildScorer,
+  defineAgent,
 } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
 import { z } from "zod";
@@ -91,7 +91,7 @@ async function evaluateChoice(args: EvaluateChoiceArgs): Promise<ChoiceAnalysis>
 
   const prompt = await buildPrompt(context);
 
-  const agent = new Agent({
+  const agent = defineAgent({
     name: `${scorerId}-judge`,
     model,
     instructions: judgeInstructions ?? buildDefaultChoiceInstructions(Object.keys(choices)),

@@ -17,14 +17,14 @@ import {
   Output as VoltAgentOutput,
   generateText as voltAgentGenerateText,
   streamText as voltAgentStreamText,
-  tool as voltAgentTool,
+  defineTool as voltAgentTool,
 } from "../index";
 import type { ModelRouterModelId } from "../registries/model-provider-types.generated";
 import type { BaseRetriever } from "../retriever/retriever";
 import {
-  Tool,
+  type Tool,
   type Toolkit,
-  tool as aiSdkTool,
+  defineTool as aiSdkTool,
   createTool,
   enhanceTool,
   withVoltAgentMetadata,
@@ -1873,7 +1873,7 @@ describe("Agent Type System", () => {
     });
 
     it("should work with complex tool schemas", () => {
-      const complexTool = new Tool({
+      const complexTool = createTool({
         name: "analyzer",
         description: "Analyze data",
         parameters: z.object({
@@ -1908,7 +1908,7 @@ describe("Agent Type System", () => {
     });
 
     it("should work with dynamic tools", () => {
-      const complexTool = new Tool({
+      const complexTool = createTool({
         name: "analyzer",
         description: "Analyze data",
         parameters: z.object({
@@ -1944,7 +1944,7 @@ describe("Agent Type System", () => {
     });
 
     it("should handle tool execution context types", async () => {
-      const toolWithContext = new Tool({
+      const toolWithContext = createTool({
         name: "context-tool",
         description: "Tool using context",
         parameters: z.object({ input: z.string() }),
@@ -2004,7 +2004,7 @@ describe("Agent Type System", () => {
 
   describe("Advanced Type Tests", () => {
     it("should handle mixed tool and toolkit arrays", () => {
-      const tool = new Tool({
+      const tool = createTool({
         name: "tool1",
         description: "Test tool",
         parameters: z.object({ input: z.string() }),
@@ -2028,7 +2028,7 @@ describe("Agent Type System", () => {
     });
 
     it("should handle async tool execute functions", () => {
-      const asyncTool = new Tool({
+      const asyncTool = createTool({
         name: "async-tool",
         description: "Async tool",
         parameters: z.object({ query: z.string() }),

@@ -230,33 +230,33 @@ export const enhanceTool = withVoltAgentMetadata;
  * The returned object is a regular AI SDK tool. VoltAgent metadata is stored
  * out-of-band so it is not sent to the model provider.
  */
-export function tool<INPUT, OUTPUT, CONTEXT extends Context>(
+export function defineTool<INPUT, OUTPUT, CONTEXT extends Context>(
   definition: VercelTool<INPUT, OUTPUT, CONTEXT> & {
     execute: ToolExecuteFunction<INPUT, OUTPUT, CONTEXT>;
     voltagent?: VoltAgentToolMetadata<INPUT, OUTPUT>;
   },
 ): ExecutableTool<VercelTool<INPUT, OUTPUT, CONTEXT>>;
-export function tool<INPUT, OUTPUT, CONTEXT extends Context>(
+export function defineTool<INPUT, OUTPUT, CONTEXT extends Context>(
   definition: VercelTool<INPUT, OUTPUT, CONTEXT> & {
     voltagent?: VoltAgentToolMetadata<INPUT, OUTPUT>;
   },
 ): VercelTool<INPUT, OUTPUT, CONTEXT>;
-export function tool<INPUT, CONTEXT extends Context>(
+export function defineTool<INPUT, CONTEXT extends Context>(
   definition: VercelTool<INPUT, never, CONTEXT> & {
     voltagent?: VoltAgentToolMetadata<INPUT, never>;
   },
 ): VercelTool<INPUT, never, CONTEXT>;
-export function tool<OUTPUT, CONTEXT extends Context>(
+export function defineTool<OUTPUT, CONTEXT extends Context>(
   definition: VercelTool<never, OUTPUT, CONTEXT> & {
     voltagent?: VoltAgentToolMetadata<never, OUTPUT>;
   },
 ): VercelTool<never, OUTPUT, CONTEXT>;
-export function tool<CONTEXT extends Context>(
+export function defineTool<CONTEXT extends Context>(
   definition: VercelTool<never, never, CONTEXT> & {
     voltagent?: VoltAgentToolMetadata<never, never>;
   },
 ): VercelTool<never, never, CONTEXT>;
-export function tool(definition: any): any {
+export function defineTool(definition: any): any {
   const { voltagent, ...toolDefinition } = definition;
   const createdTool = aiTool(toolDefinition);
   if (voltagent) {

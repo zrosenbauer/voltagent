@@ -1,9 +1,9 @@
 import {
-  Agent,
   type AgentModelReference,
   type BuilderScoreContext,
   type LocalScorerDefinition,
   buildScorer,
+  defineAgent,
 } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal/utils";
 import { z } from "zod";
@@ -82,7 +82,7 @@ export function createAnswerCorrectnessScorer<
   const classifyStep = async (
     context: AnswerCorrectnessScoreContext<Payload, Params>,
   ): Promise<ClassificationResult> => {
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "answer-correctness-classifier",
       model,
       instructions: "You classify statements for answer correctness evaluation",

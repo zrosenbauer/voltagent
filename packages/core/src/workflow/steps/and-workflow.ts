@@ -8,7 +8,7 @@ import type { InternalWorkflow, WorkflowStepWorkflow } from "./types";
  *
  * @example
  * ```ts
- * const nestedWorkflow = createWorkflow(
+ * const nestedWorkflow = defineWorkflow(
  *   andThen({
  *     id: "nested-process",
  *     execute: async ({ data }) => {
@@ -18,7 +18,7 @@ import type { InternalWorkflow, WorkflowStepWorkflow } from "./types";
  *   })
  * );
  *
- * const w = createWorkflow(
+ * const w = defineWorkflow(
  *   andThen({
  *     id: "main-process",
  *     execute: async ({ data }) => {

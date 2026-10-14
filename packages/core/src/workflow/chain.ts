@@ -4,7 +4,7 @@ import type { DangerouslyAllowAny } from "@voltagent/internal/types";
 import type { UIMessage } from "ai";
 import type { z } from "zod";
 import type { Agent } from "../agent/agent";
-import { createWorkflow } from "./core";
+import { defineWorkflow } from "./core";
 import type {
   InternalAnyWorkflowStep,
   InternalBaseWorkflowInputSchema,
@@ -947,10 +947,10 @@ export class WorkflowChain<
    * Convert the current chain to a runnable workflow
    */
   public toWorkflow(): Workflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA> {
-    // @ts-expect-error - upstream types work and this is nature of how the createWorkflow function is typed using variadic args
-    return createWorkflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>(
+    // @ts-expect-error - upstream types work and this is nature of how the defineWorkflow function is typed using variadic args
+    return defineWorkflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>(
       this.config,
-      // @ts-expect-error - upstream types work and this is nature of how the createWorkflow function is typed using variadic args
+      // @ts-expect-error - upstream types work and this is nature of how the defineWorkflow function is typed using variadic args
       ...this.steps,
     );
   }
@@ -962,9 +962,9 @@ export class WorkflowChain<
     input: WorkflowInput<INPUT_SCHEMA>,
     options?: WorkflowRunOptions,
   ): Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>> {
-    const workflow = createWorkflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>(
+    const workflow = defineWorkflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>(
       this.config,
-      // @ts-expect-error - upstream types work and this is nature of how the createWorkflow function is typed using variadic args
+      // @ts-expect-error - upstream types work and this is nature of how the defineWorkflow function is typed using variadic args
       ...this.steps,
     );
     return (await workflow.run(input, options)) as unknown as WorkflowExecutionResult<
@@ -980,9 +980,9 @@ export class WorkflowChain<
     input: WorkflowInput<INPUT_SCHEMA>,
     options?: WorkflowRunOptions,
   ): Promise<WorkflowStartAsyncResult> {
-    const workflow = createWorkflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>(
+    const workflow = defineWorkflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>(
       this.config,
-      // @ts-expect-error - upstream types work and this is nature of how the createWorkflow function is typed using variadic args
+      // @ts-expect-error - upstream types work and this is nature of how the defineWorkflow function is typed using variadic args
       ...this.steps,
     );
     return workflow.startAsync(input, options);
@@ -990,16 +990,16 @@ export class WorkflowChain<
 
   /**
    * Replay a historical execution from the selected step
-   * This recreates a workflow instance via `createWorkflow(...)` on each call.
+   * This recreates a workflow instance via `defineWorkflow(...)` on each call.
    * Use persistent/shared memory (or register the workflow) so source execution state is discoverable.
    * For ephemeral setup patterns, prefer `chain.toWorkflow().timeTravel(...)` and reuse that instance.
    */
   async timeTravel(
     options: WorkflowTimeTravelOptions,
   ): Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>> {
-    const workflow = createWorkflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>(
+    const workflow = defineWorkflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>(
       this.config,
-      // @ts-expect-error - upstream types work and this is nature of how the createWorkflow function is typed using variadic args
+      // @ts-expect-error - upstream types work and this is nature of how the defineWorkflow function is typed using variadic args
       ...this.steps,
     );
     return (await workflow.timeTravel(options)) as unknown as WorkflowExecutionResult<
@@ -1010,16 +1010,16 @@ export class WorkflowChain<
 
   /**
    * Stream a historical replay from the selected step
-   * This recreates a workflow instance via `createWorkflow(...)` on each call.
+   * This recreates a workflow instance via `defineWorkflow(...)` on each call.
    * Use persistent/shared memory (or register the workflow) so source execution state is discoverable.
    * For ephemeral setup patterns, prefer `chain.toWorkflow().timeTravelStream(...)` and reuse that instance.
    */
   timeTravelStream(
     options: WorkflowTimeTravelOptions,
   ): WorkflowStreamResult<RESULT_SCHEMA, RESUME_SCHEMA> {
-    const workflow = createWorkflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>(
+    const workflow = defineWorkflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>(
       this.config,
-      // @ts-expect-error - upstream types work and this is nature of how the createWorkflow function is typed using variadic args
+      // @ts-expect-error - upstream types work and this is nature of how the defineWorkflow function is typed using variadic args
       ...this.steps,
     );
     return workflow.timeTravelStream(options) as unknown as WorkflowStreamResult<
@@ -1030,7 +1030,7 @@ export class WorkflowChain<
 
   /**
    * Restart an interrupted execution from persisted checkpoint state
-   * This recreates a workflow instance via `createWorkflow(...)` on each call.
+   * This recreates a workflow instance via `defineWorkflow(...)` on each call.
    * Use persistent/shared memory (or register the workflow) so prior execution state is discoverable.
    * For ephemeral setup patterns, prefer `chain.toWorkflow().restart(...)` and reuse that instance.
    */
@@ -1038,9 +1038,9 @@ export class WorkflowChain<
     executionId: string,
     options?: WorkflowRunOptions,
   ): Promise<WorkflowExecutionResult<RESULT_SCHEMA, RESUME_SCHEMA>> {
-    const workflow = createWorkflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>(
+    const workflow = defineWorkflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>(
       this.config,
-      // @ts-expect-error - upstream types work and this is nature of how the createWorkflow function is typed using variadic args
+      // @ts-expect-error - upstream types work and this is nature of how the defineWorkflow function is typed using variadic args
       ...this.steps,
     );
     return (await workflow.restart(executionId, options)) as unknown as WorkflowExecutionResult<
@@ -1051,14 +1051,14 @@ export class WorkflowChain<
 
   /**
    * Restart all active (running) executions for this workflow
-   * This recreates a workflow instance via `createWorkflow(...)` on each call.
+   * This recreates a workflow instance via `defineWorkflow(...)` on each call.
    * Use persistent/shared memory (or register the workflow) so active executions can be found.
    * For ephemeral setup patterns, prefer `chain.toWorkflow().restartAllActive()` and reuse that instance.
    */
   async restartAllActive(): Promise<WorkflowRestartAllResult> {
-    const workflow = createWorkflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>(
+    const workflow = defineWorkflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>(
       this.config,
-      // @ts-expect-error - upstream types work and this is nature of how the createWorkflow function is typed using variadic args
+      // @ts-expect-error - upstream types work and this is nature of how the defineWorkflow function is typed using variadic args
       ...this.steps,
     );
     return workflow.restartAllActive();
@@ -1071,9 +1071,9 @@ export class WorkflowChain<
     input: WorkflowInput<INPUT_SCHEMA>,
     options?: WorkflowRunOptions,
   ): WorkflowStreamResult<RESULT_SCHEMA, RESUME_SCHEMA> {
-    const workflow = createWorkflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>(
+    const workflow = defineWorkflow<INPUT_SCHEMA, RESULT_SCHEMA, SUSPEND_SCHEMA, RESUME_SCHEMA>(
       this.config,
-      // @ts-expect-error - upstream types work and this is nature of how the createWorkflow function is typed using variadic args
+      // @ts-expect-error - upstream types work and this is nature of how the defineWorkflow function is typed using variadic args
       ...this.steps,
     );
     return workflow.stream(input, options) as unknown as WorkflowStreamResult<

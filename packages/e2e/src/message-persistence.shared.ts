@@ -1,4 +1,4 @@
-import { Agent, type Memory, type Tool, createTool } from "@voltagent/core";
+import { type Memory, type Tool, createTool, defineAgent } from "@voltagent/core";
 import { safeStringify } from "@voltagent/internal";
 import type { UIMessage } from "ai";
 import { MockLanguageModelV3 } from "ai/test";
@@ -131,7 +131,7 @@ export const assertAssistantParts = (message: UIMessage, turnNumber: number) => 
 };
 
 const createAgent = (memory: Memory, model: MockLanguageModelV3, tool: Tool) =>
-  new Agent({
+  defineAgent({
     name: "persistence-e2e-agent",
     instructions: "Use tools and answer briefly.",
     model: model,

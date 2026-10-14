@@ -61,11 +61,11 @@ export type { Tool as VercelTool } from "ai";
 export type { ProviderOptions } from "@ai-sdk/provider-utils";
 export {
   createNamedAiSdkTool,
+  defineTool,
   enhanceTool,
   getRawAiSdkTool,
   getVoltAgentToolMetadata,
   isNamedAiSdkTool,
-  tool,
   withVoltAgentMetadata,
 } from "./ai-sdk-tool";
 export type { NamedAiSdkTool, VoltAgentToolDefinition, VoltAgentToolMetadata } from "./ai-sdk-tool";
@@ -204,125 +204,20 @@ export type ToolOptions<
   hooks?: ToolHooks;
 };
 
-/**
- * Tool class for defining tools that agents can use
- */
-export class Tool<T extends ToolSchema = ToolSchema, O extends ToolSchema | undefined = undefined> {
-  /* implements BaseTool<z.infer<T>> */
-  /**
-   * Unique identifier for the tool
-   */
+/** Structural representation for tools using the legacy parameters-style contract. */
+export type Tool<
+  T extends ToolSchema = ToolSchema,
+  O extends ToolSchema | undefined = undefined,
+> = Readonly<ToolOptions<T, O>> & {
   readonly id: string;
-
-  /**
-   * Name of the tool
-   */
-  readonly name: string;
-
-  /**
-   * Description of the tool
-   */
-  readonly description: string;
-
-  /**
-   * Tool parameter schema
-   */
-  readonly parameters: T;
-
-  /**
-   * Tool output schema
-   */
-  readonly outputSchema?: O;
-
-  /**
-   * Optional user-defined tags for organizing or labeling tools.
-   */
-  readonly tags?: string[];
-
-  /**
-   * Whether the tool requires approval before execution.
-   */
-  readonly needsApproval?: boolean | ToolNeedsApprovalFunction<z.infer<T>, any>;
-
-  /**
-   * Provider-specific options for the tool.
-   * Enables provider-specific functionality like cache control.
-   */
-  readonly providerOptions?: ProviderOptions;
-
-  /**
-   * Optional function to convert tool output to multi-modal content.
-   * Enables returning images, media, or structured content to the LLM.
-   */
-  readonly toModelOutput?: (args: {
-    toolCallId: string;
-    input: z.infer<T>;
-    output: O extends ToolSchema ? z.infer<O> : unknown;
-  }) => ToolResultOutput | PromiseLike<ToolResultOutput>;
-
-  /**
-   * Optional tool-specific hooks for lifecycle events.
-   */
-  readonly hooks?: ToolHooks;
-
-  /**
-   * Internal discriminator to make runtime/type checks simpler across module boundaries.
-   * Marking our Tool instances with a stable string avoids instanceof issues.
-   */
-  readonly type = "user-defined" as const;
-
-  /**
-   * Function to execute when the tool is called.
-   * @param args - The arguments passed to the tool
-   * @param options - Optional execution options including context, abort signals, etc.
-   * @returns A result or an AsyncIterable of results (last value is final).
-   */
-  readonly execute?: (
-    args: z.infer<T>,
-    options?: ToolExecuteOptions,
-  ) => ToolExecutionResult<O extends ToolSchema ? z.infer<O> : unknown>;
-
-  /**
-   * Whether this tool should be executed on the client side.
-   * Returns true when no server-side execute handler is provided.
-   */
-  readonly isClientSide = (): boolean => {
-    return typeof this.execute !== "function";
-  };
-
-  /**
-   * Create a new tool
-   */
-  constructor(options: ToolOptions<T, O>) {
-    if (!options.name) {
-      throw new Error("Tool name is required");
-    }
-    if (!options.description) {
-      const logger = new LoggerProxy({ component: "tool" });
-      logger.warn(`Tool '${options.name}' created without a description`);
-    }
-    if (!options.parameters) {
-      throw new Error(`Tool '${options.name}' parameters schema is required`);
-    }
-
-    this.id = options.id ?? options.name;
-    this.name = options.name;
-    this.description = options.description || "";
-    this.parameters = options.parameters;
-    this.outputSchema = options.outputSchema;
-    this.tags = options.tags;
-    this.needsApproval = options.needsApproval;
-    this.providerOptions = options.providerOptions;
-    this.toModelOutput = options.toModelOutput;
-    this.execute = options.execute;
-    this.hooks = options.hooks;
-  }
-}
+  readonly type: "user-defined";
+  readonly isClientSide: () => boolean;
+};
 
 /**
- * Legacy helper for creating a class-style VoltAgent tool.
+ * Legacy helper for creating a parameters-style VoltAgent tool.
  *
- * @deprecated Use `tool()` with AI SDK-style `inputSchema` and VoltAgent
+ * @deprecated Use `defineTool()` with AI SDK-style `inputSchema` and VoltAgent
  * metadata under the `voltagent` namespace.
  */
 export function createTool<T extends ToolSchema>(
@@ -334,5 +229,31 @@ export function createTool<T extends ToolSchema, O extends ToolSchema>(
 export function createTool<T extends ToolSchema, O extends ToolSchema | undefined = undefined>(
   options: ToolOptions<T, O>,
 ): Tool<T, O> {
-  return new Tool<T, O>(options);
+  if (!options.name) {
+    throw new Error("Tool name is required");
+  }
+  if (!options.description) {
+    const logger = new LoggerProxy({ component: "tool" });
+    logger.warn(`Tool '${options.name}' created without a description`);
+  }
+  if (!options.parameters) {
+    throw new Error(`Tool '${options.name}' parameters schema is required`);
+  }
+
+  const definedTool: Tool<T, O> = {
+    id: options.id ?? options.name,
+    name: options.name,
+    description: options.description || "",
+    parameters: options.parameters,
+    outputSchema: options.outputSchema,
+    tags: options.tags,
+    needsApproval: options.needsApproval,
+    providerOptions: options.providerOptions,
+    toModelOutput: options.toModelOutput,
+    execute: options.execute,
+    hooks: options.hooks,
+    type: "user-defined",
+    isClientSide: () => typeof definedTool.execute !== "function",
+  };
+  return definedTool;
 }

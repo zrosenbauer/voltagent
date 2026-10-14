@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
 import { Memory } from "../memory";
 import { InMemoryStorageAdapter } from "../memory/adapters/storage/in-memory";
-import { createWorkflow } from "./core";
+import { defineWorkflow } from "./core";
 import { WorkflowRegistry } from "./registry";
 import { andThen } from "./steps";
 
@@ -16,7 +16,7 @@ describe.sequential("workflow.timeTravel", () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
     const counters = { step1: 0, step2: 0, step3: 0 };
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "time-travel-middle-step",
         name: "Time Travel Middle Step",
@@ -81,7 +81,7 @@ describe.sequential("workflow.timeTravel", () => {
   it("should apply inputData override only to replay run", async () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "time-travel-input-override",
         name: "Time Travel Input Override",
@@ -125,7 +125,7 @@ describe.sequential("workflow.timeTravel", () => {
   it("should fail with actionable error when step does not exist", async () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "time-travel-invalid-step",
         name: "Time Travel Invalid Step",
@@ -155,7 +155,7 @@ describe.sequential("workflow.timeTravel", () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
     const runningExecutionId = "exec-running-time-travel";
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "time-travel-running-source",
         name: "Time Travel Running Source",
@@ -194,7 +194,7 @@ describe.sequential("workflow.timeTravel", () => {
   it("should fail with actionable error when execution does not exist", async () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "time-travel-missing-execution",
         name: "Time Travel Missing Execution",
@@ -222,7 +222,7 @@ describe.sequential("workflow.timeTravel", () => {
   it("should keep original execution history unchanged after replay", async () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "time-travel-history-integrity",
         name: "Time Travel History Integrity",
@@ -262,7 +262,7 @@ describe.sequential("workflow.timeTravel", () => {
   it("should emit workflow stream events during replay streaming", async () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "time-travel-stream",
         name: "Time Travel Stream",

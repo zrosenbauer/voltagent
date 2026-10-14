@@ -8,7 +8,7 @@ import { MockLanguageModelV3, mockId } from "ai/test";
 import { vi } from "vitest";
 import { z } from "zod";
 import type { ToolSchema } from "../agent/providers/base/types";
-import { Tool } from "../tool";
+import { type Tool, createTool } from "../tool";
 import { Agent } from "./agent";
 import type { AgentOptions } from "./types";
 
@@ -367,7 +367,7 @@ export function createMockTool(
   },
 ): Tool<any, any> {
   const defaultSchema = z.object({ input: z.string().optional() });
-  return new Tool({
+  return createTool({
     name,
     description: options?.description || `Mock ${name} tool`,
     parameters: options?.parameters || defaultSchema,

@@ -15,7 +15,7 @@ export {
   andDoUntil,
   andMap,
 } from "./steps";
-export { createWorkflow, serializeWorkflowStep } from "./core";
+export { defineWorkflow, serializeWorkflowStep } from "./core";
 export type { SerializedWorkflowStep } from "./core";
 export { createWorkflowChain } from "./chain";
 export { WorkflowRegistry } from "./registry";

@@ -5,7 +5,7 @@ import { createTestAgent } from "../agent/test-utils";
 import { Memory } from "../memory";
 import { InMemoryStorageAdapter } from "../memory/adapters/storage/in-memory";
 import { AgentRegistry } from "../registries/agent-registry";
-import { VOLTAGENT_RESTART_CHECKPOINT_KEY, createWorkflow } from "./core";
+import { VOLTAGENT_RESTART_CHECKPOINT_KEY, defineWorkflow } from "./core";
 import { WorkflowRegistry } from "./registry";
 import { andAgent, andThen, andWhen } from "./steps";
 
@@ -19,7 +19,7 @@ describe.sequential("workflow.run", () => {
   it("should return the expected result", async () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "test",
         name: "test",
@@ -83,7 +83,7 @@ describe.sequential("workflow.run", () => {
   it("should persist workflowState across steps", async () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "workflow-state",
         name: "Workflow State",
@@ -138,7 +138,7 @@ describe.sequential("workflow.run", () => {
   it("should initialize context and persist context mutations across steps", async () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "workflow-context-persistence",
         name: "Workflow Context Persistence",
@@ -196,7 +196,7 @@ describe.sequential("workflow.run", () => {
         }) as any,
     );
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "workflow-context-agent-persistence",
         name: "Workflow Context Agent Persistence",
@@ -250,7 +250,7 @@ describe.sequential("workflow.run", () => {
   it("should persist userId and conversationId in workflow state", async () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "workflow-user-context",
         name: "Workflow User Context",
@@ -288,7 +288,7 @@ describe.sequential("workflow.run", () => {
   it("should persist custom metadata in workflow state", async () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "workflow-metadata-context",
         name: "Workflow Metadata Context",
@@ -338,7 +338,7 @@ describe.sequential("workflow.run", () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
     let finalStepReached = false;
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "execution-primitives-bail",
         name: "Execution Primitives Bail",
@@ -384,7 +384,7 @@ describe.sequential("workflow.run", () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
     let finalStepReached = false;
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "execution-primitives-bail-no-result",
         name: "Execution Primitives Bail No Result",
@@ -429,7 +429,7 @@ describe.sequential("workflow.run", () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
     let finalStepReached = false;
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "execution-primitives-abort",
         name: "Execution Primitives Abort",
@@ -474,7 +474,7 @@ describe.sequential("workflow.run", () => {
   it("should provide getStepResult and getInitData helpers in step context", async () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "execution-primitives-step-result-init",
         name: "Execution Primitives Step Result Init",
@@ -522,7 +522,7 @@ describe.sequential("workflow.run", () => {
   it("should keep getInitData stable across suspend/resume", async () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "execution-primitives-init-resume",
         name: "Execution Primitives Init Resume",
@@ -574,7 +574,7 @@ describe.sequential("workflow.run", () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
     let finalStepReached = false;
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "execution-primitives-nested-bail",
         name: "Execution Primitives Nested Bail",
@@ -620,7 +620,7 @@ describe.sequential("workflow streaming", () => {
 
   it("should provide stream method for streaming execution", async () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "stream-test",
         name: "Stream Test",
@@ -661,7 +661,7 @@ describe.sequential("workflow streaming", () => {
 
   it("should expose watch/watchAsync and streamLegacy on workflow stream results", async () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "stream-observer-surface",
         name: "Stream Observer Surface",
@@ -714,7 +714,7 @@ describe.sequential("workflow streaming", () => {
 
   it("should expose observeStream as readable stream on workflow stream results", async () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "stream-observe-readable",
         name: "Stream Observe Readable",
@@ -752,7 +752,7 @@ describe.sequential("workflow streaming", () => {
 
   it("should have usage with default values", async () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "usage-test",
         name: "Usage Test",
@@ -782,7 +782,7 @@ describe.sequential("workflow streaming", () => {
 
   it("should produce UI message stream response from workflow stream", async () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "ui-stream-test",
         name: "UI Stream Test",
@@ -844,7 +844,7 @@ describe.sequential("workflow.startAsync", () => {
       releaseStep = resolve;
     });
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "start-async-background",
         name: "Start Async Background",
@@ -894,7 +894,7 @@ describe.sequential("workflow.startAsync", () => {
   it("should persist error state when background execution fails", async () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "start-async-error",
         name: "Start Async Error",
@@ -932,7 +932,7 @@ describe.sequential("workflow.startAsync", () => {
   it("should respect executionId passed in options", async () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "start-async-execution-id",
         name: "Start Async Execution ID",
@@ -972,7 +972,7 @@ describe.sequential("workflow.startAsync", () => {
   it("should reject resumeFrom options to avoid overwriting suspended runs", async () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "start-async-reject-resume-from",
         name: "Start Async Reject Resume From",
@@ -1042,7 +1042,7 @@ describe.sequential("workflow.restart", () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
     const executions: string[] = [];
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "restart-interrupted",
         name: "Restart Interrupted",
@@ -1121,7 +1121,7 @@ describe.sequential("workflow.restart", () => {
   it("should fail restart when execution is not running", async () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "restart-invalid-status",
         name: "Restart Invalid Status",
@@ -1145,7 +1145,7 @@ describe.sequential("workflow.restart", () => {
   it("should restart all active runs and report partial failures", async () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "restart-bulk",
         name: "Restart Bulk",
@@ -1195,7 +1195,7 @@ describe.sequential("workflow.restart", () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
     let step1Runs = 0;
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "restart-preserve-state",
         name: "Restart Preserve State",
@@ -1286,7 +1286,7 @@ describe.sequential("workflow.restart", () => {
   it("should rehydrate serialized checkpoint step errors on restart", async () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "restart-error-rehydrate",
         name: "Restart Error Rehydrate",
@@ -1363,7 +1363,7 @@ describe.sequential("workflow.restart", () => {
   it("should restart safely when persisted context is not tuple-serialized", async () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "restart-invalid-context",
         name: "Restart Invalid Context",
@@ -1420,7 +1420,7 @@ describe.sequential("workflow memory defaults", () => {
     const globalWorkflowMemory = new Memory({ storage: new InMemoryStorageAdapter() });
     registry.setGlobalWorkflowMemory(globalWorkflowMemory);
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "global-workflow-memory",
         name: "Global Workflow Memory",
@@ -1441,7 +1441,7 @@ describe.sequential("workflow memory defaults", () => {
     const globalMemory = new Memory({ storage: new InMemoryStorageAdapter() });
     registry.setGlobalMemory(globalMemory);
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "global-memory-fallback",
         name: "Global Memory Fallback",
@@ -1463,7 +1463,7 @@ describe.sequential("workflow memory defaults", () => {
     const explicitMemory = new Memory({ storage: new InMemoryStorageAdapter() });
     registry.setGlobalWorkflowMemory(globalWorkflowMemory);
 
-    const workflow = createWorkflow(
+    const workflow = defineWorkflow(
       {
         id: "explicit-memory",
         name: "Explicit Memory",
