@@ -1,0 +1,123 @@
+packages/core/README.md
+  s_6b5b0311a612f2::t_e9ae4bd159da24 75,95,104
+  s_6b5b0311a612f2::t_5afc730b295029 113
+packages/scorers/src/llm/moderation.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 6,259
+packages/core/src/triggers/dsl.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 19
+packages/core/src/agent/define-agent.spec.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 1-194
+packages/core/src/agent/native-tool-execution.spec.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 10
+packages/core/src/workflow/chain.spec-d.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 6,50-51
+.changeset/canonical-authoring-factories.md
+  s_6b5b0311a612f2::t_5afc730b295029 1-8
+packages/core/src/tool/manager/index.spec.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 8,89,261
+packages/core/src/workflow/core.spec.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 8,22,86,141,199,253,291,341,387,432,477,525,577,623,664,717,755,785,847,897,935,975,1045,1124,1148,1198,1289,1366,1423,1444,1466
+packages/core/src/workflow/steps/and-all.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 21
+packages/core/src/tool/toolkit.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 2,35,37
+packages/core/src/workflow/chain.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 7,950-951,953,965,967,983,985,993,1000,1002,1013,1020,1022,1033,1041,1043,1054,1059,1061,1074,1076
+packages/core/src/tool/index.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 64,207-211,213-215,218,220,232-258
+packages/core/src/types.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 197
+packages/core/src/agent/agent-observability.spec.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 7,325
+packages/core/src/agent/test-utils.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 11,370
+packages/core/src/workflow/core.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 339,384,395,404,415,428,443,460,479,500,523,548,575,604,635,668,703,740,779,820,863,908,1325
+packages/core/src/workflow/steps/and-workflow.spec.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 5,31,56
+packages/core/src/workflow/steps/and-tap.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 12
+packages/core/src/agent/define-agent.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 1-29
+packages/core/src/workflow/suspend-resume.spec.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 5,31,92,170,248,309,369,395,461,487,532,606,650,693,757,807,857,903,952,1005,1064
+packages/core/src/tool/ai-sdk-tool.spec.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 3,8,20
+packages/core/src/voltops/client.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 1085,1087
+packages/core/src/voltagent.spec.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 9,11,54,96,134,159,172,188,201,219,248,277,304
+packages/core/src/agent/define-agent.spec-d.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 1-77
+packages/core/src/index.spec.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 2-4,11-12,15-16,19-28
+packages/core/src/tool/ai-sdk-tool.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 233,239,244,249,254,259
+packages/core/src/workflow/steps/and-workflow.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 11,21
+packages/e2e/src/message-persistence.shared.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 1,134
+packages/core/src/workflow/hooks.spec.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 5,23,79,121
+packages/core/src/workflow/steps/and-race.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 16
+packages/scorers/src/llm/answer-correctness.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 6,85
+packages/scorers/src/llm/classifiers.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 6,94
+packages/core/src/workflow/steps/and-then.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 11
+packages/scorers/src/llm/context-precision.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 6,110
+packages/scorers/src/llm/answer-relevancy.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 7,120
+packages/core/src/tool/ai-sdk-tool.spec-d.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 6,16,29,33
+packages/core/src/workflow/steps/and-when.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 10
+packages/core/src/agent/agent.spec-d.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 20,25,27,1876,1911,1947,2007,2031
+packages/core/src/workflow/steps/and-sleep-until.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 11
+packages/scorers/src/llm/context-relevancy.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 6,145
+packages/core/src/tool/index.spec.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 3,6,23,41,54,72,88,101,111,121,338
+packages/core/src/workflow/steps/and-sleep.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 11
+packages/core/src/workflow/time-travel.spec.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 5,19,84,128,158,197,225,265
+packages/core/src/voltagent.ts
+  s_6b5b0311a612f2::t_5afc730b295029 870-878
+packages/core/src/index.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 2,42-43,45-54,57-58,308-309,322
+packages/core/src/workflow/steps/and-agent.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 50
+packages/core/src/agent/agent.spec.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 17,1174,2307,2346,2374,2460,2510,2568,2608,2648,2687,2723,2768,2834,4685,5063,5126,5182,5189,5216,5262,5268,5282,5288,5409,5417,5425,5456,5464,5497,5547,5592,5632,5828,5968,6081,6129,6150
+packages/core/compatibility/consumer.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 8-11,13-14,27,44,86-102,104-107
+  s_6b5b0311a612f2::t_5afc730b295029 103
+packages/e2e/src/agent-runtime.e2e.spec.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 2,11-12,171,226,242,293,327,343,379,406,461,506,532,574,600,622,646,660,677,697,714,746,772,793,873,929,981,1046,1061,1107,1162,1208,1286
+packages/scorers/src/llm/context-recall.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 6,121
+packages/core/src/workflow/index.ts
+  s_6b5b0311a612f2::t_e9ae4bd159da24 18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "cf1a663efdb56ee9bb640bf617e229c2ff368c65",
+  "prompts": {},
+  "sessions": {
+    "s_6b5b0311a612f2": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ec8eee9faffeSYiz1ae1DjyOxY",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Zac Rosenbauer <me@zrosenbauer.com>"
+    }
+  }
+}
