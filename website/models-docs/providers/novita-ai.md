@@ -11,9 +11,9 @@ Use `novita-ai/<model>` with VoltAgent's model router.
 ## Quick start
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "novita-ai-agent",
   instructions: "You are a helpful assistant",
   model: "novita-ai/baichuan/baichuan-m2-32b",

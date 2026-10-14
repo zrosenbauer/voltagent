@@ -12,7 +12,7 @@ pnpm add @voltagent/cloudflare-d1
 
 ```ts
 import { openai } from "@ai-sdk/openai";
-import { Agent, Memory, VoltAgent } from "@voltagent/core";
+import { defineAgent, Memory, voltagent } from "@voltagent/core";
 import { D1MemoryAdapter } from "@voltagent/cloudflare-d1";
 import { serverlessHono } from "@voltagent/serverless-hono";
 import type { D1Database } from "@cloudflare/workers-types";
@@ -24,7 +24,7 @@ type Env = {
   OPENAI_API_KEY: string;
 };
 
-const createWorker = (env: Env) => {
+const createWorker = async (env: Env) => {
   const memory = new Memory({
     storage: new D1MemoryAdapter({
       binding: env.DB,
@@ -32,7 +32,7 @@ const createWorker = (env: Env) => {
     }),
   });
 
-  const agent = new Agent({
+  const agent = defineAgent({
     name: "serverless-assistant",
     instructions: "Answer user questions quickly.",
     model: openai("gpt-4o-mini"),
@@ -40,10 +40,11 @@ const createWorker = (env: Env) => {
     memory,
   });
 
-  const voltAgent = new VoltAgent({
+  const voltAgent = voltagent({
     agents: { agent },
     serverless: serverlessHono(),
   });
+  await voltAgent.ready();
 
   return voltAgent.serverless().toCloudflareWorker();
 };
@@ -51,12 +52,13 @@ const createWorker = (env: Env) => {
 let cached: ReturnType<typeof createWorker> | undefined;
 
 export default {
-  fetch: (request: Request, env: Env, ctx: ExecutionContext) => {
+  fetch: async (request: Request, env: Env, ctx: ExecutionContext) => {
     if (!cached) {
       cached = createWorker(env);
     }
 
-    return cached.fetch(request, env, ctx);
+    const worker = await cached;
+    return worker.fetch(request, env, ctx);
   },
 };
 ```

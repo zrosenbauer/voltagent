@@ -11,9 +11,9 @@ Use `zenmux/<model>` with VoltAgent's model router.
 ## Quick start
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "zenmux-agent",
   instructions: "You are a helpful assistant",
   model: "zenmux/anthropic/claude-haiku-4.5",

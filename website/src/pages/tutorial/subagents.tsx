@@ -134,12 +134,12 @@ export default function SubagentsTutorial() {
 
             <ColorModeProvider>
               <CodeBlock language="typescript">
-                {`import { VoltAgent, Agent, createTool } from "@voltagent/core";
+                {`import { voltagent, defineAgent, createTool } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
 // Story Writer Agent
-const writerAgent = new Agent({
+const writerAgent = defineAgent({
   name: "writer",
   instructions: \`You are a creative story writer. You write engaging short stories based on user requests.
   
@@ -170,7 +170,7 @@ const writerAgent = new Agent({
 });
 
 // Translator Agent  
-const translatorAgent = new Agent({
+const translatorAgent = defineAgent({
   name: "translator",
   instructions: \`You are a professional translator. You translate text into multiple languages:
   - German (Deutsch)
@@ -202,7 +202,7 @@ const translatorAgent = new Agent({
 });
 
 // Creative Director - Coordinates the team
-const creativeDirector = new Agent({
+const creativeDirector = defineAgent({
   name: "creative-director", 
   instructions: \`You are a creative director managing a story writing and translation team.
 
@@ -226,13 +226,13 @@ User: "Write a story about a magic cat"
   subAgents: [writerAgent, translatorAgent],
 });
 
-new VoltAgent({
+await voltagent({
   agents: {
     "creative-director": creativeDirector,
     writer: writerAgent,
     translator: translatorAgent,
   },
-});`}
+}).ready();`}
               </CodeBlock>
             </ColorModeProvider>
           </div>
@@ -523,7 +523,7 @@ new VoltAgent({
               </p>
               <ColorModeProvider>
                 <CodeBlock language="typescript">
-                  {`const creativeDirector = new Agent({
+                  {`const creativeDirector = defineAgent({
   name: "creative-director",
   subAgents: [writerAgent, translatorAgent],
   
@@ -551,7 +551,7 @@ new VoltAgent({
               </p>
               <ColorModeProvider>
                 <CodeBlock language="typescript">
-                  {`const creativeDirector = new Agent({
+                  {`const creativeDirector = defineAgent({
   name: "creative-director", 
   subAgents: [writerAgent, translatorAgent],
   
@@ -579,7 +579,7 @@ new VoltAgent({
               <ColorModeProvider>
                 <CodeBlock language="typescript">
                   {`// Global step limit for all subagents
-const creativeDirector = new Agent({
+const creativeDirector = defineAgent({
   name: "creative-director",
   subAgents: [writerAgent, translatorAgent],
   maxSteps: 15  // Prevents runaway workflows
@@ -610,13 +610,13 @@ const response = await creativeDirector.generateText(
                   {`import { createSubAgent } from "@voltagent/core";
 
 // Method 1: Traditional subAgent array
-const creativeDirector = new Agent({
+const creativeDirector = defineAgent({
   name: "creative-director",
   subAgents: [writerAgent, translatorAgent]
 });
 
 // Method 2: Using createSubAgent function (more powerful!)
-const managerAgent = new Agent({
+const managerAgent = defineAgent({
   name: "project-manager",
   instructions: "Coordinate creative projects and manage team workflows",
   
@@ -642,7 +642,7 @@ const managerAgent = new Agent({
 });
 
 // Dynamic team management
-const illustratorAgent = new Agent({
+const illustratorAgent = defineAgent({
   name: "illustrator", 
   instructions: "Create visual content and illustrations"
 });

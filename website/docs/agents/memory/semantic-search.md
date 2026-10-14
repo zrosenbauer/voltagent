@@ -10,7 +10,7 @@ Semantic search retrieves past messages by similarity rather than recency. It re
 ## Configuration
 
 ```ts
-import { Agent, Memory, InMemoryVectorAdapter } from "@voltagent/core";
+import { defineAgent, Memory, InMemoryVectorAdapter } from "@voltagent/core";
 import { LibSQLMemoryAdapter, LibSQLVectorAdapter } from "@voltagent/libsql";
 
 const memory = new Memory({
@@ -20,7 +20,7 @@ const memory = new Memory({
   enableCache: true, // optional embedding cache
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Assistant",
   model: "openai/gpt-4o-mini",
   memory,
@@ -204,7 +204,7 @@ const vector = new ManagedMemoryVectorAdapter({
 ## Example: Full Semantic Search Setup
 
 ```ts
-import { Agent, Memory } from "@voltagent/core";
+import { defineAgent, Memory } from "@voltagent/core";
 import { LibSQLMemoryAdapter, LibSQLVectorAdapter } from "@voltagent/libsql";
 
 const memory = new Memory({
@@ -214,7 +214,7 @@ const memory = new Memory({
   enableCache: true,
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Research Assistant",
   instructions: "Help users recall past discussions and find relevant information.",
   model: "openai/gpt-4o-mini",

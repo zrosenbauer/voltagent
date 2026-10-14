@@ -68,14 +68,14 @@ The snippet above shows how to run in stdio-only mode (ideal for IDE integration
 ## 3. Register the server with VoltAgent
 
 ```ts title="src/voltagent.ts"
-import { VoltAgent } from "@voltagent/core";
+import { voltagent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 import { mcpServer } from "./mcp/server";
 import { assistant } from "./agents/assistant";
 import { expenseApprovalWorkflow } from "./workflows/expense";
 import { logger } from "./logger";
 
-export const voltAgent = new VoltAgent({
+export const voltAgent = voltagent({
   agents: {
     assistant,
   },
@@ -88,6 +88,7 @@ export const voltAgent = new VoltAgent({
   server: honoServer({ port: 3141 }),
   logger,
 });
+await voltAgent.ready();
 ```
 
 - `mcpServers` registers your MCP server alongside the agent/workflow registries.
@@ -180,11 +181,11 @@ const tools = await mcpConfig.getTools();
 Sometimes you want MCP clients to see helpers that are not (yet) registered with VoltAgent. Provide them as keyed objects (just like the main `VoltAgent` config) via the `agents`, `workflows`, or `tools` fields to append entries that live only on the MCP side:
 
 ```ts title="src/mcp/server.ts"
-import { Agent, createTool, createWorkflowChain, tool } from "@voltagent/core";
+import { defineAgent, createTool, createWorkflowChain, defineTool } from "@voltagent/core";
 import { MCPServer } from "@voltagent/mcp-server";
 import { z } from "zod";
 
-const statusTool = tool({
+const statusTool = defineTool({
   description: "Return the current time",
   inputSchema: z.object({}),
   async execute() {
@@ -192,7 +193,7 @@ const statusTool = tool({
   },
 });
 
-const supportAgent = new Agent({
+const supportAgent = defineAgent({
   name: "Support Agent",
   purpose: "Route customer tickets to the correct queue.",
   instructions:

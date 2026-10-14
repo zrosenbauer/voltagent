@@ -11,9 +11,9 @@ Use `groq/<model>` with VoltAgent's model router.
 ## Quick start
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "groq-agent",
   instructions: "You are a helpful assistant",
   model: "groq/llama-3.1-8b-instant",

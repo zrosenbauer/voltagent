@@ -11,9 +11,9 @@ Use `perplexity/<model>` with VoltAgent's model router.
 ## Quick start
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "perplexity-agent",
   instructions: "You are a helpful assistant",
   model: "perplexity/sonar",

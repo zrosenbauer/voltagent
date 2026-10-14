@@ -11,9 +11,9 @@ Use `friendli/<model>` with VoltAgent's model router.
 ## Quick start
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "friendli-agent",
   instructions: "You are a helpful assistant",
   model: "friendli/LGAI-EXAONE/EXAONE-4.0.1-32B",

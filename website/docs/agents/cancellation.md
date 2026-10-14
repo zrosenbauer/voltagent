@@ -12,9 +12,9 @@ VoltAgent implements cancellation through the standard `AbortController` API. Pa
 Create an `AbortController` and pass it to agent methods:
 
 ```typescript
-import { Agent, isAbortError } from "@voltagent/core";
+import { defineAgent, isAbortError } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Assistant",
   instructions: "A helpful assistant",
   model: "openai/gpt-4o",
@@ -104,10 +104,10 @@ for await (const event of response.stream) {
 AI SDK-style tools receive AI SDK execution options as the second parameter. Use `abortSignal` to stop long-running work when the agent operation is cancelled:
 
 ```typescript
-import { tool } from "@voltagent/core";
+import { defineTool } from "@voltagent/core";
 import { z } from "zod";
 
-const dataProcessingTool = tool({
+const dataProcessingTool = defineTool({
   description: "Process large datasets",
   inputSchema: z.object({
     dataset: z.string(),
@@ -152,19 +152,19 @@ const dataProcessingTool = tool({
 In supervisor-subagent architectures, the abort signal propagates to all subagents:
 
 ```typescript
-const researcher = new Agent({
+const researcher = defineAgent({
   name: "Researcher",
   instructions: "Research topics thoroughly",
   model: "openai/gpt-4o-mini",
 });
 
-const writer = new Agent({
+const writer = defineAgent({
   name: "Writer",
   instructions: "Write detailed content",
   model: "openai/gpt-4o-mini",
 });
 
-const supervisor = new Agent({
+const supervisor = defineAgent({
   name: "Supervisor",
   instructions: "Coordinate research and writing",
   model: "openai/gpt-4o",
@@ -228,7 +228,7 @@ Agent hooks can detect and handle abort errors:
 ```typescript
 import { createHooks, isAbortError } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Assistant",
   instructions: "A helpful assistant",
   model: "openai/gpt-4o",
@@ -351,16 +351,17 @@ async function processWithGracefulShutdown(agent: Agent, input: string) {
 
 ### VoltAgent-Level Shutdown
 
-When using the `VoltAgent` class with a server, shutdown is handled automatically:
+When bootstrapping with `voltagent()` and a server, shutdown is handled automatically:
 
 ```typescript
-import { VoltAgent } from "@voltagent/core";
+import { voltagent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 
-const voltAgent = new VoltAgent({
+const voltAgent = voltagent({
   agents: { myAgent },
   server: honoServer({ port: 3141 }),
 });
+await voltAgent.ready();
 
 // VoltAgent automatically registers SIGINT/SIGTERM handlers
 // For programmatic shutdown:

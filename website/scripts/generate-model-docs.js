@@ -33,8 +33,8 @@ const parseRegistry = (source) => {
 };
 
 const parseProviderModels = (source) => {
-  const providerRegex = /readonly\s+'([^']+)':\s+readonly\s+\[\n([\s\S]*?)\n\s*\];/g;
-  const modelRegex = /'([^']+)'/g;
+  const providerRegex = /readonly\s+["']?([\w-]+)["']?:\s+readonly\s+\[([\s\S]*?)\];/g;
+  const modelRegex = /["']([^"']+)["']/g;
   const map = {};
   for (const match of source.matchAll(providerRegex)) {
     const providerId = match[1];
@@ -111,9 +111,9 @@ The registry is generated from [models.dev](https://models.dev) and bundled with
 <Tabs>
   <TabItem value="OpenAI" label="OpenAI">
     \`\`\`ts
-    import { Agent } from "@voltagent/core";
+    import { defineAgent } from "@voltagent/core";
 
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "openai-summary",
       instructions: "Summarize the update in 2 bullets.",
       model: "openai/gpt-4.1-mini",
@@ -122,9 +122,9 @@ The registry is generated from [models.dev](https://models.dev) and bundled with
   </TabItem>
   <TabItem value="Anthropic" label="Anthropic">
     \`\`\`ts
-    import { Agent } from "@voltagent/core";
+    import { defineAgent } from "@voltagent/core";
 
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "claude-notes",
       instructions: "Turn notes into action items.",
       model: "anthropic/claude-3-5-haiku",
@@ -133,9 +133,9 @@ The registry is generated from [models.dev](https://models.dev) and bundled with
   </TabItem>
   <TabItem value="Google" label="Google Gemini">
     \`\`\`ts
-    import { Agent } from "@voltagent/core";
+    import { defineAgent } from "@voltagent/core";
 
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "gemini-translator",
       instructions: "Translate to Turkish and keep tone friendly.",
       model: "google/gemini-2.0-flash",
@@ -144,9 +144,9 @@ The registry is generated from [models.dev](https://models.dev) and bundled with
   </TabItem>
   <TabItem value="xAI" label="xAI">
     \`\`\`ts
-    import { Agent } from "@voltagent/core";
+    import { defineAgent } from "@voltagent/core";
 
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "grok-ideas",
       instructions: "Brainstorm five product names.",
       model: "xai/grok-3-mini",
@@ -155,9 +155,9 @@ The registry is generated from [models.dev](https://models.dev) and bundled with
   </TabItem>
   <TabItem value="OpenRouter" label="OpenRouter">
     \`\`\`ts
-    import { Agent } from "@voltagent/core";
+    import { defineAgent } from "@voltagent/core";
 
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "openrouter-agent",
       instructions: "Answer in short paragraphs.",
       model: "openrouter/anthropic/claude-3.5-haiku",
@@ -187,15 +187,15 @@ const modelId: ModelRouterModelId = "openai/gpt-4.1-mini";
 Assign cheaper models to throughput-heavy steps and stronger models to critical analysis:
 
 \`\`\`ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const ingestAgent = new Agent({
+const ingestAgent = defineAgent({
   name: "ingest-agent",
   instructions: "Extract entities and key facts from raw notes.",
   model: "google/gemini-2.0-flash",
 });
 
-const reviewAgent = new Agent({
+const reviewAgent = defineAgent({
   name: "review-agent",
   instructions: "Review the summary and flag risks or gaps.",
   model: "anthropic/claude-3-5-sonnet",
@@ -207,7 +207,7 @@ const reviewAgent = new Agent({
 Pick a model based on request context:
 
 \`\`\`ts
-const agent = new Agent({
+const agent = defineAgent({
   name: "runtime-router",
   model: ({ context }) => {
     const tier = (context.get("tier") as string) || "fast";
@@ -223,7 +223,7 @@ const agent = new Agent({
 Pass provider-specific options per request when you need them:
 
 \`\`\`ts
-const analyst = new Agent({
+const analyst = defineAgent({
   name: "analyst",
   instructions: "Explain tradeoffs clearly and concisely.",
   model: "openai/o3-mini",
@@ -241,7 +241,7 @@ const response = await analyst.generateText("Compare JWTs vs cookies for auth.",
 If you need custom headers, pass an ai-sdk \`LanguageModel\` directly:
 
 \`\`\`ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 
 const customProvider = createOpenAICompatible({
@@ -253,14 +253,14 @@ const customProvider = createOpenAICompatible({
   },
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "custom-agent",
   model: customProvider("gpt-4o-mini"),
 });
 \`\`\`
 
 :::note
-VoltAgent does not include fallback chains yet. Implement retries or failover in your app if needed.
+VoltAgent supports ordered fallback lists through the agent's \`model\` array and retries through \`maxRetries\`. Recovery repeats only the failed provider call, preserving completed steps and tool results. Later steps stay on the successful fallback model. See [Retries and Fallbacks](/docs/agents/retries-fallback) for configuration and streaming limits.
 :::
 
 ## Use ai-sdk directly
@@ -269,9 +269,9 @@ You can use ai-sdk provider modules anywhere VoltAgent expects a \`LanguageModel
 
 \`\`\`ts
 import { mistral } from "@ai-sdk/mistral";
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "mistral-agent",
   model: mistral("mistral-small-latest"),
 });
@@ -352,9 +352,9 @@ Use \`${providerId}/<model>\` with VoltAgent's model router.
 ## Quick start
 
 \`\`\`ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "${providerId}-agent",
   instructions: "You are a helpful assistant",
   model: "${exampleModelId}",
@@ -413,10 +413,14 @@ const main = () => {
   );
 
   for (const providerId of providerIds) {
+    const filePath = path.join(providersDir, `${providerId}.md`);
+    if (fs.existsSync(filePath) && !readFile(filePath).includes(autoGeneratedNotice)) {
+      continue;
+    }
     const entry = registry[providerId];
     const models = providerModels[providerId] ?? [];
     const content = buildProviderDoc(providerId, entry, models);
-    fs.writeFileSync(path.join(providersDir, `${providerId}.md`), content, "utf8");
+    fs.writeFileSync(filePath, content, "utf8");
   }
 
   // eslint-disable-next-line no-console

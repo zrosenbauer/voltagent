@@ -76,7 +76,7 @@ Each method accepts either a stored `credentialId` or inline OAuth tokens
 ## Treat Drive actions as tools
 
 ```ts
-import { Agent, createTool, VoltOpsClient } from "@voltagent/core";
+import { defineAgent, createTool, VoltOpsClient } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
@@ -101,7 +101,7 @@ export const shareDriveFile = createTool({
   },
 });
 
-const driveAgent = new Agent({
+const driveAgent = defineAgent({
   name: "Drive Assistant",
   model: openai("gpt-4o-mini"),
   instructions: "Use Google Drive to fetch or share files for the user.",

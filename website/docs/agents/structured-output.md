@@ -12,7 +12,7 @@ Use the AI SDK `output` option with `generateText` and `streamText` when you nee
 ## Generate an Object
 
 ```ts
-import { Agent, Output } from "@voltagent/core";
+import { defineAgent, Output } from "@voltagent/core";
 import { z } from "zod";
 
 const recipeSchema = z.object({
@@ -22,7 +22,7 @@ const recipeSchema = z.object({
   prepTimeMinutes: z.number(),
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Recipe Assistant",
   instructions: "Create practical recipes.",
   model: "openai/gpt-4o-mini",

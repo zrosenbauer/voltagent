@@ -13,19 +13,19 @@ Build multi-agent systems where a supervisor agent coordinates specialized subag
 
 ```typescript
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, createTool } from "@voltagent/core";
+import { defineAgent, voltagent, createTool } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
 
 // Create specialized subagents
-const contentCreator = new Agent({
+const contentCreator = defineAgent({
   name: "ContentCreator",
   purpose: "Drafts short content",
   instructions: "Creates text content on requested topics",
   model: openai("gpt-4o-mini"),
 });
 
-const formatter = new Agent({
+const formatter = defineAgent({
   name: "Formatter",
   purpose: "Formats and styles text",
   instructions: "Cleans and formats content",
@@ -34,7 +34,7 @@ const formatter = new Agent({
 });
 
 // Create supervisor that coordinates subagents
-const supervisor = new Agent({
+const supervisor = defineAgent({
   name: "Supervisor",
   instructions: "Coordinates between content creation and formatting",
   model: openai("gpt-4o-mini"),
@@ -46,10 +46,10 @@ const supervisor = new Agent({
   },
 });
 
-new VoltAgent({
+await voltagent({
   agents: { supervisor, contentCreator, formatter },
   server: honoServer({ port: 3141 }),
-});
+}).ready();
 ```
 
 ## How It Works
@@ -63,7 +63,7 @@ new VoltAgent({
 ## Subagent Properties
 
 ```typescript
-new Agent({
+defineAgent({
   name: "Specialist",
   purpose: "Brief description for supervisor", // Helps supervisor decide when to use
   instructions: "Detailed instructions...",

@@ -213,7 +213,7 @@ Asynchronously forwards events from an agent's fullStream to the workflow stream
 .andThen({
   id: "generate-content",
   execute: async ({ data, writer }) => {
-    const agent = new Agent({ /* ... */ });
+    const agent = defineAgent({ /* ... */ });
     const response = await agent.streamText(prompt);
 
     if (response.stream) {
@@ -502,7 +502,7 @@ For now, use the programmatic API directly if you need continuous streaming acro
 
 ### Suspend/Resume Event Flow
 
-> **Important:** Register your workflow with `new VoltAgent({ workflows: { ... } })` so suspend/resume streaming works with the registry and REST endpoints.
+> **Important:** Register your workflow with `voltagent({ workflows: { ... } })` so suspend/resume streaming works with the registry and REST endpoints.
 
 ```typescript
 // Example workflow with suspension

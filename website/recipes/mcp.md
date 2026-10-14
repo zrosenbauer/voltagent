@@ -13,7 +13,7 @@ MCP (Model Context Protocol) lets agents access external tools and data sources 
 
 ```typescript
 import { openai } from "@ai-sdk/openai";
-import { Agent, MCPConfiguration, VoltAgent } from "@voltagent/core";
+import { defineAgent, MCPConfiguration, voltagent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 
 // Configure MCP server
@@ -30,17 +30,17 @@ const mcpConfig = new MCPConfiguration({
 // Get tools from MCP server
 const mcpTools = await mcpConfig.getTools();
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "MCP Agent",
   instructions: "You can search the web using Exa",
   model: openai("gpt-4o-mini"),
   tools: mcpTools,
 });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer({ port: 3141 }),
-});
+}).ready();
 ```
 
 ## MCP Server Types
@@ -93,11 +93,11 @@ const mcpServer = new MCPServer({
   protocols: { stdio: true, http: true, sse: true },
 });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   mcpServers: { mcpServer },
   server: honoServer({ port: 3141 }),
-});
+}).ready();
 ```
 
 ## Full Examples

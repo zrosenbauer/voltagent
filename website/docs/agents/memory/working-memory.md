@@ -23,7 +23,7 @@ Scope options:
 ### Markdown Template
 
 ```ts
-import { Agent, Memory } from "@voltagent/core";
+import { defineAgent, Memory } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 
 const memory = new Memory({
@@ -46,7 +46,7 @@ const memory = new Memory({
   },
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Assistant",
   model: "openai/gpt-4o-mini",
   memory,
@@ -206,7 +206,7 @@ All official adapters (LibSQL, Postgres, Supabase, Managed Memory) support both 
 ## Example: User-Scoped Preferences
 
 ```ts
-import { Agent, Memory } from "@voltagent/core";
+import { defineAgent, Memory } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { z } from "zod";
 
@@ -226,7 +226,7 @@ const memory = new Memory({
   },
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Personal Assistant",
   instructions: "Adapt responses based on user preferences stored in working memory.",
   model: "openai/gpt-4o-mini",
@@ -271,7 +271,7 @@ const projectMemory = new Memory({
   },
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Project Manager",
   instructions: "Track project context and help with sprint planning.",
   model: "openai/gpt-4o-mini",

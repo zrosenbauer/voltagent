@@ -13,7 +13,7 @@ Memory enables agents to remember past conversations and maintain context across
 
 ```typescript
 import { openai } from "@ai-sdk/openai";
-import { Agent, Memory, VoltAgent } from "@voltagent/core";
+import { defineAgent, Memory, voltagent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { honoServer } from "@voltagent/server-hono";
 
@@ -23,17 +23,17 @@ const memory = new Memory({
   }),
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Memory Agent",
   instructions: "A helpful assistant that remembers conversations",
   model: openai("gpt-4o-mini"),
   memory,
 });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer({ port: 3141 }),
-});
+}).ready();
 ```
 
 ## Working Memory (Structured Context)

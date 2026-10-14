@@ -567,9 +567,9 @@ console.log(
 Message helpers integrate with agent hooks for message transformation.
 
 ```typescript
-import { Agent, messageHelpers } from "@voltagent/core";
+import { defineAgent, messageHelpers } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Assistant",
   instructions: "A helpful assistant",
   // Direct ai-sdk model; no custom provider needed

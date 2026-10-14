@@ -11,9 +11,9 @@ Use `helicone/<model>` with VoltAgent's model router.
 ## Quick start
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "helicone-agent",
   instructions: "You are a helpful assistant",
   model: "helicone/chatgpt-4o-latest",

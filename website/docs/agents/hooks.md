@@ -13,7 +13,7 @@ Define hooks using the `createHooks` helper function. Pass the resulting object 
 
 ```ts
 import {
-  Agent,
+  defineAgent,
   createHooks,
   messageHelpers,
   type AgentTool,
@@ -154,7 +154,7 @@ const myAgentHooks = createHooks({
 });
 
 // Pass hooks to the Agent constructor
-const agentWithHooks = new Agent({
+const agentWithHooks = defineAgent({
   name: "My Agent with Hooks",
   instructions: "An assistant demonstrating hooks",
   model: "openai/gpt-4o",
@@ -162,7 +162,7 @@ const agentWithHooks = new Agent({
 });
 
 // Or define hooks inline
-const agentWithInlineHooks = new Agent({
+const agentWithInlineHooks = defineAgent({
   name: "Inline Hooks Agent",
   instructions: "Another assistant",
   model: "openai/gpt-4o",
@@ -186,7 +186,7 @@ Method-level hooks do not override agent-level hooks. Both will execute. For mos
 :::
 
 ```ts
-const agent = new Agent({
+const agent = defineAgent({
   name: "My Agent with Hooks",
   instructions: "An assistant demonstrating hooks",
   model: "openai/gpt-4o",
@@ -205,7 +205,7 @@ await agent.generateText("Hello, how are you?", {
 For example, store conversation history only for specific endpoints:
 
 ```ts
-const agent = new Agent({
+const agent = defineAgent({
   name: "Translation Agent",
   instructions: "A translation agent that translates text from English to French",
   model: "openai/gpt-4o",
@@ -495,10 +495,10 @@ Tool hooks run for a specific tool instance and are called before/after executio
 - `onEnd`: `{ tool, args, output, error, options }` (return `{ output }` to override)
 
 ```ts
-import { Agent, tool } from "@voltagent/core";
+import { defineAgent, defineTool } from "@voltagent/core";
 import { z } from "zod";
 
-const normalizeTool = tool({
+const normalizeTool = defineTool({
   description: "Normalize and trim text",
   inputSchema: z.object({ text: z.string() }),
   execute: async ({ text }) => text,
@@ -516,7 +516,7 @@ const normalizeTool = tool({
   },
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Normalizer",
   model: "openai/gpt-4o-mini",
   tools: {
@@ -572,7 +572,7 @@ The call-level AI SDK `onError` callback is separate from VoltAgent's `hooks.onE
 Transform messages before they reach the LLM using `onPrepareMessages` and message helper functions:
 
 ```ts
-import { Agent, createHooks, messageHelpers } from "@voltagent/core";
+import { defineAgent, createHooks, messageHelpers } from "@voltagent/core";
 
 const enhancedHooks = createHooks({
   onPrepareMessages: async ({ messages, context }) => {
@@ -613,7 +613,7 @@ const enhancedHooks = createHooks({
   },
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Privacy-Aware Assistant",
   instructions: "A helpful assistant that protects user privacy",
   model: "openai/gpt-4o-mini",

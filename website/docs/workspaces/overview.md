@@ -14,7 +14,7 @@ Workspace gives agents a persistent home base with filesystem, sandbox execution
 ## Quick start
 
 ```ts
-import { Agent, Workspace, LocalSandbox, InMemoryVectorAdapter } from "@voltagent/core";
+import { defineAgent, Workspace, LocalSandbox, InMemoryVectorAdapter } from "@voltagent/core";
 
 const workspace = new Workspace({
   id: "demo-workspace",
@@ -33,7 +33,7 @@ const workspace = new Workspace({
   },
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "workspace-agent",
   model,
   instructions: "Use workspace tools when needed.",
@@ -45,7 +45,7 @@ const agent = new Agent({
 If you only want specific toolkits:
 
 ```ts
-const agent = new Agent({
+const agent = defineAgent({
   name: "workspace-agent",
   model,
   instructions: "Use workspace tools when needed.",
@@ -62,16 +62,17 @@ const agent = new Agent({
 You can also set a global workspace on the VoltAgent instance. Agents inherit it unless they pass their own `workspace` or set `workspace: false`:
 
 ```ts
-import { Agent, VoltAgent, Workspace } from "@voltagent/core";
+import { defineAgent, voltagent, Workspace } from "@voltagent/core";
 
 const workspace = new Workspace({ id: "shared-workspace" });
 
-const volt = new VoltAgent({
+const volt = voltagent({
   workspace,
   agents: {
-    support: new Agent({ name: "support", model }),
+    support: defineAgent({ name: "support", model }),
   },
 });
+await volt.ready();
 ```
 
 Skills root resolvers can receive context:

@@ -36,7 +36,7 @@ VOLTAGENT_SECRET_KEY=sk_...
 ```
 
 ```ts
-import { Agent, Memory } from "@voltagent/core";
+import { defineAgent, Memory } from "@voltagent/core";
 import { ManagedMemoryAdapter } from "@voltagent/voltagent-memory";
 
 // Adapter automatically uses VoltOps credentials from environment
@@ -46,7 +46,7 @@ const memory = new Memory({
   }),
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Assistant",
   model: "openai/gpt-4o-mini",
   memory,
@@ -60,7 +60,7 @@ The adapter checks `AgentRegistry` for a global `VoltOpsClient` instance configu
 Pass a `VoltOpsClient` instance explicitly:
 
 ```ts
-import { Agent, Memory, VoltOpsClient } from "@voltagent/core";
+import { defineAgent, Memory, VoltOpsClient } from "@voltagent/core";
 import { ManagedMemoryAdapter } from "@voltagent/voltagent-memory";
 
 const voltOpsClient = new VoltOpsClient({
@@ -76,7 +76,7 @@ const memory = new Memory({
   }),
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Assistant",
   model: "openai/gpt-4o-mini",
   memory,

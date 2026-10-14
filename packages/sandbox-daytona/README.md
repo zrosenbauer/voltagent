@@ -46,7 +46,7 @@ pnpm add @voltagent/sandbox-daytona
 ## Usage
 
 ```typescript
-import { Agent, Workspace } from "@voltagent/core";
+import { defineAgent, Workspace } from "@voltagent/core";
 import { DaytonaSandbox } from "@voltagent/sandbox-daytona";
 import { openai } from "@ai-sdk/openai";
 
@@ -54,7 +54,7 @@ const sandbox = new DaytonaSandbox({
   apiKey: process.env.DAYTONA_API_KEY,
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "my-agent",
   instructions: "A helpful assistant with sandboxed shell access",
   model: openai("gpt-4o-mini"),

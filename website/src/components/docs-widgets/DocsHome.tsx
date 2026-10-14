@@ -11,20 +11,20 @@ import CodeBlock from "@theme/CodeBlock";
 import { FeatureShowcase } from "../feature-showcase";
 import { DotPattern } from "../ui/dot-pattern";
 
-const codeExample = `import { VoltAgent, Agent } from "@voltagent/core";
+const codeExample = `import { voltagent, defineAgent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 import { openai } from "@ai-sdk/openai";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "my-voltagent-app",
   instructions: "A helpful assistant that answers questions",
   model: openai("gpt-4o-mini"),
 });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer(),
-});`;
+}).ready();`;
 
 const coreFeatures = ["Memory", "RAG", "Guardrails", "Tools", "MCP", "Voice", "Workflow"];
 

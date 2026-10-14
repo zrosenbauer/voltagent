@@ -12,13 +12,13 @@ Live evaluations run scorers against real-time agent interactions. Attach scorer
 Define scorers in the `eval` config when creating an agent:
 
 ```ts
-import { Agent, VoltAgentObservability } from "@voltagent/core";
+import { defineAgent, VoltAgentObservability } from "@voltagent/core";
 import { createModerationScorer } from "@voltagent/scorers";
 import { openai } from "@ai-sdk/openai";
 
 const observability = new VoltAgentObservability();
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "support-agent",
   instructions: "Answer customer questions about products.",
   model: openai("gpt-4o"),
@@ -492,7 +492,7 @@ scorers: {
 When a VoltOps client is configured globally, live scorer results are forwarded automatically:
 
 ```ts
-import VoltAgent, { Agent, VoltAgentObservability } from "@voltagent/core";
+import voltagent, { defineAgent, VoltAgentObservability } from "@voltagent/core";
 import { VoltOpsClient } from "@voltagent/sdk";
 
 const voltOpsClient = new VoltOpsClient({
@@ -502,11 +502,11 @@ const voltOpsClient = new VoltOpsClient({
 
 const observability = new VoltAgentObservability();
 
-new VoltAgent({
+await voltagent({
   agents: { support: agent },
   observability,
   voltOpsClient, // enables automatic forwarding
-});
+}).ready();
 ```
 
 The framework creates evaluation runs, registers scorers, appends results, and finalizes summaries. Each batch of scores (per agent interaction) becomes a separate run in VoltOps.
@@ -644,7 +644,7 @@ Filter telemetry by environment in VoltOps dashboards.
 ### Moderation + Keyword Matching
 
 ```ts
-import { Agent, VoltAgentObservability, buildScorer } from "@voltagent/core";
+import { defineAgent, VoltAgentObservability, buildScorer } from "@voltagent/core";
 import { createModerationScorer } from "@voltagent/scorers";
 import { openai } from "@ai-sdk/openai";
 
@@ -661,7 +661,7 @@ const keywordScorer = buildScorer({
   })
   .build();
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "support",
   model: openai("gpt-4o"),
   eval: {
@@ -683,7 +683,7 @@ const agent = new Agent({
 ### LLM Judge for Helpfulness
 
 ```ts
-import { Agent, buildScorer } from "@voltagent/core";
+import { defineAgent, buildScorer } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
@@ -697,7 +697,7 @@ const helpfulnessScorer = buildScorer({
   label: "Helpfulness",
 })
   .score(async ({ payload }) => {
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "helpfulness-judge",
       model: openai("gpt-4o-mini"),
       instructions: "You rate responses for helpfulness",
@@ -726,7 +726,7 @@ Provide a score from 0 to 1 with an explanation.`;
   })
   .build();
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "support",
   model: openai("gpt-4o"),
   eval: {
@@ -741,7 +741,7 @@ const agent = new Agent({
 ### Multiple Scorers with Different Sampling
 
 ```ts
-const agent = new Agent({
+const agent = defineAgent({
   name: "support",
   model: openai("gpt-4o"),
   eval: {

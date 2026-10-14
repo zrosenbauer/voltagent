@@ -34,7 +34,7 @@ Output middlewares do not run in streaming calls.
 Agent-level middlewares run before per-call middlewares. Per-call middlewares are appended to the list for that call.
 
 ```ts
-import { Agent, createInputMiddleware, createOutputMiddleware } from "@voltagent/core";
+import { defineAgent, createInputMiddleware, createOutputMiddleware } from "@voltagent/core";
 
 const normalizeInput = createInputMiddleware({
   name: "NormalizeInput",
@@ -54,7 +54,7 @@ const requireSignature = createOutputMiddleware<string>({
   },
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Support",
   instructions: "Answer support questions with short, direct replies.",
   model: "openai/gpt-4o-mini",

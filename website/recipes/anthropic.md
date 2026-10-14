@@ -19,7 +19,7 @@ npm install @ai-sdk/anthropic
 
 ```typescript
 import { anthropic } from "@ai-sdk/anthropic";
-import { Agent, VoltAgent, createTool } from "@voltagent/core";
+import { defineAgent, voltagent, createTool } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
 
@@ -34,17 +34,17 @@ const weatherTool = createTool({
   },
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Claude Agent",
   instructions: "A helpful assistant powered by Claude",
   model: anthropic("claude-sonnet-4-20250514"),
   tools: [weatherTool],
 });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer({ port: 3141 }),
-});
+}).ready();
 ```
 
 ## Environment Variables

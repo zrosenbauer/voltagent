@@ -13,7 +13,7 @@ Tools allow agents to perform actions like searching the web, checking calendars
 
 ```typescript
 import { openai } from "@ai-sdk/openai";
-import { Agent, createTool, VoltAgent } from "@voltagent/core";
+import { defineAgent, createTool, voltagent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
 
@@ -31,17 +31,17 @@ const weatherTool = createTool({
 });
 
 // Create agent with tools
-const agent = new Agent({
+const agent = defineAgent({
   name: "Weather Assistant",
   instructions: "Help users check the weather",
   model: openai("gpt-4o-mini"),
   tools: [weatherTool],
 });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer({ port: 3141 }),
-});
+}).ready();
 ```
 
 ## Adding Tools Dynamically
@@ -56,7 +56,7 @@ agent.addTools([anotherTool]);
 Some providers offer built-in tools:
 
 ```typescript
-const agent = new Agent({
+const agent = defineAgent({
   model: openai("gpt-4o-mini"),
   tools: [
     openai.tools.webSearch(), // OpenAI web search

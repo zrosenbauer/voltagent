@@ -7,7 +7,7 @@
 The simplest suspend & resume example:
 
 ```typescript
-import VoltAgent, { createWorkflowChain } from "@voltagent/core";
+import voltagent, { createWorkflowChain } from "@voltagent/core";
 import { z } from "zod";
 
 const simpleApprovalChain = createWorkflowChain({
@@ -33,9 +33,9 @@ const simpleApproval = simpleApprovalChain.toWorkflow();
 // Suspend/Resume relies on workflow registration.
 // Make sure your workflow is passed to a `VoltAgent` instance
 // so the runtime can track and resume executions:
-new VoltAgent({
+await voltagent({
   workflows: { simpleApproval },
-});
+}).ready();
 
 // Run the workflow - it will suspend
 const execution = await simpleApproval.run({ item: "New laptop" });

@@ -194,7 +194,7 @@ Import `SupabaseMemory` and initialize it with your Supabase credentials:
 
 ```typescript
 import { SupabaseMemory } from "@voltagent/supabase";
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 // ... other imports
 
 const supabaseUrl = process.env.SUPABASE_URL; // Use environment variables
@@ -214,7 +214,7 @@ const memory = new SupabaseMemory({
 });
 
 // Pass the memory instance to your Agent
-const agent = new Agent({
+const agent = defineAgent({
   name: "my-agent",
   instructions: "A helpful assistant that answers questions without using tools",
   // ... other agent config
@@ -321,24 +321,24 @@ This command guides you through setup.
 You'll see the starter code in `src/index.ts` to get you started with the VoltAgent framework.
 
 ```typescript
-import { VoltAgent, Agent } from "@voltagent/core";
+import { voltagent, defineAgent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 import { openai } from "@ai-sdk/openai"; // Example model
 
 // Define a simple agent
-const agent = new Agent({
+const agent = defineAgent({
   name: "my-agent",
   instructions: "A helpful assistant that answers questions without using tools",
   model: openai("gpt-4o-mini"),
 });
 
 // Initialize VoltAgent with your agent(s)
-new VoltAgent({
+await voltagent({
   agents: {
     agent,
   },
   server: honoServer(),
-});
+}).ready();
 ```
 
 Afterwards, navigate to your project and run:

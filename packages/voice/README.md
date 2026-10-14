@@ -93,24 +93,24 @@ This command guides you through setup.
 You'll see the starter code in `src/index.ts` to get you started with the VoltAgent framework.
 
 ```typescript
-import { VoltAgent, Agent } from "@voltagent/core";
+import { voltagent, defineAgent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 import { openai } from "@ai-sdk/openai"; // Example model
 
 // Define a simple agent
-const agent = new Agent({
+const agent = defineAgent({
   name: "my-agent",
   instructions: "A helpful assistant that answers questions without using tools",
   model: openai("gpt-4o-mini"),
 });
 
 // Initialize VoltAgent with your agent(s)
-new VoltAgent({
+await voltagent({
   agents: {
     agent,
   },
   server: honoServer(),
-});
+}).ready();
 ```
 
 Afterwards, navigate to your project and run:

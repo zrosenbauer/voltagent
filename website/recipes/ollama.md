@@ -23,7 +23,7 @@ npm install ollama-ai-provider-v2
 ## Quick Setup
 
 ```typescript
-import { Agent, VoltAgent, createTool } from "@voltagent/core";
+import { defineAgent, voltagent, createTool } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 import { createOllama } from "ollama-ai-provider-v2";
 import { z } from "zod";
@@ -43,17 +43,17 @@ const weatherTool = createTool({
   },
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Local Agent",
   instructions: "A helpful local assistant",
   model: ollama("llama3.2:latest"),
   tools: [weatherTool],
 });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer({ port: 3141 }),
-});
+}).ready();
 ```
 
 ## Environment Variables

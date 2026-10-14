@@ -50,7 +50,7 @@ When a stream starts, a new `streamId` is created, the stream store persists the
 Create a Redis-backed store, build the adapter, and pass it to the Hono server.
 
 ```ts
-import { Agent, VoltAgent } from "@voltagent/core";
+import { defineAgent, voltagent } from "@voltagent/core";
 import {
   createResumableStreamAdapter,
   createResumableStreamRedisStore,
@@ -60,19 +60,19 @@ import { honoServer } from "@voltagent/server-hono";
 const streamStore = await createResumableStreamRedisStore();
 const resumableStream = await createResumableStreamAdapter({ streamStore });
 
-const agent = new Agent({
+const agent = defineAgent({
   id: "assistant",
   name: "Resumable Stream Agent",
   instructions: "You are a helpful assistant.",
   model: "openai/gpt-4o-mini",
 });
 
-new VoltAgent({
+await voltagent({
   agents: { assistant: agent },
   server: honoServer({
     resumableStream: { adapter: resumableStream },
   }),
-});
+}).ready();
 ```
 
 By default, the adapter uses `streamStore` as the `activeStreamStore`.  
@@ -99,7 +99,7 @@ await fetch(`${baseUrl}/agents/${agentId}/chat`, {
 If you want resumable streaming enabled by default, set it at the server level and omit the per-request flag. You can still opt out by sending `options.resumableStream: false`.
 
 ```ts
-new VoltAgent({
+await voltagent({
   agents: { assistant: agent },
   server: honoServer({
     resumableStream: {
@@ -107,7 +107,7 @@ new VoltAgent({
       defaultEnabled: true,
     },
   }),
-});
+}).ready();
 ```
 
 ### Resume endpoint

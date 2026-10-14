@@ -46,7 +46,7 @@ export const providerServerConfigs: {
 // Fetch all tools from all configured MCP servers into a flat array
 const allTools = await mcpConfig.getTools();
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "MCP Agent",
   instructions: "An assistant that can use MCP tools configured at startup",
   
@@ -150,7 +150,7 @@ const agent = new Agent({
 // Fetch all tools from all configured MCP servers into a flat array
 const allTools = await mcpConfig.getTools();
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "MCP Agent",
   instructions: "An assistant that can use MCP tools configured at startup",
   

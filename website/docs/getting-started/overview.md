@@ -105,10 +105,10 @@ description: 'Deploy your agents to production with one-click GitHub integration
 ### Core Framework Example
 
 ```tsx
-import { VoltAgent, Agent } from "@voltagent/core";
+import { voltagent, defineAgent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "my-voltagent-app",
   instructions: "A helpful assistant that answers questions without using tools",
   // VoltAgent uses the AI SDK directly - pass a LanguageModel or "provider/model"
@@ -116,20 +116,20 @@ const agent = new Agent({
 });
 
 // Serve your agent over HTTP (default port 3141)
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer(),
-});
+}).ready();
 ```
 
 ### Workflow Engine Example
 
 ```typescript
-import { createWorkflowChain, andThen, andAgent, Agent } from "@voltagent/core";
+import { createWorkflowChain, andThen, andAgent, defineAgent } from "@voltagent/core";
 import { z } from "zod";
 
 // First, define an agent to be used in the workflow
-const agent = new Agent({
+const agent = defineAgent({
   name: "summarizer-agent",
   instructions: "You are an expert at summarizing text.",
   model: "openai/gpt-4o-mini",

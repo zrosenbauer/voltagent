@@ -16,10 +16,10 @@ Both `@voltagent/server-hono` and `@voltagent/server-elysia` allow you to add cu
 Add custom endpoints through the Hono server configuration:
 
 ```typescript
-import { VoltAgent } from "@voltagent/core";
+import { voltagent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 
-new VoltAgent({
+await voltagent({
   agents: { myAgent },
   server: honoServer({
     configureApp: (app) => {
@@ -33,7 +33,7 @@ new VoltAgent({
       });
     },
   }),
-});
+}).ready();
 ```
 
 ## Using Elysia
@@ -41,10 +41,10 @@ new VoltAgent({
 Add custom endpoints through the Elysia server configuration:
 
 ```typescript
-import { VoltAgent } from "@voltagent/core";
+import { voltagent } from "@voltagent/core";
 import { elysiaServer } from "@voltagent/server-elysia";
 
-new VoltAgent({
+await voltagent({
   agents: { myAgent },
   server: elysiaServer({
     configureApp: (app) => {
@@ -57,7 +57,7 @@ new VoltAgent({
       });
     },
   }),
-});
+}).ready();
 ```
 
 ## CORS Configuration
@@ -67,18 +67,18 @@ Configure Cross-Origin Resource Sharing (CORS) for your API using the `cors` fie
 ### Default CORS (Permissive)
 
 ```typescript
-new VoltAgent({
+await voltagent({
   agents: { myAgent },
   server: honoServer({
     // Default: allows all origins
   }),
-});
+}).ready();
 ```
 
 ### Custom CORS Settings
 
 ```typescript
-new VoltAgent({
+await voltagent({
   agents: { myAgent },
   server: honoServer({
     cors: {
@@ -90,13 +90,13 @@ new VoltAgent({
       credentials: true,
     },
   }),
-});
+}).ready();
 ```
 
 ### Multiple Origins
 
 ```typescript
-new VoltAgent({
+await voltagent({
   agents: { myAgent },
   server: honoServer({
     cors: {
@@ -104,13 +104,13 @@ new VoltAgent({
       credentials: true,
     },
   }),
-});
+}).ready();
 ```
 
 ### Dynamic Origin
 
 ```typescript
-new VoltAgent({
+await voltagent({
   agents: { myAgent },
   server: honoServer({
     cors: {
@@ -125,7 +125,7 @@ new VoltAgent({
       credentials: true,
     },
   }),
-});
+}).ready();
 ```
 
 ### Route-Specific CORS
@@ -135,7 +135,7 @@ For advanced use cases where different routes need different CORS policies, disa
 ```typescript
 import { cors } from "hono/cors";
 
-new VoltAgent({
+await voltagent({
   agents: { myAgent },
   server: honoServer({
     cors: false, // Disable default CORS
@@ -173,7 +173,7 @@ new VoltAgent({
       app.get("/api/admin/stats", (c) => c.json({ stats: {...} }));
     },
   }),
-});
+}).ready();
 ```
 
 **Important**: When `cors: false`, you must manually configure CORS for all routes that need it, including VoltAgent's built-in routes.
@@ -548,7 +548,7 @@ With `authNext`, custom routes are **user** routes by default. To make a route p
 ```typescript
 import { DEFAULT_CONSOLE_ROUTES, jwtAuth } from "@voltagent/server-core";
 
-new VoltAgent({
+await voltagent({
   agents: { myAgent },
   server: honoServer({
     authNext: {
@@ -570,7 +570,7 @@ new VoltAgent({
       });
     },
   }),
-});
+}).ready();
 ```
 
 Notes:

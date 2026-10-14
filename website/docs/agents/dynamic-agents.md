@@ -55,9 +55,9 @@ The agent defines three specific dynamic types:
 Here's a dynamic agent that changes instructions based on user role:
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const dynamicAgent = new Agent({
+const dynamicAgent = defineAgent({
   name: "Adaptive Assistant",
 
   // Dynamic instructions based on user context
@@ -85,7 +85,7 @@ You can make `instructions`, `model`, and `tools` dynamic. Each is resolved inde
 Instructions can be a string or a function that returns a string (or `PromptContent` when using VoltOps).
 
 ```ts
-const agent = new Agent({
+const agent = defineAgent({
   name: "Multilingual Support Agent",
 
   instructions: ({ context }) => {
@@ -112,7 +112,7 @@ const agent = new Agent({
 When an agent is called through the built-in HTTP endpoints, VoltAgent exposes the request headers to dynamic `instructions`, `model`, and `tools` functions as `headers`. Header names are normalized to lowercase.
 
 ```ts
-const agent = new Agent({
+const agent = defineAgent({
   name: "Tenant Agent",
   instructions: "You are a tenant-aware assistant.",
   model: ({ headers }) => {
@@ -149,7 +149,7 @@ Legacy top-level `requestHeaders` is still supported, but `voltagent.requestHead
 The model can be a static `LanguageModel`, a `provider/model` string, or a function returning either. The agent resolves the model at [agent.ts:1672](https://github.com/VoltAgent/voltagent/blob/main/packages/core/src/agent/agent.ts#L1672) before each generation call.
 
 ```ts
-const agent = new Agent({
+const agent = defineAgent({
   name: "Tier-Based Assistant",
   instructions: "You are a helpful assistant.",
 
@@ -174,11 +174,11 @@ const agent = new Agent({
 Tools can be a static array or a function returning an array. The agent stores dynamic tool functions separately in the `dynamicTools` property ([agent.ts:337](https://github.com/VoltAgent/voltagent/blob/main/packages/core/src/agent/agent.ts#L337)) and resolves them at [agent.ts:1673](https://github.com/VoltAgent/voltagent/blob/main/packages/core/src/agent/agent.ts#L1673).
 
 ```ts
-import { tool } from "@voltagent/core";
+import { defineTool } from "@voltagent/core";
 import { z } from "zod";
 
 // Regular user tool
-const basicTool = tool({
+const basicTool = defineTool({
   description: "Get basic help information",
   inputSchema: z.object({
     topic: z.string().describe("Help topic"),
@@ -189,7 +189,7 @@ const basicTool = tool({
 });
 
 // Admin-only tool
-const adminTool = tool({
+const adminTool = defineTool({
   description: "Perform administrative actions",
   inputSchema: z.object({
     action: z.string().describe("Admin action to perform"),
@@ -199,7 +199,7 @@ const adminTool = tool({
   },
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Role-Based Agent",
   instructions: "You are an assistant with role-based capabilities.",
 
@@ -416,7 +416,7 @@ const createUserContext = (user: User) => {
 Make properties dynamic only when context requires it:
 
 ```ts
-const agent = new Agent({
+const agent = defineAgent({
   name: "Conditionally Dynamic Agent",
 
   // Static instructions most of the time

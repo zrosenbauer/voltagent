@@ -14,15 +14,15 @@ Guardrails filter harmful inputs and sanitize sensitive outputs to keep your age
 ```typescript
 import { openai } from "@ai-sdk/openai";
 import {
-  Agent,
-  VoltAgent,
+  defineAgent,
+  voltagent,
   createDefaultInputSafetyGuardrails,
   createMaxLengthGuardrail,
   createSensitiveNumberGuardrail,
 } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Safe Agent",
   instructions: "A helpful but safe assistant",
   model: openai("gpt-4o-mini"),
@@ -37,10 +37,10 @@ const agent = new Agent({
   ],
 });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer({ port: 3141 }),
-});
+}).ready();
 ```
 
 ## Built-in Guardrails
@@ -119,7 +119,7 @@ const inputSanitizer = createInputGuardrail({
   },
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Safe Agent",
   model: openai("gpt-4o-mini"),
   inputGuardrails: [topicBlocker, inputSanitizer],

@@ -71,14 +71,14 @@ export default function LivePreview() {
             files={{
               "/index.ts": {
                 active: true,
-                code: `import { VoltAgent, Agent, createTool, createHooks } from "@voltagent/core";
+                code: `import { voltagent, defineAgent, createTool, createHooks } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 import { openai } from "@ai-sdk/openai";
 import { fetchRepoContributorsTool } from "./tools";
 import { fetchRepoStarsTool } from "./tools";
 
 // Create the stars fetcher agent
-const starsFetcherAgent = new Agent({
+const starsFetcherAgent = defineAgent({
   name: "Stars Fetcher",
   description: "Fetches the number of stars for a GitHub repository using the GitHub API",
   model: openai("gpt-4o-mini"),
@@ -86,7 +86,7 @@ const starsFetcherAgent = new Agent({
 });
 
 // Create the contributors fetcher agent
-const contributorsFetcherAgent = new Agent({
+const contributorsFetcherAgent = defineAgent({
   name: "Contributors Fetcher",
   description: "Fetches the list of contributors for a GitHub repository using the GitHub API",
   model: openai("gpt-4o-mini"),
@@ -94,14 +94,14 @@ const contributorsFetcherAgent = new Agent({
 });
 
 // Create the analyzer agent
-const analyzerAgent = new Agent({
+const analyzerAgent = defineAgent({
   name: "Repo Analyzer",
   description: "Analyzes repository statistics and provides insights",
   model: openai("gpt-4o-mini"),
 });
 
 // Create the supervisor agent that coordinates all the sub-agents
-const supervisorAgent = new Agent({
+const supervisorAgent = defineAgent({
   name: "Supervisor",
   description: \`You are a GitHub repository analyzer. When given a GitHub repository URL or owner/repo format, you will:
 1. Use the StarsFetcher agent to get the repository's star count
@@ -115,12 +115,12 @@ Example input: https://github.com/voltagent/voltagent or voltagent/voltagent
 });
 
 // Initialize the VoltAgent with the agent hierarchy
-new VoltAgent({
+await voltagent({
   agents: {
     supervisorAgent,
   },
   server: honoServer(),
-});
+}).ready();
 
 `,
               },

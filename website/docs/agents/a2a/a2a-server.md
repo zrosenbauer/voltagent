@@ -53,12 +53,12 @@ The server metadata feeds the discovery card served from `/.well-known/{serverId
 ## Register The Server With VoltAgent
 
 ```ts title="src/voltagent.ts"
-import { VoltAgent } from "@voltagent/core";
+import { voltagent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 import { a2aServer } from "./a2a/server";
 import { assistant } from "./agents/assistant";
 
-export const voltAgent = new VoltAgent({
+export const voltAgent = voltagent({
   agents: {
     assistant,
   },
@@ -67,6 +67,7 @@ export const voltAgent = new VoltAgent({
   },
   server: honoServer({ port: 3141 }),
 });
+await voltAgent.ready();
 ```
 
 With this in place, VoltAgent automatically exposes:
@@ -184,7 +185,7 @@ Pass the store during initialisation:
 
 ```ts title="src/a2a/server.ts"
 import { RedisTaskStore } from "./redis-store";
-import { VoltAgent } from "@voltagent/core";
+import { voltagent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 import { assistant } from "../agents/assistant";
 
@@ -195,11 +196,12 @@ export const a2aServer = new A2AServer({
   version: "0.1.0",
 });
 
-export const voltAgent = new VoltAgent({
+export const voltAgent = voltagent({
   agents: { assistant },
   a2aServers: { a2aServer },
   server: honoServer({ port: 3141 }),
 });
+await voltAgent.ready();
 
 a2aServer.initialize({
   agentRegistry: voltAgent.agentRegistry,
@@ -223,6 +225,6 @@ The test sends a `message/send`, streams a `message/stream`, and exercises `task
 
 ## Troubleshooting checklist
 
-- **404 for discovery card**: ensure the `serverId` in `/.well-known/{serverId}/agent-card.json` matches `A2AServer({ id })`, or the normalized `name` when `id` is omitted. It does not come from `VoltAgent({ agents: { ... } })` or the `a2aServers` map key.
+- **404 for discovery card**: ensure the `serverId` in `/.well-known/{serverId}/agent-card.json` matches `A2AServer({ id })`, or the normalized `name` when `id` is omitted. It does not come from `voltagent({ agents: { ... } })` or the `a2aServers` map key.
 - **Unexpected JSON in SSE**: confirm you are stripping the `\x1E` prefix before parsing the JSON payload.
 - **Cancellation not propagating**: verify you call `tasks/cancel` with the task ID from the stream and that your TaskStore preserves the `activeCancellations` set.

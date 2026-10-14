@@ -201,7 +201,7 @@ This code sets up a trigger handler that receives new Airtable rows and generate
 
 ```ts
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, createTriggers } from "@voltagent/core";
+import { defineAgent, voltagent, createTriggers } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
 import { safeStringify } from "@voltagent/internal";
@@ -217,7 +217,7 @@ type AirtableRecordCreatedPayload = {
 
 const logger = createPinoLogger({ name: "with-airtable", level: "info" });
 
-const airtableAgent = new Agent({
+const airtableAgent = defineAgent({
   name: "airtable-agent",
   instructions: `You process newly created Airtable rows.
 Draft a summary, a priority (High/Medium/Low), a status (New/In Progress/Blocked/Done), and next steps as bullet text.
@@ -225,7 +225,7 @@ You will get a tool to write back in the next step; for now just return the prop
   model: openai("gpt-4o-mini"),
 });
 
-new VoltAgent({
+await voltagent({
   agents: { airtableAgent },
   server: honoServer(),
   logger,
@@ -252,7 +252,7 @@ Propose updates (no tool calls yet):
 - Next steps (short bullet list as a single string)`);
     });
   }),
-});
+}).ready();
 ```
 
 </ExpandableCode>
@@ -286,7 +286,7 @@ Add the VoltOps client and `updateAirtableRecord` tool to your code:
 
 ```ts
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, createTool, createTriggers } from "@voltagent/core";
+import { defineAgent, voltagent, createTool, createTriggers } from "@voltagent/core";
 import { VoltOpsClient } from "@voltagent/sdk";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -334,7 +334,7 @@ const updateAirtableRecord = createTool({
   },
 });
 
-const airtableAgent = new Agent({
+const airtableAgent = defineAgent({
   name: "airtable-agent",
   instructions: `You process newly created Airtable rows.
 Create a short summary, assign a priority (High/Medium/Low), pick a status (New/In Progress/Blocked/Done), and list next steps.
@@ -343,7 +343,7 @@ Always write updates via updateAirtableRecord using the exact Airtable field nam
   model: openai("gpt-4o-mini"),
 });
 
-new VoltAgent({
+await voltagent({
   agents: { airtableAgent },
   server: honoServer(),
   logger,
@@ -372,7 +372,7 @@ Update the same record with:
 Call updateAirtableRecord with recordId and the new fields using those exact names.`);
     });
   }),
-});
+}).ready();
 ```
 
 </ExpandableCode>

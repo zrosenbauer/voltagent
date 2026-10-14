@@ -70,7 +70,7 @@ Here's the complete implementation that we'll break down step by step:
 
 ```typescript
 import { openai } from "@ai-sdk/openai";
-import { Agent, MCPConfiguration, VoltAgent, createWorkflowChain } from "@voltagent/core";
+import { defineAgent, MCPConfiguration, voltagent, createWorkflowChain } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { z } from "zod";
 
@@ -85,7 +85,7 @@ import { z } from "zod";
     },
   });
 
-  const assistantAgent = new Agent({
+  const assistantAgent = defineAgent({
     id: "assistant",
     name: "Assistant",
     instructions:
@@ -96,7 +96,7 @@ import { z } from "zod";
     tools: await mcpConfig.getTools(),
   });
 
-  const writerAgent = new Agent({
+  const writerAgent = defineAgent({
     id: "writer",
     name: "Writer",
     instructions: "Write a report according to the user's instructions.",
@@ -155,7 +155,7 @@ import { z } from "zod";
   });
 
   // Register with VoltOps
-  new VoltAgent({
+  await voltagent({
     agents: {
       assistant: assistantAgent,
       writer: writerAgent,
@@ -164,7 +164,7 @@ import { z } from "zod";
       assistant: workflow,
     },
     logger,
-  });
+  }).ready();
 })();
 ```
 
@@ -199,7 +199,7 @@ const mcpConfig = new MCPConfiguration({
 Next, we create our first agent - the research assistant:
 
 ```typescript
-const assistantAgent = new Agent({
+const assistantAgent = defineAgent({
   id: "assistant",
   name: "Assistant",
   instructions:
@@ -225,7 +225,7 @@ const assistantAgent = new Agent({
 The second agent is responsible for writing the final report:
 
 ```typescript
-const writerAgent = new Agent({
+const writerAgent = defineAgent({
   id: "writer",
   name: "Writer",
   instructions: "Write a report according to the user's instructions.",
@@ -331,7 +331,7 @@ The second step creates the final report:
 Finally, we register everything with VoltAgent for observability:
 
 ```typescript
-new VoltAgent({
+await voltagent({
   agents: {
     assistant: assistantAgent,
     writer: writerAgent,
@@ -340,7 +340,7 @@ new VoltAgent({
     assistant: workflow,
   },
   logger,
-});
+}).ready();
 ```
 
 **Benefits:**

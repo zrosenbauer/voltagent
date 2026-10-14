@@ -13,7 +13,7 @@ Retrieval lets agents search and use information from your documents (RAG - Retr
 
 ```typescript
 import { openai } from "@ai-sdk/openai";
-import { Agent, Memory, VoltAgent } from "@voltagent/core";
+import { defineAgent, Memory, voltagent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { honoServer } from "@voltagent/server-hono";
 import { retriever } from "./retriever";
@@ -22,7 +22,7 @@ const memory = new Memory({
   storage: new LibSQLMemoryAdapter({}),
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Assistant with Retrieval",
   instructions: "A helpful assistant that can retrieve information from documents",
   model: openai("gpt-4o-mini"),
@@ -30,10 +30,10 @@ const agent = new Agent({
   memory,
 });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer({ port: 3141 }),
-});
+}).ready();
 ```
 
 ## Creating a Custom Retriever
@@ -92,7 +92,7 @@ export const retriever = new SimpleRetriever(documents);
 You can also use the retriever as a tool for on-demand search:
 
 ```typescript
-const agent = new Agent({
+const agent = defineAgent({
   name: "Assistant",
   instructions: "Use the search tool to find relevant information",
   model: openai("gpt-4o-mini"),

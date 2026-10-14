@@ -143,7 +143,7 @@ The experiment can be executed the same way as shown above (CLI or Node script).
 Live evaluations attach scorers to real-time agent interactions. They are suited for production monitoring, moderation, and sampling conversational quality under actual traffic.
 
 ```ts title="Attach live scorers when defining an agent"
-import VoltAgent, { Agent, VoltAgentObservability } from "@voltagent/core";
+import voltagent, { defineAgent, VoltAgentObservability } from "@voltagent/core";
 import { createModerationScorer } from "@voltagent/scorers";
 import { openai } from "@ai-sdk/openai";
 import honoServer from "@voltagent/server-hono";
@@ -151,7 +151,7 @@ import honoServer from "@voltagent/server-hono";
 const observability = new VoltAgentObservability();
 const moderationModel = openai("gpt-4o-mini");
 
-const supportAgent = new Agent({
+const supportAgent = defineAgent({
   name: "live-scorer-demo",
   instructions: "Answer questions about VoltAgent.",
   model: openai("gpt-4o-mini"),
@@ -167,11 +167,11 @@ const supportAgent = new Agent({
   },
 });
 
-new VoltAgent({
+await voltagent({
   agents: { support: supportAgent },
   observability,
   server: honoServer(),
-});
+}).ready();
 ```
 
 Use cases:

@@ -125,7 +125,7 @@ Extracts brand information from websites:
 <summary>Show landing-page-analyzer.agent.ts</summary>
 
 ```typescript
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 import { Memory } from "@voltagent/core";
 import { pageNavigateTool } from "../tools/browserbase/page-navigate.tool";
@@ -134,7 +134,7 @@ import { pageObserveTool } from "../tools/browserbase/page-observe.tool";
 import { screenshotTool } from "../tools/browserbase/screenshot.tool";
 
 export const createLandingPageAnalyzer = (memory: Memory) => {
-  return new Agent({
+  return defineAgent({
     name: "LandingPageAnalyzer",
     purpose: "Analyze landing pages to extract brand information and marketing insights",
     instructions: `You are a landing page analysis expert specializing in extracting brand information for ad creation.
@@ -194,13 +194,13 @@ Transforms brand data into Instagram ads via Google Gemini:
 <summary>Show ad-creator.agent.ts</summary>
 
 ```typescript
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 import { Memory } from "@voltagent/core";
 import { generateInstagramAdGeminiTool } from "../tools/image-generation/instagram-ad-gemini.tool";
 
 export const createAdCreatorAgent = (memory: Memory) => {
-  return new Agent({
+  return defineAgent({
     name: "InstagramAdCreator",
     purpose: "Create compelling Instagram ad visuals using Google Gemini AI",
     instructions: `You are an Instagram advertising specialist using Google's Gemini AI for ad creation.
@@ -270,7 +270,7 @@ The supervisor orchestrates the entire workflow and coordinates both subagents:
 <summary>Show supervisor.agent.ts</summary>
 
 ```typescript
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 import type { Memory } from "@voltagent/core";
 import { createLandingPageAnalyzer } from "./landing-page-analyzer.agent";
@@ -280,7 +280,7 @@ export const createSupervisorAgent = (memory: Memory) => {
   const landingPageAnalyzer = createLandingPageAnalyzer(memory);
   const adCreator = createAdCreatorAgent(memory);
 
-  return new Agent({
+  return defineAgent({
     name: "InstagramAdSupervisor",
     purpose:
       "Orchestrate Instagram ad generation workflow from website analysis to final ad creation",
@@ -879,14 +879,14 @@ Orchestrates image generation pipeline:
 <summary>Show instagram-ad-gemini.tool.ts</summary>
 
 ```typescript
-import { Agent, createTool } from "@voltagent/core";
+import { defineAgent, createTool } from "@voltagent/core";
 import { z } from "zod";
 import { google } from "@ai-sdk/google";
 import sharp from "sharp";
 import * as fs from "fs/promises";
 import * as path from "path";
 
-const creativeBriefAgent = new Agent({
+const creativeBriefAgent = defineAgent({
   name: "GeminiCreativeBrief",
   purpose: "Transform product information into rich Instagram creative direction",
   instructions:
@@ -894,7 +894,7 @@ const creativeBriefAgent = new Agent({
   model: google("gemini-2.0-flash-exp"),
 });
 
-const imageGenerationAgent = new Agent({
+const imageGenerationAgent = defineAgent({
   name: "GeminiImageGenerator",
   purpose: "Generate high-converting Instagram visuals",
   instructions:
@@ -1003,7 +1003,7 @@ Application configuration and initialization:
 
 ```typescript
 import "dotenv/config";
-import { VoltAgent, Memory, VoltAgentObservability } from "@voltagent/core";
+import { voltagent, Memory, VoltAgentObservability } from "@voltagent/core";
 import { LibSQLMemoryAdapter, LibSQLObservabilityAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -1028,7 +1028,7 @@ const memory = new Memory({
 const supervisorAgent = createSupervisorAgent(memory);
 
 // Initialize VoltAgent with Instagram ad generation system using Gemini AI
-new VoltAgent({
+await voltagent({
   agents: {
     InstagramAdSupervisor: supervisorAgent,
   },
@@ -1043,7 +1043,7 @@ new VoltAgent({
       url: "file:./.voltagent/observability.db",
     }),
   }),
-});
+}).ready();
 ```
 
 </details>

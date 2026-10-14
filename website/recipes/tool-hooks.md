@@ -13,7 +13,7 @@ Use tool hooks to observe execution and optionally replace tool outputs. Tool-le
 
 ```typescript
 import { openai } from "@ai-sdk/openai";
-import { Agent, createTool, VoltAgent } from "@voltagent/core";
+import { defineAgent, createTool, voltagent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
 
@@ -34,7 +34,7 @@ const normalizeTool = createTool({
   },
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "ToolHooksAgent",
   instructions: "Use tools when needed.",
   model: openai("gpt-4o-mini"),
@@ -48,10 +48,10 @@ const agent = new Agent({
   },
 });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer({ port: 3141 }),
-});
+}).ready();
 ```
 
 ## Notes

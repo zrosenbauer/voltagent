@@ -11,9 +11,9 @@ Use `azure-cognitive-services/<model>` with VoltAgent's model router.
 ## Quick start
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "azure-cognitive-services-agent",
   instructions: "You are a helpful assistant",
   model: "azure-cognitive-services/claude-haiku-4-5",

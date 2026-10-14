@@ -485,7 +485,7 @@ Now let's examine the complete `src/index.ts` file that brings everything togeth
 
 ```typescript
 import "dotenv/config";
-import { VoltAgent, VoltOpsClient, Agent, Memory } from "@voltagent/core";
+import { voltagent, VoltOpsClient, defineAgent, Memory } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { openai } from "@ai-sdk/openai";
@@ -530,7 +530,7 @@ const memory = new Memory({
   },
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "with-whatsapp",
   instructions: `You are a WhatsApp ordering AI agent. Your task is to take food orders from customers.
 
@@ -557,7 +557,7 @@ Always be friendly and helpful. Start with "Welcome!" greeting.`,
   memory,
 });
 
-new VoltAgent({
+await voltagent({
   agents: {
     agent,
   },
@@ -589,7 +589,7 @@ new VoltAgent({
     publicKey: process.env.VOLTAGENT_PUBLIC_KEY || "",
     secretKey: process.env.VOLTAGENT_SECRET_KEY || "",
   }),
-});
+}).ready();
 ```
 
 </details>
@@ -665,7 +665,7 @@ const memory = new Memory({
 The example configures an intelligent agent with specific instructions and tools:
 
 ```typescript
-const agent = new Agent({
+const agent = defineAgent({
   name: "with-whatsapp",
   instructions: `You are a WhatsApp ordering AI agent. Your task is to take food orders from customers.
 
@@ -716,7 +716,7 @@ Here are the WhatsApp webhook handlers in `src/webhooks/whatsapp.ts`:
 
 ```typescript
 import { Context } from "hono";
-import { Agent } from "@voltagent/core";
+import type { Agent } from "@voltagent/core";
 import { WhatsAppWebhookBody } from "../types/whatsapp";
 
 // Send message back to WhatsApp
@@ -856,7 +856,7 @@ export async function handleWhatsAppMessage(c: Context, agent: Agent) {
 Initialize VoltAgent with custom webhook handlers:
 
 ```typescript
-new VoltAgent({
+await voltagent({
   agents: {
     agent,
   },
@@ -888,7 +888,7 @@ new VoltAgent({
     publicKey: process.env.VOLTAGENT_PUBLIC_KEY || "",
     secretKey: process.env.VOLTAGENT_SECRET_KEY || "",
   }),
-});
+}).ready();
 ```
 
 **Key points:**

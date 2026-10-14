@@ -70,10 +70,10 @@ You can enable feedback at the agent level or per request. A VoltOps client must
 ### Agent-level default
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "support-agent",
   instructions: "Help users solve issues",
   model: openai("gpt-4o-mini"),
@@ -150,11 +150,11 @@ console.log(stream.feedback);
 You can run LLM or heuristic scorers and persist the result as feedback without manual `fetch` calls. The `onResult` callback receives a `feedback` helper with `feedback.save(...)`. The `key` is required and the trace id is taken from the scorer result.
 
 ```ts
-import { Agent, buildScorer } from "@voltagent/core";
+import { defineAgent, buildScorer } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
-const judgeAgent = new Agent({
+const judgeAgent = defineAgent({
   name: "satisfaction-judge",
   model: openai("gpt-4o-mini"),
   instructions: "Return JSON with score (0-1), label, and optional reason.",
@@ -185,7 +185,7 @@ Assistant: ${payload.output}`;
   })
   .build();
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "support-agent",
   model: openai("gpt-4o-mini"),
   eval: {

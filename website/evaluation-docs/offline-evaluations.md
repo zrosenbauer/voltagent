@@ -19,7 +19,7 @@ Start with the simplest possible experiment using `createExperiment`. You need t
 
 ```ts
 import { createExperiment } from "@voltagent/evals";
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 
 export default createExperiment({
@@ -39,7 +39,7 @@ export default createExperiment({
     ],
   },
   runner: async ({ item }) => {
-    const supportAgent = new Agent({
+    const supportAgent = defineAgent({
       name: "offline-evals-support",
       instructions: "You are a helpful assistant. Answer questions very short.",
       model: openai("gpt-4o-mini"),
@@ -62,7 +62,7 @@ Add a scorer to evaluate the runner's output against the expected value. Start w
 
 ```ts
 import { createExperiment } from "@voltagent/evals";
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 import { scorers } from "@voltagent/scorers";
 
@@ -83,7 +83,7 @@ export default createExperiment({
     ],
   },
   runner: async ({ item }) => {
-    const supportAgent = new Agent({
+    const supportAgent = defineAgent({
       name: "offline-evals-support",
       instructions: "You are a helpful assistant. Answer questions very short.",
       model: openai("gpt-4o-mini"),
@@ -105,7 +105,7 @@ Make the scorer meaningful by adding a `threshold`. Items fail if their score fa
 
 ```ts
 import { createExperiment } from "@voltagent/evals";
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 import { scorers } from "@voltagent/scorers";
 
@@ -126,7 +126,7 @@ export default createExperiment({
     ],
   },
   runner: async ({ item }) => {
-    const supportAgent = new Agent({
+    const supportAgent = defineAgent({
       name: "offline-evals-support",
       instructions: "You are a helpful assistant. Answer questions very short.",
       model: openai("gpt-4o-mini"),
@@ -168,7 +168,7 @@ There are two types of criteria:
 
 ```ts
 import { createExperiment } from "@voltagent/evals";
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 import { scorers } from "@voltagent/scorers";
 
@@ -189,7 +189,7 @@ export default createExperiment({
     ],
   },
   runner: async ({ item }) => {
-    const supportAgent = new Agent({
+    const supportAgent = defineAgent({
       name: "offline-evals-support",
       instructions: "You are a helpful assistant. Answer questions very short.",
       model: openai("gpt-4o-mini"),

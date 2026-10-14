@@ -99,7 +99,7 @@ const safetyGuardrails = createDefaultSafetyGuardrails({
   maxLength: { maxCharacters: 500 },
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Support",
   instructions: "Answer without revealing PII",
   model: "openai/gpt-4o-mini",
@@ -215,7 +215,7 @@ import { createDefaultInputSafetyGuardrails } from "@voltagent/core";
 
 const inputGuardrails = createDefaultInputSafetyGuardrails();
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Support",
   instructions: "Answer user questions safely",
   model: "openai/gpt-4o-mini",

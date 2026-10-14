@@ -14,13 +14,13 @@ VoltAgent supports optional authentication. For new integrations, use **authNext
 Use for development and internal tools:
 
 ```typescript
-import { VoltAgent } from "@voltagent/core";
+import { voltagent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 
-new VoltAgent({
+await voltagent({
   agents: { myAgent },
   server: honoServer(), // No auth configuration needed
-});
+}).ready();
 ```
 
 All endpoints are publicly accessible.
@@ -35,7 +35,7 @@ Protect everything by default. Explicitly allow public routes, and use a Console
 import { jwtAuth } from "@voltagent/server-core";
 import { honoServer } from "@voltagent/server-hono";
 
-new VoltAgent({
+await voltagent({
   agents: { myAgent },
   server: honoServer({
     authNext: {
@@ -45,7 +45,7 @@ new VoltAgent({
       publicRoutes: ["GET /health"],
     },
   }),
-});
+}).ready();
 ```
 
 #### Using Elysia
@@ -54,7 +54,7 @@ new VoltAgent({
 import { jwtAuth } from "@voltagent/server-elysia";
 import { elysiaServer } from "@voltagent/server-elysia";
 
-new VoltAgent({
+await voltagent({
   agents: { myAgent },
   server: elysiaServer({
     authNext: {
@@ -64,7 +64,7 @@ new VoltAgent({
       publicRoutes: ["GET /health"],
     },
   }),
-});
+}).ready();
 ```
 
 Legacy `auth` is still supported for existing integrations. See the **Legacy auth** section at the end for details.
@@ -289,7 +289,7 @@ const provider = jwtAuth({
 If you use a different identity system, implement `AuthProvider` and plug it into `authNext`:
 
 ```typescript
-import { VoltAgent } from "@voltagent/core";
+import { voltagent } from "@voltagent/core";
 import type { AuthProvider } from "@voltagent/server-core";
 import { honoServer } from "@voltagent/server-hono";
 
@@ -301,12 +301,12 @@ const provider: AuthProvider = {
   },
 };
 
-new VoltAgent({
+await voltagent({
   agents: { myAgent },
   server: honoServer({
     authNext: { provider },
   }),
-});
+}).ready();
 ```
 
 ### Provider Recipes
@@ -637,18 +637,18 @@ Observability and updates still require Console Access Key in production.
 Minimal setup with JWT:
 
 ```typescript
-import { VoltAgent } from "@voltagent/core";
+import { voltagent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 import { jwtAuth } from "@voltagent/server-core";
 
-new VoltAgent({
+await voltagent({
   agents: { myAgent },
   server: honoServer({
     auth: jwtAuth({
       secret: process.env.JWT_SECRET!,
     }),
   }),
-});
+}).ready();
 ```
 
 ### Legacy Route Controls

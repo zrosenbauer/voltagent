@@ -11,9 +11,9 @@ Use `amazon-bedrock/<model>` with VoltAgent's model router.
 ## Quick start
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "amazon-bedrock-agent",
   instructions: "You are a helpful assistant",
   model: "amazon-bedrock/ai21.jamba-1-5-large-v1:0",

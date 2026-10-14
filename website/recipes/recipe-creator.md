@@ -69,7 +69,7 @@ The [VoltOps Platform](https://console.voltagent.dev) link will open automatical
 ```typescript
 import path from "node:path";
 import { openai } from "@ai-sdk/openai";
-import { Agent, MCPConfiguration, VoltAgent } from "@voltagent/core";
+import { defineAgent, MCPConfiguration, voltagent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 
 const mcpConfig = new MCPConfiguration({
@@ -82,7 +82,7 @@ const mcpConfig = new MCPConfiguration({
   },
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Recipe Assistant",
   instructions: `You are a culinary expert AI assistant. Help users create delicious recipes.
 
@@ -126,12 +126,12 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-new VoltAgent({
+await voltagent({
   agents: {
     agent,
   },
   logger,
-});
+}).ready();
 ```
 
 ## How This AI Agent Works

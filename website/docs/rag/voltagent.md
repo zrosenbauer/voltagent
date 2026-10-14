@@ -98,7 +98,7 @@ OPENAI_API_KEY=sk-your-openai-api-key-here
 The retriever automatically searches your knowledge base before each response and injects relevant context:
 
 ```typescript
-import { Agent, VoltAgent } from "@voltagent/core";
+import { defineAgent, voltagent } from "@voltagent/core";
 import { VoltAgentRagRetriever } from "@voltagent/core";
 
 // Create the retriever
@@ -109,7 +109,7 @@ const retriever = new VoltAgentRagRetriever({
 });
 
 // Create agent with retriever
-const agent = new Agent({
+const agent = defineAgent({
   name: "RAG Assistant",
   instructions:
     "A helpful assistant that searches your knowledge base and uses relevant context to answer.",
@@ -117,9 +117,9 @@ const agent = new Agent({
   retriever, // Automatic context injection
 });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
-});
+}).ready();
 
 // The agent now automatically searches before responding
 const result = await agent.generateText("What is our return policy?");
@@ -132,7 +132,7 @@ console.log(result.text);
 Let the agent decide when to search using the retriever as a tool:
 
 ```typescript
-import { Agent, VoltAgent } from "@voltagent/core";
+import { defineAgent, voltagent } from "@voltagent/core";
 import { VoltAgentRagRetriever } from "@voltagent/core";
 
 const retriever = new VoltAgentRagRetriever({
@@ -141,7 +141,7 @@ const retriever = new VoltAgentRagRetriever({
   includeSources: true,
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "RAG Assistant (Tool-based)",
   instructions:
     "Call the search_knowledge_base tool whenever you need to look something up from the knowledge base.",
@@ -149,9 +149,9 @@ const agent = new Agent({
   tools: [retriever.tool], // Use as a tool
 });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
-});
+}).ready();
 ```
 
 **When to use each approach:**

@@ -36,7 +36,7 @@ const codeExamples = {
   langfuse: (
     <>
       <span className="text-blue-400">import</span>{" "}
-      <span className="text-gray-300">{"{ VoltAgent }"}</span>{" "}
+      <span className="text-gray-300">{"{ voltagent }"}</span>{" "}
       <span className="text-blue-400">from</span>{" "}
       <span className="text-main-emerald">"@voltagent/core"</span>
       <br />
@@ -48,8 +48,7 @@ const codeExamples = {
       <br />
       <span className="text-purple-400">export const</span>{" "}
       <span className="text-gray-300">volt</span> <span className="text-gray-500">=</span>{" "}
-      <span className="text-purple-400">new</span>{" "}
-      <span className="text-gray-300">VoltAgent({"{"}</span>
+      <span className="text-gray-300">voltagent({"{"}</span>
       <br />
       {"  "}
       <span className="text-gray-300">telemetry: {"{"}</span>
@@ -96,12 +95,15 @@ const codeExamples = {
       <span className="text-gray-300">{"}"},</span>
       <br />
       <span className="text-gray-300">{"}"});</span>
+      <br />
+      <span className="text-purple-400">await</span>{" "}
+      <span className="text-gray-300">volt.ready();</span>
     </>
   ),
   langsmith: (
     <>
       <span className="text-blue-400">import</span>{" "}
-      <span className="text-gray-300">{"{ VoltAgent }"}</span>{" "}
+      <span className="text-gray-300">{"{ voltagent }"}</span>{" "}
       <span className="text-blue-400">from</span>{" "}
       <span className="text-main-emerald">"@voltagent/core"</span>
       <br />
@@ -113,8 +115,7 @@ const codeExamples = {
       <br />
       <span className="text-purple-400">export const</span>{" "}
       <span className="text-gray-300">volt</span> <span className="text-gray-500">=</span>{" "}
-      <span className="text-purple-400">new</span>{" "}
-      <span className="text-gray-300">VoltAgent({"{"}</span>
+      <span className="text-gray-300">voltagent({"{"}</span>
       <br />
       {"  "}
       <span className="text-gray-300">telemetry: {"{"}</span>
@@ -155,12 +156,15 @@ const codeExamples = {
       <span className="text-gray-300">{"}"},</span>
       <br />
       <span className="text-gray-300">{"}"});</span>
+      <br />
+      <span className="text-purple-400">await</span>{" "}
+      <span className="text-gray-300">volt.ready();</span>
     </>
   ),
   braintrust: (
     <>
       <span className="text-blue-400">import</span>{" "}
-      <span className="text-gray-300">{"{ VoltAgent }"}</span>{" "}
+      <span className="text-gray-300">{"{ voltagent }"}</span>{" "}
       <span className="text-blue-400">from</span>{" "}
       <span className="text-main-emerald">"@voltagent/core"</span>
       <br />
@@ -182,8 +186,7 @@ const codeExamples = {
       <br />
       <span className="text-purple-400">export const</span>{" "}
       <span className="text-gray-300">volt</span> <span className="text-gray-500">=</span>{" "}
-      <span className="text-purple-400">new</span>{" "}
-      <span className="text-gray-300">VoltAgent({"{"}</span>
+      <span className="text-gray-300">voltagent({"{"}</span>
       <br />
       {"  "}
       <span className="text-gray-300">telemetry: {"{"}</span>
@@ -216,12 +219,15 @@ const codeExamples = {
       <span className="text-gray-300">{"}"},</span>
       <br />
       <span className="text-gray-300">{"}"});</span>
+      <br />
+      <span className="text-purple-400">await</span>{" "}
+      <span className="text-gray-300">volt.ready();</span>
     </>
   ),
   dash0: (
     <>
       <span className="text-blue-400">import</span>{" "}
-      <span className="text-gray-300">{"{ VoltAgent }"}</span>{" "}
+      <span className="text-gray-300">{"{ voltagent }"}</span>{" "}
       <span className="text-blue-400">from</span>{" "}
       <span className="text-main-emerald">"@voltagent/core"</span>
       <br />
@@ -233,8 +239,7 @@ const codeExamples = {
       <br />
       <span className="text-purple-400">export const</span>{" "}
       <span className="text-gray-300">volt</span> <span className="text-gray-500">=</span>{" "}
-      <span className="text-purple-400">new</span>{" "}
-      <span className="text-gray-300">VoltAgent({"{"}</span>
+      <span className="text-gray-300">voltagent({"{"}</span>
       <br />
       {"  "}
       <span className="text-gray-300">telemetry: {"{"}</span>
@@ -275,12 +280,15 @@ const codeExamples = {
       <span className="text-gray-300">{"}"},</span>
       <br />
       <span className="text-gray-300">{"}"});</span>
+      <br />
+      <span className="text-purple-400">await</span>{" "}
+      <span className="text-gray-300">volt.ready();</span>
     </>
   ),
   langwatch: (
     <>
       <span className="text-blue-400">import</span>{" "}
-      <span className="text-gray-300">{"{ VoltAgent }"}</span>{" "}
+      <span className="text-gray-300">{"{ voltagent }"}</span>{" "}
       <span className="text-blue-400">from</span>{" "}
       <span className="text-main-emerald">"@voltagent/core"</span>
       <br />
@@ -292,8 +300,7 @@ const codeExamples = {
       <br />
       <span className="text-purple-400">export const</span>{" "}
       <span className="text-gray-300">volt</span> <span className="text-gray-500">=</span>{" "}
-      <span className="text-purple-400">new</span>{" "}
-      <span className="text-gray-300">VoltAgent({"{"}</span>
+      <span className="text-gray-300">voltagent({"{"}</span>
       <br />
       {"  "}
       <span className="text-gray-300">telemetry: {"{"}</span>
@@ -334,12 +341,15 @@ const codeExamples = {
       <span className="text-gray-300">{"}"},</span>
       <br />
       <span className="text-gray-300">{"}"});</span>
+      <br />
+      <span className="text-purple-400">await</span>{" "}
+      <span className="text-gray-300">volt.ready();</span>
     </>
   ),
   signoz: (
     <>
       <span className="text-blue-400">import</span>{" "}
-      <span className="text-gray-300">{"{ VoltAgent }"}</span>{" "}
+      <span className="text-gray-300">{"{ voltagent }"}</span>{" "}
       <span className="text-blue-400">from</span>{" "}
       <span className="text-main-emerald">"@voltagent/core"</span>
       <br />
@@ -351,8 +361,7 @@ const codeExamples = {
       <br />
       <span className="text-purple-400">export const</span>{" "}
       <span className="text-gray-300">volt</span> <span className="text-gray-500">=</span>{" "}
-      <span className="text-purple-400">new</span>{" "}
-      <span className="text-gray-300">VoltAgent({"{"}</span>
+      <span className="text-gray-300">voltagent({"{"}</span>
       <br />
       {"  "}
       <span className="text-gray-300">telemetry: {"{"}</span>
@@ -393,12 +402,15 @@ const codeExamples = {
       <span className="text-gray-300">{"}"},</span>
       <br />
       <span className="text-gray-300">{"}"});</span>
+      <br />
+      <span className="text-purple-400">await</span>{" "}
+      <span className="text-gray-300">volt.ready();</span>
     </>
   ),
   honeyhive: (
     <>
       <span className="text-blue-400">import</span>{" "}
-      <span className="text-gray-300">{"{ VoltAgent }"}</span>{" "}
+      <span className="text-gray-300">{"{ voltagent }"}</span>{" "}
       <span className="text-blue-400">from</span>{" "}
       <span className="text-main-emerald">"@voltagent/core"</span>
       <br />
@@ -410,8 +422,7 @@ const codeExamples = {
       <br />
       <span className="text-purple-400">export const</span>{" "}
       <span className="text-gray-300">volt</span> <span className="text-gray-500">=</span>{" "}
-      <span className="text-purple-400">new</span>{" "}
-      <span className="text-gray-300">VoltAgent({"{"}</span>
+      <span className="text-gray-300">voltagent({"{"}</span>
       <br />
       {"  "}
       <span className="text-gray-300">telemetry: {"{"}</span>
@@ -452,12 +463,15 @@ const codeExamples = {
       <span className="text-gray-300">{"}"},</span>
       <br />
       <span className="text-gray-300">{"}"});</span>
+      <br />
+      <span className="text-purple-400">await</span>{" "}
+      <span className="text-gray-300">volt.ready();</span>
     </>
   ),
   newRelic: (
     <>
       <span className="text-blue-400">import</span>{" "}
-      <span className="text-gray-300">{"{ VoltAgent }"}</span>{" "}
+      <span className="text-gray-300">{"{ voltagent }"}</span>{" "}
       <span className="text-blue-400">from</span>{" "}
       <span className="text-main-emerald">"@voltagent/core"</span>
       <br />
@@ -469,8 +483,7 @@ const codeExamples = {
       <br />
       <span className="text-purple-400">export const</span>{" "}
       <span className="text-gray-300">volt</span> <span className="text-gray-500">=</span>{" "}
-      <span className="text-purple-400">new</span>{" "}
-      <span className="text-gray-300">VoltAgent({"{"}</span>
+      <span className="text-gray-300">voltagent({"{"}</span>
       <br />
       {"  "}
       <span className="text-gray-300">telemetry: {"{"}</span>
@@ -511,12 +524,15 @@ const codeExamples = {
       <span className="text-gray-300">{"}"},</span>
       <br />
       <span className="text-gray-300">{"}"});</span>
+      <br />
+      <span className="text-purple-400">await</span>{" "}
+      <span className="text-gray-300">volt.ready();</span>
     </>
   ),
   traceLoop: (
     <>
       <span className="text-blue-400">import</span>{" "}
-      <span className="text-gray-300">{"{ VoltAgent }"}</span>{" "}
+      <span className="text-gray-300">{"{ voltagent }"}</span>{" "}
       <span className="text-blue-400">from</span>{" "}
       <span className="text-main-emerald">"@voltagent/core"</span>
       <br />
@@ -528,8 +544,7 @@ const codeExamples = {
       <br />
       <span className="text-purple-400">export const</span>{" "}
       <span className="text-gray-300">volt</span> <span className="text-gray-500">=</span>{" "}
-      <span className="text-purple-400">new</span>{" "}
-      <span className="text-gray-300">VoltAgent({"{"}</span>
+      <span className="text-gray-300">voltagent({"{"}</span>
       <br />
       {"  "}
       <span className="text-gray-300">telemetry: {"{"}</span>
@@ -570,6 +585,9 @@ const codeExamples = {
       <span className="text-gray-300">{"}"},</span>
       <br />
       <span className="text-gray-300">{"}"});</span>
+      <br />
+      <span className="text-purple-400">await</span>{" "}
+      <span className="text-gray-300">volt.ready();</span>
     </>
   ),
 };

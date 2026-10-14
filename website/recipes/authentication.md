@@ -21,17 +21,17 @@ For details, see [Authentication API](/docs/api/authentication).
 
 ```typescript
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent } from "@voltagent/core";
+import { defineAgent, voltagent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 import { jwtAuth } from "@voltagent/server-core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Agent",
   instructions: "Assistant for auth example",
   model: openai("gpt-4o-mini"),
 });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer({
     authNext: {
@@ -41,7 +41,7 @@ new VoltAgent({
       publicRoutes: ["GET /api/health"],
     },
   }),
-});
+}).ready();
 ```
 
 ## Console Access Key

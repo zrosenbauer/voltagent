@@ -13,11 +13,11 @@ Workflows let you chain multiple steps together - combining AI agents, custom lo
 
 ```typescript
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, createWorkflowChain } from "@voltagent/core";
+import { defineAgent, voltagent, createWorkflowChain } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
 
-const analysisAgent = new Agent({
+const analysisAgent = defineAgent({
   name: "AnalysisAgent",
   model: openai("gpt-4o-mini"),
   instructions: "You are a data analyst.",
@@ -66,11 +66,11 @@ const orderWorkflow = createWorkflowChain({
     },
   });
 
-new VoltAgent({
+await voltagent({
   agents: { analysisAgent },
   workflows: { orderWorkflow },
   server: honoServer({ port: 3141 }),
-});
+}).ready();
 ```
 
 ## Workflow Methods

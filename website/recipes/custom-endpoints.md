@@ -13,16 +13,16 @@ Add your own REST API endpoints to the VoltAgent server using Hono's routing.
 
 ```typescript
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent } from "@voltagent/core";
+import { defineAgent, voltagent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "API Agent",
   instructions: "A helpful assistant",
   model: openai("gpt-4o-mini"),
 });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer({
     port: 3141,
@@ -70,7 +70,7 @@ new VoltAgent({
       });
     },
   }),
-});
+}).ready();
 ```
 
 ## Using Middleware

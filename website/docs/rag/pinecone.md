@@ -325,12 +325,12 @@ export const retriever = new PineconeRetriever();
 Now create agents using different retrieval patterns in `src/index.ts`:
 
 ```typescript
-import { Agent, VoltAgent } from "@voltagent/core";
+import { defineAgent, voltagent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 import { retriever } from "./retriever/index.js";
 
 // Agent 1: Automatic retrieval on every interaction
-const agentWithRetriever = new Agent({
+const agentWithRetriever = defineAgent({
   name: "Assistant with Retriever",
   instructions:
     "A helpful assistant that automatically searches the Pinecone knowledge base for relevant information",
@@ -339,20 +339,20 @@ const agentWithRetriever = new Agent({
 });
 
 // Agent 2: LLM decides when to search
-const agentWithTools = new Agent({
+const agentWithTools = defineAgent({
   name: "Assistant with Tools",
   instructions: "A helpful assistant that can search the knowledge base when needed",
   model: "openai/gpt-4o-mini",
   tools: [retriever.tool],
 });
 
-new VoltAgent({
+await voltagent({
   agents: {
     agentWithRetriever,
     agentWithTools,
   },
   server: honoServer(),
-});
+}).ready();
 ```
 
 ## Usage Patterns

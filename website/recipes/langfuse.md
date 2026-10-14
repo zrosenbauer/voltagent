@@ -19,11 +19,11 @@ npm install @voltagent/langfuse-exporter
 
 ```typescript
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, VoltAgentObservability } from "@voltagent/core";
+import { defineAgent, voltagent, VoltAgentObservability } from "@voltagent/core";
 import { createLangfuseSpanProcessor } from "@voltagent/langfuse-exporter";
 import { honoServer } from "@voltagent/server-hono";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Traced Agent",
   instructions: "A helpful assistant",
   model: openai("gpt-4o-mini"),
@@ -41,11 +41,11 @@ const observability = new VoltAgentObservability({
   ],
 });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer({ port: 3141 }),
   observability,
-});
+}).ready();
 ```
 
 ## Environment Variables

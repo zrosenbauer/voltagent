@@ -32,16 +32,16 @@ When deploying to Node.js servers, you may need to configure the network binding
 Modern cloud platforms like Railway and Fly.io use IPv6 or dual-stack networking. Configure your server to bind to both IPv4 and IPv6:
 
 ```typescript
-import { VoltAgent } from "@voltagent/core";
+import { voltagent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 
-new VoltAgent({
+await voltagent({
   agents: { myAgent },
   server: honoServer({
     port: parseInt(process.env.PORT || "3141"),
     hostname: "::", // Binds to both IPv4 and IPv6
   }),
-});
+}).ready();
 ```
 
 For more details on network binding configuration, see the [Server Architecture](/docs/api/server-architecture/#network-binding-configuration) documentation.

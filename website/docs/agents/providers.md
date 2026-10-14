@@ -13,9 +13,9 @@ VoltAgent 1.x has no `llm` provider prop. Set `model` to either:
 ## Quick Example
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "my-agent",
   instructions: "Helpful and concise",
   model: "anthropic/claude-3-5-sonnet",
@@ -28,10 +28,10 @@ console.log(res.text);
 You can also pass a `LanguageModel` directly:
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import { anthropic } from "@ai-sdk/anthropic";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "my-agent",
   instructions: "Helpful and concise",
   model: anthropic("claude-3-5-sonnet"),

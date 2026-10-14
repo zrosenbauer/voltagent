@@ -24,7 +24,7 @@ npm install @voltagent/langfuse-exporter
 In your application (e.g., `src/index.ts`) import the observability class and the Langfuse helper:
 
 ```typescript
-import { Agent, VoltAgent, VoltAgentObservability } from "@voltagent/core";
+import { defineAgent, voltagent, VoltAgentObservability } from "@voltagent/core";
 import { createLangfuseSpanProcessor } from "@voltagent/langfuse-exporter";
 ```
 
@@ -42,16 +42,16 @@ const observability = new VoltAgentObservability({
   ],
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "my-voltagent-app",
   instructions: "A helpful assistant",
   model: "openai/gpt-4o-mini",
 });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   observability,
-});
+}).ready();
 ```
 
 Ensure you have set `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` in your environment.

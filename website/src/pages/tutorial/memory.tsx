@@ -478,7 +478,7 @@ const response4 = await agent.generateText("Let's talk about something new.", {
           <ColorModeProvider>
             <CodeBlock language="typescript">
               {`// Completely disable memory
-const statelessAgent = new Agent({
+const statelessAgent = defineAgent({
   name: "Stateless Agent",
   instructions: "This agent remembers nothing.",
   
@@ -492,7 +492,7 @@ const statelessAgent = new Agent({
             <CodeBlock language="typescript">
               {`import { InMemoryStorage } from "@voltagent/core";
 
-const fastAgent = new Agent({
+const fastAgent = defineAgent({
   name: "Fast Agent",
   instructions: "This agent stores memory in RAM.",
   
@@ -506,7 +506,7 @@ const fastAgent = new Agent({
             <CodeBlock language="typescript">
               {`import { PostgreSQLStorage } from "@voltagent/postgres";
 
-const productionAgent = new Agent({
+const productionAgent = defineAgent({
   name: "Production Agent",
   instructions: "This agent stores memory in PostgreSQL.",
   

@@ -90,7 +90,7 @@ Only files listed under `references`, `scripts`, or `assets` are readable via th
 When an agent has a workspace with `skills` configured, VoltAgent automatically injects a skills prompt into messages by default.
 
 ```ts
-import { Agent, Workspace } from "@voltagent/core";
+import { defineAgent, Workspace } from "@voltagent/core";
 
 const workspace = new Workspace({
   skills: {
@@ -98,7 +98,7 @@ const workspace = new Workspace({
   },
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "skills-agent",
   model,
   instructions: "Use workspace skills when relevant.",
@@ -112,7 +112,7 @@ It includes skill metadata (name, id, description). To read full `SKILL.md` inst
 You can customize this behavior with `workspaceSkillsPrompt`:
 
 ```ts
-const agent = new Agent({
+const agent = defineAgent({
   name: "skills-agent",
   model,
   instructions: "Use workspace skills when relevant.",
@@ -129,7 +129,7 @@ const agent = new Agent({
 Disable auto prompt injection:
 
 ```ts
-const agent = new Agent({
+const agent = defineAgent({
   name: "skills-agent",
   model,
   instructions: "Use workspace skills when relevant.",

@@ -88,11 +88,11 @@ If you run the built-in server as a separate process, make sure it loads the sam
 Create the agent in `voltagent/agents.ts`:
 
 ```typescript title="voltagent/agents.ts"
-import { Agent, tool } from "@voltagent/core";
+import { defineAgent, defineTool } from "@voltagent/core";
 import { z } from "zod";
 
 // Simple calculator tool
-const calculatorTool = tool({
+const calculatorTool = defineTool({
   description: "Perform basic mathematical calculations",
   inputSchema: z.object({
     expression: z
@@ -110,7 +110,7 @@ const calculatorTool = tool({
   },
 });
 
-export const agent = new Agent({
+export const agent = defineAgent({
   name: "CalculatorAgent",
   instructions:
     "You are a helpful calculator assistant. When users ask you to calculate something, use the calculate tool to perform the math and then explain the result clearly.",
@@ -162,16 +162,16 @@ run the built-in server in a separate process. It exposes the REST API that the 
 Create `voltagent/server.ts`:
 
 ```typescript title="voltagent/server.ts"
-import { VoltAgent } from "@voltagent/core";
+import { voltagent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 import { agent } from "./agents";
 
-new VoltAgent({
+await voltagent({
   agents: {
     agent,
   },
   server: honoServer({ port: 3141 }),
-});
+}).ready();
 ```
 
 Add a script to `package.json`:

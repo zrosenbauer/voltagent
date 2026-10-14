@@ -12,10 +12,10 @@ slug: /agents/memory/in-memory
 Agents use in-memory storage by default when no `memory` option is provided:
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
 // Uses InMemoryStorageAdapter automatically
-const agent = new Agent({
+const agent = defineAgent({
   name: "Assistant",
   instructions: "Help users with questions.",
   model: "openai/gpt-4o-mini",
@@ -29,13 +29,13 @@ Omitting `memory` does **not** disable memory. To make an agent stateless, set `
 Configure storage limits explicitly:
 
 ```ts
-import { Agent, Memory, InMemoryStorageAdapter } from "@voltagent/core";
+import { defineAgent, Memory, InMemoryStorageAdapter } from "@voltagent/core";
 
 const memory = new Memory({
   storage: new InMemoryStorageAdapter(),
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Assistant",
   model: "openai/gpt-4o-mini",
   memory,
@@ -89,9 +89,9 @@ Both storage and vectors are lost on restart. For persistent vectors, use `LibSQ
 Test agent logic without database setup:
 
 ```ts
-import { Agent, Memory, InMemoryStorageAdapter } from "@voltagent/core";
+import { defineAgent, Memory, InMemoryStorageAdapter } from "@voltagent/core";
 
-const testAgent = new Agent({
+const testAgent = defineAgent({
   name: "Test Assistant",
   model: "openai/gpt-4o-mini",
   memory: new Memory({
@@ -118,7 +118,7 @@ Serverless functions or ephemeral containers where persistence isn't needed:
 ```ts
 // Cloud function handler
 export async function handler(event) {
-  const agent = new Agent({
+  const agent = defineAgent({
     name: "Serverless Assistant",
     model: "openai/gpt-4o-mini",
     // Default in-memory storage

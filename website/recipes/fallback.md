@@ -14,10 +14,10 @@ Fallbacks let VoltAgent try a secondary model when the primary fails. Each model
 ```typescript
 import { openai } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
-import { Agent, VoltAgent } from "@voltagent/core";
+import { defineAgent, voltagent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "FallbackAgent",
   instructions: "Be concise.",
   model: [
@@ -26,16 +26,16 @@ const agent = new Agent({
   ],
 });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer({ port: 3141 }),
-});
+}).ready();
 ```
 
 ## Enable or Disable a Model
 
 ```typescript
-const agent = new Agent({
+const agent = defineAgent({
   name: "FeatureFlaggedAgent",
   instructions: "Handle requests reliably.",
   model: [
@@ -48,7 +48,7 @@ const agent = new Agent({
 ## Track Fallbacks
 
 ```typescript
-const agent = new Agent({
+const agent = defineAgent({
   name: "FallbackAwareAgent",
   instructions: "Respond with a backup model if needed.",
   model: [

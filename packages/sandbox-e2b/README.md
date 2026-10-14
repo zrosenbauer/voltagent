@@ -46,7 +46,7 @@ pnpm add @voltagent/sandbox-e2b
 ## Usage
 
 ```typescript
-import { Agent, Workspace } from "@voltagent/core";
+import { defineAgent, Workspace } from "@voltagent/core";
 import { E2BSandbox } from "@voltagent/sandbox-e2b";
 import { openai } from "@ai-sdk/openai";
 
@@ -54,7 +54,7 @@ const sandbox = new E2BSandbox({
   apiKey: process.env.E2B_API_KEY,
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "my-agent",
   instructions: "A helpful assistant with sandboxed shell access",
   model: openai("gpt-4o-mini"),

@@ -19,11 +19,11 @@ npm install @ai-sdk/groq
 
 ```typescript
 import { groq } from "@ai-sdk/groq";
-import { Agent, Memory, VoltAgent } from "@voltagent/core";
+import { defineAgent, Memory, voltagent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { honoServer } from "@voltagent/server-hono";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Fast Agent",
   instructions: "A fast assistant powered by Groq",
   model: groq("llama-3.3-70b-versatile"),
@@ -32,10 +32,10 @@ const agent = new Agent({
   }),
 });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer({ port: 3141 }),
-});
+}).ready();
 ```
 
 ## Environment Variables
@@ -68,7 +68,7 @@ const searchTool = createTool({
   },
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Search Agent",
   model: groq("llama-3.3-70b-versatile"),
   tools: [searchTool],

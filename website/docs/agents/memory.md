@@ -27,7 +27,7 @@ VoltAgent's `Memory` class stores conversation history and enables agents to mai
 ## Quick Start
 
 ```typescript
-import { Agent, Memory } from "@voltagent/core";
+import { defineAgent, Memory } from "@voltagent/core";
 import { ManagedMemoryAdapter } from "@voltagent/voltagent-memory";
 
 const memory = new Memory({
@@ -36,7 +36,7 @@ const memory = new Memory({
   }),
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Assistant",
   model: "openai/gpt-4o-mini",
   memory,

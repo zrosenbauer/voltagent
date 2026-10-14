@@ -85,7 +85,7 @@ await voltops.actions.googlecalendar.getEvent({
 ## Treat Calendar actions as tools
 
 ```ts
-import { Agent, createTool, VoltOpsClient } from "@voltagent/core";
+import { defineAgent, createTool, VoltOpsClient } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
@@ -118,7 +118,7 @@ export const scheduleMeetingTool = createTool({
   },
 });
 
-const calendarAgent = new Agent({
+const calendarAgent = defineAgent({
   name: "Calendar Assistant",
   model: openai("gpt-4o-mini"),
   instructions: "Use Google Calendar tools to schedule and manage events.",

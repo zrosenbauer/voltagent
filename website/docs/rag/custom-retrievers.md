@@ -265,7 +265,7 @@ You can use your retriever in two ways:
 ### Option 1: Always Search
 
 ```ts
-const agent = new Agent({
+const agent = defineAgent({
   name: "Support Bot",
   retriever: new MyRetriever(), // Searches before every response
   // ... other config
@@ -282,7 +282,7 @@ const retriever = new MyRetriever({
   toolDescription: "Search company documentation",
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Smart Assistant",
   tools: [retriever.tool], // LLM decides when to search
   // ... other config

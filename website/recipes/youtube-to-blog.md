@@ -121,7 +121,7 @@ To support this flow I register three agents inside one VoltAgent instance. The 
 TranscriptFetcher handles pulling the raw transcript from the YouTube MCP tool.
 
 ```typescript
-const transcriptFetcherAgent = new Agent({
+const transcriptFetcherAgent = defineAgent({
   name: "TranscriptFetcher",
   instructions: `
   You are a transcript fetcher. Your ONLY job is to fetch transcripts from YouTube videos.
@@ -151,7 +151,7 @@ const transcriptFetcherAgent = new Agent({
 BlogWriter converts the transcript into a Markdown article with defined sections.
 
 ```typescript
-const blogWriterAgent = new Agent({
+const blogWriterAgent = defineAgent({
   name: "BlogWriter",
   instructions: `
   You are an expert blog writer. When given a YouTube transcript, convert it into a well-structured, engaging blog post with:
@@ -177,7 +177,7 @@ const blogWriterAgent = new Agent({
 The supervisor enforces the handoff order and delegates work to both subagents.
 
 ```typescript
-const coordinatorAgent = new Agent({
+const coordinatorAgent = defineAgent({
   name: "YouTubeToBlogCoordinator",
   instructions: `
   You are a coordinator that orchestrates the process of converting YouTube videos to blog posts. You DO NOT write the blog post yourself - that is the BlogWriter's job.
@@ -241,7 +241,7 @@ const observability = new VoltAgentObservability({
 #### VoltAgent Server Configuration
 
 ```typescript
-new VoltAgent({
+await voltagent({
   agents: {
     coordinatorAgent,
     transcriptFetcherAgent,
@@ -250,7 +250,7 @@ new VoltAgent({
   server: honoServer(),
   logger,
   observability,
-});
+}).ready();
 ```
 
 - Registers all three agents so I can call them individually or through the supervisor.

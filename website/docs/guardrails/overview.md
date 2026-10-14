@@ -300,9 +300,9 @@ const fundingLimitGuardrail = createOutputGuardrail({
 Add guardrails to the `outputGuardrails` array when constructing an agent:
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Support",
   instructions: "Answer questions concisely",
   model: "openai/gpt-4o-mini",
@@ -725,9 +725,9 @@ const validationGuardrail = createInputGuardrail({
 Add guardrails to the `inputGuardrails` array when constructing an agent:
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Support",
   instructions: "Answer user questions",
   model: "openai/gpt-4o-mini",

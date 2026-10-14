@@ -31,7 +31,7 @@ AI Agent Engineering Platform
 
 Framework-agnostic server core for VoltAgent. This package provides the shared infrastructure — route definitions, request handlers, WebSocket support, authentication utilities, MCP/A2A protocol helpers, and a base server provider — that all VoltAgent server adapters (e.g. `@voltagent/server-hono`) build on top of.
 
-You typically do not use this package directly. Instead, choose a server adapter for your framework (such as `@voltagent/server-hono`) and pass it to the `VoltAgent` constructor. If you are building a **custom server adapter**, this package gives you everything you need.
+You typically do not use this package directly. Instead, choose a server adapter for your framework (such as `@voltagent/server-hono`) and pass it to `voltagent()`. If you are building a **custom server adapter**, this package gives you everything you need.
 
 ---
 
@@ -147,20 +147,20 @@ export function myCustomServer(config?: ServerProviderConfig) {
 Pass the factory to `VoltAgent`:
 
 ```typescript
-import { VoltAgent, Agent } from "@voltagent/core";
+import { voltagent, defineAgent } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 import { myCustomServer } from "./my-custom-server";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "my-agent",
   instructions: "A helpful assistant",
   model: openai("gpt-4o-mini"),
 });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: myCustomServer({ port: 3141 }),
-});
+}).ready();
 ```
 
 For a complete, production-ready server adapter see [`@voltagent/server-hono`](https://github.com/VoltAgent/voltagent/tree/main/packages/server-hono).

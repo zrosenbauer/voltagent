@@ -18,9 +18,9 @@ For the full provider directory and model lists, see [Models](/models-docs/).
 Use the `provider/model` format:
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "router-demo",
   instructions: "Be concise.",
   model: "anthropic/claude-3-5-sonnet",
@@ -30,13 +30,13 @@ const agent = new Agent({
 More examples:
 
 ```ts
-const openaiAgent = new Agent({
+const openaiAgent = defineAgent({
   name: "openai-agent",
   instructions: "Summarize the text",
   model: "openai/gpt-4o-mini",
 });
 
-const geminiAgent = new Agent({
+const geminiAgent = defineAgent({
   name: "gemini-agent",
   instructions: "Respond in Turkish",
   model: "google/gemini-2.0-flash",
@@ -46,7 +46,7 @@ const geminiAgent = new Agent({
 You can also generate strings dynamically:
 
 ```ts
-const agent = new Agent({
+const agent = defineAgent({
   name: "dynamic-router",
   model: ({ context }) => {
     const provider = (context.get("provider") as string) || "openai";
@@ -89,10 +89,10 @@ OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
 Use model strings for quick setup and dynamic routing. If you need provider-specific configuration or advanced options, pass a `LanguageModel` from an ai-sdk provider instead:
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "custom-provider",
   instructions: "You are a helpful assistant",
   model: openai("gpt-4o-mini"),

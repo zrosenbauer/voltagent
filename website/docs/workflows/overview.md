@@ -24,7 +24,7 @@ Let's build a workflow from scratch. We'll start with a simple function, add AI,
 First, create a workflow that takes a name and returns a greeting. This is the simplest form of a workflow: a single step that processes some data.
 
 ```typescript
-import { VoltAgent, createWorkflowChain } from "@voltagent/core";
+import { voltagent, createWorkflowChain } from "@voltagent/core";
 import { z } from "zod";
 
 // Define the workflow's shape: its inputs and final output
@@ -45,7 +45,7 @@ const workflow = createWorkflowChain({
   });
 
 // Run it!
-new VoltAgent({ workflows: { workflow } });
+voltagent({ workflows: { workflow } });
 
 const result = await workflow.run({ name: "World" });
 
@@ -58,11 +58,11 @@ console.log(result.result);
 Now, let's enhance our workflow. We'll add an AI agent to analyze the sentiment of the greeting message. Notice how we add new imports, define an agent, and chain the `.andAgent()` step.
 
 ```typescript
-import { VoltAgent, createWorkflowChain, Agent } from "@voltagent/core";
+import { voltagent, createWorkflowChain, defineAgent } from "@voltagent/core";
 import { z } from "zod";
 
 // Define an AI agent to use in our workflow
-const agent = new Agent({
+const agent = defineAgent({
   name: "Analyzer",
   model: "openai/gpt-4o-mini",
   instructions: "You are a text analyzer.",
@@ -102,7 +102,7 @@ const workflow = createWorkflowChain({
   });
 
 // Run the enhanced workflow
-new VoltAgent({ workflows: { workflow } });
+voltagent({ workflows: { workflow } });
 
 const result = await workflow.run({ name: "World" });
 
@@ -115,10 +115,10 @@ console.log(result.result);
 Finally, let's add a step that only runs if a condition is met. We'll check if the input name is long and add a flag. The `.andWhen()` step is perfect for this. We also update the final `result` schema to include the new optional field.
 
 ```typescript
-import { VoltAgent, createWorkflowChain, Agent, andThen } from "@voltagent/core";
+import { voltagent, createWorkflowChain, defineAgent, andThen } from "@voltagent/core";
 import { z } from "zod";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Analyzer",
   model: "openai/gpt-4o-mini",
   instructions: "You are a text analyzer.",
@@ -167,7 +167,7 @@ const workflow = createWorkflowChain({
   });
 
 // Run with a long name to trigger the conditional step
-new VoltAgent({ workflows: { workflow } });
+voltagent({ workflows: { workflow } });
 
 const longNameResult = await workflow.run({ name: "Alexanderson" });
 console.log(longNameResult.result);
@@ -213,7 +213,7 @@ As data flows through the workflow, TypeScript types are automatically inferred 
 
 ```typescript
 import { z } from "zod";
-import { Agent, createWorkflowChain } from "@voltagent/core";
+import { defineAgent, createWorkflowChain } from "@voltagent/core";
 
 declare const agent: Agent<any>;
 
@@ -304,7 +304,7 @@ The `WorkflowChain` builder has a `.toWorkflow()` method that converts your blue
 This is powerful for creating modular and testable code.
 
 ```typescript
-import { VoltAgent, createWorkflowChain } from "@voltagent/core";
+import { voltagent, createWorkflowChain } from "@voltagent/core";
 import { z } from "zod";
 
 // 1. Define the chain (the builder)
@@ -322,7 +322,7 @@ const greeterChain = createWorkflowChain({
 const runnableGreeter = greeterChain.toWorkflow();
 
 // 3. Now you can run it as many times as you want
-new VoltAgent({ workflows: { runnableGreeter } });
+voltagent({ workflows: { runnableGreeter } });
 
 const result1 = await runnableGreeter.run({ name: "Alice" });
 console.log(result1.result); // { greeting: 'Hello, Alice!' }
@@ -357,7 +357,7 @@ const result = await workflow.run(
 The `execute` function can accept a second argument containing the execution state. You can also modify the `context` map, and the changes will be available in subsequent steps.
 
 ```typescript
-import { VoltAgent, createWorkflowChain } from "@voltagent/core";
+import { voltagent, createWorkflowChain } from "@voltagent/core";
 import { z } from "zod";
 
 const workflow = createWorkflowChain({
@@ -398,7 +398,7 @@ const workflow = createWorkflowChain({
   });
 
 // Run it with an initial state
-new VoltAgent({ workflows: { workflow } });
+voltagent({ workflows: { workflow } });
 
 await workflow.run(
   { name: "Alex" },
@@ -571,17 +571,17 @@ This execution history is stored using a **memory provider**. By default, VoltAg
 To set a default memory provider for all workflows, configure `workflowMemory` (or the shared `memory` fallback) when creating `VoltAgent`.
 
 ```ts
-import { Memory, VoltAgent } from "@voltagent/core";
+import { Memory, voltagent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 
 const workflowMemory = new Memory({
   storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/workflows.db" }),
 });
 
-new VoltAgent({
+await voltagent({
   workflowMemory,
   workflows: { workflow },
-});
+}).ready();
 ```
 
 The `memory` property in the `createWorkflowChain` configuration allows you to **override this default storage mechanism**. This is useful when moving to production or if you want persistent storage.
@@ -617,7 +617,7 @@ const workflow = createWorkflowChain({
 
 Storing a workflow's history is the first step. To make that history visible in an observability tool like **VoltOps**, you need to register your workflow with a central `VoltAgent` instance.
 
-This is typically done in your application's main entry point. By passing your workflow objects to the `workflows` property of the `VoltAgent` constructor, you make them discoverable. Once registered, you can:
+This is typically done in your application's main entry point. By passing your workflow objects to the `workflows` option of `voltagent()`, you make them discoverable. Once registered, you can:
 
 1.  Run your local application.
 2.  Open the [**VoltOps Console**](https://console.voltagent.dev/).
@@ -625,18 +625,18 @@ This is typically done in your application's main entry point. By passing your w
 4.  Click on it to see a detailed, visual trace of every run.
 
 ```typescript
-import { VoltAgent, createWorkflowChain } from "@voltagent/core";
+import { voltagent, createWorkflowChain } from "@voltagent/core";
 // ... other imports
 // ... (define myWorkflow and anotherWorkflow using createWorkflowChain)
 
 // 3. Register them with the VoltAgent instance
-new VoltAgent({
+await voltagent({
   agents: { myAgent },
   workflows: {
     myWorkflow,
     anotherWorkflow,
   },
-});
+}).ready();
 
 // After running the workflows, their execution traces will be visible in your VoltOps dashboard.
 ```

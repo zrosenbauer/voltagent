@@ -105,10 +105,10 @@ First, create your VoltAgent agent:
 
 ```typescript
 // src/agents/support.ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 
-export const supportAgent = new Agent({
+export const supportAgent = defineAgent({
   name: "Customer Support",
   instructions:
     "You are a helpful customer support agent. Provide accurate and friendly assistance.",

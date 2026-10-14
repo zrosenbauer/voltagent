@@ -11,9 +11,9 @@ Use `ovhcloud/<model>` with VoltAgent's model router.
 ## Quick start
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "ovhcloud-agent",
   instructions: "You are a helpful assistant",
   model: "ovhcloud/deepseek-r1-distill-llama-70b",

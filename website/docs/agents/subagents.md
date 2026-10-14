@@ -21,24 +21,24 @@ Sub-agents are agents that work under a supervisor agent to handle specific task
 Create the agents that will serve as sub-agents:
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
 // Create an agent for content creation
-const contentCreatorAgent = new Agent({
+const contentCreatorAgent = defineAgent({
   name: "ContentCreator",
   instructions: "Creates short text content on requested topics",
   model: "openai/gpt-4o-mini",
 });
 
 // Create an agent for formatting
-const formatterAgent = new Agent({
+const formatterAgent = defineAgent({
   name: "Formatter",
   instructions: "Formats and styles text content",
   model: "openai/gpt-4o-mini",
 });
 
 // Give sub-agents a concise purpose to control what the supervisor sees
-const summarizerAgent = new Agent({
+const summarizerAgent = defineAgent({
   name: "Summarizer",
   purpose: "Summarize long support tickets",
   instructions:
@@ -52,9 +52,9 @@ const summarizerAgent = new Agent({
 Pass the agents in the `subAgents` array during supervisor initialization:
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const supervisorAgent = new Agent({
+const supervisorAgent = defineAgent({
   name: "Supervisor",
   instructions: "Coordinates between content creation and formatting agents",
   model: "openai/gpt-4o-mini",
@@ -93,9 +93,9 @@ The `supervisorConfig` option is only available when `subAgents` are provided. T
 ### Basic Supervisor Configuration
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const supervisorAgent = new Agent({
+const supervisorAgent = defineAgent({
   name: "Content Supervisor",
   instructions: "Coordinate content creation workflow",
   model: "openai/gpt-4o-mini",
@@ -120,7 +120,7 @@ const supervisorAgent = new Agent({
 Control which events from sub-agents are forwarded to the parent stream. By default, only `tool-call` and `tool-result` events are forwarded.
 
 ```ts
-const supervisorAgent = new Agent({
+const supervisorAgent = defineAgent({
   name: "Content Supervisor",
   instructions: "Coordinate content creation workflow",
   model: "openai/gpt-4o-mini",
@@ -187,7 +187,7 @@ This configuration balances stream performance and information detail for sub-ag
 Control how the supervisor handles sub-agent failures.
 
 ```ts
-const supervisorAgent = new Agent({
+const supervisorAgent = defineAgent({
   name: "Supervisor",
   instructions: "Coordinate between agents",
   model: "openai/gpt-4o-mini",
@@ -276,7 +276,7 @@ The supervisor's behavior when a sub-agent encounters an error depends on your c
 
 ```ts
 // Example: Sub-agent fails during stream
-const supervisor = new Agent({
+const supervisor = defineAgent({
   name: "Supervisor",
   subAgents: [unreliableAgent],
   supervisorConfig: {
@@ -388,7 +388,7 @@ Every `UIMessage` in memory now includes the `metadata.subAgentId` and `metadata
 Provide a custom `systemMessage` to replace the default template:
 
 ```ts
-const supervisorAgent = new Agent({
+const supervisorAgent = defineAgent({
   name: "Custom Supervisor",
   instructions: "This will be ignored when systemMessage is provided",
   model: "openai/gpt-4o-mini",
@@ -451,7 +451,7 @@ supervisorConfig: {
 **Stateless sub-agent:**
 
 ```ts
-const writerAgent = new Agent({
+const writerAgent = defineAgent({
   name: "Writer",
   instructions: "Write concise drafts.",
   model: "openai/gpt-4o-mini",
@@ -533,23 +533,23 @@ This tool is automatically added to supervisor agents and handles delegation.
 ## Complete Example
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
 // Create agents
-const writer = new Agent({
+const writer = defineAgent({
   name: "Writer",
   instructions: "Write creative stories",
   model: "openai/gpt-4o-mini",
 });
 
-const translator = new Agent({
+const translator = defineAgent({
   name: "Translator",
   instructions: "Translate text accurately",
   model: "openai/gpt-4o-mini",
 });
 
 // Create supervisor
-const supervisor = new Agent({
+const supervisor = defineAgent({
   name: "Supervisor",
   instructions: "Coordinate story writing and translation",
   model: "openai/gpt-4o-mini",
@@ -580,7 +580,7 @@ VoltAgent provides hooks to monitor and control the supervisor/subagent workflow
 Triggered when delegation begins:
 
 ```ts
-const supervisor = new Agent({
+const supervisor = defineAgent({
   name: "Supervisor",
   subAgents: [writer, translator],
   hooks: {
@@ -596,7 +596,7 @@ const supervisor = new Agent({
 Triggered when a subagent completes execution. This hook enables **early termination (bail)** to optimize token usage:
 
 ```ts
-const supervisor = new Agent({
+const supervisor = defineAgent({
   name: "Supervisor",
   subAgents: [dataAnalyzer, reportGenerator],
   hooks: {
@@ -624,7 +624,7 @@ const response = await supervisor.streamText("Task", {
 });
 
 // Sub-agent receives it automatically
-const subAgent = new Agent({
+const subAgent = defineAgent({
   hooks: {
     onStart: (context) => {
       const projectId = context.context.get("projectId"); // "123"
@@ -665,7 +665,7 @@ Supervisor → SubAgent → bail() → User ✅
 Call `bail()` in the `onHandoffComplete` hook to terminate early:
 
 ```ts
-const supervisor = new Agent({
+const supervisor = defineAgent({
   name: "Workout Supervisor",
   subAgents: [exerciseAgent, workoutBuilder],
   hooks: {
@@ -747,7 +747,7 @@ interface OnHandoffCompleteHookArgs {
 When a subagent bails, the **subagent's result** is returned to the user (not the supervisor's):
 
 ```ts
-const supervisor = new Agent({
+const supervisor = defineAgent({
   name: "Supervisor",
   subAgents: [
     createSubagent({
@@ -800,7 +800,7 @@ supervisorConfig: {
 When a subagent bails and produces text output, you must explicitly include `text-delta` in the forwarded event types:
 
 ```ts
-const supervisor = new Agent({
+const supervisor = defineAgent({
   name: "Supervisor",
   subAgents: [workoutBuilder],
   supervisorConfig: {
@@ -909,7 +909,7 @@ Perfect for scenarios where specialized subagents generate final outputs:
 Control workflow steps with `maxSteps`:
 
 ```ts
-const supervisor = new Agent({
+const supervisor = defineAgent({
   subAgents: [writer, editor],
   maxSteps: 20, // Inherited by all sub-agents
 });
@@ -937,7 +937,7 @@ const AnalysisSchema = z.object({
   confidence: z.number().min(0).max(1),
 });
 
-const supervisor = new Agent({
+const supervisor = defineAgent({
   subAgents: [
     writer, // Default streamText
     createSubagent({

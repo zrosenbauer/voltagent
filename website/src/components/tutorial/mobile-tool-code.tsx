@@ -129,7 +129,7 @@ export const MobileToolCode = ({ isVisible }: MobileToolCodeProps) => {
                 <span className="text-blue-400">import</span>
                 <span>
                   {" "}
-                  {"{"} VoltAgent, Agent, createTool {"}"}{" "}
+                  {"{"} voltagent, defineAgent, createTool {"}"}{" "}
                 </span>
                 <span className="text-blue-400">from</span>
                 <span className="text-yellow-300"> "@voltagent/core"</span>
@@ -277,8 +277,7 @@ export const MobileToolCode = ({ isVisible }: MobileToolCodeProps) => {
               >
                 <span className="text-blue-400">const</span>
                 <span> agent = </span>
-                <span className="text-blue-400">new</span>
-                <span className="text-green-400"> Agent</span>
+                <span className="text-green-400">defineAgent</span>
                 <span>{"({"}</span>
                 <br />
                 <span className="ml-4">name: </span>
@@ -307,15 +306,15 @@ export const MobileToolCode = ({ isVisible }: MobileToolCodeProps) => {
 
               {/* Server Setup */}
               <span className={getBaseCodeClasses()}>
-                <span className="text-blue-400">new</span>
-                <span className="text-green-400"> VoltAgent</span>
+                <span className="text-blue-400">await</span>{" "}
+                <span className="text-green-400">voltagent</span>
                 <span>{"({"}</span>
                 <br />
                 <span className="ml-4">
                   agents: {"{"} agent {"}"},
                 </span>
                 <br />
-                <span>{"});"}</span>
+                <span>{"}).ready();"}</span>
               </span>
 
               {/* Feature Info Overlay */}

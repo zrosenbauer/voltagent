@@ -57,7 +57,7 @@ The adapters demonstrate how prompts, resources, and elicitation bridges can be 
 The same file wires agents, workflows, and the MCP server into a single VoltAgent instance:
 
 ```typescript
-new VoltAgent({
+await voltagent({
   agents: {
     supervisorAgent,
     translatorAgent,
@@ -67,7 +67,7 @@ new VoltAgent({
   mcpServers: { mcpServer },
   server: honoServer({ port: 3141 }),
   logger,
-});
+}).ready();
 ```
 
 Key agents include:

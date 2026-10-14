@@ -39,7 +39,7 @@ pnpm add @voltagent/postgres
 ## Configuration
 
 ```ts
-import { Agent, Memory } from "@voltagent/core";
+import { defineAgent, Memory } from "@voltagent/core";
 import { PostgreSQLMemoryAdapter } from "@voltagent/postgres";
 
 // Using connection string
@@ -64,7 +64,7 @@ const memory = new Memory({
   }),
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Assistant",
   model: "openai/gpt-4o-mini",
   memory,
@@ -191,7 +191,7 @@ See [Semantic Search](./semantic-search.md) for detailed configuration and usage
 ## Production Setup
 
 ```ts
-import { Agent, Memory } from "@voltagent/core";
+import { defineAgent, Memory } from "@voltagent/core";
 import { PostgreSQLMemoryAdapter } from "@voltagent/postgres";
 
 const memory = new Memory({
@@ -208,7 +208,7 @@ const memory = new Memory({
   }),
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Production Assistant",
   model: "openai/gpt-4o-mini",
   memory,

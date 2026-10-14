@@ -44,14 +44,14 @@ Fetch prompts using the `prompts` helper available in dynamic instructions:
 
 ```typescript
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, VoltOpsClient } from "@voltagent/core";
+import { defineAgent, voltagent, VoltOpsClient } from "@voltagent/core";
 
 const voltOpsClient = new VoltOpsClient({
   publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
   secretKey: process.env.VOLTAGENT_SECRET_KEY,
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "SupportAgent",
   model: openai("gpt-4o-mini"),
   instructions: async ({ prompts }) => {
@@ -61,10 +61,10 @@ const agent = new Agent({
   },
 });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   voltOpsClient: voltOpsClient,
-});
+}).ready();
 ```
 
 ## Local Prompts (CLI Pull)
@@ -135,7 +135,7 @@ If a local prompt is found, it is used first. If not, VoltOps is used as the fal
 Alternatively, attach the client directly to the agent:
 
 ```typescript
-const agent = new Agent({
+const agent = defineAgent({
   name: "SupportAgent",
   model: openai("gpt-4o-mini"),
   instructions: async ({ prompts }) => {
@@ -169,7 +169,7 @@ console.log("Prompt content:", content);
 Use labels to target specific prompt versions for different environments:
 
 ```typescript
-const agent = new Agent({
+const agent = defineAgent({
   name: "ProductionAgent",
   model: openai("gpt-4o-mini"),
   instructions: async ({ prompts }) => {
@@ -200,7 +200,7 @@ You can also use custom labels (e.g., `beta`, `canary`, `region-eu`).
 Pass dynamic values to replace template variables in prompts:
 
 ```typescript
-const agent = new Agent({
+const agent = defineAgent({
   name: "DynamicAgent",
   model: openai("gpt-4o-mini"),
   instructions: async ({ prompts, context }) => {
@@ -338,7 +338,7 @@ Chat prompts define multi-message conversations with role-based structure.
 ### Fetching Chat Prompts
 
 ```typescript
-const agent = new Agent({
+const agent = defineAgent({
   name: "ChatAgent",
   model: openai("gpt-4o-mini"),
   instructions: async ({ prompts }) => {
@@ -470,7 +470,7 @@ try {
 
 ```typescript
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, VoltOpsClient } from "@voltagent/core";
+import { defineAgent, voltagent, VoltOpsClient } from "@voltagent/core";
 
 const voltOpsClient = new VoltOpsClient({
   publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
@@ -482,7 +482,7 @@ const voltOpsClient = new VoltOpsClient({
   },
 });
 
-const supportAgent = new Agent({
+const supportAgent = defineAgent({
   name: "SupportAgent",
   model: openai("gpt-4o-mini"),
   instructions: async ({ prompts, context }) => {
@@ -506,10 +506,10 @@ const supportAgent = new Agent({
   },
 });
 
-new VoltAgent({
+await voltagent({
   agents: { supportAgent },
   voltOpsClient: voltOpsClient,
-});
+}).ready();
 ```
 
 ## API Reference

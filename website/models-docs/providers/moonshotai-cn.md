@@ -11,9 +11,9 @@ Use `moonshotai-cn/<model>` with VoltAgent's model router.
 ## Quick start
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "moonshotai-cn-agent",
   instructions: "You are a helpful assistant",
   model: "moonshotai-cn/kimi-k2-0711-preview",

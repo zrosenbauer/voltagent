@@ -28,8 +28,8 @@ Every workflow step has an `execute` function that receives a context object:
 > **Tip:** Register your workflows with a `VoltAgent` instance so suspend/resume and REST routes can locate executions:
 >
 > ```typescript
-> import { VoltAgent } from "@voltagent/core";
-> new VoltAgent({ workflows: { myWorkflow } });
+> import { voltagent } from "@voltagent/core";
+> voltagent({ workflows: { myWorkflow } });
 > ```
 
 ## What's in the Context?

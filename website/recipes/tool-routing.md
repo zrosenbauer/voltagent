@@ -12,7 +12,7 @@ Tool routing keeps prompts small by exposing only `searchTools` and `callTool`. 
 ## Quick Setup (Embedding Search)
 
 ```typescript
-import { Agent, createTool, VoltAgent } from "@voltagent/core";
+import { defineAgent, createTool, voltagent } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
@@ -36,7 +36,7 @@ const convertCurrencyTool = createTool({
   execute: async ({ amount, from, to }) => ({ amount, from, to, rate: 0.92 }),
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Assistant",
   instructions:
     "When you need a tool, call searchTools with the user request, then call callTool with the exact tool name and schema-compliant arguments.",
@@ -48,7 +48,7 @@ const agent = new Agent({
   },
 });
 
-new VoltAgent({ agents: { agent } });
+voltagent({ agents: { agent } });
 ```
 
 If `toolRouting.pool` is not provided, VoltAgent uses the agent's registered tools as the pool (the routing helper tools are excluded).
@@ -90,12 +90,12 @@ toolRouting: {
 ## Global Defaults
 
 ```typescript
-new VoltAgent({
+await voltagent({
   toolRouting: {
     embedding: "openai/text-embedding-3-small",
   },
   agents: { agent },
-});
+}).ready();
 ```
 
 ## Pooling Provider and MCP Tools

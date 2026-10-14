@@ -11,9 +11,9 @@ Use `cohere/<model>` with VoltAgent's model router.
 ## Quick start
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "cohere-agent",
   instructions: "You are a helpful assistant",
   model: "cohere/command-a-03-2025",

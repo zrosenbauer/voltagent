@@ -41,7 +41,7 @@ import { createPrompt, PromptTemplate, PromptCreator } from "@voltagent/core";
 Define a template with default variables.
 
 ```typescript
-import { createPrompt, Agent } from "@voltagent/core";
+import { createPrompt, defineAgent } from "@voltagent/core";
 
 // Define the prompt template and default variables
 const basicPrompt = createPrompt({
@@ -59,7 +59,7 @@ You are a helpful assistant that simplifies complex topics.
 Task: summarize text
 */
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Basic Assistant",
   // Use the generated prompt in the instructions field
   // highlight-next-line

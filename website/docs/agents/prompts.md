@@ -17,9 +17,9 @@ VoltAgent supports three approaches for defining agent instructions. Each approa
 Static instructions are literal strings assigned to the `instructions` property.
 
 ```typescript
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "SupportAgent",
   model: "openai/gpt-4o-mini",
   instructions: "You are a customer support agent. Help users with their questions.",
@@ -84,7 +84,7 @@ Dynamic instructions are functions that receive runtime context and return instr
 Functions can return a plain string based on context:
 
 ```typescript
-const agent = new Agent({
+const agent = defineAgent({
   name: "SupportAgent",
   model: "openai/gpt-4o-mini",
   instructions: async ({ context }) => {
@@ -116,7 +116,7 @@ Functions can also return `PromptContent` objects for text or chat-based instruc
 **Text type:**
 
 ```typescript
-const agent = new Agent({
+const agent = defineAgent({
   name: "SupportAgent",
   model: "openai/gpt-4o-mini",
   instructions: async ({ context }) => {
@@ -131,9 +131,9 @@ const agent = new Agent({
 **Chat type with multiple messages:**
 
 ```typescript
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "ChatAgent",
   model: "openai/gpt-4o-mini",
   instructions: async () => {
@@ -161,9 +161,9 @@ const agent = new Agent({
 **Chat type with provider-specific options:**
 
 ```typescript
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "CachedAgent",
   model: "anthropic/claude-3-7-sonnet-20250219",
   instructions: async () => {
@@ -231,14 +231,14 @@ For complete documentation on VoltOps Prompt Management, see:
 ### Quick Example
 
 ```typescript
-import { Agent, VoltAgent, VoltOpsClient } from "@voltagent/core";
+import { defineAgent, voltagent, VoltOpsClient } from "@voltagent/core";
 
 const voltOpsClient = new VoltOpsClient({
   publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
   secretKey: process.env.VOLTAGENT_SECRET_KEY,
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "SupportAgent",
   model: "openai/gpt-4o-mini",
   instructions: async ({ prompts }) => {
@@ -250,10 +250,10 @@ const agent = new Agent({
   },
 });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   voltOpsClient: voltOpsClient,
-});
+}).ready();
 ```
 
 ### When to Use
@@ -289,7 +289,7 @@ Avoid when:
 **Static (solo developer, consistent behavior):**
 
 ```typescript
-const agent = new Agent({
+const agent = defineAgent({
   instructions: "You are a code reviewer. Focus on security and performance.",
   model: "openai/gpt-4o-mini",
 });
@@ -298,7 +298,7 @@ const agent = new Agent({
 **Dynamic (user-specific behavior):**
 
 ```typescript
-const agent = new Agent({
+const agent = defineAgent({
   instructions: async ({ context }) => {
     const tier = context.get("tier");
     return tier === "premium"
@@ -312,7 +312,7 @@ const agent = new Agent({
 **VoltOps (team collaboration, versioning):**
 
 ```typescript
-const agent = new Agent({
+const agent = defineAgent({
   instructions: async ({ prompts }) => {
     return await prompts.getPrompt({
       promptName: "customer-support-agent",

@@ -56,10 +56,10 @@ pnpm add @voltagent/langfuse-exporter
 
 ## Usage
 
-Import `VoltAgent` from `@voltagent/core` and `LangfuseExporter` from this package. Pass an instance of the exporter to the `VoltAgent` constructor.
+Import `voltagent` from `@voltagent/core` and `LangfuseExporter` from this package. Pass an instance of the exporter to `voltagent()`.
 
 ```typescript
-import { Agent, VoltAgent } from "@voltagent/core";
+import { defineAgent, voltagent } from "@voltagent/core";
 import { LangfuseExporter } from "@voltagent/langfuse-exporter";
 // ... other necessary imports
 
@@ -72,18 +72,18 @@ const langfuseExporter = new LangfuseExporter({
 });
 
 // Define your agent(s)
-const myAgent = new Agent({
+const myAgent = defineAgent({
   name: "My Assistant",
   // ... other agent options (llm, model, tools, etc.)
 });
 
 // Initialize VoltAgent with the exporter
-new VoltAgent({
+await voltagent({
   agents: {
     myAgent, // Register your agent(s)
   },
   telemetryExporter: langfuseExporter, // Pass the exporter instance
-});
+}).ready();
 ```
 
 ## What is VoltAgent?
@@ -137,24 +137,24 @@ This command guides you through setup.
 You'll see the starter code in `src/index.ts` to get you started with the VoltAgent framework.
 
 ```typescript
-import { VoltAgent, Agent } from "@voltagent/core";
+import { voltagent, defineAgent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 import { openai } from "@ai-sdk/openai"; // Example model
 
 // Define a simple agent
-const agent = new Agent({
+const agent = defineAgent({
   name: "my-agent",
   instructions: "A helpful assistant that answers questions without using tools",
   model: openai("gpt-4o-mini"),
 });
 
 // Initialize VoltAgent with your agent(s)
-new VoltAgent({
+await voltagent({
   agents: {
     agent,
   },
   server: honoServer(),
-});
+}).ready();
 ```
 
 Afterwards, navigate to your project and run:

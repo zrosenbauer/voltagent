@@ -11,9 +11,9 @@ Use `cloudflare-ai-gateway/<model>` with VoltAgent's model router.
 ## Quick start
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "cloudflare-ai-gateway-agent",
   instructions: "You are a helpful assistant",
   model: "cloudflare-ai-gateway/anthropic/claude-3-5-haiku",

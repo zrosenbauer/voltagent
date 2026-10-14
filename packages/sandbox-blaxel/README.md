@@ -46,7 +46,7 @@ pnpm add @voltagent/sandbox-blaxel
 ## Usage
 
 ```typescript
-import { Agent, Workspace } from "@voltagent/core";
+import { defineAgent, Workspace } from "@voltagent/core";
 import { BlaxelSandbox } from "@voltagent/sandbox-blaxel";
 import { openai } from "@ai-sdk/openai";
 
@@ -55,7 +55,7 @@ const sandbox = new BlaxelSandbox({
   workspace: process.env.BL_WORKSPACE,
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "my-agent",
   instructions: "A helpful assistant with sandboxed shell access",
   model: openai("gpt-4o-mini"),

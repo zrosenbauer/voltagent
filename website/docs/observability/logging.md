@@ -13,14 +13,15 @@ VoltAgent provides automatic logging for all agent and workflow events. By defau
 When creating a VoltAgent instance, you can configure logging globally for all agents and workflows:
 
 ```javascript
-import { VoltAgent } from "@voltagent/core";
+import { voltagent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 
 // Option 1: Use built-in console logger (basic, for development only)
-const voltAgent = new VoltAgent({
+const voltAgent = voltagent({
   agents: [myAgent],
   workflows: [myWorkflow],
 });
+await voltAgent.ready();
 // ⚠️ This uses a simple console logger with basic formatting
 // Output: [2024-01-20T10:30:45.123Z] INFO {component: "voltagent"}: Agent started
 
@@ -31,11 +32,12 @@ const logger = createPinoLogger({
   name: "my-app", // Add app name to all logs
 });
 
-const voltAgent = new VoltAgent({
+const voltAgent = voltagent({
   logger: logger,
   agents: { myAgent },
   workflows: { myWorkflow },
 });
+await voltAgent.ready();
 // ✅ This uses Pino with pretty formatting, transports, and all advanced features
 ```
 
@@ -94,7 +96,7 @@ When you don't provide a logger to VoltAgent, it uses a built-in `ConsoleLogger`
 
 | Use Case                     | Logger Choice                 | Example                                                   |
 | ---------------------------- | ----------------------------- | --------------------------------------------------------- |
-| Quick prototyping            | Default ConsoleLogger         | `new VoltAgent({ agents })`                               |
+| Quick prototyping            | Default ConsoleLogger         | `voltagent({ agents })`                                   |
 | Development with nice output | Pino with pretty format       | `createPinoLogger({ format: "pretty" })`                  |
 | Production with file logging | Pino with transports          | `createPinoLogger({ pinoOptions: { transport: {...} } })` |
 | VoltOps Platform integration | Any logger (logs always sent) | Both work with VoltOps                                    |
@@ -123,7 +125,7 @@ What happens under the hood:
 Advanced control (optional): You can tune sampling and batching through `VoltAgentObservability` and it applies to both traces and logs:
 
 ```ts
-import { VoltAgent, VoltAgentObservability } from "@voltagent/core";
+import { voltagent, VoltAgentObservability } from "@voltagent/core";
 
 const observability = new VoltAgentObservability({
   voltOpsSync: {
@@ -137,12 +139,12 @@ const observability = new VoltAgentObservability({
   },
 });
 
-new VoltAgent({
+await voltagent({
   agents: {
     /* ... */
   },
   observability,
-});
+}).ready();
 ```
 
 Tip: To disable cloud export and keep logs local to the console only, set `sampling: { strategy: "never" }`.
@@ -177,10 +179,11 @@ const logger = createPinoLogger({
   },
 });
 
-const voltAgent = new VoltAgent({
+const voltAgent = voltagent({
   logger,
   agents: [myAgent],
 });
+await voltAgent.ready();
 ```
 
 ## Agent-Level Logging
@@ -188,10 +191,10 @@ const voltAgent = new VoltAgent({
 Each agent can have its own logger configuration that overrides the global settings:
 
 ```javascript
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "CustomerSupport",
   model: "anthropic/claude-3-5-sonnet",
   instructions: "You are a helpful customer support agent",
@@ -222,10 +225,10 @@ VoltAgent automatically adds context to agent logs:
 Workflows can also have custom logger configuration:
 
 ```javascript
-import { createWorkflow } from "@voltagent/core";
+import { defineWorkflow } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 
-const processOrderWorkflow = createWorkflow(
+const processOrderWorkflow = defineWorkflow(
   {
     name: "ProcessOrder",
     inputSchema: z.object({ orderId: z.string() }),
@@ -632,10 +635,10 @@ When your tools, workflows, and retrievers are executed from an agent or workflo
 AI SDK-style tool `execute` functions keep the native AI SDK contract. Use VoltAgent tool hooks when you need the execution-scoped logger:
 
 ```javascript
-import { tool } from "@voltagent/core";
+import { defineTool } from "@voltagent/core";
 import { z } from "zod";
 
-const weatherTool = tool({
+const weatherTool = defineTool({
   description: "Get weather for a location",
   inputSchema: z.object({
     location: z.string(),
@@ -665,9 +668,9 @@ const weatherTool = tool({
 Workflow steps have access to the logger through the execution context:
 
 ```javascript
-import { createWorkflow, andThen } from "@voltagent/core";
+import { defineWorkflow, andThen } from "@voltagent/core";
 
-const workflow = createWorkflow(
+const workflow = defineWorkflow(
   {
     name: "DataProcessing",
     inputSchema: z.object({ data: z.array(z.string()) }),

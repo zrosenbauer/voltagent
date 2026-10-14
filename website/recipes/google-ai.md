@@ -19,7 +19,7 @@ npm install @ai-sdk/google
 
 ```typescript
 import { google } from "@ai-sdk/google";
-import { Agent, VoltAgent, createTool } from "@voltagent/core";
+import { defineAgent, voltagent, createTool } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
 
@@ -34,17 +34,17 @@ const searchTool = createTool({
   },
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Gemini Agent",
   instructions: "A helpful assistant powered by Gemini",
   model: google("gemini-2.0-flash"),
   tools: [searchTool],
 });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer({ port: 3141 }),
-});
+}).ready();
 ```
 
 ## Environment Variables

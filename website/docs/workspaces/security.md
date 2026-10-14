@@ -42,7 +42,7 @@ const workspace = new Workspace({
 `operationTimeoutMs` applies to workspace tool executions (filesystem, sandbox, search, skills). You can override it per toolkit:
 
 ```ts
-const agent = new Agent({
+const agent = defineAgent({
   name: "workspace-agent",
   model,
   workspace,

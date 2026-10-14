@@ -340,14 +340,14 @@ export const retriever = new QdrantRetriever();
 Now create agents using different retrieval patterns in `src/index.ts`:
 
 ```typescript
-import { Agent, VoltAgent } from "@voltagent/core";
+import { defineAgent, voltagent } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
 
 import { retriever } from "./retriever/index.js";
 
 // Agent 1: Using retriever directly
-const agentWithRetriever = new Agent({
+const agentWithRetriever = defineAgent({
   name: "Assistant with Retriever",
   instructions:
     "A helpful assistant that can retrieve information from the Qdrant knowledge base using semantic search to provide better answers. I automatically search for relevant information when needed.",
@@ -356,7 +356,7 @@ const agentWithRetriever = new Agent({
 });
 
 // Agent 2: Using retriever as tool
-const agentWithTools = new Agent({
+const agentWithTools = defineAgent({
   name: "Assistant with Tools",
   instructions:
     "A helpful assistant that can search the Qdrant knowledge base using tools. The agent will decide when to search for information based on user questions.",
@@ -370,12 +370,12 @@ const logger = createPinoLogger({
   level: "info",
 });
 
-new VoltAgent({
+await voltagent({
   agents: {
     agentWithRetriever,
     agentWithTools,
   },
   server: honoServer(), // Default port: 3141; enable Swagger via options if needed
   logger,
-});
+}).ready();
 ```

@@ -19,9 +19,9 @@ This document covers both approaches, starting with the basics.
 An agent requires three properties: a name, instructions, and a model.
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Assistant",
   instructions: "Answer questions clearly and concisely.",
   model: "openai/gpt-4o",
@@ -31,7 +31,7 @@ const agent = new Agent({
 You can also use a model string instead of importing a provider:
 
 ```ts
-const agent = new Agent({
+const agent = defineAgent({
   name: "Assistant",
   instructions: "Answer questions clearly and concisely.",
   model: "openai/gpt-4o",
@@ -365,7 +365,7 @@ Summarization inserts a system summary and keeps the last N non-system messages 
 VoltAgent persists conversation messages and step records while a run is executing. By default, it uses step-level checkpoints, which is safer for long multi-step tool chains.
 
 ```ts
-const agent = new Agent({
+const agent = defineAgent({
   name: "Assistant",
   instructions: "Help users reliably.",
   model: "openai/gpt-4o-mini",
@@ -417,19 +417,19 @@ VoltAgent can expose agents through HTTP endpoints. This lets you call agents fr
 Create a `VoltAgent` instance with a server provider:
 
 ```ts
-import { VoltAgent, Agent } from "@voltagent/core";
+import { voltagent, defineAgent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "assistant",
   instructions: "Answer questions clearly.",
   model: "openai/gpt-4o",
 });
 
-new VoltAgent({
+await voltagent({
   agents: { assistant: agent },
   server: honoServer(), // Starts on port 3141 by default
-});
+}).ready();
 ```
 
 ### Available Endpoints
@@ -558,7 +558,7 @@ REST requests accept the same runtime namespace inside `options.voltagent`:
 You can configure agents with additional options:
 
 ```typescript
-const agent = new Agent({
+const agent = defineAgent({
   // Required
   name: "MyAgent", // Agent identifier
   instructions: "You are a helpful assistant", // Behavior guidelines
@@ -616,7 +616,7 @@ const memory = new Memory({
   storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/memory.db" }),
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Agent with Memory",
   model: "openai/gpt-4o",
   memory,
@@ -630,10 +630,10 @@ const agent = new Agent({
 Tools let agents call functions to fetch data, perform actions, or interact with external systems. The LLM decides when to use tools based on the user's input.
 
 ```ts
-import { tool } from "@voltagent/core";
+import { defineTool } from "@voltagent/core";
 import { z } from "zod";
 
-const weatherTool = tool({
+const weatherTool = defineTool({
   description: "Get current weather for a location",
   inputSchema: z.object({
     location: z.string(),
@@ -644,7 +644,7 @@ const weatherTool = tool({
   },
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Weather Assistant",
   instructions: "Answer weather questions using the get_weather tool.",
   model: "openai/gpt-4o",
@@ -661,20 +661,20 @@ const agent = new Agent({
 Agents can be converted to tools and used by other agents:
 
 ```ts
-const writerAgent = new Agent({
+const writerAgent = defineAgent({
   id: "writer",
   purpose: "Writes blog posts",
   model: "openai/gpt-4o-mini",
 });
 
-const editorAgent = new Agent({
+const editorAgent = defineAgent({
   id: "editor",
   purpose: "Edits content",
   model: "openai/gpt-4o-mini",
 });
 
 // Coordinator uses them as tools
-const coordinator = new Agent({
+const coordinator = defineAgent({
   tools: [writerAgent.toTool(), editorAgent.toTool()],
   model: "openai/gpt-4o-mini",
 });
@@ -687,9 +687,9 @@ This is useful when the LLM should decide which agents to call based on the requ
 Guardrails run before and after the model call to validate inputs or adjust outputs. Input guardrails receive the request text, while output guardrails can rewrite or block the response before it reaches the caller.
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Guarded Assistant",
   instructions: "Answer briefly.",
   model: "openai/gpt-4o-mini",
@@ -733,19 +733,19 @@ console.log(response.text); // "Give me one fact about Mars." (trimmed)
 Sub-agents let you delegate tasks to specialized agents. The parent agent can call sub-agents through an automatically generated `delegate_task` tool.
 
 ```ts
-const researchAgent = new Agent({
+const researchAgent = defineAgent({
   name: "Researcher",
   instructions: "Research topics thoroughly.",
   model: "openai/gpt-4o",
 });
 
-const writerAgent = new Agent({
+const writerAgent = defineAgent({
   name: "Writer",
   instructions: "Write clear, concise content.",
   model: "openai/gpt-4o",
 });
 
-const coordinator = new Agent({
+const coordinator = defineAgent({
   name: "Coordinator",
   instructions: "Delegate research to Researcher and writing to Writer.",
   model: "openai/gpt-4o",
@@ -760,7 +760,7 @@ When streaming with sub-agents, by default only `tool-call` and `tool-result` ev
 **Enable all event types:**
 
 ```ts
-const coordinator = new Agent({
+const coordinator = defineAgent({
   name: "Coordinator",
   instructions: "Coordinate between agents.",
   model: "openai/gpt-4o",
@@ -815,7 +815,7 @@ const hooks = createHooks({
   },
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Agent",
   instructions: "Answer questions.",
   model: "openai/gpt-4o",
@@ -831,14 +831,14 @@ Instructions can be static strings, dynamic functions, or managed remotely via V
 
 ```ts
 // Static instructions
-const agent1 = new Agent({
+const agent1 = defineAgent({
   name: "Assistant",
   instructions: "Answer questions.",
   model: "openai/gpt-4o",
 });
 
 // Dynamic instructions
-const agent2 = new Agent({
+const agent2 = defineAgent({
   name: "Assistant",
   instructions: ({ context }) => {
     const tier = context.get("tier") || "free";
@@ -855,7 +855,7 @@ const agent2 = new Agent({
 Agent properties (instructions, model, tools) can be functions that evaluate at runtime based on context. This enables multi-tenant apps, role-based access, or per-user model selection.
 
 ```ts
-const agent = new Agent({
+const agent = defineAgent({
   name: "Agent",
   instructions: ({ context }) => {
     const role = context.get("role");
@@ -882,7 +882,7 @@ await agent.generateText("Hello", {
 Pass request-specific data (like request IDs, user info) between hooks and tools using the operation context `Map`. Context is scoped to a single operation.
 
 ```ts
-import { createHooks, tool } from "@voltagent/core";
+import { createHooks, defineTool } from "@voltagent/core";
 import { z } from "zod";
 
 const hooks = createHooks({
@@ -891,7 +891,7 @@ const hooks = createHooks({
   },
 });
 
-const loggerTool = tool({
+const loggerTool = defineTool({
   description: "Log a message with the current request id",
   inputSchema: z.object({ message: z.string() }),
   execute: async ({ message }) => {
@@ -922,7 +922,7 @@ class SimpleRetriever extends BaseRetriever {
   }
 }
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Assistant",
   instructions: "Answer using retrieved context.",
   model: "openai/gpt-4o",
@@ -937,13 +937,13 @@ const agent = new Agent({
 VoltAgent can use [ai-sdk](https://sdk.vercel.ai) models directly, but model strings are the default. Switch providers by changing the model string (or import another provider).
 
 ```ts
-const agent1 = new Agent({
+const agent1 = defineAgent({
   name: "OpenAI Agent",
   model: "openai/gpt-4o",
   instructions: "Answer questions.",
 });
 
-const agent2 = new Agent({
+const agent2 = defineAgent({
   name: "Anthropic Agent",
   model: "anthropic/claude-3-5-sonnet",
   instructions: "Answer questions.",
@@ -976,7 +976,7 @@ await agent.generateText("Write a story", {
 Enable automatic markdown formatting in text responses by setting `markdown: true`. The agent will use markdown syntax (headings, lists, bold text, etc.) in its responses.
 
 ```ts
-const agent = new Agent({
+const agent = defineAgent({
   name: "Assistant",
   instructions: "Answer questions clearly.",
   model: "openai/gpt-4o",
@@ -993,7 +993,7 @@ const result = await agent.generateText("Explain how to make tea.");
 
 ```ts
 // Set maxSteps at agent level
-const agent = new Agent({
+const agent = defineAgent({
   name: "Agent",
   model: "openai/gpt-4o",
   maxSteps: 5, // Default for all operations
@@ -1043,7 +1043,7 @@ const mcpConfig = new MCPConfiguration({
 
 const mcpTools = await mcpConfig.getTools();
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Agent",
   model: "openai/gpt-4o",
   tools: mcpTools,
@@ -1065,7 +1065,7 @@ const voice = new OpenAIVoiceProvider({
   voice: "alloy",
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Voice Assistant",
   model: "openai/gpt-4o",
   voice,

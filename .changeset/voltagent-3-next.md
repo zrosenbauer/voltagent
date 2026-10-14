@@ -70,7 +70,7 @@ const { openai } = require("@ai-sdk/openai");
 After:
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 ```
 
@@ -106,6 +106,8 @@ pnpm add zod@^4
 ```
 
 ### Agent usage
+
+Create agents with `defineAgent(options)`, native tools with `defineTool(options)`, and workflows with `defineWorkflow(options, ...steps)`. Bootstrap the application with `voltagent(options)`. `Agent` and `VoltAgent` are type-only exports. Replace the old VoltAgent `tool` and `createWorkflow` imports with their canonical factory names.
 
 The object-style call shape is the preferred API. VoltAgent 3 derives agent generation options from AI SDK v7 `generateText` and `streamText`, so AI SDK settings stay at the top level while VoltAgent runtime concerns live under `voltagent`.
 
@@ -178,20 +180,21 @@ for await (const part of result.stream) {
 
 ### Tool usage
 
-VoltAgent now accepts AI SDK-style tool sets directly. For new VoltAgent tools, import `tool()` from `@voltagent/core`; it is AI SDK-compatible and adds only an optional `voltagent` metadata namespace. Raw AI SDK tools from `ai` remain first-class. Use `enhanceTool()` when you receive an existing AI SDK tool from another package and want to add VoltAgent hooks, tags, API metadata, or display metadata without rebuilding the tool.
+VoltAgent now accepts AI SDK-style tool sets directly. For new VoltAgent tools, import `defineTool()` from `@voltagent/core`; it is AI SDK-compatible and adds only an optional `voltagent` metadata namespace. Raw AI SDK tools from `ai` remain first-class. Use `enhanceTool()` when you receive an existing AI SDK tool from another package and want to add VoltAgent hooks, tags, API metadata, or display metadata without rebuilding the tool.
 
 `@voltagent/core` also re-exports common AI SDK primitives such as `generateText`, `streamText`, `generateObject`, `streamObject`, `embed`, `embedMany`, `Output`, `ToolSet`, and `LanguageModel`. Importing these from VoltAgent keeps one public surface for application code, while the direct function exports preserve native AI SDK behavior. Use `agent.generateText()` and `agent.streamText()` when you want VoltAgent orchestration, memory, guardrails, tracing, and tool routing.
 
 ```ts
-import { Agent, tool } from "@voltagent/core";
+import { defineAgent, defineTool } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Weather Agent",
+  instructions: "Use getWeather to answer weather questions.",
   model: openai("gpt-4o-mini"),
   tools: {
-    getWeather: tool({
+    getWeather: defineTool({
       description: "Get the weather for a city",
       inputSchema: z.object({
         city: z.string(),
@@ -207,7 +210,7 @@ const agent = new Agent({
 Native AI SDK tool options such as `contextSchema` work unchanged with call-level `toolsContext`:
 
 ```ts
-const weather = tool({
+const weather = defineTool({
   description: "Get weather for a city",
   inputSchema: z.object({ city: z.string() }),
   contextSchema: z.object({
@@ -237,9 +240,9 @@ await agent.generateText({
 VoltAgent-specific tool metadata is optional and stored out-of-band so it is not sent to the model provider:
 
 ```ts
-import { tool } from "@voltagent/core";
+import { defineTool } from "@voltagent/core";
 
-const refundCustomer = tool({
+const refundCustomer = defineTool({
   description: "Refund a customer order",
   inputSchema: z.object({
     orderId: z.string(),
@@ -291,8 +294,9 @@ const weather = enhanceTool(externalWeatherTool, {
 Register the tool under the canonical name the model should call:
 
 ```ts
-const agent = new Agent({
+const agent = defineAgent({
   name: "Support Agent",
+  instructions: "Help customers with eligible refunds.",
   model,
   tools: {
     refundCustomer,
@@ -302,7 +306,7 @@ const agent = new Agent({
 
 The ToolSet key remains the canonical `tool.name` used for tool calls, approval, routing, and telemetry correlation. VoltAgent metadata `name` is display metadata and is emitted as `tool.display_name` for Console and observability consumers.
 
-`createTool` is now a legacy compatibility helper for existing class-style tools.
+`createTool` is now a legacy compatibility helper that returns parameters-style tool objects.
 
 ### Tool approval
 

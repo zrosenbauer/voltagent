@@ -23,10 +23,10 @@ Only `searchTools`, `callTool`, and any tools listed in `toolRouting.expose` are
 This configuration enables embedding-based tool search and exposes only `searchTools` and `callTool` to the model.
 
 ```ts
-import { Agent, tool } from "@voltagent/core";
+import { defineAgent, defineTool } from "@voltagent/core";
 import { z } from "zod";
 
-const getWeather = tool({
+const getWeather = defineTool({
   description: "Get the current weather for a city",
   inputSchema: z.object({
     location: z.string(),
@@ -38,7 +38,7 @@ const getWeather = tool({
   }),
 });
 
-const getTimeZone = tool({
+const getTimeZone = defineTool({
   description: "Get the time zone offset for a city",
   inputSchema: z.object({
     location: z.string(),
@@ -49,7 +49,7 @@ const getTimeZone = tool({
   }),
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Tool Routing Agent",
   instructions:
     "When you need a tool, call searchTools with the user request, then call callTool with the exact tool name and schema-compliant arguments.",
@@ -74,10 +74,10 @@ Notes:
 
 Use `pool` to define the hidden tool set and `expose` to keep a subset visible.
 
-`toolRouting.pool` and `toolRouting.expose` currently use named compatibility tools and toolkits. For normal agent tools, prefer the AI SDK-style `tool()` helper; for explicit routing pools, keep using named tools until ToolSet support is added to the routing config.
+`toolRouting.pool` and `toolRouting.expose` currently use named compatibility tools and toolkits. For normal agent tools, prefer the AI SDK-style `defineTool()` helper; for explicit routing pools, keep using named tools until ToolSet support is added to the routing config.
 
 ```ts
-import { Agent, createTool } from "@voltagent/core";
+import { defineAgent, createTool } from "@voltagent/core";
 import { z } from "zod";
 
 const getWeather = createTool({
@@ -94,7 +94,7 @@ const getStatus = createTool({
   execute: async () => ({ status: "ok" }),
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Support Agent",
   instructions:
     "Use searchTools to find tool schemas, then call callTool with validated arguments.",
@@ -113,7 +113,7 @@ By default, `callTool` requires the tool to appear in a prior `searchTools` resu
 You can disable this behavior:
 
 ```ts
-const agent = new Agent({
+const agent = defineAgent({
   name: "Relaxed Agent",
   instructions: "Use searchTools before callTool when possible.",
   model: "openai/gpt-4o-mini",
@@ -136,7 +136,7 @@ const agent = new Agent({
 Provider-qualified strings use the same registry and type list as agent model strings.
 
 ```ts
-const agent = new Agent({
+const agent = defineAgent({
   name: "Custom Embedding Agent",
   instructions:
     "Use searchTools to discover tool schemas, then call callTool with the right arguments.",

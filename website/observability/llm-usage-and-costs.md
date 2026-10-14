@@ -49,14 +49,14 @@ This makes OpenRouter cost tracking more accurate, especially when you use `@ope
 To make sure OpenRouter usage accounting is included in the response metadata, enable it on the model you pass to `Agent`:
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 
 const openrouter = createOpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY,
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "cost-aware-agent",
   instructions: "Answer clearly and concisely.",
   model: openrouter("openai/gpt-4o-mini", {
@@ -82,9 +82,9 @@ If your provider does not return billed cost metadata, or if you want to apply y
 For text generation operations such as `generateText` and `streamText`, `onEnd` is a convenient option because it gives you both the normalized usage object and the current `traceContext`.
 
 ```ts
-import { Agent, createHooks } from "@voltagent/core";
+import { defineAgent, createHooks } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "custom-cost-agent",
   instructions: "Answer clearly and concisely.",
   model: "openai/gpt-4o-mini",

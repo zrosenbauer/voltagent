@@ -20,21 +20,21 @@ export const tabsData: TabData[] = [
     icon: "code",
     image: "https://cdn.voltagent.dev/website/feature-showcase/framework.png",
     code: `import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, createTriggers } from "@voltagent/core";
+import { defineAgent, voltagent, createTriggers } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
 import { weatherTool } from "./tools/weather";
 
 const logger = createPinoLogger({ name: "with-slack", level: "info" });
 
-const slackAgent = new Agent({
+const slackAgent = defineAgent({
   name: "slack-agent",
   instructions: "You are a Slack assistant.",
   tools: [weatherTool],
   model: openai("gpt-4o-mini"),
 });
 
-new VoltAgent({
+await voltagent({
   agents: { slackAgent },
   server: honoServer(),
   logger,
@@ -60,7 +60,7 @@ new VoltAgent({
       );
     });
   }),
-});`,
+}).ready();`,
     footerText: "Create production-ready AI agents in minutes with type-safe TypeScript APIs",
     docLink: "/docs",
   },
@@ -79,13 +79,13 @@ new VoltAgent({
     label: "Evals",
     icon: "check",
     image: "https://cdn.voltagent.dev/website/feature-showcase/evals.png",
-    code: `import { Agent, VoltAgentObservability } from "@voltagent/core";
+    code: `import { defineAgent, voltagent, VoltAgentObservability } from "@voltagent/core";
 import { createModerationScorer } from "@voltagent/scorers";
 import { openai } from "@ai-sdk/openai";
 
 const observability = new VoltAgentObservability();
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "support-agent",
   instructions: "Answer customer questions about products.",
   model: openai("gpt-4o"),
@@ -111,9 +111,9 @@ const agent = new Agent({
     label: "Triggers & Actions",
     icon: "play",
     image: "https://cdn.voltagent.dev/website/feature-showcase/trigger.png",
-    triggerCode: `import { VoltAgent, createTriggers } from "@voltagent/core";
+    triggerCode: `import { voltagent, createTriggers } from "@voltagent/core";
 
-new VoltAgent({
+await voltagent({
   triggers: createTriggers((on) => {
     // Slack integration
     on.slack.messagePosted(({ payload, agents }) => {
@@ -135,8 +135,8 @@ new VoltAgent({
       console.log("Webhook received:", payload);
     });
   }),
-});`,
-    actionCode: `import { Agent, createTool } from "@voltagent/core";
+}).ready();`,
+    actionCode: `import { defineAgent, createTool } from "@voltagent/core";
 import { voltOps } from "@voltagent/voltops";
 
 // Create Airtable action as a tool
@@ -156,7 +156,7 @@ const createAirtableRecord = createTool({
   },
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "data-agent",
   tools: [createAirtableRecord],
 });`,
@@ -169,7 +169,7 @@ const agent = new Agent({
     icon: "book",
     image: "https://cdn.voltagent.dev/website/feature-showcase/rag-features.png",
     code: `import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent } from "@voltagent/core";
+import { defineAgent, voltagent } from "@voltagent/core";
 import { VoltAgentRagRetriever } from "@voltagent/core";
 
 const retriever = new VoltAgentRagRetriever({
@@ -178,7 +178,7 @@ const retriever = new VoltAgentRagRetriever({
   includeSources: true,
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "RAG Assistant",
   instructions:
     "A helpful assistant that searches your knowledge base and uses relevant context to answer.",
@@ -234,14 +234,14 @@ await voltOps.alerts.create({
     icon: "message",
     image: "https://cdn.voltagent.dev/website/feature-showcase/prompts.png",
     code: `import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, VoltOpsClient } from "@voltagent/core";
+import { defineAgent, voltagent, VoltOpsClient } from "@voltagent/core";
 
 const voltOpsClient = new VoltOpsClient({
   publicKey: process.env.VOLTAGENT_PUBLIC_KEY,
   secretKey: process.env.VOLTAGENT_SECRET_KEY,
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "MyAgent",
   model: openai("gpt-4o-mini"),
   instructions: async ({ prompts }) => {
@@ -251,10 +251,10 @@ const agent = new Agent({
   },
 });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   voltOpsClient: voltOpsClient,
-});`,
+}).ready();`,
     footerText: "Version and update prompts without code changes using a central registry",
     docLink: "/docs/agents/prompts#voltops-prompt-management",
   },
@@ -263,14 +263,14 @@ new VoltAgent({
     label: "Guardrails",
     icon: "shield",
     image: "https://cdn.voltagent.dev/website/feature-showcase/guardrails.png",
-    code: `import { Agent, createGuardrail } from "@voltagent/core";
+    code: `import { defineAgent, createGuardrail } from "@voltagent/core";
 import {
   contentModerationGuardrail,
   piiDetectionGuardrail,
   topicRestrictionGuardrail,
 } from "@voltagent/guardrails";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "safe-agent",
 
   guardrails: {

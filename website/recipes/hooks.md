@@ -24,10 +24,10 @@ Hooks let you intercept and modify agent behavior at key points in the execution
 
 ```typescript
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, ToolDeniedError } from "@voltagent/core";
+import { defineAgent, voltagent, ToolDeniedError } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "HooksDemo",
   instructions: "Agent with lifecycle hooks",
   model: openai("gpt-4o-mini"),
@@ -65,10 +65,10 @@ const agent = new Agent({
   },
 });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer({ port: 3141 }),
-});
+}).ready();
 ```
 
 ## Transform Messages Before LLM

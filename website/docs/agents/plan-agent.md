@@ -12,9 +12,9 @@ PlanAgent is a higher-level agent that adds built-in planning, task delegation, 
 Start with a normal `Agent` if you only need straightforward responses.
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Assistant",
   instructions: "Answer questions clearly and concisely.",
   model: "openai/gpt-4o",

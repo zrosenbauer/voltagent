@@ -234,7 +234,7 @@ const lengthScorer = buildScorer({
 Leverage language models for sophisticated evaluation:
 
 ```typescript
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 
@@ -248,7 +248,7 @@ const qualityScorer = buildScorer({
   label: "Response Quality",
 })
   .analyze(async ({ payload }) => {
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "quality-evaluator",
       model: openai("gpt-4o-mini"),
       instructions: "You evaluate response quality on a scale of 0-10",
@@ -327,9 +327,9 @@ export default createExperiment({
 ### In Agent Evaluations
 
 ```typescript
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "support-agent",
   model: openai("gpt-4o-mini"),
   eval: {

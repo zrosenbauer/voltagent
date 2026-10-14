@@ -201,7 +201,7 @@ This code sets up a trigger handler that receives Slack messages and can call a 
 
 ```ts
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, createTriggers } from "@voltagent/core";
+import { defineAgent, voltagent, createTriggers } from "@voltagent/core";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
 import { weatherTool } from "./tools/weather";
@@ -216,14 +216,14 @@ type SlackMessagePayload = {
 
 const logger = createPinoLogger({ name: "with-slack", level: "info" });
 
-const slackAgent = new Agent({
+const slackAgent = defineAgent({
   name: "slack-agent",
   instructions: "You are a Slack assistant.",
   tools: [weatherTool],
   model: openai("gpt-4o-mini"),
 });
 
-new VoltAgent({
+await voltagent({
   agents: { slackAgent },
   server: honoServer(),
   logger,
@@ -247,7 +247,7 @@ Message: ${text}
 If the user asks for weather, call getWeather.`);
     });
   }),
-});
+}).ready();
 ```
 
 </ExpandableCode>
@@ -322,7 +322,7 @@ Add the VoltOps client and `sendSlackMessage` tool to your code:
 
 ```ts
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, createTool, createTriggers } from "@voltagent/core";
+import { defineAgent, voltagent, createTool, createTriggers } from "@voltagent/core";
 import { VoltOpsClient } from "@voltagent/sdk";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono";
@@ -367,7 +367,7 @@ const sendSlackMessage = createTool({
   },
 });
 
-const slackAgent = new Agent({
+const slackAgent = defineAgent({
   name: "slack-agent",
   instructions: [
     "You are a Slack assistant.",
@@ -378,7 +378,7 @@ const slackAgent = new Agent({
   model: openai("gpt-4o-mini"),
 });
 
-new VoltAgent({
+await voltagent({
   agents: { slackAgent },
   server: honoServer(),
   logger,
@@ -402,7 +402,7 @@ Message: ${text}
 Respond in Slack via sendSlackMessage; use getWeather for weather questions.`);
     });
   }),
-});
+}).ready();
 ```
 
 </ExpandableCode>

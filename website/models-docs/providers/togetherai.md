@@ -11,9 +11,9 @@ Use `togetherai/<model>` with VoltAgent's model router.
 ## Quick start
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "togetherai-agent",
   instructions: "You are a helpful assistant",
   model: "togetherai/Qwen/Qwen3-Coder-480B-A35B-Instruct-FP8",

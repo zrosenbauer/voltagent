@@ -45,17 +45,17 @@ No extra observability code is required for the basic path.
 For more control, configure observability explicitly with `VoltOpsClient`:
 
 ```typescript
-import { VoltAgent, VoltOpsClient } from "@voltagent/core";
-import { Agent } from "@voltagent/core";
+import { voltagent, VoltOpsClient } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 
-const supportAgent = new Agent({
+const supportAgent = defineAgent({
   name: "Support Agent",
   model: openai("gpt-4"),
   instructions: "Help users with their questions",
 });
 
-new VoltAgent({
+await voltagent({
   agents: {
     supportAgent,
   },
@@ -63,7 +63,7 @@ new VoltAgent({
     publicKey: process.env.VOLTAGENT_PUBLIC_KEY!,
     secretKey: process.env.VOLTAGENT_SECRET_KEY!,
   }),
-});
+}).ready();
 ```
 
 Run one request through your agent, then open [console.voltagent.dev](https://console.voltagent.dev).
@@ -79,7 +79,7 @@ If a trace does not appear, first confirm keys belong to the same project, resta
 Attach IDs so filtering and debugging is easier:
 
 ```typescript
-const agent = new Agent({
+const agent = defineAgent({
   name: "Support Agent",
   model: openai("gpt-4"),
   instructions: "Help users with their questions",
@@ -103,9 +103,9 @@ await agent.run("Hello", {
 Use `createVoltAgentObservability` for service naming and sampling control:
 
 ```typescript
-import { VoltAgent, createVoltAgentObservability } from "@voltagent/core";
+import { voltagent, createVoltAgentObservability } from "@voltagent/core";
 
-new VoltAgent({
+await voltagent({
   agents: {
     // your agents
   },
@@ -123,7 +123,7 @@ new VoltAgent({
       exportTimeoutMillis: 30000,
     },
   }),
-});
+}).ready();
 ```
 
 Recommended starting point:
@@ -149,15 +149,15 @@ Recommended starting point:
 VoltAgent automatically detects serverless environments (Cloudflare Workers, Vercel Edge, Deno Deploy). For serverless apps, use `serverlessHono`:
 
 ```typescript
-import { VoltAgent, serverlessHono } from "@voltagent/core";
+import { voltagent, serverlessHono } from "@voltagent/core";
 import { honoServer } from "@voltagent/server";
 
-new VoltAgent({
+await voltagent({
   agents: { supportAgent },
   serverless: serverlessHono(),
   voltOpsClient: new VoltOpsClient({
     publicKey: process.env.VOLTAGENT_PUBLIC_KEY!,
     secretKey: process.env.VOLTAGENT_SECRET_KEY!,
   }),
-});
+}).ready();
 ```

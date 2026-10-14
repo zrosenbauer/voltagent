@@ -13,7 +13,7 @@ Without RAG, your AI agent is like a smart person with amnesia:
 
 ```typescript
 // ❌ Without RAG - agent only knows training data
-const agent = new Agent({
+const agent = defineAgent({
   name: "Support Bot",
   instructions: "Help customers with our product",
 });
@@ -28,7 +28,7 @@ With RAG, your agent can search and use your actual data:
 
 ```typescript
 // ✅ With RAG - agent searches your knowledge base
-const agent = new Agent({
+const agent = defineAgent({
   name: "Support Bot",
   instructions: "Help customers with our product",
   retriever: myKnowledgeBase, // 🔥 This is the magic
@@ -56,7 +56,7 @@ VoltAgent gives you two ways to add RAG to your agents:
 ### Option 1: Always-On Search
 
 ```typescript
-const agent = new Agent({
+const agent = defineAgent({
   name: "Smart Assistant",
   retriever: mySearchEngine, // Searches before every response
 });
@@ -67,7 +67,7 @@ const agent = new Agent({
 ### Option 2: Search When Needed
 
 ```typescript
-const agent = new Agent({
+const agent = defineAgent({
   name: "Smart Assistant",
   tools: [mySearchEngine.tool], // Agent decides when to search
 });
@@ -103,7 +103,7 @@ class PostgreSQLRetriever extends BaseRetriever {
 }
 
 // Agent code stays exactly the same! 🎉
-const agent = new Agent({
+const agent = defineAgent({
   retriever: new FileRetriever(), // Just swap the class
 });
 ```
@@ -130,7 +130,7 @@ The fastest way to add RAG to your agent. Fully managed - just upload documents 
 </video>
 
 ```typescript
-import { Agent, VoltAgentRagRetriever } from "@voltagent/core";
+import { defineAgent, VoltAgentRagRetriever } from "@voltagent/core";
 
 const retriever = new VoltAgentRagRetriever({
   knowledgeBaseName: "my-docs",
@@ -138,7 +138,7 @@ const retriever = new VoltAgentRagRetriever({
   includeSources: true,
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Support Bot",
   retriever, // Automatic context injection
 });

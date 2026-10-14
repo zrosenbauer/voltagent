@@ -136,7 +136,7 @@ const Day3 = () => (
             showLineNumbers={false}
             className="!m-0 !p-0 h-full [&>pre]:!m-0 [&>pre]:!p-4 [&>pre]:h-full"
           >
-            {`const supervisor = new Agent({
+            {`const supervisor = defineAgent({
   name: "Workout Supervisor",
   subAgents: [exerciseAgent, workoutBuilder],
   hooks: {

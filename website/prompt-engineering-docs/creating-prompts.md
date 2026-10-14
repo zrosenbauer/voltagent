@@ -109,7 +109,7 @@ Prompts can include optional configuration stored as JSON:
 Access configuration in your agent:
 
 ```typescript
-const agent = new Agent({
+const agent = defineAgent({
   name: "ConfiguredAgent",
   model: openai("gpt-4o-mini"),
   instructions: async ({ prompts }) => {

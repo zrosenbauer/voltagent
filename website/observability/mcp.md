@@ -77,7 +77,7 @@ https://your-api.example.com/mcp/observability
 If you want one VoltAgent agent to inspect traces from another system, connect to VoltOps as a remote MCP server:
 
 ```ts
-import { Agent, MCPConfiguration } from "@voltagent/core";
+import { defineAgent, MCPConfiguration } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 
 const mcp = new MCPConfiguration({
@@ -94,7 +94,7 @@ const mcp = new MCPConfiguration({
   },
 });
 
-const debuggerAgent = new Agent({
+const debuggerAgent = defineAgent({
   name: "Debugger",
   model: openai("gpt-4o-mini"),
   instructions:

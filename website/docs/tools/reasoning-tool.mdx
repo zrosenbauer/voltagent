@@ -137,12 +137,12 @@ When the agent calls `think` or `analyze`, it uses parameters like:
 ![River Crossing Puzzle](https://cdn.voltagent.dev/docs/reasoning-demo.gif)
 
 ```typescript
-import { Agent, createReasoningTools, type Toolkit } from "@voltagent/core";
+import { defineAgent, createReasoningTools, type Toolkit } from "@voltagent/core";
 
 // Get toolkit, automatically adding instructions & examples to system prompt
 const reasoningToolkit: Toolkit = createReasoningTools(); // Uses defaults
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "ThinkingAgent",
   instructions: `
     You are an AI assistant designed for complex problem-solving using structured reasoning.

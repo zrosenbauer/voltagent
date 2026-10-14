@@ -13,20 +13,20 @@ Retries help you survive transient provider issues like 5xx errors and rate limi
 
 ```typescript
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent } from "@voltagent/core";
+import { defineAgent, voltagent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "ReliableAgent",
   instructions: "Answer support questions clearly and fast.",
   model: openai("gpt-4o-mini"),
   maxRetries: 2,
 });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer({ port: 3141 }),
-});
+}).ready();
 ```
 
 ## Per-Call Overrides
@@ -42,7 +42,7 @@ const response = await agent.generateText("Summarize this ticket", {
 Use the `onRetry` hook to track retry behavior.
 
 ```typescript
-const agent = new Agent({
+const agent = defineAgent({
   name: "RetryAwareAgent",
   instructions: "Answer questions with retries.",
   model: openai("gpt-4o-mini"),

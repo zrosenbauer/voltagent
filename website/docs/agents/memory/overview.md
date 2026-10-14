@@ -104,17 +104,17 @@ Notes:
 Agents accept a `memory` option:
 
 ```ts
-import { Agent, Memory } from "@voltagent/core";
+import { defineAgent, Memory } from "@voltagent/core";
 
 // Default when omitted: built-in in-memory storage
-const agent1 = new Agent({
+const agent1 = defineAgent({
   name: "Assistant",
   model: "openai/gpt-4o-mini",
   // memory omitted (or undefined)
 });
 
 // Disable memory entirely
-const agent2 = new Agent({
+const agent2 = defineAgent({
   name: "Stateless",
   model: "openai/gpt-4o-mini",
   memory: false,
@@ -123,7 +123,7 @@ const agent2 = new Agent({
 // Persistent storage
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 
-const agent3 = new Agent({
+const agent3 = defineAgent({
   name: "Persistent",
   model: "openai/gpt-4o-mini",
   memory: new Memory({
@@ -147,7 +147,7 @@ For stateless sub-agents, set `memory: false` on each sub-agent explicitly.
 Set default memory instances once at the VoltAgent entrypoint. Defaults apply only when an agent or workflow does not specify `memory`. If nothing is configured, VoltAgent still falls back to built-in in-memory storage. An explicit `memory: false` on an agent disables memory and bypasses defaults.
 
 ```ts
-import { Memory, VoltAgent } from "@voltagent/core";
+import { Memory, voltagent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 
 const agentMemory = new Memory({
@@ -158,11 +158,11 @@ const workflowMemory = new Memory({
   storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/workflows.db" }),
 });
 
-new VoltAgent({
+await voltagent({
   agentMemory,
   workflowMemory,
   // memory: sharedFallbackMemory,
-});
+}).ready();
 ```
 
 **Precedence**
@@ -197,7 +197,7 @@ const response = await agent.generateText({
 ### Managed Memory (Zero Setup)
 
 ```ts
-import { Agent, Memory } from "@voltagent/core";
+import { defineAgent, Memory } from "@voltagent/core";
 import { ManagedMemoryAdapter } from "@voltagent/voltagent-memory";
 import { VoltOpsClient } from "@voltagent/core";
 
@@ -213,7 +213,7 @@ const memory = new Memory({
   }),
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Assistant",
   model: "openai/gpt-4o-mini",
   memory,
@@ -223,7 +223,7 @@ const agent = new Agent({
 ### Semantic Search + Working Memory
 
 ```ts
-import { Agent, Memory, InMemoryVectorAdapter } from "@voltagent/core";
+import { defineAgent, Memory, InMemoryVectorAdapter } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { z } from "zod";
 
@@ -241,7 +241,7 @@ const memory = new Memory({
   },
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Smart Assistant",
   model: "openai/gpt-4o-mini",
   memory,
@@ -357,7 +357,7 @@ class TenantMemoryAdapter extends InMemoryStorageAdapter {
 }
 
 // Use the adapter
-const agent = new Agent({
+const agent = defineAgent({
   memory: new Memory({ storage: new TenantMemoryAdapter() }),
 });
 

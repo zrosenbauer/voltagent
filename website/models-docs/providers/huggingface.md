@@ -11,9 +11,9 @@ Use `huggingface/<model>` with VoltAgent's model router.
 ## Quick start
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "huggingface-agent",
   instructions: "You are a helpful assistant",
   model: "huggingface/MiniMaxAI/MiniMax-M2.1",

@@ -58,7 +58,7 @@ When search tools run, VoltAgent forwards the current operation context through 
 This means context-aware filesystem backends (for example tenant-based roots) also apply to `workspace_index` and `workspace_search`.
 
 ```ts
-import { Agent, Workspace, NodeFilesystemBackend } from "@voltagent/core";
+import { defineAgent, Workspace, NodeFilesystemBackend } from "@voltagent/core";
 
 const workspace = new Workspace({
   filesystem: {
@@ -74,7 +74,7 @@ const workspace = new Workspace({
   },
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "workspace-search-agent",
   model: "openai/gpt-4o-mini", // Replace with your preferred provider/model
   instructions: "Use workspace search tools when needed.",

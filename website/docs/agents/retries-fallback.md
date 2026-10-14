@@ -20,9 +20,9 @@ Native model middleware remains active on a model passed through `wrapLanguageMo
 You can set a default retry count at the agent level, then override it per model or per call.
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Support",
   instructions: "Resolve tickets quickly.",
   model: "openai/gpt-4o-mini",
@@ -47,10 +47,10 @@ Provide a list of models. VoltAgent tries them in order until one succeeds.
 Each entry can have its own retry count and can be toggled on/off.
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import { anthropic } from "@ai-sdk/anthropic";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "FallbackAgent",
   instructions: "Be concise.",
   model: [
@@ -137,7 +137,7 @@ See [Middleware](/docs/agents/middleware) for configuration and API details.
 The primary provider returns 5xx errors during a traffic spike. Configure a fallback provider with its own retry count.
 
 ```ts
-const agent = new Agent({
+const agent = defineAgent({
   name: "LaunchAssistant",
   instructions: "Handle onboarding questions.",
   model: [
@@ -157,7 +157,7 @@ Expected behavior:
 The primary model returns 429 during peak hours. Set `maxRetries: 0` on the primary and allow retries on the fallback.
 
 ```ts
-const agent = new Agent({
+const agent = defineAgent({
   name: "PeakTrafficAgent",
   instructions: "Answer pricing questions.",
   model: [
@@ -177,7 +177,7 @@ Expected behavior:
 A provider returns timeout errors. Configure another provider as a fallback.
 
 ```ts
-const agent = new Agent({
+const agent = defineAgent({
   name: "RegionalAgent",
   instructions: "Support users in APAC.",
   model: [
@@ -198,7 +198,7 @@ Expected behavior:
 Some users require a specific provider for data residency. Select the primary model dynamically and keep a fallback entry.
 
 ```ts
-const agent = new Agent({
+const agent = defineAgent({
   name: "ComplianceAgent",
   instructions: "Handle regulated requests.",
   model: [
@@ -224,7 +224,7 @@ Expected behavior:
 Use a lower-cost primary model and a second model for error cases.
 
 ```ts
-const agent = new Agent({
+const agent = defineAgent({
   name: "CostAwareAgent",
   instructions: "Handle receipts and billing questions.",
   model: [

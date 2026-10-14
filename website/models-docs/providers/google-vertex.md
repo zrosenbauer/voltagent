@@ -11,9 +11,9 @@ Use `google-vertex/<model>` with VoltAgent's model router.
 ## Quick start
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "google-vertex-agent",
   instructions: "You are a helpful assistant",
   model: "google-vertex/gemini-2.0-flash",

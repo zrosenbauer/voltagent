@@ -5,11 +5,11 @@
 ## Quick Start
 
 ```typescript
-import { createWorkflowChain, Agent } from "@voltagent/core";
+import { createWorkflowChain, defineAgent } from "@voltagent/core";
 import { z } from "zod";
 
 // Create an agent
-const agent = new Agent({
+const agent = defineAgent({
   name: "Assistant",
   // Pass an ai-sdk model directly
   model: "openai/gpt-4o-mini",
@@ -107,7 +107,7 @@ By default, the step result replaces the workflow data with the agent output. If
 per step.
 
 ```ts
-import { Agent, createInputMiddleware, createOutputMiddleware } from "@voltagent/core";
+import { defineAgent, createInputMiddleware, createOutputMiddleware } from "@voltagent/core";
 import { createWorkflowChain } from "@voltagent/core";
 import { z } from "zod";
 
@@ -129,7 +129,7 @@ const requireSource = createOutputMiddleware<string>({
   },
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Assistant",
   model: "openai/gpt-4o-mini",
   instructions: "Summarize documents with sources.",
@@ -300,10 +300,10 @@ createWorkflowChain({ id: "smart-email" })
 `andAgent` supports tools, but it only returns the structured output when the step completes. Use `andThen` when you need streaming tokens or to inspect tool calls/results directly:
 
 ```typescript
-import { Agent, tool } from "@voltagent/core";
+import { defineAgent, defineTool } from "@voltagent/core";
 import { z } from "zod";
 
-const getWeatherTool = tool({
+const getWeatherTool = defineTool({
   description: "Get weather for a location",
   inputSchema: z.object({ city: z.string() }),
   execute: async ({ city }) => {
@@ -311,7 +311,7 @@ const getWeatherTool = tool({
   },
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Assistant",
   model: "openai/gpt-4o-mini",
   tools: {

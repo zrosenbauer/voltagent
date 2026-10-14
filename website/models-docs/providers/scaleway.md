@@ -11,9 +11,9 @@ Use `scaleway/<model>` with VoltAgent's model router.
 ## Quick start
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "scaleway-agent",
   instructions: "You are a helpful assistant",
   model: "scaleway/bge-multilingual-gemma2",

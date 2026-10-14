@@ -23,12 +23,12 @@ Tools created with `tool` from `ai` work directly in the agent's `tools` object.
 
 ```ts
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent } from "@voltagent/core";
+import { defineAgent, voltagent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 import { isStepCount, tool } from "ai";
 import { z } from "zod";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Calculator",
   instructions: "Use the calculator for arithmetic and explain the result.",
   model: openai("gpt-4o-mini"),
@@ -41,7 +41,7 @@ const agent = new Agent({
   },
 });
 
-new VoltAgent({ agents: { agent }, server: honoServer() });
+voltagent({ agents: { agent }, server: honoServer() });
 
 const result = await agent.generateText({
   prompt: "What is 21 + 34?",
@@ -73,7 +73,7 @@ Configure [memory](../agents/memory.md) on the agent when calls should retain co
 
 ## Add VoltAgent metadata to a tool
 
-Use `enhanceTool` for existing AI SDK tools, or `tool` from `@voltagent/core` to define a tool with a `voltagent` metadata namespace. Native execution semantics stay the same; metadata alone does not enable retries or output validation.
+Use `enhanceTool` for existing AI SDK tools, or `defineTool` from `@voltagent/core` to define a tool with a `voltagent` metadata namespace. Native execution semantics stay the same; metadata alone does not enable retries or output validation.
 
 ```ts
 import { enhanceTool } from "@voltagent/core";

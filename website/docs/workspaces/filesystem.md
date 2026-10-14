@@ -89,7 +89,7 @@ When read-only, `workspace_index` and `workspace_index_content` are also disable
 Tool policies let you enable/disable tools, require approval, or enforce read-before-write:
 
 ```ts
-const agent = new Agent({
+const agent = defineAgent({
   name: "workspace-agent",
   model,
   workspace,

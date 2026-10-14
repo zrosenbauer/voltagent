@@ -20,9 +20,9 @@ Both approaches are fully compatible with ai-sdk streaming, tool calling, and st
 Model strings remove the need to import provider packages in your app:
 
 ```typescript
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "my-agent",
   instructions: "You are a helpful assistant",
   model: "openai/gpt-4o-mini",
@@ -32,13 +32,13 @@ const agent = new Agent({
 Other examples:
 
 ```typescript
-const claudeAgent = new Agent({
+const claudeAgent = defineAgent({
   name: "claude-agent",
   instructions: "Answer with concise reasoning",
   model: "anthropic/claude-3-5-sonnet",
 });
 
-const geminiAgent = new Agent({
+const geminiAgent = defineAgent({
   name: "gemini-agent",
   instructions: "Respond in Turkish",
   model: "google/gemini-2.0-flash",
@@ -125,9 +125,9 @@ If you only use model strings, you can skip installing provider packages.
 ### Model Strings
 
 ```typescript
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "my-agent",
   instructions: "You are a helpful assistant",
   model: "openai/gpt-4o-mini",
@@ -137,10 +137,10 @@ const agent = new Agent({
 ### Direct ai-sdk Provider
 
 ```typescript
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "my-agent",
   instructions: "You are a helpful assistant",
   model: openai("gpt-4o-mini"),
@@ -306,7 +306,7 @@ If you're currently using VoltAgent's native providers (`@voltagent/anthropic-ai
 import { AnthropicProvider } from "@voltagent/anthropic-ai";
 
 const provider = new AnthropicProvider({ apiKey: "..." });
-const agent = new Agent({
+const agent = defineAgent({
   llm: provider,
   model: "claude-opus-4-1",
 });
@@ -315,9 +315,9 @@ const agent = new Agent({
 ### After (Recommended):
 
 ```typescript
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   model: "anthropic/claude-3-5-sonnet",
   instructions: "You are a helpful assistant",
 });

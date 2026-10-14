@@ -44,7 +44,7 @@ pnpm add @assistant-ui/react @assistant-ui/react-ai-sdk @assistant-ui/react-mark
 Create `voltagent/agents.ts` and wire an agent with shared memory. You can keep it simple—no tools needed to get streaming working.
 
 ```ts title="examples/with-assistant-ui/voltagent/agents.ts"
-import { Agent, tool } from "@voltagent/core";
+import { defineAgent, defineTool } from "@voltagent/core";
 import { z } from "zod";
 import { sharedMemory } from "./memory";
 
@@ -59,7 +59,7 @@ const weatherOutputSchema = z.object({
   message: z.string(),
 });
 
-const weatherTool = tool({
+const weatherTool = defineTool({
   description: "Get the current weather for a specific location",
   inputSchema: z.object({
     location: z.string().describe("The city or location to get weather for"),
@@ -83,7 +83,7 @@ const weatherTool = tool({
   },
 });
 
-export const assistantAgent = new Agent({
+export const assistantAgent = defineAgent({
   name: "AssistantUIAgent",
   instructions:
     "You are a helpful AI that keeps responses concise, explains reasoning when useful, can describe attachments, and can call the getWeather tool for weather questions.",
@@ -122,14 +122,14 @@ export const sharedMemory = new Memory({
 Create `voltagent/server.ts`:
 
 ```ts title="examples/with-assistant-ui/voltagent/server.ts"
-import { VoltAgent } from "@voltagent/core";
+import { voltagent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 import { agent } from "./agents";
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer(),
-});
+}).ready();
 ```
 
 Add a script to `package.json`:

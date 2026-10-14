@@ -10,9 +10,9 @@ Summarization shortens long conversations by inserting a system summary and keep
 ## Configuration
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Assistant",
   instructions: "Answer questions clearly.",
   model: "openai/gpt-4o",

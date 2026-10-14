@@ -184,7 +184,7 @@ export default function MCPTutorial() {
 
           <ColorModeProvider>
             <CodeBlock language="typescript">
-              {`import { VoltAgent, Agent, createTool, MCPConfiguration } from "@voltagent/core";
+              {`import { voltagent, defineAgent, createTool, MCPConfiguration } from "@voltagent/core";
 // Removed legacy provider in 1.x; use ai-sdk model directly
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
@@ -229,7 +229,7 @@ const mcpConfig = new MCPConfiguration({
 
 (async () => {
   const tools = await mcpConfig.getTools();
-  const agent = new Agent({
+  const agent = defineAgent({
     name: "my-agent",
     instructions: \`You are a helpful assistant that can check weather and manage files. You can:
   - Get weather information for any city
@@ -246,9 +246,9 @@ const mcpConfig = new MCPConfiguration({
     ],
   });
 
-  new VoltAgent({
+  await voltagent({
     agents: { agent },
-  });
+  }).ready();
 })();
 
 // Now your agent can do both weather AND file operations!
@@ -390,7 +390,7 @@ const mcpConfig = new MCPConfiguration({
 
           <ColorModeProvider>
             <CodeBlock language="typescript">
-              {`import { VoltAgent, Agent, createTool, MCPConfiguration } from "@voltagent/core";
+              {`import { voltagent, defineAgent, createTool, MCPConfiguration } from "@voltagent/core";
 // Removed legacy provider in 1.x; use ai-sdk model directly
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
@@ -447,7 +447,7 @@ const mcpConfig = new MCPConfiguration({
   try {
     const tools = await mcpConfig.getTools();
     
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "my-agent",
       instructions: \`You are a powerful assistant with comprehensive capabilities:
         
@@ -477,9 +477,9 @@ const mcpConfig = new MCPConfiguration({
       ],
     });
 
-    new VoltAgent({
+    await voltagent({
       agents: { agent },
-    });
+    }).ready();
   } catch (error) {
     console.error("Failed to initialize VoltAgent:", error);
   }

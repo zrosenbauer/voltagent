@@ -11,9 +11,9 @@ Use `siliconflow/<model>` with VoltAgent's model router.
 ## Quick start
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "siliconflow-agent",
   instructions: "You are a helpful assistant",
   model: "siliconflow/ByteDance-Seed/Seed-OSS-36B-Instruct",

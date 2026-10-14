@@ -11,9 +11,9 @@ Use `llama/<model>` with VoltAgent's model router.
 ## Quick start
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "llama-agent",
   instructions: "You are a helpful assistant",
   model: "llama/cerebras-llama-4-maverick-17b-128e-instruct",

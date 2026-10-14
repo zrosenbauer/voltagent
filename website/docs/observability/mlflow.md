@@ -26,7 +26,7 @@ npm install @opentelemetry/sdk-trace-base @opentelemetry/exporter-trace-otlp-pro
 In your application (e.g., `src/index.ts`) import the observability class and the OpenTelemetry packages:
 
 ```typescript
-import { Agent, VoltAgent, VoltAgentObservability } from "@voltagent/core";
+import { defineAgent, voltagent, VoltAgentObservability } from "@voltagent/core";
 import { BatchSpanProcessor } from "@opentelemetry/sdk-trace-base";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto";
 ```
@@ -45,16 +45,16 @@ const observability = new VoltAgentObservability({
   spanProcessors: [new BatchSpanProcessor(mlflowExporter)],
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "my-voltagent-app",
   instructions: "A helpful assistant",
   model: "openai/gpt-4o-mini",
 });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   observability,
-});
+}).ready();
 ```
 
 Add the required environment variables to your `.env` file:

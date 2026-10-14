@@ -181,7 +181,7 @@ const Day3 = () => (
             showLineNumbers={false}
             className="!m-0 !p-0 h-full [&>pre]:!m-0 [&>pre]:!p-4 [&>pre]:h-full"
           >
-            {`const agent = new Agent({
+            {`const agent = defineAgent({
   id: "assistant",
   name: "Assistant",
   instructions: "You are a helpful assistant that can answer questions and help with tasks.",
@@ -229,7 +229,7 @@ const Day4 = () => (
             showLineNumbers={false}
             className="!m-0 !p-0 h-full [&>pre]:!m-0 [&>pre]:!p-4 [&>pre]:h-full"
           >
-            {`new VoltAgent({
+            {`voltagent({
   agents: { myAgent },
   server: {
     customEndpoints: [

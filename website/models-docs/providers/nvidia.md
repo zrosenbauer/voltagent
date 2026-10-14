@@ -11,9 +11,9 @@ Use `nvidia/<model>` with VoltAgent's model router.
 ## Quick start
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "nvidia-agent",
   instructions: "You are a helpful assistant",
   model: "nvidia/black-forest-labs/flux.1-dev",

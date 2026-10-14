@@ -59,7 +59,7 @@ To persist observability data, provide a `storage` adapter to `VoltAgentObservab
 Example (persist with LibSQL):
 
 ```ts
-import { VoltAgent, VoltAgentObservability } from "@voltagent/core";
+import { voltagent, VoltAgentObservability } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 import { createPinoLogger } from "@voltagent/logger";
 import { LibSQLObservabilityAdapter } from "@voltagent/libsql";
@@ -69,7 +69,7 @@ import { agent } from "./agent"; // adjust path as needed
 
 const logger = createPinoLogger({ name: "my-voltagent-app", level: "info" });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer(),
   logger,
@@ -83,7 +83,7 @@ new VoltAgent({
       // authToken: process.env.TURSO_AUTH_TOKEN,
     }),
   }),
-});
+}).ready();
 ```
 
 Notes:
@@ -128,7 +128,7 @@ If keys are missing or invalid, VoltAgent continues to run locally with full rea
 The defaults work for most cases. If you want to fine-tune sampling or batching, provide a custom `VoltAgentObservability` when creating `VoltAgent`.
 
 ```ts
-import { VoltAgent, Agent, VoltAgentObservability } from "@voltagent/core";
+import { voltagent, defineAgent, VoltAgentObservability } from "@voltagent/core";
 
 const observability = new VoltAgentObservability({
   serviceName: "my-service", // Optional service metadata
@@ -144,13 +144,13 @@ const observability = new VoltAgentObservability({
   },
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "My Agent",
   instructions: "You are a helpful assistant.",
   model: "openai/gpt-4o-mini",
 });
 
-new VoltAgent({ agents: { main: agent }, observability });
+voltagent({ agents: { main: agent }, observability });
 ```
 
 Common overrides:
@@ -239,15 +239,15 @@ Minimal example after migration:
 
 ```ts
 // .env contains VOLTAGENT_PUBLIC_KEY and VOLTAGENT_SECRET_KEY
-import { VoltAgent, Agent } from "@voltagent/core";
+import { voltagent, defineAgent } from "@voltagent/core";
 
-new VoltAgent({
+await voltagent({
   agents: {
-    main: new Agent({
+    main: defineAgent({
       /* ... */
     }),
   },
-});
+}).ready();
 // Remote export auto-enables when keys exist; no code changes needed
 ```
 

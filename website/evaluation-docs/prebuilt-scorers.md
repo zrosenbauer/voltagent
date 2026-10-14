@@ -292,7 +292,7 @@ const experiment = await voltagent.evals.runExperiment({
 <TabItem value="live" label="Live Eval">
 
 ```typescript
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import { createAnswerCorrectnessScorer } from "@voltagent/scorers";
 import { openai } from "@ai-sdk/openai";
 
@@ -305,7 +305,7 @@ const scorer = createAnswerCorrectnessScorer({
   }),
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "support-agent",
   model: openai("gpt-4o"),
   eval: {
@@ -563,7 +563,7 @@ const experiment = await voltagent.evals.runExperiment({
 <TabItem value="live" label="Live Eval">
 
 ```typescript
-const agent = new Agent({
+const agent = defineAgent({
   name: "fact-checker",
   model: openai("gpt-4o"),
   eval: {
@@ -797,7 +797,7 @@ const experiment = await voltagent.evals.runExperiment({
 <TabItem value="live" label="Live Eval">
 
 ```typescript
-const agent = new Agent({
+const agent = defineAgent({
   name: "content-moderator",
   model: openai("gpt-4o"),
   eval: {
@@ -846,11 +846,11 @@ const results = await experiment.results();
 ### In Live Evaluations
 
 ```typescript
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import { scorers, createAnswerCorrectnessScorer } from "@voltagent/scorers";
 import { openai } from "@ai-sdk/openai";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "production-agent",
   model: openai("gpt-4o"),
   eval: {

@@ -113,7 +113,7 @@ describe("Agent", () => {
   });
 
   it("should generate text", async () => {
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "test-agent",
       model: mockModel,
     });
@@ -128,11 +128,11 @@ describe("Agent", () => {
 
 ```typescript
 import { z } from "zod";
-import { tool } from "./index";
+import { defineTool } from "./index";
 
 describe("Tool", () => {
   it("should create tool with schema", () => {
-    const testTool = tool({
+    const testTool = defineTool({
       description: "A test tool",
       inputSchema: z.object({
         input: z.string(),

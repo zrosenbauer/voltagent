@@ -100,7 +100,7 @@ export const createAirtableRecordTool = createTool({
 Add the tool to an agent:
 
 ```ts
-const airtableAgent = new Agent({
+const airtableAgent = defineAgent({
   name: "Airtable Assistant",
   model: openai("gpt-4o-mini"),
   instructions: "Use the Airtable tools to manage the operations database.",

@@ -119,7 +119,7 @@ Create `src/index.ts`:
 <ExpandableCode title="src/index.ts" previewLines={12}>
 
 ```typescript
-import { VoltAgent, Agent, Memory } from "@voltagent/core";
+import { voltagent, defineAgent, Memory } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono"; // HTTP server
 import { LibSQLMemoryAdapter } from "@voltagent/libsql"; // For persistent memory
 import { createPinoLogger } from "@voltagent/logger";
@@ -131,7 +131,7 @@ const logger = createPinoLogger({
 });
 
 // Define a simple agent
-const agent = new Agent({
+const agent = defineAgent({
   name: "my-agent",
   instructions: "A helpful assistant that answers questions without using tools",
   // VoltAgent uses model strings - pick any provider/model id
@@ -145,11 +145,11 @@ const agent = new Agent({
 });
 
 // Initialize VoltAgent with your agent(s)
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer(), // Default port: 3141
   logger,
-});
+}).ready();
 ```
 
 </ExpandableCode>

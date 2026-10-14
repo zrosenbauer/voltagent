@@ -96,14 +96,14 @@ await generateText({
       javascript: `const conversationId = "conv-456";
 
 // First interaction
-const agent1 = new Agent({
+const agent1 = defineAgent({
   conversationId,
   instructions: "Help with password reset"
 });
 await agent1.run("How to reset password?");
 
 // Second interaction - same session
-const agent2 = new Agent({
+const agent2 = defineAgent({
   conversationId, // Same conversation ID
   instructions: "Continue helping user"
 });
@@ -143,7 +143,7 @@ const conversationId = \`meeting_\${projectId}_\${timestamp}\`;
 const conversationId = \`workflow_\${workflowType}_\${id}\`;
 
 // Used in agent creation
-const agent = new Agent({
+const agent = defineAgent({
   conversationId,
   name: "Support Agent"
 });`,

@@ -11,9 +11,9 @@ Use `privatemode-ai/<model>` with VoltAgent's model router.
 ## Quick start
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "privatemode-ai-agent",
   instructions: "You are a helpful assistant",
   model: "privatemode-ai/gemma-3-27b",

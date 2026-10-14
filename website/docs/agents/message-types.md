@@ -122,9 +122,9 @@ const message: UIMessage = {
 #### Common Patterns
 
 ```typescript
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   memory: myMemory,
 
   hooks: {
@@ -240,9 +240,9 @@ const subAgentStreamPart: VoltAgentTextStreamPart = {
 #### Common Patterns
 
 ```typescript
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   subAgents: [writerAgent, editorAgent],
 });
 
@@ -356,9 +356,9 @@ See [Message Helpers](/docs/utils/message-helpers) for the complete API.
 **Use Case**: Store and retrieve conversation history
 
 ```typescript
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   memory: myMemory,
 });
 
@@ -385,9 +385,9 @@ history.forEach((msg) => {
 **Use Case**: Real-time UI updates with SubAgent identification
 
 ```typescript
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const coordinator = new Agent({
+const coordinator = defineAgent({
   subAgents: [researchAgent, writerAgent],
 });
 
@@ -414,9 +414,9 @@ for await (const part of result.stream) {
 **Use Case**: Add context or filter sensitive data
 
 ```typescript
-import { Agent, messageHelpers } from "@voltagent/core";
+import { defineAgent, messageHelpers } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   hooks: {
     onPrepareMessages: async ({ messages }) => {
       // Add timestamps to user messages

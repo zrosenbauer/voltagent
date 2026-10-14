@@ -11,9 +11,9 @@ Use `io-net/<model>` with VoltAgent's model router.
 ## Quick start
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "io-net-agent",
   instructions: "You are a helpful assistant",
   model: "io-net/Intel/Qwen3-Coder-480B-A35B-Instruct-int4-mixed-ar",

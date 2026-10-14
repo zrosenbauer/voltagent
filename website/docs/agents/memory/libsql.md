@@ -16,7 +16,7 @@ npm install @voltagent/libsql
 ## Configuration
 
 ```ts
-import { Agent, Memory } from "@voltagent/core";
+import { defineAgent, Memory } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 
 // Local SQLite
@@ -34,7 +34,7 @@ const memory = new Memory({
   }),
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Assistant",
   model: "openai/gpt-4o-mini",
   memory,
@@ -130,10 +130,10 @@ For production-ready zero-setup hosting, see [Managed Memory](./managed-memory.m
 ### Development with Local SQLite
 
 ```ts
-import { Agent, Memory } from "@voltagent/core";
+import { defineAgent, Memory } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Dev Assistant",
   model: "openai/gpt-4o-mini",
   memory: new Memory({
@@ -147,10 +147,10 @@ const agent = new Agent({
 ### Remote Instance
 
 ```ts
-import { Agent, Memory } from "@voltagent/core";
+import { defineAgent, Memory } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Assistant",
   model: "openai/gpt-4o-mini",
   memory: new Memory({

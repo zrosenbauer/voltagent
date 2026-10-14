@@ -301,7 +301,7 @@ export default function ChatbotProblemTutorial() {
                             <span className="text-[#ff7b72]">import</span>
                             <span className="text-[#e6edf3]">
                               {" "}
-                              {"{"} VoltAgent, Agent, createTool {"}"}{" "}
+                              {"{"} voltagent, defineAgent, createTool {"}"}{" "}
                             </span>
                             <span className="text-[#ff7b72]">from</span>
                             <span className="text-[#a5d6ff]"> "@voltagent/core"</span>
@@ -432,8 +432,7 @@ export default function ChatbotProblemTutorial() {
                           <span className={`block ${getHighlightClasses("agent")}`}>
                             <span className="text-[#ff7b72]">const</span>
                             <span> agent = </span>
-                            <span className="text-[#ff7b72]">new</span>
-                            <span className="text-[#d2a8ff]"> Agent</span>
+                            <span className="text-[#d2a8ff]">defineAgent</span>
                             <span>{"({"}</span>
                             <br />
                             <span className="ml-4">name: </span>
@@ -445,11 +444,6 @@ export default function ChatbotProblemTutorial() {
                               "A helpful assistant that can check weather"
                             </span>
                             <span>,</span>
-                            <br />
-                            <span className="ml-4">llm: </span>
-                            <span className="text-[#ff7b72]">new</span>
-
-                            <span>(),</span>
                             <br />
                             <span className="ml-4">model: </span>
                             <span className="text-[#d2a8ff]">openai</span>
@@ -466,15 +460,15 @@ export default function ChatbotProblemTutorial() {
 
                           {/* Server Setup */}
                           <span className={`block ${getHighlightClasses("server")}`}>
-                            <span className="text-[#ff7b72]">new</span>
-                            <span className="text-[#d2a8ff]"> VoltAgent</span>
+                            <span className="text-[#ff7b72]">await</span>{" "}
+                            <span className="text-[#d2a8ff]">voltagent</span>
                             <span>{"({"}</span>
                             <br />
                             <span className="ml-4">
                               agents: {"{"} agent {"}"},
                             </span>
                             <br />
-                            <span>{"});"}</span>
+                            <span>{"}).ready();"}</span>
                           </span>
                         </code>
                       </div>

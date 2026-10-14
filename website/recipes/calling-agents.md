@@ -12,10 +12,10 @@ VoltAgent 3 accepts AI SDK models and tools directly. Use Node.js 22 or newer wi
 ## Programmatic calls
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 
-export const agent = new Agent({
+export const agent = defineAgent({
   id: "assistant",
   name: "Assistant",
   instructions: "You are a helpful assistant.",
@@ -113,11 +113,11 @@ console.log(await stream.output);
 Register the agent with a server:
 
 ```ts
-import { VoltAgent } from "@voltagent/core";
+import { voltagent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 import { agent } from "./agent.js";
 
-new VoltAgent({ agents: { assistant: agent }, server: honoServer() });
+voltagent({ agents: { assistant: agent }, server: honoServer() });
 ```
 
 The default agent endpoint prefix is `/agents`, without `/api`:
@@ -214,15 +214,15 @@ console.log(result);
 Use the agent's tool adapter when one agent should consult another:
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const expert = new Agent({
+const expert = defineAgent({
   name: "Expert",
   instructions: "Explain technical concepts accurately.",
   model: "openai/gpt-4o-mini",
 });
 
-const coordinator = new Agent({
+const coordinator = defineAgent({
   name: "Coordinator",
   instructions: "Consult the expert for technical questions.",
   model: "openai/gpt-4o-mini",

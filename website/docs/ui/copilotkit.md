@@ -31,12 +31,12 @@ Use the built-in helper to wrap your VoltAgent agents and register the CopilotKi
 
 ```typescript title="examples/with-copilotkit/server/src/index.ts"
 import { registerCopilotKitRoutes } from "@voltagent/ag-ui";
-import { Agent, VoltAgent, tool } from "@voltagent/core";
+import { defineAgent, voltagent, defineTool } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
 
-// Optional tool (used by the math agent)
-const weatherTool = tool({
+// Optional defineTool (used by the math agent)
+const weatherTool = defineTool({
   description: "Get the current weather for a specific location",
   inputSchema: z.object({ location: z.string() }),
   outputSchema: z.object({
@@ -61,7 +61,7 @@ const weatherTool = tool({
   }),
 });
 
-const mathAgent = new Agent({
+const mathAgent = defineAgent({
   name: "MathAgent",
   instructions:
     "You are a concise math tutor. Show steps briefly and give the final answer. You can also fetch weather if the user asks.",
@@ -71,13 +71,13 @@ const mathAgent = new Agent({
   },
 });
 
-const storyAgent = new Agent({
+const storyAgent = defineAgent({
   name: "StoryAgent",
   instructions: "You are a friendly storyteller. Write short, vivid stories in Turkish.",
   model: "openai/gpt-4o-mini",
 });
 
-new VoltAgent({
+await voltagent({
   agents: { MathAgent: mathAgent, StoryAgent: storyAgent },
   server: honoServer({
     configureApp: async (app) =>
@@ -89,7 +89,7 @@ new VoltAgent({
         // agents: { MathAgent: mathAgent, StoryAgent: storyAgent },
       }),
   }),
-});
+}).ready();
 ```
 
 Notes:
@@ -205,7 +205,7 @@ If you want CopilotKit thumbs up/down to persist as VoltOps trace feedback, wire
 ### 1. Enable feedback on the agent
 
 ```ts title="examples/with-copilotkit/server/src/index.ts"
-const mathAgent = new Agent({
+const mathAgent = defineAgent({
   name: "MathAgent",
   instructions: "You are a concise math tutor.",
   model: "openai/gpt-4o-mini",

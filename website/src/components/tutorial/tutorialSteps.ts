@@ -44,23 +44,23 @@ console.log("👋 Ready to build your first AI agent?");
     files: {
       "src/index.js": {
         code: `import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent } from "@voltagent/core";
+import { defineAgent, voltagent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 
 // Create your first AI agent
-const agent = new Agent({
+const agent = defineAgent({
   name: "Tutorial Agent", 
   instructions: "You are a helpful assistant that explains VoltAgent concepts clearly.",
   model: openai("gpt-4o-mini"),
 });
 
 // Initialize VoltAgent
-new VoltAgent({
+await voltagent({
   agents: {
     tutorialAgent: agent,
   },
   server: honoServer(),
-});
+}).ready();
 
 // Generate a response
 async function askAgent() {
@@ -88,7 +88,7 @@ askAgent();`,
     files: {
       "src/index.js": {
         code: `import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent } from "@voltagent/core";
+import { defineAgent, voltagent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
 
@@ -113,17 +113,17 @@ const weatherTool = {
 };
 
 // Create agent with tools
-const agent = new Agent({
+const agent = defineAgent({
   name: "Weather Agent",
   instructions: "You are a helpful weather assistant. Use the weather tool to provide accurate information.",
   model: openai("gpt-4o-mini"),
   tools: [weatherTool],
 });
 
-new VoltAgent({
+await voltagent({
   agents: { weatherAgent: agent },
   server: honoServer(),
-});
+}).ready();
 
 // Test the agent with tools
 async function testWithTools() {
@@ -151,21 +151,21 @@ testWithTools();`,
     files: {
       "src/index.js": {
         code: `import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent, Memory } from "@voltagent/core";
+import { defineAgent, voltagent, Memory } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 
 // Create agent with memory
-const agent = new Agent({
+const agent = defineAgent({
   name: "Memory Agent",
   instructions: "You are a helpful assistant with excellent memory. Remember user preferences and past conversations.",
   model: openai("gpt-4o-mini"),
   memory: new Memory(),
 });
 
-new VoltAgent({
+await voltagent({
   agents: { memoryAgent: agent },
   server: honoServer(),
-});
+}).ready();
 
 // Simulate a conversation with memory
 async function conversationDemo() {
@@ -211,40 +211,40 @@ conversationDemo();`,
     files: {
       "src/index.js": {
         code: `import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent } from "@voltagent/core";
+import { defineAgent, voltagent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 import { z } from "zod";
 
 // Create a specialized research sub-agent
-const researchAgent = new Agent({
+const researchAgent = defineAgent({
   name: "Research Agent",
   instructions: "You are a research specialist. Provide detailed, well-researched information on any topic.",
   model: openai("gpt-4o-mini"),
 });
 
 // Create a writing sub-agent  
-const writerAgent = new Agent({
+const writerAgent = defineAgent({
   name: "Writer Agent",
   instructions: "You are a skilled writer. Create engaging, well-structured content based on research.",
   model: openai("gpt-4o-mini"),
 });
 
 // Create supervisor agent with sub-agents
-const supervisorAgent = new Agent({
+const supervisorAgent = defineAgent({
   name: "Supervisor Agent",
   instructions: "You coordinate between research and writing agents to create comprehensive content.",
   model: openai("gpt-4o-mini"),
   subAgents: [researchAgent, writerAgent],
 });
 
-new VoltAgent({
+await voltagent({
   agents: {
     supervisor: supervisorAgent,
     researcher: researchAgent, 
     writer: writerAgent,
   },
   server: honoServer(),
-});
+}).ready();
 
 // Demonstrate sub-agent coordination
 async function advancedDemo() {

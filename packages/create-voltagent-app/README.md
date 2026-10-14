@@ -95,7 +95,7 @@ This command guides you through setup, including selecting a server (Hono or Ely
 You'll see the starter code in `src/index.ts`, which now registers both an agent and a comprehensive workflow example found in `src/workflows/index.ts`.
 
 ```typescript
-import { VoltAgent, Agent, Memory } from "@voltagent/core";
+import { voltagent, defineAgent, Memory } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { createPinoLogger } from "@voltagent/logger";
 import { honoServer } from "@voltagent/server-hono"; // or elysiaServer from @voltagent/server-elysia
@@ -116,7 +116,7 @@ const memory = new Memory({
   }),
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "my-agent",
   instructions: "A helpful assistant that can check weather and help with various tasks",
   model: "openai/gpt-4o-mini",
@@ -125,7 +125,7 @@ const agent = new Agent({
 });
 
 // Initialize VoltAgent with your agent(s) and workflow(s)
-new VoltAgent({
+await voltagent({
   agents: {
     agent,
   },
@@ -134,7 +134,7 @@ new VoltAgent({
   },
   server: honoServer(), // or elysiaServer()
   logger,
-});
+}).ready();
 ```
 
 Afterwards, navigate to your project and run:

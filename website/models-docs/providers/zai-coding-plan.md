@@ -11,9 +11,9 @@ Use `zai-coding-plan/<model>` with VoltAgent's model router.
 ## Quick start
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "zai-coding-plan-agent",
   instructions: "You are a helpful assistant",
   model: "zai-coding-plan/glm-4.5",

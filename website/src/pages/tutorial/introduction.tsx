@@ -388,7 +388,7 @@ export default function TutorialIntroduction() {
                             <span className="text-[#ff7b72]">import</span>
                             <span className="text-[#e6edf3]">
                               {" "}
-                              {"{"} VoltAgent, Agent {"}"}{" "}
+                              {"{"} voltagent, defineAgent {"}"}{" "}
                             </span>
                             <span className="text-[#ff7b72]">from</span>
                             <span className="text-[#a5d6ff]"> "@voltagent/core"</span>
@@ -413,8 +413,7 @@ export default function TutorialIntroduction() {
                             <br />
                             <span className="text-[#ff7b72]">const</span>
                             <span className="text-[#e6edf3]"> agent = </span>
-                            <span className="text-[#ff7b72]">new</span>
-                            <span className="text-[#d2a8ff]"> Agent</span>
+                            <span className="text-[#d2a8ff]">defineAgent</span>
                             <span className="text-[#e6edf3]">{"({"}</span>
                             <br />
                           </span>
@@ -459,15 +458,15 @@ export default function TutorialIntroduction() {
                               {"// Initialize VoltAgent with your agent(s)"}
                             </span>
                             <br />
-                            <span className="text-[#ff7b72]">new</span>
-                            <span className="text-[#d2a8ff]"> VoltAgent</span>
+                            <span className="text-[#ff7b72]">await</span>{" "}
+                            <span className="text-[#d2a8ff]">voltagent</span>
                             <span className="text-[#e6edf3]">{"({"}</span>
                             <br />
                             <span className="ml-4 text-[#e6edf3]">
                               agents: {"{"} agent {"}"},
                             </span>
                             <br />
-                            <span className="text-[#e6edf3]">{"});"}</span>
+                            <span className="text-[#e6edf3]">{"}).ready();"}</span>
                             <br />
                             <br />
                             <br />
@@ -507,8 +506,8 @@ export default function TutorialIntroduction() {
                           "I need an AI agent"
                         </div>
                         <div className="text-muted-foreground text-xs leading-relaxed">
-                          The Agent class is your AI's personality container. It defines who your AI
-                          is and how it should behave.
+                          The agent definition is your AI's personality container. It defines who
+                          your AI is and how it should behave.
                         </div>
                       </div>
                     </div>

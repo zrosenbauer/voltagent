@@ -11,9 +11,9 @@ Use `cerebras/<model>` with VoltAgent's model router.
 ## Quick start
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "cerebras-agent",
   instructions: "You are a helpful assistant",
   model: "cerebras/gpt-oss-120b",

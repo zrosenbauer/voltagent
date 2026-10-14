@@ -43,22 +43,23 @@ netlify secrets:set VOLTAGENT_SECRET_KEY
 Create the agent once and reuse it across invocations. The example keeps the serverless Hono provider so the same HTTP routes (agents, workflows, observability) stay available.
 
 ```ts title="src/index.ts"
-import { Agent, VoltAgent } from "@voltagent/core";
+import { defineAgent, voltagent } from "@voltagent/core";
 import { serverlessHono } from "@voltagent/serverless-hono";
 import { openai } from "@ai-sdk/openai";
 import { weatherTool } from "./tools";
 
-const assistant = new Agent({
+const assistant = defineAgent({
   name: "netlify-function-agent",
   instructions: "Answer user questions and call tools when needed.",
   model: openai("gpt-4o-mini"),
   tools: [weatherTool],
 });
 
-const voltAgent = new VoltAgent({
+const voltAgent = voltagent({
   agents: { assistant },
   serverless: serverlessHono(),
 });
+await voltAgent.ready();
 
 export function getVoltAgent() {
   return voltAgent;

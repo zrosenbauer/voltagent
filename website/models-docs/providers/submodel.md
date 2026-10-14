@@ -11,9 +11,9 @@ Use `submodel/<model>` with VoltAgent's model router.
 ## Quick start
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "submodel-agent",
   instructions: "You are a helpful assistant",
   model: "submodel/Qwen/Qwen3-235B-A22B-Instruct-2507",

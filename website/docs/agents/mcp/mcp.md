@@ -155,11 +155,11 @@ Add MCP tools at initialization or per request:
 ### At Agent Initialization
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
 const allTools = await mcpConfig.getTools();
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "MCP Agent",
   instructions: "You can use MCP tools to access external systems",
   model: "openai/gpt-4o",
@@ -173,9 +173,9 @@ await mcpConfig.disconnect();
 ### At Request Time
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Agent",
   instructions: "You are a helpful assistant",
   model: "openai/gpt-4o",

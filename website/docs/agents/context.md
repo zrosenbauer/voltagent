@@ -30,14 +30,14 @@ You can provide initial data in two ways:
 Set default `context` when creating the agent. This context is used for all operations unless overridden at execution time:
 
 ```typescript
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
 // Set default context at agent creation
 const defaultContext = new Map();
 defaultContext.set("environment", "production");
 defaultContext.set("projectId", "my-project");
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "SimpleAgent",
   model: "openai/gpt-4o",
   instructions: "You are a helpful assistant.",
@@ -64,7 +64,7 @@ console.log("Project ID:", response2.context?.get("projectId")); // "my-project"
 Pass `context` when calling the agent to provide operation-specific data:
 
 ```typescript
-const agent = new Agent({
+const agent = defineAgent({
   name: "SimpleAgent",
   model: "openai/gpt-4o",
   instructions: "You are a helpful assistant.",
@@ -104,10 +104,10 @@ Legacy top-level `context` is still supported, but `voltagent.context` is prefer
 Add `contextSchema` to an agent to validate its existing context and infer types in dynamic `instructions`, `model`, and `tools` functions, inline agent hooks, and returned results. Continue passing data through `voltagent.context` or the legacy top-level `context` field.
 
 ```typescript
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import { z } from "zod";
 
-const support = new Agent({
+const support = defineAgent({
   name: "Support",
   contextSchema: z.object({
     tenantId: z.string().min(1),
@@ -194,9 +194,9 @@ Supported fields:
 When using the SDK, pass user information in the `context` Map:
 
 ```typescript
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({ ... });
+const agent = defineAgent({ ... });
 
 const context = new Map();
 context.set("user.name", "John Doe");
@@ -274,7 +274,7 @@ Hooks can read and write to `context`:
 ```typescript
 import { createHooks } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "HookAgent",
   model: "openai/gpt-4o",
   hooks: createHooks({
@@ -309,10 +309,10 @@ await agent.generateText("Hello!", { context });
 AI SDK-style tools receive AI SDK execution options as the second parameter. Use `contextSchema` and call-level `toolsContext` for tool-specific runtime values:
 
 ```typescript
-import { Agent, tool } from "@voltagent/core";
+import { defineAgent, defineTool } from "@voltagent/core";
 import { z } from "zod";
 
-const loggerTool = tool({
+const loggerTool = defineTool({
   description: "Logs a message with user context",
   inputSchema: z.object({
     message: z.string(),
@@ -334,7 +334,7 @@ const loggerTool = tool({
   },
 });
 
-const agentWithTool = new Agent({
+const agentWithTool = defineAgent({
   name: "ToolAgent",
   model: "openai/gpt-4o",
   tools: {
@@ -383,7 +383,7 @@ Tool hooks and agent `onToolStart`/`onToolEnd` hooks also receive tool-specific 
 
 ```typescript
 // Example: Authorization check using context
-const sensitiveDataTool = tool({
+const sensitiveDataTool = defineTool({
   description: "Retrieves sensitive user data",
   inputSchema: z.object({
     dataType: z.string(),
@@ -401,7 +401,7 @@ const sensitiveDataTool = tool({
 });
 ```
 
-`createTool` remains available as a legacy compatibility helper for existing tools that need direct execute-time access to the full VoltAgent `OperationContext`. New tools should prefer AI SDK `tool()` plus `toolsContext`.
+`createTool` remains available as a legacy compatibility helper for existing tools that need direct execute-time access to the full VoltAgent `OperationContext`. New tools should prefer `defineTool()` from `@voltagent/core` plus `toolsContext`.
 
 ## Access Input and Output in Context
 
@@ -412,9 +412,9 @@ The `OperationContext` provides access to both the input and output of the curre
 The `input` field contains the original input provided to the agent operation:
 
 ```typescript
-import { Agent, createHooks } from "@voltagent/core";
+import { defineAgent, createHooks } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "InputLogger",
   model: "openai/gpt-4o",
   instructions: "Answer concisely.",
@@ -470,7 +470,7 @@ The `input` and `output` fields are particularly useful for:
 - **Custom Metrics**: Calculate response time, token efficiency, etc.
 
 ```typescript
-import { Agent, createHooks } from "@voltagent/core";
+import { defineAgent, createHooks } from "@voltagent/core";
 
 const auditHooks = createHooks({
   onEnd: async ({ context, output }) => {
@@ -488,7 +488,7 @@ const auditHooks = createHooks({
   },
 });
 
-const auditedAgent = new Agent({
+const auditedAgent = defineAgent({
   name: "Audited Assistant",
   model: "openai/gpt-4o",
   instructions: "You are a helpful assistant.",
@@ -559,7 +559,7 @@ interface OperationContext {
 **Usage example:**
 
 ```typescript
-const agent = new Agent({
+const agent = defineAgent({
   name: "TrackedAgent",
   model: "openai/gpt-4o",
   hooks: createHooks({
@@ -633,9 +633,9 @@ These fields are documented in detail in the "Access Input and Output in Context
 Here's how to use metadata fields for observability:
 
 ```typescript
-import { Agent, createHooks } from "@voltagent/core";
+import { defineAgent, createHooks } from "@voltagent/core";
 
-const observableAgent = new Agent({
+const observableAgent = defineAgent({
   name: "ObservableAgent",
   model: "openai/gpt-4o",
   hooks: createHooks({
@@ -681,9 +681,9 @@ const response = await observableAgent.generateText("Hello", {
 The `abortController` field allows operation cancellation:
 
 ```typescript
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "CancellableAgent",
   model: "openai/gpt-4o",
   instructions: "You are a helpful assistant.",
@@ -739,7 +739,7 @@ class SimpleRetriever extends BaseRetriever {
   }
 }
 
-const agentWithRetriever = new Agent({
+const agentWithRetriever = defineAgent({
   name: "RetrievalAgent",
   model: "openai/gpt-4o",
   retriever: new SimpleRetriever(),
@@ -760,7 +760,7 @@ When a supervisor delegates to sub-agents, the parent's `OperationContext` is pa
 
 ```typescript
 // Worker agent - automatically receives supervisor's context
-const workerAgent = new Agent({
+const workerAgent = defineAgent({
   name: "WorkerAgent",
   model: "openai/gpt-4o",
   hooks: createHooks({
@@ -778,7 +778,7 @@ const workerAgent = new Agent({
 });
 
 // Supervisor agent
-const supervisorAgent = new Agent({
+const supervisorAgent = defineAgent({
   name: "SupervisorAgent",
   model: "openai/gpt-4o",
   subAgents: [workerAgent],
@@ -830,7 +830,7 @@ For more details on sub-agent architecture, see the [Sub-Agents guide](./subagen
 Here's how all pieces work together:
 
 ```typescript
-import { Agent, BaseRetriever, createHooks, tool } from "@voltagent/core";
+import { defineAgent, BaseRetriever, createHooks, defineTool } from "@voltagent/core";
 import { z } from "zod";
 
 // Simple retriever
@@ -844,7 +844,7 @@ class BasicRetriever extends BaseRetriever {
 }
 
 // Simple tool
-const counterTool = tool({
+const counterTool = defineTool({
   description: "Increments a counter",
   inputSchema: z.object({}),
   contextSchema: z.object({
@@ -856,7 +856,7 @@ const counterTool = tool({
 });
 
 // Agent with everything
-const fullAgent = new Agent({
+const fullAgent = defineAgent({
   name: "FullAgent",
   model: "openai/gpt-4o",
   retriever: new BasicRetriever(),
@@ -947,7 +947,7 @@ Lower-priority sources only fill in missing keys; they don't override existing v
 **Extend rather than replace default context:**
 
 ```typescript
-const agent = new Agent({
+const agent = defineAgent({
   context: new Map([["env", "production"]]),
   // ...
 });
@@ -1014,7 +1014,7 @@ class TenantMemoryAdapter extends InMemoryStorageAdapter {
 }
 
 // Use the adapter
-const agent = new Agent({
+const agent = defineAgent({
   memory: new Memory({ storage: new TenantMemoryAdapter() }),
 });
 

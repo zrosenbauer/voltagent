@@ -11,9 +11,9 @@ Use `kimi-for-coding/<model>` with VoltAgent's model router.
 ## Quick start
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "kimi-for-coding-agent",
   instructions: "You are a helpful assistant",
   model: "kimi-for-coding/kimi-k2-thinking",

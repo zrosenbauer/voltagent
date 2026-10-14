@@ -11,9 +11,9 @@ Use `abacus/<model>` with VoltAgent's model router.
 ## Quick start
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "abacus-agent",
   instructions: "You are a helpful assistant",
   model: "abacus/Qwen/QwQ-32B",

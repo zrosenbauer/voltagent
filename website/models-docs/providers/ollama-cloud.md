@@ -11,9 +11,9 @@ Use `ollama-cloud/<model>` with VoltAgent's model router.
 ## Quick start
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "ollama-cloud-agent",
   instructions: "You are a helpful assistant",
   model: "ollama-cloud/cogito-2.1:671b-cloud",

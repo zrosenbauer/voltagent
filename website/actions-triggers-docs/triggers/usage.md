@@ -88,16 +88,16 @@ First, you need to add a trigger handler to your VoltAgent project. This is the 
 The wizard displays a **code snippet** that you need to copy and add to your VoltAgent project:
 
 ```typescript
-import { VoltAgent, createTriggers } from "@voltagent/core";
+import { voltagent, createTriggers } from "@voltagent/core";
 
-new VoltAgent({
+await voltagent({
   //
   triggers: createTriggers((on) => {
     on.airtable.recordCreated(({ payload }) => {
       console.log(payload);
     });
   }),
-});
+}).ready();
 ```
 
 **What this code does:**

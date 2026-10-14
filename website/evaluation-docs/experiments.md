@@ -367,10 +367,10 @@ Here's a complete example from the codebase:
 ```typescript
 import { createExperiment } from "@voltagent/evals";
 import { scorers } from "@voltagent/scorers";
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 
-const supportAgent = new Agent({
+const supportAgent = defineAgent({
   name: "Support Agent",
   instructions: "You are a helpful customer support agent.",
   model: openai("gpt-4o-mini"),

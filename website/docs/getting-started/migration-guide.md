@@ -14,6 +14,9 @@ If you are still on 1.x, follow the **Migration guide: 1.x → 2.x** section fir
 - AI SDK: `ai` moves to `^7`.
 - AI SDK provider packages need v7-compatible majors, for example `@ai-sdk/openai@^4`.
 - Zod: `zod` moves to `^4`. Zod 3 is no longer a supported peer dependency in VoltAgent 3.x.
+- Author agents with `defineAgent(options)` and applications with `voltagent(options)`. `Agent` and `VoltAgent` are type-only exports.
+- Application startup is explicit: call `await app.ready()`. Call `await app.shutdown()` to stop resources and flush telemetry.
+- Prefer `defineTool` and `defineWorkflow` for new definitions. Legacy `createTool` and `createWorkflowChain` remain available.
 - AI SDK callbacks use `onEnd` and `onStepEnd`.
 - `stepCountIs` is now `isStepCount`.
 - `streamText` detailed events are exposed as `stream`. `fullStream` remains as a deprecated alias during the transition.
@@ -60,7 +63,7 @@ const { openai } = require("@ai-sdk/openai");
 After:
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import { openai } from "@ai-sdk/openai";
 ```
 
@@ -76,6 +79,8 @@ For TypeScript projects, use a module resolution mode that matches your toolchai
 ```
 
 ## Step 3. Update packages
+
+Configure your application with `voltagent(options)` instead of `new VoltAgent(options)`, then call `await app.ready()` to start its resources. Import the factory as a named or default export from `@voltagent/core`. `VoltAgent` is now a type-only export. The `ready()` method waits for workspaces, telemetry, transports, and configured servers; `shutdown()` stops resources and flushes telemetry. Startup is explicit, including for applications without an HTTP server.
 
 ### 3.1 Update VoltAgent packages
 
@@ -147,6 +152,45 @@ pnpm add zod@^4
 ```
 
 Use the public Zod 4 API for schemas passed to VoltAgent or AI SDK. A third-party integration that still requires Zod 3 can use `zod/v3` inside its own adapter, but must not pass those schemas to VoltAgent. For example, the ad-creator example accepts a serializable field definition through a Zod 4 tool schema, then constructs a separate Zod 3 schema for Stagehand 2 inside `execute`.
+
+### 3.4 Replace constructors and start the application explicitly
+
+Before (2.x):
+
+```ts
+import { Agent, VoltAgent } from "@voltagent/core";
+import { honoServer } from "@voltagent/server-hono";
+
+const agent = new Agent({
+  name: "Assistant",
+  instructions: "Answer questions clearly.",
+  model: "openai/gpt-4o-mini",
+});
+
+const app = new VoltAgent({ agents: { agent }, server: honoServer() });
+await app.ready;
+```
+
+After (3.x):
+
+```ts
+import { defineAgent, voltagent } from "@voltagent/core";
+import type { Agent, VoltAgent } from "@voltagent/core";
+import { honoServer } from "@voltagent/server-hono";
+
+const agent = defineAgent({
+  name: "Assistant",
+  instructions: "Answer questions clearly.",
+  model: "openai/gpt-4o-mini",
+});
+
+const app = voltagent({ agents: { agent }, server: honoServer() });
+await app.ready();
+```
+
+Creating the application does not start workspaces, telemetry, transports, or servers. Await `ready()` before accepting requests or using those application resources, even when no HTTP server is configured. Repeated calls share startup; repeated `shutdown()` calls share cleanup. Use `await app.shutdown()` when your application owns teardown.
+
+Existing agent configuration and generation methods stay the same. `Agent` and `VoltAgent` remain available for type annotations through `import type`. Direct AI SDK `tool` exports retain native AI SDK behavior; `createTool` remains the compatibility helper for tools using VoltAgent operation context. See [Tools](/docs/agents/tools) and [Workflows](/docs/workflows/overview) for canonical definitions.
 
 ## Step 4. Keep using the AI SDK-style agent call shape
 
@@ -319,7 +363,7 @@ const result = await agent.streamText({
 Agent-level hooks use the same names:
 
 ```ts
-const agent = new Agent({
+const agent = defineAgent({
   name: "assistant",
   model,
   instructions: "You are a helpful assistant.",
@@ -341,7 +385,7 @@ Call-level `onEnd` and `onStepEnd` receive the original AI SDK callback payloads
 AI SDK v7 separates instructions from regular model messages. For VoltAgent agents, keep using the `instructions` field:
 
 ```ts
-const agent = new Agent({
+const agent = defineAgent({
   name: "support",
   model,
   instructions: "Answer support questions with short, direct replies.",
@@ -409,7 +453,7 @@ for await (const partial of result.partialOutputStream ?? []) {
 
 ## Step 10. Prefer AI SDK-style tools for new custom tools
 
-VoltAgent 3.x accepts AI SDK-style `ToolSet` records directly on agents. Raw tools created with `tool()` from `ai` are first-class. For new tools that need VoltAgent metadata inline, import AI SDK-compatible `tool()` from `@voltagent/core`. The tool name comes from the `tools` object key and the schema field is `inputSchema`.
+VoltAgent 3.x accepts AI SDK-style `ToolSet` records directly on agents. Raw tools created with `defineTool()` from `ai` are first-class. For new tools that need VoltAgent metadata inline, import AI SDK-compatible `defineTool()` from `@voltagent/core`. The tool name comes from the `tools` object key and the schema field is `inputSchema`.
 
 Before:
 
@@ -432,11 +476,11 @@ const weatherTool = createTool({
 After:
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import { tool } from "ai";
 import { z } from "zod";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "assistant",
   model,
   instructions: "You are a helpful assistant.",
@@ -457,11 +501,11 @@ const agent = new Agent({
 Native AI SDK tool features such as `contextSchema` and call-level `toolsContext` pass through unchanged:
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import { tool } from "ai";
 import { z } from "zod";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "assistant",
   model,
   instructions: "You are a helpful assistant.",
@@ -496,13 +540,13 @@ await agent.generateText({
 });
 ```
 
-VoltAgent-specific tool metadata is optional and additive. For new tools, import `tool()` from `@voltagent/core` and add VoltAgent-only metadata under the `voltagent` namespace:
+VoltAgent-specific tool metadata is optional and additive. For new tools, import `defineTool()` from `@voltagent/core` and add VoltAgent-only metadata under the `voltagent` namespace:
 
 ```ts
-import { tool } from "@voltagent/core";
+import { defineTool } from "@voltagent/core";
 import { z } from "zod";
 
-const refundCustomer = tool({
+const refundCustomer = defineTool({
   description: "Refund a customer order",
   inputSchema: z.object({
     orderId: z.string(),
@@ -554,12 +598,12 @@ const weather = enhanceTool(externalWeatherTool, {
 For new approval flows, prefer AI SDK v7's native call-level `toolApproval` option. It takes precedence over tool-level `needsApproval`:
 
 ```ts
-import { tool } from "@voltagent/core";
+import { defineTool } from "@voltagent/core";
 
 const result = await agent.generateText({
   prompt: "Delete the stale report",
   tools: {
-    delete_file: tool({
+    delete_file: defineTool({
       description: "Delete a file",
       inputSchema: z.object({
         path: z.string(),
@@ -573,7 +617,7 @@ const result = await agent.generateText({
 });
 ```
 
-`createTool` is now a legacy compatibility helper for existing class-style tools. New custom tools should use `tool()`. When migrating from `createTool` to `tool()`:
+`createTool` is now a legacy compatibility helper for existing class-style tools. New custom tools should use `defineTool()`. When migrating from `createTool` to `defineTool()`:
 
 - move `name` to the `tools` object key.
 - rename `parameters` to `inputSchema`.
@@ -584,7 +628,7 @@ const result = await agent.generateText({
 - use `runtimeContext`, `toolsContext`, telemetry, and other AI SDK options at the top level when you want native AI SDK behavior.
 - use `voltagent.context` on the agent call for VoltAgent runtime state that should be visible to memory, guardrails, middleware, hooks, and VoltAgent-managed tools.
 
-The `tool()` helper matches AI SDK's overloads. Client-side tools can omit both `execute` and `outputSchema`; handle their calls in the browser and return an output or error with `addToolResult`. When a definition includes `execute`, the returned tool retains a directly callable, typed `execute` function. These inference fixes do not change tool execution behavior.
+The `defineTool()` helper matches AI SDK's overloads. Client-side tools can omit both `execute` and `outputSchema`; handle their calls in the browser and return an output or error with `addToolResult`. When a definition includes `execute`, the returned tool retains a directly callable, typed `execute` function. These inference fixes do not change tool execution behavior.
 
 `PlanAgent` still accepts an array of named `createTool()` tools. Keep that format for `PlanAgent`; the `Agent` ToolSet migration does not apply to its `tools` option.
 
@@ -599,7 +643,7 @@ import type { ToolExecutionOptions } from "@ai-sdk/provider-utils";
 If you use `toModelOutput`, keep the AI SDK v7 argument object shape:
 
 ```ts
-const screenshotTool = tool({
+const screenshotTool = defineTool({
   description: "Capture a screenshot",
   inputSchema: z.object({
     url: z.string(),
@@ -618,13 +662,13 @@ const screenshotTool = tool({
 });
 ```
 
-`tool()` from `@voltagent/core` is AI SDK-compatible and is the recommended import when defining new VoltAgent tools. Raw AI SDK tools are still first-class and do not require a VoltAgent wrapper. Use `enhanceTool()` only when you want VoltAgent metadata around a prebuilt raw AI SDK tool.
+`defineTool()` from `@voltagent/core` is AI SDK-compatible and is the recommended import when defining new VoltAgent tools. Raw AI SDK tools are still first-class and do not require a VoltAgent wrapper. Use `enhanceTool()` only when you want VoltAgent metadata around a prebuilt raw AI SDK tool.
 
 Provider-defined AI SDK tools can also be passed in the same `tools` object. Provider-owned tools are still passed through to AI SDK unchanged; use `enhanceTool()` when VoltAgent should apply hooks, preserve tags, or attach approval/API metadata around a user-executed AI SDK tool created elsewhere.
 
 ### Tool execution behavior changes
 
-These changes apply to native tools: raw `ai.tool()`, `tool()` from `@voltagent/core`, and tools decorated with `enhanceTool()`. Existing `createTool` tools retain their legacy execution context, automatic output validation, and serialized error results.
+These changes apply to native tools: raw `ai.tool()`, `defineTool()` from `@voltagent/core`, and tools decorated with `enhanceTool()`. Existing `createTool` tools retain their legacy execution context, automatic output validation, and serialized error results.
 
 | Behavior                                    | Native tools in VoltAgent 3.x                                                                                             | Migration action                                                                                                                      |
 | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
@@ -658,10 +702,10 @@ Native validation failures use the SDK schema-validation error shape. If you ins
 Enable validation explicitly when moving from `createTool` or an earlier `next` build:
 
 ```ts
-import { tool, enhanceTool } from "@voltagent/core";
+import { defineTool, enhanceTool } from "@voltagent/core";
 import { z } from "zod";
 
-const lookup = tool({
+const lookup = defineTool({
   inputSchema: z.object({ id: z.string() }),
   outputSchema: z.object({ name: z.string().trim() }),
   execute: async ({ id }) => lookupRecord(id),
@@ -678,7 +722,7 @@ Move asynchronous stream setup into the generator body:
 
 ```ts
 // Before: resolves to an iterable; earlier VoltAgent wrappers consumed it.
-const before = tool({
+const before = defineTool({
   inputSchema: z.object({ id: z.string() }),
   execute: async ({ id }) => {
     const report = await openReport(id);
@@ -687,7 +731,7 @@ const before = tool({
 });
 
 // After: returns an iterable directly, as required for native SDK streaming.
-const after = tool({
+const after = defineTool({
   inputSchema: z.object({ id: z.string() }),
   async *execute({ id }) {
     const report = await openReport(id);
@@ -840,7 +884,7 @@ pnpm --dir website build
 - [ ] `result.fullStream` is replaced with `result.stream` in new code.
 - [ ] `onFinish`/`onStepFinish` usages are replaced with `onEnd`/`onStepEnd`.
 - [ ] `experimental_output` is replaced with `output`.
-- [ ] New custom tools use `tool()` from `@voltagent/core` + `inputSchema`; external AI SDK tools use `enhanceTool()` when VoltAgent metadata is needed.
+- [ ] New custom tools use `defineTool()` from `@voltagent/core` + `inputSchema`; external AI SDK tools use `enhanceTool()` when VoltAgent metadata is needed.
 - [ ] New approval flows use call-level `toolApproval` where possible.
 - [ ] New structured output code uses `generateText`/`streamText` with `Output.object`.
 
@@ -1131,7 +1175,7 @@ Update your code as follows (highlighted lines are new in 1.x). Note: logger usa
 // import { VercelAIProvider } from "@voltagent/vercel-ai";
 
 // highlight-start
-import { VoltAgent, Agent, Memory } from "@voltagent/core";
+import { voltagent, defineAgent, Memory } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 import { honoServer } from "@voltagent/server-hono";
 // highlight-end
@@ -1145,7 +1189,7 @@ const memory = new Memory({
 });
 // highlight-end
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "my-app",
   instructions: "Helpful assistant",
   // REMOVE (0.1.x): llm: new VercelAIProvider(),
@@ -1155,11 +1199,11 @@ const agent = new Agent({
 });
 
 // highlight-start
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer(),
   logger,
-});
+}).ready();
 // highlight-end
 ```
 
@@ -1175,7 +1219,7 @@ Add to your app (1.x):
 - `import { LibSQLMemoryAdapter } from "@voltagent/libsql";`
 - `import { honoServer } from "@voltagent/server-hono";`
 - Configure `memory: new Memory({ storage: new LibSQLMemoryAdapter({ url }) })`
-- Pass `server: honoServer()` to `new VoltAgent({...})`
+- Pass `server: honoServer()` to `voltagent({...})`
 
 Summary of changes:
 
@@ -1188,7 +1232,7 @@ Summary of changes:
 Custom routes and auth (server):
 
 ```ts
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer({
     port: 3141, // default
@@ -1202,7 +1246,7 @@ new VoltAgent({
     //   publicRoutes: ["GET /health", "GET /metrics"],
     // },
   }),
-});
+}).ready();
 ```
 
 ## Detailed Changes
@@ -1257,10 +1301,10 @@ VoltAgent no longer uses a custom provider wrapper. The `@voltagent/vercel-ai` p
 ### Before (0.1.x)
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "my-app",
   instructions: "Helpful assistant",
   llm: new VercelAIProvider(),
@@ -1271,9 +1315,9 @@ const agent = new Agent({
 ### After (1.x)
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "my-app",
   instructions: "Helpful assistant",
   // VoltAgent uses ai-sdk directly - just provide a model
@@ -1286,9 +1330,9 @@ You can swap `openai/...` for any provider string, e.g. `"anthropic/claude-3-5-s
 Or use a model string:
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "my-app",
   instructions: "Helpful assistant",
   model: "openai/gpt-4o-mini",
@@ -1359,11 +1403,11 @@ VoltAgent 1.x introduces a new `Memory` class that unifies conversation history,
 ### Before (0.1.x)
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import { VercelAIProvider } from "@voltagent/vercel-ai";
 import { LibSQLStorage } from "@voltagent/libsql";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "my-agent",
   instructions: "A helpful assistant that answers questions without using tools",
   llm: new VercelAIProvider(),
@@ -1378,10 +1422,10 @@ const agent = new Agent({
 ### After (1.x)
 
 ```ts
-import { Agent, Memory } from "@voltagent/core";
+import { defineAgent, Memory } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "my-agent",
   instructions: "A helpful assistant that answers questions without using tools",
   model: "openai/gpt-4o-mini",
@@ -1520,7 +1564,7 @@ console.log(out.context); // VoltAgent Map
 - Per-call `prepareStep` overrides the agent-level default.
 - Example: force text-only output after the first step:
   ```ts
-  const agent = new Agent({
+  const agent = defineAgent({
     name: "my-agent",
     model,
     prepareStep: ({ steps }) => (steps.length > 0 ? { toolChoice: "none" } : {}),
@@ -1547,42 +1591,42 @@ VoltAgent 1.x decouples the HTTP server from `@voltagent/core`. The built-in ser
 ### Before (0.1.x)
 
 ```ts
-import { VoltAgent } from "@voltagent/core";
+import { voltagent } from "@voltagent/core";
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   port: 3141,
   enableSwaggerUI: true,
   // server auto-started
-});
+}).ready();
 ```
 
 ### After (1.x)
 
 ```ts
-import { VoltAgent } from "@voltagent/core";
+import { voltagent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer({
     port: 3141, // default
     enableSwaggerUI: true, // optional
   }),
-});
+}).ready();
 ```
 
 ### Custom routes
 
 ```ts
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer({
     configureApp: (app) => {
       app.get("/api/health", (c) => c.json({ status: "ok" }));
     },
   }),
-});
+}).ready();
 ```
 
 ### Authentication (optional)
@@ -1593,7 +1637,7 @@ Use `authNext` to separate public, console, and user routes:
 import { honoServer } from "@voltagent/server-hono";
 import { jwtAuth } from "@voltagent/server-core";
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer({
     authNext: {
@@ -1601,7 +1645,7 @@ new VoltAgent({
       publicRoutes: ["GET /health", "GET /metrics"],
     },
   }),
-});
+}).ready();
 ```
 
 Within agents, you can read the authenticated user from the `OperationContext` (`context.get("user")`) inside hooks.

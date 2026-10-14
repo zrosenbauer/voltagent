@@ -195,7 +195,7 @@ console.log("Available ElevenLabs Voices:", elevenLabsVoices); // Structure migh
 You can integrate the voice provider directly into an `Agent` instance.
 
 ```typescript
-import { Agent, OpenAIAgentProvider } from "@voltagent/core";
+import { defineAgent, OpenAIAgentProvider } from "@voltagent/core";
 import { OpenAIVoiceProvider } from "@voltagent/voice";
 
 // Initialize the voice provider
@@ -211,7 +211,7 @@ const provider = new OpenAIAgentProvider({
 });
 
 // Create the agent, passing the voice instance
-const voiceEnabledAgent = new Agent({
+const voiceEnabledAgent = defineAgent({
   name: "VoiceBot",
   instructions: "An agent that can speak.",
   provider,

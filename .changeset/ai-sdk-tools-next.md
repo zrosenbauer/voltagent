@@ -5,7 +5,7 @@
 Publish the latest AI SDK v7 tool compatibility updates on the `next` channel.
 
 Raw AI SDK tools remain first-class, including native `contextSchema` and call-level
-`toolsContext`. New tools can import AI SDK-compatible `tool()` from
+`toolsContext`. New tools can import AI SDK-compatible `defineTool()` from
 `@voltagent/core` and add VoltAgent metadata under the optional `voltagent`
 namespace. Existing AI SDK tools from external packages can be decorated with
 `enhanceTool()` without rebuilding the original tool object.

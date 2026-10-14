@@ -13,10 +13,10 @@ Agent methods (`generateText`, `streamText`, `generateObject`, `streamObject`) a
 Both message formats are from the AI SDK and re-exported by VoltAgent. To send images or files, use either message array format with structured content.
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 import type { BaseMessage } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "vision-assistant",
   instructions: "Analyze images and answer questions about them.",
   model: "openai/gpt-4o",

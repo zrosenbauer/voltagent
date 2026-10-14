@@ -13,7 +13,7 @@ Enable your agents to speak and listen using voice providers like OpenAI or Elev
 
 ```typescript
 import { openai } from "@ai-sdk/openai";
-import { Agent, VoltAgent } from "@voltagent/core";
+import { defineAgent, voltagent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 import { OpenAIVoiceProvider } from "@voltagent/voice";
 
@@ -23,17 +23,17 @@ const voiceProvider = new OpenAIVoiceProvider({
   ttsModel: "tts-1", // or tts-1-hd for higher quality
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Voice Assistant",
   instructions: "A helpful voice-enabled assistant",
   model: openai("gpt-4o-mini"),
   voice: voiceProvider,
 });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer({ port: 3141 }),
-});
+}).ready();
 ```
 
 ## Text-to-Speech (Speak)

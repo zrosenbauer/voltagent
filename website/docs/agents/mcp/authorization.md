@@ -172,7 +172,7 @@ const mcp = new MCPConfiguration({
 
 const tools = await mcp.getTools();
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Assistant",
   model: "openai/gpt-4o",
   tools,
@@ -414,7 +414,7 @@ The policy structure:
 
 ```typescript
 import { GRPC } from "@cerbos/grpc";
-import { Agent, MCPConfiguration, VoltAgent } from "@voltagent/core";
+import { defineAgent, MCPConfiguration, voltagent } from "@voltagent/core";
 import type { MCPCanParams } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 
@@ -464,7 +464,7 @@ const tools = await mcp.getTools({
   context: { roles: ["manager"] },
 });
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "Finance Assistant",
   instructions: `You are a finance assistant that helps users manage expenses.
 Available actions depend on the user's role.`,
@@ -472,10 +472,10 @@ Available actions depend on the user's role.`,
   tools,
 });
 
-new VoltAgent({
+await voltagent({
   agents: { agent },
   server: honoServer(),
-});
+}).ready();
 ```
 
 ### How It Works

@@ -11,9 +11,9 @@ Use `requesty/<model>` with VoltAgent's model router.
 ## Quick start
 
 ```ts
-import { Agent } from "@voltagent/core";
+import { defineAgent } from "@voltagent/core";
 
-const agent = new Agent({
+const agent = defineAgent({
   name: "requesty-agent",
   instructions: "You are a helpful assistant",
   model: "requesty/anthropic/claude-3-7-sonnet",
