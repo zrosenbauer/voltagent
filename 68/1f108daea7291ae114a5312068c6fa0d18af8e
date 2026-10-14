@@ -1,0 +1,309 @@
+examples/with-auth/src/tools/weather.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,20
+examples/with-composio-mcp/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,22,34,40
+examples/with-assistant-ui/voltagent/agents.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,16,40
+examples/with-retrieval/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,20,30,40,47
+examples/with-viteval/src/agents/science.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,15
+examples/with-groq-ai/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,12,23,29
+examples/with-amazon-bedrock/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,8,39,56,62
+examples/with-chroma/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,22,32,42,49
+examples/with-ollama/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,16,32,42,48
+examples/with-mcp-server/README.md
+  s_6b5b0311a612f2::t_df05964563d883 97,111
+examples/with-voltagent-actions/src/tools/airtable.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,54,93,153,194,229
+examples/with-offline-evals/src/experiments/scorers.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,76
+examples/with-ad-creator/src/agents/ad-creator.agent.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,6
+examples/with-zapier-mcp/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,26,40,46
+examples/with-google-vertex-ai/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,11,22,28
+examples/with-viteval/src/agents/supervisor.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,17
+examples/with-client-side-tools/README.md
+  s_6b5b0311a612f2::t_df05964563d883 49,52-53,59
+examples/with-viteval/src/voltagent.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,17,32
+examples/with-agent-tool/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,16,31,47,64,66
+examples/with-hugging-face-mcp/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,25,37,43
+examples/with-middleware/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 5-6,47,57,61
+examples/with-nextjs/voltagent/server.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,5,13
+examples/with-jwt-auth/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,16,41,75
+examples/with-agent-tool/README.md
+  s_6b5b0311a612f2::t_df05964563d883 25
+examples/with-vercel-ai/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,12,23,29
+examples/with-whatsapp/src/tools/list-menu-items.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,5
+examples/with-workspace/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 8-9,53,65,69
+examples/with-youtube-to-blog/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 5-6,38,55,69,105,116
+examples/with-zapier-mcp/README.md
+  s_6b5b0311a612f2::t_df05964563d883 67
+examples/with-guardrails/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 7-8,24,109,113
+examples/with-viteval/src/agents/history.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,15
+examples/with-qdrant/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,22,32,41,48
+examples/with-tavily-search/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,19,46,52
+examples/with-postgres/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,30,45,51
+examples/with-a2a-server/src/agents/assistant.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,4,14
+examples/with-langfuse/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,15,44,51
+examples/with-subagents/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 5-7,26,37,45,57,71,83
+examples/with-turso/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,17,32,38
+examples/with-research-assistant/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,17,26,83,93
+examples/with-openrouter/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 2,20,33,39
+examples/with-google-ai/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,12,23,29
+examples/with-whatsapp/src/tools/create-order.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,9
+examples/with-chat-sdk/lib/agent.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,4,39
+examples/github-repo-analyzer/src/tools.ts
+  s_6b5b0311a612f2::t_df05964563d883 2,10,38
+examples/with-ad-creator/src/agents/supervisor.agent.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,11
+examples/with-ad-creator/README.md
+  s_6b5b0311a612f2::t_df05964563d883 263,266,287
+examples/with-thinking-tool/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1-7,22,45,51
+examples/with-dynamic-parameters/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,8,19,35,76,82
+examples/with-nestjs/src/voltagent/voltagent.service.ts
+  s_6b5b0311a612f2::t_df05964563d883 2,11,44,56,71
+examples/with-summarization/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,17,27,42,46
+examples/with-voltagent-actions/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,18,43,51,59,67,76
+examples/with-nextjs/voltagent/agents.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,6,17,32,44,56,68,80
+examples/with-tools/src/tools/search.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,20
+examples/next-js-chatbot-starter-template/lib/tools/calculator.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,8
+examples/with-voltagent-exporter/src/tools/search.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,7
+examples/with-hooks/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1-8,14,30,127,132
+examples/with-tools/src/tools/calendar.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,53,82
+examples/with-cerbos/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 2,75,89,92
+examples/with-dynamic-prompts/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,16,34,41
+examples/with-tools/src/tools/weather.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,28
+examples/with-voltops-resumable-streams/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,18,25,31
+examples/with-whatsapp/src/tools/check-order-status.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,9
+examples/with-mcp/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 2,23,35,41
+examples/with-mcp-elicitation/src/mcp-server.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,87,94
+examples/with-live-evals/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1-6,29,89,108,270,411,434,448,476,485
+examples/with-ad-creator/src/agents/landing-page-analyzer.agent.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,9
+examples/github-star-stories/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 2,13,42,58
+examples/with-working-memory/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,55,97,104,121
+examples/with-mcp-server/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,81,88,95,104,274,286
+examples/next-js-chatbot-starter-template/voltagent/server.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,5,10
+examples/with-copilotkit/server/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 2,11,44,53,59,65
+examples/with-whatsapp/README.md
+  s_6b5b0311a612f2::t_df05964563d883 234,238,284,292,379,387,480,524,542,555,587,631,665
+examples/with-google-drive-mcp/server/src/voltagent/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,12,24,30
+examples/with-netlify-functions/src/tools/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,4
+examples/with-ad-creator/src/tools/image-generation/instagram-ad-gemini.tool.ts
+  s_6b5b0311a612f2::t_df05964563d883 3,7,15
+examples/with-playwright/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1-2,52,106,112
+examples/with-langfuse/src/tools/search.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,7
+examples/with-viteval/src/agents/general.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,13
+examples/with-tools/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 2,23,41,47
+examples/with-viteval/src/agents/math.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,14,36
+examples/with-voltops-retrieval/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,17,26,35,42
+examples/with-tool-routing/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,6,24,57,78,94,98
+.changeset/migrate-authoring-examples.md
+  s_6b5b0311a612f2::t_0d6232444f4158 1-6
+examples/with-nextjs-resumable-stream/voltagent/server.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,5,10
+examples/github-repo-analyzer/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,21,32,43,51,66,72
+examples/with-voltagent-managed-memory/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,20,37,43
+examples/with-resumable-streams/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,18,27,34
+examples/with-xquik-tools/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,11,22,28
+examples/next-js-chatbot-starter-template/lib/tools/random.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,8
+examples/with-rag-chatbot/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,62,77,84
+examples/with-retries-fallback/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,15,23,27
+examples/with-workflow/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 2,16-18,25,31,41,168,253,364,404,445,488,578,602,646,664
+examples/with-recipe-generator/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,15,59,65
+examples/with-viteval/src/agents/geography.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,15
+examples/with-voltagent-exporter/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,13,30,40
+examples/with-client-side-tools/voltagent/server.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,5,10
+examples/with-google-drive-mcp/server/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 2,141
+examples/github-star-stories/src/tools.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,4,42
+examples/with-pinecone/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,22,32,42,49
+packages/server-elysia/example/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,36,43,51
+examples/with-cloudflare-workers/src/tools/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,5
+examples/with-voice-xsai/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 3,19,32,38
+examples/with-whatsapp/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 2,46,77,111
+examples/with-lancedb/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,22,32,42,49
+examples/with-tavily-search/src/tools.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,4,135
+examples/next-js-chatbot-starter-template/lib/agent/agent.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,12
+examples/next-js-chatbot-starter-template/lib/tools/datetime.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,8
+examples/with-nuxt/voltagent/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,13,23,37,48,59,70,82,115,130
+packages/create-voltagent-app/templates/base/index.ts.template
+  s_6b5b0311a612f2::t_df05964563d883 2,30,38,52
+tools/core/src/generators/example/files/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 2,18,24
+examples/with-voltagent-exporter/src/tools/weather.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,7
+examples/with-workflow-chain/README.md
+  s_6b5b0311a612f2::t_df05964563d883 46
+examples/with-xquik-tools/src/tools.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,104,132,144,155,174
+examples/with-offline-evals/src/experiments/offline.experiment.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,7
+examples/with-voice-openai/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 3,23,36,42
+examples/with-netlify-functions/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,5,14,18
+examples/with-supabase/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,24,37,43
+examples/with-workflow-chain/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 2,8-9,16,22,610,628
+examples/with-assistant-ui/voltagent/server.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,5,10
+examples/with-custom-endpoints/README.md
+  s_6b5b0311a612f2::t_df05964563d883 72,109
+examples/with-planagents/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 2,46,52
+examples/with-peaka-mcp/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,24,37,43
+examples/with-vector-search/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,24,32,36
+packages/cli/src/commands/deploy.ts
+  s_6b5b0311a612f2::t_df05964563d883 91,117
+examples/with-client-side-tools/voltagent/agents.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,6-7,13,18-19,36
+examples/with-airtable/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,27,62,72,100
+examples/with-langfuse/src/tools/weather.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,7
+examples/with-memory-rest-api/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,20,30,127
+examples/base/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,20,27,31
+examples/with-anthropic/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,13,26,36,42
+examples/with-auth/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,22,32,47
+examples/with-cloudflare-workers/README.md
+  s_6b5b0311a612f2::t_df05964563d883 190,193,204
+examples/with-feedback/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,10,26,40,58,66
+examples/with-langfuse/src/tools/calendar.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,32,59
+examples/with-voice-elevenlabs/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 3,30,43,49
+examples/with-a2a-server/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 2,18,27
+examples/with-voltagent-managed-memory/README.md
+  s_6b5b0311a612f2::t_df05964563d883 43
+examples/with-cloudflare-workers/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,6,15,19
+examples/with-voltagent-exporter/src/tools/calendar.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,32,59
+examples/with-ad-creator/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 3,27,42
+examples/with-mcp-elicitation/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,25
+examples/with-custom-endpoints/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,13,27,130
+examples/with-slack/src/index.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,26,51,61,85
+examples/with-working-memory/README.md
+  s_6b5b0311a612f2::t_df05964563d883 65,82,84
+examples/with-slack/src/tools/weather.ts
+  s_6b5b0311a612f2::t_df05964563d883 1,15
+examples/with-vector-search/README.md
+  s_6b5b0311a612f2::t_df05964563d883 65,75-76
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "681f108daea7291ae114a5312068c6fa0d18af8e",
+  "prompts": {},
+  "sessions": {
+    "s_6b5b0311a612f2": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ec8eee9faffeSYiz1ae1DjyOxY",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Zac Rosenbauer <me@zrosenbauer.com>"
+    }
+  }
+}
