@@ -1,0 +1,47 @@
+packages/core/src/observability/utils.ts
+  s_6b5b0311a612f2::t_575ea4a72edb63 1-8
+website/docs/agents/voltagent-instance.md
+  s_6b5b0311a612f2::t_575ea4a72edb63 8,13,16,22,25,41,43,47,64,75,79,94,101,117,123,126,134,138,148,152,175,179,189,194,217,220
+packages/core/src/voltagent-lifecycle.spec.ts
+  s_6b5b0311a612f2::t_575ea4a72edb63 1-217
+packages/core/compatibility/consumer.ts
+  s_6b5b0311a612f2::t_575ea4a72edb63 103
+packages/core/README.md
+  s_6b5b0311a612f2::t_575ea4a72edb63 113
+website/docs/api/server-architecture.md
+  s_6b5b0311a612f2::t_575ea4a72edb63 93,96,102,135,141,149,155,165,171,179,185,205,223,231,234,240,276,292,399,403,417,421,441,445,449
+packages/core/src/voltagent.spec.ts
+  s_6b5b0311a612f2::t_575ea4a72edb63 153,297
+packages/core/src/voltagent.ts
+  s_6b5b0311a612f2::t_575ea4a72edb63 55-63,66,96,116-121,123-161,180-197,199-215,217-219,221,223-225,227,229-234,236-237,239-243,248-250,379,387,392,399-402,406,423-429,691-693,695-699,707-716,718-731,733-739,741-743,750,779-785,837-846,862,864-867
+packages/core/src/mcp/registry.ts
+  s_6b5b0311a612f2::t_575ea4a72edb63 36,50-53
+packages/core/src/observability/node/volt-agent-observability.ts
+  s_6b5b0311a612f2::t_575ea4a72edb63 27,368-373,378
+packages/e2e/src/application-lifecycle.e2e.spec.ts
+  s_6b5b0311a612f2::t_575ea4a72edb63 1-101
+.changeset/explicit-application-lifecycle.md
+  s_6b5b0311a612f2::t_83cb4c8826a373 1-9
+packages/server-hono/src/hono-server-provider.ts
+  s_6b5b0311a612f2::t_575ea4a72edb63 45,67-70,81-87
+packages/core/src/observability/serverless/volt-agent-observability.ts
+  s_6b5b0311a612f2::t_575ea4a72edb63 42,398-404,409
+packages/server-core/src/server/base-provider.ts
+  s_6b5b0311a612f2::t_575ea4a72edb63 116,120-137
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d61ff5da064bff32cafdc8afb232f3e45b9872ff",
+  "prompts": {},
+  "sessions": {
+    "s_6b5b0311a612f2": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_ec8eee9faffeSYiz1ae1DjyOxY",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Zac Rosenbauer <me@zrosenbauer.com>"
+    }
+  }
+}
