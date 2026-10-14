@@ -24,6 +24,7 @@ import { SamplingWrapperProcessor } from "../processors/sampling-wrapper-process
 import { type SpanFilterOptions, SpanFilterProcessor } from "../processors/span-filter-processor";
 import { WebSocketSpanProcessor } from "../processors/websocket-span-processor";
 import type { ObservabilityConfig, ObservabilityStorageAdapter } from "../types";
+import { settleTelemetryOperations } from "../utils";
 
 /**
  * VoltAgent Observability wrapper around OpenTelemetry for Node
@@ -364,17 +365,17 @@ export class VoltAgentObservability {
   }
 
   async shutdown(): Promise<void> {
-    await this.provider.shutdown();
-    await this.loggerProvider.shutdown();
-
-    if (this.storage instanceof InMemoryStorageAdapter) {
-      (this.storage as InMemoryStorageAdapter).destroy();
+    try {
+      await settleTelemetryOperations([this.provider.shutdown(), this.loggerProvider.shutdown()]);
+    } finally {
+      if (this.storage instanceof InMemoryStorageAdapter) {
+        this.storage.destroy();
+      }
     }
   }
 
   async forceFlush(): Promise<void> {
-    await this.provider.forceFlush();
-    await this.loggerProvider.forceFlush();
+    await settleTelemetryOperations([this.provider.forceFlush(), this.loggerProvider.forceFlush()]);
   }
 
   /**

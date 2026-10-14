@@ -110,7 +110,7 @@ await voltagent({
   },
   server: honoServer(),
   logger,
-}).ready;
+}).ready();
 ```
 
 Afterwards, navigate to your project and run:

@@ -39,6 +39,7 @@ import type {
   ServerlessRemoteEndpointConfig,
   ServerlessRemoteExportConfig,
 } from "../types";
+import { settleTelemetryOperations } from "../utils";
 
 const textDecoder = typeof TextDecoder !== "undefined" ? new TextDecoder() : undefined;
 
@@ -394,18 +395,18 @@ export class ServerlessVoltAgentObservability {
   }
 
   async shutdown(): Promise<void> {
-    await this.provider.shutdown();
-    await this.loggerProvider.shutdown();
-
-    const destroy = (this.storage as any)?.destroy;
-    if (typeof destroy === "function") {
-      destroy.call(this.storage);
+    try {
+      await settleTelemetryOperations([this.provider.shutdown(), this.loggerProvider.shutdown()]);
+    } finally {
+      const destroy = (this.storage as any)?.destroy;
+      if (typeof destroy === "function") {
+        destroy.call(this.storage);
+      }
     }
   }
 
   async forceFlush(): Promise<void> {
-    await this.provider.forceFlush();
-    await this.loggerProvider.forceFlush();
+    await settleTelemetryOperations([this.provider.forceFlush(), this.loggerProvider.forceFlush()]);
   }
 
   /**

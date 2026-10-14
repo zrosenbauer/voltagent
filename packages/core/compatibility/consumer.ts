@@ -100,7 +100,7 @@ const workflow = defineWorkflow(
   }),
 );
 const app: VoltAgent = voltagent({ agents: { agent }, workflows: { workflow } });
-const ready: Promise<void> = app.ready;
+const ready: Promise<void> = app.ready();
 void ready;
 const execution = await workflow.run({ prompt: "hello" });
 const workflowAnswer: string | undefined = execution.result?.answer;

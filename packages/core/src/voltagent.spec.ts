@@ -150,7 +150,7 @@ describe("VoltAgent defaults", () => {
       expect.arrayContaining(["ls", "read_file", "execute_command", "workspace_search"]),
     );
 
-    await voltAgent.ready;
+    await voltAgent.ready();
     await voltAgent.shutdown();
   });
 
@@ -294,7 +294,7 @@ describe("VoltAgent defaults", () => {
       },
     });
 
-    await voltAgent.ready;
+    await voltAgent.ready();
     expect(updateSpy).toHaveBeenCalledTimes(1);
 
     ensureEnvironmentHook?.();

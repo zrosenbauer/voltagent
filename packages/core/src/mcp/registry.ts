@@ -33,7 +33,7 @@ export class MCPServerRegistry<TServer extends MCPServerLike = MCPServerLike> {
     }
   }
 
-  unregister(server: TServer): void {
+  unregister(server: TServer, closeTransport = true): void {
     if (!this.servers.has(server)) {
       return;
     }
@@ -47,9 +47,10 @@ export class MCPServerRegistry<TServer extends MCPServerLike = MCPServerLike> {
       this.metadataById.delete(serverId);
     }
 
-    void server.close?.().catch(() => {
-      /* noop */
-    });
+    if (closeTransport)
+      void server.close?.().catch(() => {
+        /* noop */
+      });
   }
 
   getServer(id: string): TServer | undefined {

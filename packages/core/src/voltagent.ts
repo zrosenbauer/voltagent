@@ -52,10 +52,18 @@ export class VoltAgent {
     logsUrl: string;
     headers: Record<string, string>;
   };
-  public readonly ready: Promise<void>;
+  private readyPromise?: Promise<void>;
+  private shutdownPromise?: Promise<void>;
+  private cleanupPromise?: Promise<void>;
+  private telemetryShutdownPromise?: Promise<void>;
+  private lifecycle: "created" | "starting" | "ready" | "stopping" | "stopped" | "failed" =
+    "created";
+  private workspace?: Workspace;
+  private workspaceStarted = false;
+  private removeShutdownHandlers?: () => void;
   public initError?: unknown;
   public degraded = false;
-  constructor(options: VoltAgentOptions) {
+  constructor(private readonly options: VoltAgentOptions) {
     this.registry = AgentRegistry.getInstance();
     this.workflowRegistry = WorkflowRegistry.getInstance();
     this.triggerRegistry = TriggerRegistry.getInstance();
@@ -78,7 +86,6 @@ export class VoltAgent {
     if (options.toolRouting) {
       this.registry.setGlobalToolRouting(options.toolRouting);
     }
-    let workspaceInitPromise: Promise<void> | undefined;
     if (options.workspace) {
       const workspaceInstance =
         options.workspace instanceof Workspace
@@ -86,7 +93,7 @@ export class VoltAgent {
           : new Workspace(options.workspace);
       this.registry.setGlobalWorkspace(workspaceInstance);
       this.applyDefaultWorkspaceToAgents(options.agents);
-      workspaceInitPromise = workspaceInstance.init();
+      this.workspace = workspaceInstance;
     }
 
     // Initialize logger
@@ -106,11 +113,52 @@ export class VoltAgent {
       // Buffer management is now handled by LoggerProxy/BufferedLogger
     }
 
-    // telemetryExporter removed - migrated to OpenTelemetry
+    this.registerAgents(options.agents);
+    this.registerTriggers(options.triggers);
+    if (options.workflows) {
+      this.registerWorkflows(options.workflows);
+    }
+  }
 
-    // Initialize OpenTelemetry observability
-    // This enables tracing for all agents and workflows
-    // This is the SINGLE global provider for the entire application
+  /** Starts configured resources once and waits until the application is ready. */
+  public ready(): Promise<void> {
+    if (this.lifecycle === "stopping" || this.lifecycle === "stopped") {
+      return Promise.reject(new Error("Cannot start a shut down VoltAgent application"));
+    }
+    if (!this.readyPromise) {
+      this.lifecycle = "starting";
+      this.readyPromise = Promise.resolve().then(async () => {
+        try {
+          await this.initialize();
+          if (this.lifecycle === "starting") {
+            this.lifecycle = "ready";
+          }
+        } catch (error) {
+          this.initError = error;
+          this.degraded = true;
+          if (this.lifecycle === "starting") {
+            this.lifecycle = "failed";
+          }
+          try {
+            await this.cleanup();
+          } catch (cleanupError) {
+            throw new AggregateError(
+              [error, cleanupError],
+              "Application startup and cleanup failed",
+            );
+          }
+          throw error;
+        }
+      });
+    }
+    return this.readyPromise;
+  }
+
+  private async initialize(): Promise<void> {
+    const options = this.options;
+    this.workspaceStarted = Boolean(this.workspace);
+    await this.workspace?.init();
+    this.autoConfigureVoltOpsClientFromEnv();
     const observabilityOption = options.observability;
     this.observability = observabilityOption
       ? observabilityOption
@@ -129,154 +177,77 @@ export class VoltAgent {
     // Setup graceful shutdown handlers
     this.setupShutdownHandlers();
 
-    // Register agents synchronously so getAgent/getAgents can be used immediately after construction.
-    // Workspace defaults are applied before registration; workspace initialization is still awaited by ready.
-    this.registerAgents(options.agents);
+    // Handle server provider if provided
+    if (options.server) {
+      this.serverInstance = options.server({
+        agentRegistry: this.registry,
+        workflowRegistry: this.workflowRegistry,
+        logger: this.logger,
+        voltOpsClient: this.registry.getGlobalVoltOpsClient(),
+        observability: this.observability,
+        mcp: {
+          registry: this.mcpServerRegistry,
+        },
+        a2a: {
+          registry: this.a2aServerRegistry,
+        },
+        triggerRegistry: this.triggerRegistry,
+        ensureEnvironment: this.ensureEnvironmentBinding,
+      });
+    }
 
-    const finalizeInit = () => {
-      this.registerTriggers(options.triggers);
+    if (options.serverless) {
+      this.serverlessProvider = options.serverless({
+        agentRegistry: this.registry,
+        workflowRegistry: this.workflowRegistry,
+        logger: this.logger,
+        voltOpsClient: this.registry.getGlobalVoltOpsClient(),
+        observability: this.observability,
+        mcp: {
+          registry: this.mcpServerRegistry,
+        },
+        a2a: {
+          registry: this.a2aServerRegistry,
+        },
+        triggerRegistry: this.triggerRegistry,
+        ensureEnvironment: this.ensureEnvironmentBinding,
+      });
+    }
 
-      // Register workflows if provided
-      if (options.workflows) {
-        this.registerWorkflows(options.workflows);
+    if (options.mcpServers) {
+      for (const entry of Object.values(options.mcpServers)) {
+        this.initializeMCPServer(entry);
       }
+    }
 
-      // Handle server provider if provided
-      if (options.server) {
-        this.serverInstance = options.server({
-          agentRegistry: this.registry,
-          workflowRegistry: this.workflowRegistry,
-          logger: this.logger,
-          voltOpsClient: this.registry.getGlobalVoltOpsClient(),
-          observability: this.observability,
-          mcp: {
-            registry: this.mcpServerRegistry,
-          },
-          a2a: {
-            registry: this.a2aServerRegistry,
-          },
-          triggerRegistry: this.triggerRegistry,
-          ensureEnvironment: this.ensureEnvironmentBinding,
+    if (options.a2aServers) {
+      for (const entry of Object.values(options.a2aServers)) {
+        this.initializeA2AServer(entry);
+      }
+    }
+
+    // Check dependencies if enabled (run in background)
+    if (options.checkDependencies !== false) {
+      // Run dependency check in background to not block startup
+      Promise.resolve().then(() => {
+        this.checkDependencies().catch(() => {
+          // Silently ignore errors
         });
-      }
+      });
+    }
 
-      if (options.serverless) {
-        this.serverlessProvider = options.serverless({
-          agentRegistry: this.registry,
-          workflowRegistry: this.workflowRegistry,
-          logger: this.logger,
-          voltOpsClient: this.registry.getGlobalVoltOpsClient(),
-          observability: this.observability,
-          mcp: {
-            registry: this.mcpServerRegistry,
-          },
-          a2a: {
-            registry: this.a2aServerRegistry,
-          },
-          triggerRegistry: this.triggerRegistry,
-          ensureEnvironment: this.ensureEnvironmentBinding,
-        });
-      }
-
-      if (options.mcpServers) {
-        for (const entry of Object.values(options.mcpServers)) {
-          this.initializeMCPServer(entry);
-        }
-      }
-
-      if (options.a2aServers) {
-        for (const entry of Object.values(options.a2aServers)) {
-          this.initializeA2AServer(entry);
-        }
-      }
-
-      // Check dependencies if enabled (run in background)
-      if (options.checkDependencies !== false) {
-        // Run dependency check in background to not block startup
-        Promise.resolve().then(() => {
-          this.checkDependencies().catch(() => {
-            // Silently ignore errors
-          });
-        });
-      }
-
-      // Auto-start server if provided
-      if (this.serverInstance) {
-        this.startServer().catch((err) => {
-          this.logger.error("Failed to start server:", err);
-          if (typeof process !== "undefined" && typeof process.exit === "function") {
-            process.exit(1);
-          }
-        });
-      }
-    };
-
-    this.ready = (async () => {
-      let workspaceError: unknown;
-      let finalizeError: unknown;
-      if (workspaceInitPromise) {
-        try {
-          await workspaceInitPromise;
-        } catch (error) {
-          workspaceError = error;
-          logger.error("Workspace initialization failed:", { error });
-        }
-      }
-      try {
-        finalizeInit();
-      } catch (error) {
-        finalizeError = error;
-        logger.error("finalizeInit failed:", { error });
-      }
-
-      if (workspaceError || finalizeError) {
-        this.degraded = true;
-        if (workspaceError && finalizeError) {
-          this.initError = new AggregateError(
-            [workspaceError, finalizeError],
-            "Workspace and finalizeInit failed",
-          );
-          logger.error("Agent initialization encountered multiple failures:", {
-            workspaceError,
-            finalizeError,
-          });
-        } else {
-          this.initError = workspaceError ?? finalizeError;
-          logger.error("Agent initialization failed:", {
-            error: this.initError,
-          });
-        }
-      }
-
-      if (finalizeError) {
-        throw finalizeError;
-      }
-    })().catch((error) => {
-      this.degraded = true;
-      if (this.initError) {
-        if (this.initError instanceof AggregateError) {
-          const aggregated = (this.initError as AggregateError).errors;
-          if (!aggregated.includes(error)) {
-            this.initError = new AggregateError(
-              [...aggregated, error],
-              "Agent initialization failed",
-            );
-          }
-        } else if (this.initError !== error) {
-          this.initError = new AggregateError(
-            [this.initError, error],
-            "Agent initialization failed",
-          );
-        }
-      } else {
-        this.initError = error;
-      }
-      logger.error("Agent initialization failed:", { error });
-    });
+    if (this.serverInstance) {
+      await this.startServer();
+    } else {
+      await this.startConfiguredMcpTransports();
+    }
   }
 
   serverless(): IServerlessProvider {
     if (!this.serverlessProvider) {
+      if (this.options.serverless) {
+        throw new Error("Application is not ready. Call and await ready() first.");
+      }
       throw new Error("No serverless provider configured. Pass serverless option to VoltAgent");
     }
 
@@ -405,6 +376,7 @@ export class VoltAgent {
 
     const handleSignal = async (signal: string) => {
       this.logger.info(`[VoltAgent] Received ${signal}...`);
+      const shouldExit = this.isSoleSignalHandler(signal as "SIGTERM" | "SIGINT");
 
       try {
         // Use the public shutdown method for all cleanup
@@ -412,30 +384,26 @@ export class VoltAgent {
 
         // Only call process.exit if we're the sole handler
         // This allows other frameworks to perform their own cleanup
-        if (
-          this.isSoleSignalHandler(signal as "SIGTERM" | "SIGINT") &&
-          typeof process.exit === "function"
-        ) {
+        if (shouldExit && typeof process.exit === "function") {
           process.exit(0);
         }
       } catch (error) {
         this.logger.error("[VoltAgent] Error during shutdown:", { error });
-        if (
-          this.isSoleSignalHandler(signal as "SIGTERM" | "SIGINT") &&
-          typeof process.exit === "function"
-        ) {
+        if (shouldExit && typeof process.exit === "function") {
           process.exit(1);
         }
       }
     };
 
     // Use process.once to prevent duplicate handling
-    process.once("SIGTERM", () => handleSignal("SIGTERM"));
-    process.once("SIGINT", () => handleSignal("SIGINT"));
+    const onTerm = () => handleSignal("SIGTERM");
+    const onInt = () => handleSignal("SIGINT");
+    process.once("SIGTERM", onTerm);
+    process.once("SIGINT", onInt);
 
     // Handle unhandled promise rejections to prevent server crashes
     // This is particularly important for AI SDK's NoOutputGeneratedError
-    process.on("unhandledRejection", (reason) => {
+    const onUnhandledRejection = (reason: unknown) => {
       const isStructuredOutputWrapperError =
         isVoltAgentError(reason) && reason.code === "STRUCTURED_OUTPUT_NOT_GENERATED";
       const isNoOutputGeneratedError =
@@ -452,7 +420,13 @@ export class VoltAgent {
       });
       // Don't crash the server, just log the error
       // In production, you might want to send this to an error tracking service
-    });
+    };
+    process.on("unhandledRejection", onUnhandledRejection);
+    this.removeShutdownHandlers = () => {
+      process.off("SIGTERM", onTerm);
+      process.off("SIGINT", onInt);
+      process.off("unhandledRejection", onUnhandledRejection);
+    };
   }
 
   private isSoleSignalHandler(event: "SIGTERM" | "SIGINT"): boolean {
@@ -714,10 +688,15 @@ export class VoltAgent {
   /**
    * Shutdown telemetry (delegates to VoltAgentObservability)
    */
-  public async shutdownTelemetry(): Promise<void> {
-    if (this.observability) {
-      await this.observability.shutdown();
+  public shutdownTelemetry(): Promise<void> {
+    if (!this.observability) {
+      return Promise.resolve();
     }
+    this.telemetryShutdownPromise ??= this.runCleanupSteps([
+      () => this.observability?.forceFlush(),
+      () => this.observability?.shutdown(),
+    ]);
+    return this.telemetryShutdownPromise;
   }
 
   /**
@@ -725,50 +704,53 @@ export class VoltAgent {
    * This includes stopping the server, suspending workflows, and shutting down telemetry
    * Useful for programmatic cleanup or when integrating with other frameworks
    */
-  public async shutdown(): Promise<void> {
-    this.logger.info("[VoltAgent] Starting graceful shutdown...");
+  public shutdown(): Promise<void> {
+    if (!this.shutdownPromise) {
+      this.lifecycle = "stopping";
+      this.shutdownPromise = Promise.resolve().then(async () => {
+        await this.readyPromise?.catch(() => undefined);
+        await this.cleanup();
+      });
+    }
+    return this.shutdownPromise;
+  }
 
-    try {
-      // Stop the server first to prevent new requests
-      if (this.serverInstance?.isRunning()) {
-        this.logger.info("[VoltAgent] Stopping server...");
-        await this.stopServer();
+  private cleanup(): Promise<void> {
+    this.cleanupPromise ??= this.runCleanupSteps([
+      () => this.serverInstance?.stop(),
+      () => (this.readyPromise ? this.workflowRegistry.suspendAllActiveWorkflows() : undefined),
+      () => this.shutdownA2AServers(),
+      () => this.shutdownMcpServers(),
+      () => (this.workspaceStarted ? this.workspace?.destroy() : undefined),
+      () => (this.observability ? this.shutdownTelemetry() : undefined),
+      () => this.removeShutdownHandlers?.(),
+    ]).finally(() => {
+      this.lifecycle = "stopped";
+    });
+    return this.cleanupPromise;
+  }
+
+  private async runCleanupSteps(steps: Array<() => void | Promise<void>>): Promise<void> {
+    const errors: unknown[] = [];
+    for (const step of steps) {
+      try {
+        await step();
+      } catch (error) {
+        errors.push(error);
       }
-
-      // Suspend all active workflows
-      this.logger.info("[VoltAgent] Suspending active workflows...");
-      await this.workflowRegistry.suspendAllActiveWorkflows();
-
-      const globalWorkspace = this.registry.getGlobalWorkspace();
-      if (globalWorkspace) {
-        this.logger.info("[VoltAgent] Destroying global workspace...");
-        await globalWorkspace.destroy();
-      }
-
-      // Shutdown telemetry
-      if (this.observability) {
-        this.logger.info("[VoltAgent] Shutting down telemetry...");
-        await this.shutdownTelemetry();
-      }
-
-      await this.shutdownA2AServers();
-      await this.shutdownMcpServers();
-
-      this.logger.info("[VoltAgent] Graceful shutdown complete");
-    } catch (error) {
-      this.logger.error("[VoltAgent] Error during shutdown:", { error });
-      throw error;
+    }
+    if (errors.length > 0) {
+      throw new AggregateError(errors, "Failed to shut down application resources");
     }
   }
 
   private initializeMCPServer(mcpServer: MCPServerLike | MCPServerFactory): MCPServerLike {
     const instance: MCPServerLike = typeof mcpServer === "function" ? mcpServer() : mcpServer;
 
+    this.mcpServers.add(instance);
     this.mcpServerRegistry.register(instance, this.getMCPDependencies(), {
       startTransports: this.serverInstance?.isRunning() ?? false,
     });
-
-    this.mcpServers.add(instance);
 
     return instance;
   }
@@ -794,7 +776,13 @@ export class VoltAgent {
     }
 
     if (startTasks.length > 0) {
-      await Promise.all(startTasks);
+      const results = await Promise.allSettled(startTasks);
+      const errors = results.flatMap((result) =>
+        result.status === "rejected" ? [result.reason] : [],
+      );
+      if (errors.length > 0) {
+        throw new AggregateError(errors, "Failed to start MCP transports");
+      }
     }
   }
 
@@ -846,14 +834,16 @@ export class VoltAgent {
 
     this.logger.info("[VoltAgent] Shutting down MCP server transports...");
 
-    for (const server of Array.from(this.mcpServers)) {
-      try {
-        await server.close?.();
-      } finally {
-        this.mcpServerRegistry.unregister(server);
-        this.mcpServers.delete(server);
-      }
-    }
+    await this.runCleanupSteps(
+      Array.from(this.mcpServers, (server) => async () => {
+        try {
+          await server.close?.();
+        } finally {
+          this.mcpServerRegistry.unregister(server, false);
+          this.mcpServers.delete(server);
+        }
+      }),
+    );
   }
 
   private async shutdownA2AServers(): Promise<void> {
@@ -869,9 +859,12 @@ export class VoltAgent {
 }
 
 /**
- * Creates an application with the existing runtime configuration.
+ * Configures an application. Call ready() to start its resources.
  * @param options - Registration, server, memory, and observability configuration.
- * @returns A runtime exposing registration and shutdown APIs.
+ * @returns A runtime exposing readiness, registration, and shutdown APIs.
+ * @example
+ * const app = voltagent({ agents: { assistant }, server: honoServer() });
+ * await app.ready();
  */
 export function voltagent(options: VoltAgentOptions): VoltAgent {
   return new VoltAgent(options);

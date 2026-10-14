@@ -113,17 +113,29 @@ export abstract class BaseServerProvider implements IServerProvider {
    * Stop the server
    */
   async stop(): Promise<void> {
-    if (!this.running) {
+    if (!this.running && !this.server?.listening) {
       return;
     }
 
-    // Close WebSocket server if exists
-    if (this.websocketServer) {
-      this.websocketServer.close();
+    const results = await Promise.allSettled([
+      this.websocketServer
+        ? new Promise<void>((resolve, reject) => {
+            const websocketServer = this.websocketServer;
+            if (!websocketServer) return resolve();
+            websocketServer.close((error) => (error ? reject(error) : resolve()));
+            for (const client of websocketServer.clients) {
+              client.close(1001, "Server shutting down");
+            }
+          })
+        : Promise.resolve(),
+      this.stopServer(),
+    ]);
+    const errors = results.flatMap((result) =>
+      result.status === "rejected" ? [result.reason] : [],
+    );
+    if (errors.length > 0) {
+      throw new AggregateError(errors, "Failed to stop server");
     }
-
-    // Framework-specific server stop
-    await this.stopServer();
 
     // Release the allocated port
     if (this.allocatedPort !== null) {

@@ -42,8 +42,7 @@ export class HonoServerProvider extends BaseServerProvider {
 
     return new Promise((resolve, reject) => {
       try {
-        // The serve function from @hono/node-server automatically starts listening
-        // It returns a server that's already bound to the port
+        // serve() begins listening asynchronously.
         const server = serve({
           fetch: app.fetch.bind(app),
           port,
@@ -65,16 +64,10 @@ export class HonoServerProvider extends BaseServerProvider {
         server.once("error", errorHandler);
         server.once("listening", successHandler);
 
-        // Set a timeout to detect if server doesn't start
-        setTimeout(() => {
-          if (!server.listening) {
-            server.removeListener("error", errorHandler);
-            server.removeListener("listening", successHandler);
-            // If not listening after a short time, resolve anyway
-            // The serve() function might handle errors differently
-            resolve(server as unknown as Server);
-          }
-        }, 100);
+        if (server.listening) {
+          server.removeListener("listening", successHandler);
+          successHandler();
+        }
       } catch (error) {
         reject(error);
       }
@@ -85,8 +78,13 @@ export class HonoServerProvider extends BaseServerProvider {
    * Stop the Hono server
    */
   protected async stopServer(): Promise<void> {
-    if (this.server) {
-      this.server.close();
+    if (this.server?.listening) {
+      await new Promise<void>((resolve, reject) => {
+        this.server?.close((error) => {
+          if (error) reject(error);
+          else resolve();
+        });
+      });
     }
   }
 

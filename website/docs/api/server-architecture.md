@@ -90,16 +90,16 @@ abstract class BaseServerProvider implements IServerProvider {
 ### Basic Setup
 
 ```typescript
-import { VoltAgent } from "@voltagent/core";
+import { voltagent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 
-new VoltAgent({
+await voltagent({
   agents: { myAgent },
   server: honoServer({
     port: 3141,
     enableSwaggerUI: true,
   }),
-});
+}).ready();
 ```
 
 ### Configuration Options
@@ -132,13 +132,13 @@ The `hostname` option controls which network interface the server binds to. This
 By default, VoltAgent binds to `0.0.0.0`, which accepts connections on all IPv4 interfaces:
 
 ```typescript
-new VoltAgent({
+await voltagent({
   agents: { myAgent },
   server: honoServer({
     port: 3141,
     // hostname: "0.0.0.0" is the default
   }),
-});
+}).ready();
 ```
 
 #### IPv6 Dual-Stack (Recommended for Production)
@@ -146,13 +146,13 @@ new VoltAgent({
 For platforms like Railway, Fly.io, or other IPv6-enabled environments, use `::` to bind to both IPv4 and IPv6:
 
 ```typescript
-new VoltAgent({
+await voltagent({
   agents: { myAgent },
   server: honoServer({
     port: 3141,
     hostname: "::", // Binds to both IPv4 and IPv6
   }),
-});
+}).ready();
 ```
 
 This is the recommended configuration for production deployments as it ensures compatibility with modern networking infrastructure.
@@ -162,13 +162,13 @@ This is the recommended configuration for production deployments as it ensures c
 For local development when you want to restrict access to localhost only:
 
 ```typescript
-new VoltAgent({
+await voltagent({
   agents: { myAgent },
   server: honoServer({
     port: 3141,
     hostname: "127.0.0.1", // IPv4 localhost only
   }),
-});
+}).ready();
 ```
 
 #### Environment-Based Configuration
@@ -176,13 +176,13 @@ new VoltAgent({
 Use environment variables for flexible deployment configuration:
 
 ```typescript
-new VoltAgent({
+await voltagent({
   agents: { myAgent },
   server: honoServer({
     port: parseInt(process.env.PORT || "3141"),
     hostname: process.env.HOSTNAME || "::", // Default to dual-stack
   }),
-});
+}).ready();
 ```
 
 Then set in your deployment environment:
@@ -202,7 +202,7 @@ HOSTNAME=127.0.0.1
 Access the Hono app directly for custom middleware and routes:
 
 ```typescript
-new VoltAgent({
+await voltagent({
   agents: { myAgent },
   server: honoServer({
     configureApp: (app) => {
@@ -220,7 +220,7 @@ new VoltAgent({
       app.use("*", rateLimiter());
     },
   }),
-});
+}).ready();
 ```
 
 ## Using the Elysia Server
@@ -228,16 +228,16 @@ new VoltAgent({
 ### Basic Setup
 
 ```typescript
-import { VoltAgent } from "@voltagent/core";
+import { voltagent } from "@voltagent/core";
 import { elysiaServer } from "@voltagent/server-elysia";
 
-new VoltAgent({
+await voltagent({
   agents: { myAgent },
   server: elysiaServer({
     port: 3141,
     enableSwaggerUI: true,
   }),
-});
+}).ready();
 ```
 
 ### Configuration Options
@@ -273,7 +273,7 @@ interface ElysiaServerConfig {
 Access the Elysia app directly for custom middleware and routes:
 
 ```typescript
-new VoltAgent({
+await voltagent({
   agents: { myAgent },
   server: elysiaServer({
     configureApp: (app) => {
@@ -289,7 +289,7 @@ new VoltAgent({
       app.group("/api/v2", (app) => app.get("/users", getUsersHandler));
     },
   }),
-});
+}).ready();
 ```
 
 ## Port Management
@@ -396,10 +396,11 @@ When VoltAgent receives a shutdown signal (SIGINT/SIGTERM):
 VoltAgent automatically registers SIGINT and SIGTERM handlers that clean up resources:
 
 ```typescript
-const voltAgent = new VoltAgent({
+const voltAgent = voltagent({
   agents: { myAgent },
   server: honoServer({ port: 3141 }),
 });
+await voltAgent.ready();
 
 // When you press Ctrl+C or the process receives SIGTERM:
 // 1. Server stops accepting new connections
@@ -413,10 +414,11 @@ const voltAgent = new VoltAgent({
 Use the `shutdown()` method for manual resource cleanup:
 
 ```typescript
-const voltAgent = new VoltAgent({
+const voltAgent = voltagent({
   agents: { myAgent },
   server: honoServer({ port: 3141 }),
 });
+await voltAgent.ready();
 
 // Later in your application
 await voltAgent.shutdown();
@@ -436,14 +438,15 @@ Example with Express:
 
 ```typescript
 import express from "express";
-import { VoltAgent } from "@voltagent/core";
+import { voltagent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 
 const app = express();
-const voltAgent = new VoltAgent({
+const voltAgent = voltagent({
   agents: { myAgent },
   server: honoServer({ port: 3141 }),
 });
+await voltAgent.ready();
 
 // Express graceful shutdown
 process.on("SIGTERM", async () => {

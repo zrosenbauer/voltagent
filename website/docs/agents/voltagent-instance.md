@@ -5,24 +5,24 @@ sidebar_label: VoltAgent Instance
 
 # VoltAgent Instance
 
-`VoltAgent` is the application entrypoint. It wires agents and workflows together, applies global defaults, and optionally starts an HTTP or serverless provider.
+`voltagent()` configures the application without starting resources. Call `await app.ready()` to initialize workspaces, telemetry, transports, and the configured HTTP or serverless provider. This also applies to applications without a server. Startup errors reject the readiness promise and clean up initialized resources. Call `await app.shutdown()` to stop resources and flush telemetry. Both methods are idempotent; a stopped application cannot restart. Import `VoltAgent` as a type when you need an explicit runtime annotation.
 
 ## Basic Setup
 
 ```ts
-import { Agent, VoltAgent } from "@voltagent/core";
+import { defineAgent, voltagent } from "@voltagent/core";
 import { honoServer } from "@voltagent/server-hono";
 
-const assistant = new Agent({
+const assistant = defineAgent({
   name: "Assistant",
   instructions: "Help users get answers fast.",
   model: "openai/gpt-4o-mini",
 });
 
-new VoltAgent({
+await voltagent({
   agents: { assistant },
   server: honoServer({ port: 3141 }),
-});
+}).ready();
 ```
 
 ## What VoltAgent Manages
@@ -38,12 +38,13 @@ new VoltAgent({
 You can register instances on startup or later at runtime.
 
 ```ts
-import { VoltAgent } from "@voltagent/core";
+import { voltagent } from "@voltagent/core";
 
-const app = new VoltAgent({
+const app = voltagent({
   agents: { assistant },
   workflows: { onboardingWorkflow },
 });
+await app.ready();
 
 app.registerAgent(anotherAgent);
 app.registerWorkflow(anotherWorkflow);
@@ -60,7 +61,7 @@ app.registerTriggers(triggers);
 Set default memory once at the VoltAgent entrypoint. Defaults apply only when an agent or workflow does not specify `memory`. Omitting `memory` does not disable it; it still resolves to configured defaults (or built-in in-memory). An explicit `memory: false` on an agent disables memory entirely.
 
 ```ts
-import { Memory, VoltAgent } from "@voltagent/core";
+import { Memory, voltagent } from "@voltagent/core";
 import { LibSQLMemoryAdapter } from "@voltagent/libsql";
 
 const agentMemory = new Memory({
@@ -71,11 +72,11 @@ const workflowMemory = new Memory({
   storage: new LibSQLMemoryAdapter({ url: "file:./.voltagent/workflows.db" }),
 });
 
-new VoltAgent({
+await voltagent({
   agentMemory,
   workflowMemory,
   // memory: sharedFallbackMemory,
-});
+}).ready();
 ```
 
 **Precedence**
@@ -90,14 +91,14 @@ See [Memory Overview](/docs/agents/memory/overview) for adapter options.
 Set a default persistence strategy for agents that do not explicitly define `conversationPersistence`.
 
 ```ts
-new VoltAgent({
+await voltagent({
   agents: { assistant },
   agentConversationPersistence: {
     mode: "step", // default
     debounceMs: 200, // default
     flushOnToolResult: true, // default
   },
-});
+}).ready();
 ```
 
 **Precedence**
@@ -113,16 +114,16 @@ new VoltAgent({
 VoltAgent creates an OpenTelemetry-based observability instance by default. You can provide your own instance or logger if you want full control.
 
 ```ts
-import { VoltAgent, VoltAgentObservability } from "@voltagent/core";
+import { voltagent, VoltAgentObservability } from "@voltagent/core";
 
 const observability = new VoltAgentObservability({
   serviceName: "my-voltagent-app",
 });
 
-new VoltAgent({
+await voltagent({
   agents: { assistant },
   observability,
-});
+}).ready();
 ```
 
 See [Observability Overview](/docs/observability/overview) and [Logging](/docs/observability/logging) for details.
@@ -130,11 +131,11 @@ See [Observability Overview](/docs/observability/overview) and [Logging](/docs/o
 If you already have a `VoltOpsClient` or a custom logger, pass them once and VoltAgent shares them across agents and workflows.
 
 ```ts
-new VoltAgent({
+await voltagent({
   agents: { assistant },
   voltOpsClient,
   logger,
-});
+}).ready();
 ```
 
 ## Server and Serverless Providers
@@ -144,10 +145,11 @@ Use `server` to expose HTTP endpoints, or `serverless` for fetch-based runtimes.
 ```ts
 import { honoServer } from "@voltagent/server-hono";
 
-const app = new VoltAgent({
+const app = voltagent({
   agents: { assistant },
   server: honoServer({ port: 3141, enableSwaggerUI: true }),
 });
+await app.ready();
 ```
 
 See [API Overview](/docs/api/overview) for the full endpoint list.
@@ -170,10 +172,11 @@ If you are using a serverless provider, you can access it with `serverless()`:
 ```ts
 import { serverlessHono } from "@voltagent/serverless-hono";
 
-const serverlessApp = new VoltAgent({
+const serverlessApp = voltagent({
   agents: { assistant },
   serverless: serverlessHono(),
 });
+await serverlessApp.ready();
 
 const serverlessProvider = serverlessApp.serverless();
 ```
@@ -183,12 +186,12 @@ const serverlessProvider = serverlessApp.serverless();
 VoltAgent can register triggers and protocol servers alongside your agents.
 
 ```ts
-new VoltAgent({
+await voltagent({
   agents: { assistant },
   triggers,
   mcpServers,
   a2aServers,
-});
+}).ready();
 ```
 
 See [Triggers](/docs/triggers) and [MCP](/docs/agents/mcp) for setup details.
@@ -211,8 +214,8 @@ await app.shutdown();
 `checkDependencies` controls a background dependency update check intended for Node runtimes. It is skipped in serverless or edge environments, and the current core implementation is a no-op placeholder.
 
 ```ts
-new VoltAgent({
+await voltagent({
   agents: { assistant },
   checkDependencies: false,
-});
+}).ready();
 ```
