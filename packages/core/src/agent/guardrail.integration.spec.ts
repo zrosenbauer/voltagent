@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { Memory } from "../memory";
 import { InMemoryStorageAdapter } from "../memory/adapters/storage/in-memory";
 import { convertUsage } from "../utils/usage-converter";
-import { Agent } from "./agent";
+import { type Agent, defineAgent } from "./agent";
 import { createInputGuardrail, createOutputGuardrail } from "./guardrail";
 import type { VoltAgentTextStreamPart } from "./subagent/types";
 import {
@@ -69,7 +69,7 @@ describe("Agent guardrail integration", () => {
       },
     });
 
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "Guarded Agent",
       instructions: "Return funding details.",
       model,
@@ -144,7 +144,7 @@ describe("Agent guardrail integration", () => {
       },
     });
 
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "Streaming Guarded Agent",
       instructions: "Stream funding details.",
       model,
@@ -223,7 +223,7 @@ describe("Agent guardrail integration", () => {
       },
     });
 
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "Parallel Guardrail Agent",
       instructions: "Stream response.",
       model,
@@ -282,7 +282,7 @@ describe("Agent guardrail integration", () => {
       storage: new InMemoryStorageAdapter(),
     });
     const saveSpy = vi.spyOn(memory, "saveMessageWithContext");
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "Blocking Parallel Guardrail Agent",
       instructions: "Stream response.",
       model,
@@ -322,7 +322,7 @@ describe("Agent guardrail integration", () => {
       })),
     });
 
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "Blocked Stream Surfaces Agent",
       instructions: "Stream response.",
       model: createStreamingModel("unsafe model output"),
@@ -435,7 +435,7 @@ describe("Agent guardrail integration", () => {
       },
     });
 
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "Input Override Agent",
       instructions: "Stream response.",
       model,

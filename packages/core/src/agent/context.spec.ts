@@ -2,7 +2,7 @@ import { APICallError, Output, isStepCount, tool } from "ai";
 import { MockLanguageModelV4 } from "ai/test";
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { Agent } from "./agent";
+import { type Agent, defineAgent } from "./agent";
 import { createInputMiddleware, createOutputMiddleware } from "./middleware";
 import type { OperationContext } from "./types";
 
@@ -71,7 +71,7 @@ describe("schema-validated context", () => {
         ["tenant", "acme"],
         ["extra", true],
       ]);
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "typed-context",
         memory: false,
         contextSchema: z
@@ -126,7 +126,7 @@ describe("schema-validated context", () => {
       const model = modelForText('{"answer":"unused"}');
       const instructions = vi.fn(() => "Help");
       const onStart = vi.fn();
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "invalid",
         model,
         instructions,
@@ -150,7 +150,7 @@ describe("schema-validated context", () => {
   );
 
   it("merges constructor defaults, legacy input and namespaced input before validation", async () => {
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "merge",
       model: modelForText("ready"),
       memory: false,
@@ -175,7 +175,7 @@ describe("schema-validated context", () => {
   });
 
   it("applies field defaults to an omitted context", async () => {
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "defaults",
       model: modelForText("ready"),
       memory: false,
@@ -187,7 +187,7 @@ describe("schema-validated context", () => {
 
   it("does not mutate constructor defaults or leak schema defaults between invocations", async () => {
     const defaults = new Map<string | symbol, unknown>([["budget", "100"]]);
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "isolated",
       model: modelForText("ready"),
       memory: false,
@@ -217,7 +217,7 @@ describe("schema-validated context", () => {
       [key, { id: 1 }],
       ["extra", true],
     ]);
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "shared",
       model: modelForText("ready"),
       memory: false,
@@ -233,7 +233,7 @@ describe("schema-validated context", () => {
 
   it("does not partially modify shared context on validation failure", async () => {
     const shared = new Map<string | symbol, unknown>([["tenant", 123]]);
-    const agent: Agent = new Agent({
+    const agent: Agent = defineAgent({
       name: "atomic",
       model: modelForText("unused"),
       memory: false,
@@ -249,7 +249,7 @@ describe("schema-validated context", () => {
 
   it("inherits parent context and shares child updates through an agent tool", async () => {
     let childContext: Map<string | symbol, unknown> | undefined;
-    const child = new Agent({
+    const child = defineAgent({
       id: "child",
       name: "Child",
       model: modelForText("child result"),
@@ -281,7 +281,7 @@ describe("schema-validated context", () => {
               finishReason: { unified: "tool-calls", raw: "tool_calls" },
             },
     });
-    const parent = new Agent({
+    const parent = defineAgent({
       name: "Parent",
       model: parentModel,
       memory: false,
@@ -300,7 +300,7 @@ describe("schema-validated context", () => {
   });
 
   it("rejects invalid parent values without replacing them with call or constructor values", async () => {
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "parent-priority",
       model: modelForText("unused"),
       memory: false,
@@ -336,7 +336,7 @@ describe("schema-validated context", () => {
       },
     });
     const fallback = modelForText("ready");
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "retries",
       memory: false,
       instructions: "Help",
@@ -368,7 +368,7 @@ describe("schema-validated context", () => {
       abort.abort(new Error("cancelled"));
     });
     const model = modelForText("unused");
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "abort",
       model,
       instructions: "Help",
@@ -398,7 +398,7 @@ describe("schema-validated context", () => {
             },
     });
     const execute = vi.fn();
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "tools",
       model,
       memory: false,

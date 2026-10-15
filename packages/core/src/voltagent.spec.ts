@@ -1,7 +1,8 @@
-import { MockLanguageModelV3 } from "ai/test";
+import { MockLanguageModelV4 } from "ai/test";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { Agent } from "./agent/agent";
+import { type Agent, defineAgent } from "./agent/agent";
+import { MemoryPersistQueue } from "./agent/memory-persist-queue";
 import { Memory } from "./memory";
 import { InMemoryStorageAdapter } from "./memory/adapters/storage/in-memory";
 import { ServerlessVoltAgentObservability } from "./observability";
@@ -12,6 +13,19 @@ import { defineWorkflow } from "./workflow";
 import { WorkflowRegistry } from "./workflow/registry";
 import { andThen } from "./workflow/steps";
 import { Workspace } from "./workspace";
+
+const createModel = (text = "Response") =>
+  new MockLanguageModelV4({
+    doGenerate: {
+      content: [{ type: "text", text }],
+      finishReason: { unified: "stop", raw: "stop" },
+      usage: {
+        inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 },
+        outputTokens: { total: 1, text: 1, reasoning: 0 },
+      },
+      warnings: [],
+    },
+  });
 
 const resetRegistries = () => {
   const agentRegistry = AgentRegistry.getInstance() as {
@@ -40,12 +54,13 @@ describe("VoltAgent defaults", () => {
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     resetRegistries();
   });
 
   it("applies agentMemory to registered agents without explicit memory", () => {
     const agentMemory = new Memory({ storage: new InMemoryStorageAdapter() });
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "assistant",
       instructions: "Be helpful.",
       model: "openai/gpt-4o-mini",
@@ -65,32 +80,11 @@ describe("VoltAgent defaults", () => {
       storage: new InMemoryStorageAdapter(),
       generateTitle: true,
     });
-    const model = new MockLanguageModelV3({
-      modelId: "title-model",
-      doGenerate: async () => ({
-        content: [{ type: "text", text: "Global Memory Title" }],
-        finishReason: "stop",
-        usage: {
-          inputTokens: 1,
-          outputTokens: 1,
-          totalTokens: 2,
-          inputTokenDetails: {
-            noCacheTokens: 1,
-            cacheReadTokens: 0,
-            cacheWriteTokens: 0,
-          },
-          outputTokenDetails: {
-            textTokens: 1,
-            reasoningTokens: 0,
-          },
-        },
-        warnings: [],
-      }),
-    });
-    const agent = new Agent({
+    const model = createModel("Global Memory Title");
+    const agent = defineAgent({
       name: "assistant",
       instructions: "Be helpful.",
-      model: model as any,
+      model,
     });
 
     const voltAgent = voltagent({
@@ -99,20 +93,10 @@ describe("VoltAgent defaults", () => {
       checkDependencies: false,
     });
 
-    const operationContext = (agent as any).createOperationContext("Plan a weekend trip to Rome.", {
+    await agent.generateText("Plan a weekend trip to Rome.", {
       userId: "user-1",
       conversationId: "conversation-1",
     });
-    await (agent as any).memoryManager.saveMessage(
-      operationContext,
-      {
-        id: "message-1",
-        role: "assistant",
-        parts: [{ type: "text", text: "Sure, let's plan it." }],
-      },
-      "user-1",
-      "conversation-1",
-    );
 
     const conversation = await agentMemory.getConversation("conversation-1");
     expect(conversation?.title).toBe("Global Memory Title");
@@ -122,7 +106,7 @@ describe("VoltAgent defaults", () => {
 
   it("applies workspace to preconstructed registered agents without explicit workspace", async () => {
     const workspace = new Workspace({ id: "global-workspace" });
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "assistant",
       instructions: "Be helpful.",
       model: "openai/gpt-4o-mini",
@@ -180,7 +164,7 @@ describe("VoltAgent defaults", () => {
 
   it("uses shared memory as fallback for agents and workflows", () => {
     const sharedMemory = new Memory({ storage: new InMemoryStorageAdapter() });
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "assistant",
       instructions: "Be helpful.",
       model: "openai/gpt-4o-mini",
@@ -209,14 +193,15 @@ describe("VoltAgent defaults", () => {
     expect(workflow.memory).toBe(sharedMemory);
   });
 
-  it("applies default agent conversation persistence when agent does not configure it", () => {
-    const agent = new Agent({
+  it("applies default agent conversation persistence when agent does not configure it", async () => {
+    const scheduleSave = vi.spyOn(MemoryPersistQueue.prototype, "scheduleSave");
+    const agent = defineAgent({
       name: "assistant",
       instructions: "Be helpful.",
-      model: "openai/gpt-4o-mini",
+      model: createModel(),
     });
 
-    voltagent({
+    const app = voltagent({
       agents: { assistant: agent },
       agentConversationPersistence: {
         mode: "finish",
@@ -226,18 +211,20 @@ describe("VoltAgent defaults", () => {
       checkDependencies: false,
     });
 
-    expect((agent as any).conversationPersistence).toMatchObject({
-      mode: "finish",
-      debounceMs: 10,
-      flushOnToolResult: false,
+    await agent.generateText("Hello", {
+      userId: "persistence-user",
+      conversationId: "persistence-conversation",
     });
+    expect(scheduleSave).not.toHaveBeenCalled();
+    await app.shutdown();
   });
 
-  it("preserves explicit agent conversation persistence config", () => {
-    const agent = new Agent({
+  it("preserves explicit agent conversation persistence config", async () => {
+    const scheduleSave = vi.spyOn(MemoryPersistQueue.prototype, "scheduleSave");
+    const agent = defineAgent({
       name: "assistant",
       instructions: "Be helpful.",
-      model: "openai/gpt-4o-mini",
+      model: createModel(),
       conversationPersistence: {
         mode: "step",
         debounceMs: 25,
@@ -245,7 +232,7 @@ describe("VoltAgent defaults", () => {
       },
     });
 
-    voltagent({
+    const app = voltagent({
       agents: { assistant: agent },
       agentConversationPersistence: {
         mode: "finish",
@@ -255,11 +242,12 @@ describe("VoltAgent defaults", () => {
       checkDependencies: false,
     });
 
-    expect((agent as any).conversationPersistence).toMatchObject({
-      mode: "step",
-      debounceMs: 25,
-      flushOnToolResult: true,
+    await agent.generateText("Hello", {
+      userId: "persistence-user",
+      conversationId: "persistence-conversation",
     });
+    expect(scheduleSave).toHaveBeenCalledOnce();
+    await app.shutdown();
   });
 
   it("does not recreate serverless observability remote config when unchanged", async () => {

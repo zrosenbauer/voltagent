@@ -1,11 +1,30 @@
-import type { Logger } from "@voltagent/internal";
-import type { StepResult, ToolSet } from "ai";
+import { type StepResult, type ToolSet, generateText } from "ai";
+import { MockLanguageModelV4 } from "ai/test";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { Agent } from "./agent";
-import { ConversationBuffer } from "./conversation-buffer";
-import { MemoryPersistQueue, type MemoryPersistQueueMemoryManager } from "./memory-persist-queue";
-import type { AgentConversationPersistenceOptions } from "./types";
+import { defineAgent } from "./agent";
+import { MemoryPersistQueue } from "./memory-persist-queue";
+import type { AgentConversationPersistenceOptions, OperationContext } from "./types";
+
+vi.mock("ai", async () => ({
+  ...(await vi.importActual<typeof import("ai")>("ai")),
+  generateText: vi.fn(),
+}));
+
+const mockGeneration = (events: StepResult<ToolSet>[]) => {
+  vi.mocked(generateText).mockImplementation(async (options) => {
+    for (const event of events) {
+      for (const callback of [options.onStepEnd].flat()) await callback?.(event);
+    }
+    return {
+      text: "checkpoint",
+      finishReason: "stop",
+      usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
+      response: events.at(-1)?.response,
+      steps: events,
+    } as Awaited<ReturnType<typeof generateText>>;
+  });
+};
 
 type QueueMock = {
   scheduleSave: ReturnType<typeof vi.fn>;
@@ -14,32 +33,13 @@ type QueueMock = {
 
 type StepEventInput = Pick<StepResult<ToolSet>, "content" | "response">;
 
-const createOperationContext = () =>
+const toStepResult = (event: StepEventInput): StepResult<ToolSet> =>
   ({
-    operationId: "op-step-persist",
-    systemContext: new Map<string | symbol, unknown>(),
-    logger: createLogger(),
-    abortController: new AbortController(),
-    userId: "user-1",
-    conversationId: "conv-1",
-  }) as any;
-
-const createLogger = () => {
-  const logger = {
-    trace: vi.fn(),
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    fatal: vi.fn(),
-    child: vi.fn(),
-  } satisfies Logger;
-
-  logger.child.mockImplementation(() => logger);
-  return logger;
-};
-
-const toStepResult = (event: StepEventInput): StepResult<ToolSet> => event as StepResult<ToolSet>;
+    ...event,
+    text: event.content.flatMap((part) => (part.type === "text" ? [part.text] : [])).join(""),
+    toolCalls: event.content.filter((part) => part.type === "tool-call"),
+    toolResults: event.content.filter((part) => part.type === "tool-result"),
+  }) as StepResult<ToolSet>;
 
 const createStepEvent = (content: StepEventInput["content"]) =>
   toStepResult({
@@ -55,51 +55,41 @@ const createStepEvent = (content: StepEventInput["content"]) =>
   });
 
 const createHarness = (overrides: AgentConversationPersistenceOptions) => {
-  const agent = new Agent({
+  const queue: QueueMock = {
+    scheduleSave: vi
+      .spyOn(MemoryPersistQueue.prototype, "scheduleSave")
+      .mockImplementation(() => {}),
+    flush: vi.spyOn(MemoryPersistQueue.prototype, "flush").mockResolvedValue(undefined),
+  };
+  const agent = defineAgent({
     name: "step-persistence-agent",
     instructions: "Test",
-    model: "openai/gpt-4o-mini",
+    model: new MockLanguageModelV4({}),
+    conversationPersistence: {
+      mode: "step",
+      debounceMs: 200,
+      flushOnToolResult: true,
+      ...overrides,
+    },
   });
 
-  const queue: QueueMock = {
-    scheduleSave: vi.fn(),
-    flush: vi.fn().mockResolvedValue(undefined),
-  };
-
-  const buffer = {
-    addModelMessages: vi.fn(),
-  };
-
-  const oc = createOperationContext();
-
-  const persistence = {
-    mode: "step" as const,
-    debounceMs: 200,
-    flushOnToolResult: true,
-    ...overrides,
-  };
-
-  vi.spyOn(agent as any, "getConversationBuffer").mockReturnValue(buffer);
-  vi.spyOn(agent as any, "getMemoryPersistQueue").mockReturnValue(queue);
-  vi.spyOn(agent as any, "getConversationPersistenceOptionsForContext").mockReturnValue(
-    persistence,
-  );
   const recordStepResultsSpy = vi
-    .spyOn(agent as any, "recordStepResults")
+    .spyOn(agent.getMemoryManager(), "saveConversationSteps")
     .mockResolvedValue(undefined);
-
-  const handler = (
-    agent as unknown as {
-      createStepHandler: (
-        operationContext: unknown,
-        options?: unknown,
-      ) => (event: StepResult<ToolSet>) => Promise<void>;
-    }
-  ).createStepHandler(oc, undefined);
+  const handler = async (
+    event: StepResult<ToolSet>,
+    assertCheckpoint: (context: OperationContext) => void,
+  ) => {
+    mockGeneration([event]);
+    await agent.generateText("checkpoint", {
+      userId: "user-1",
+      conversationId: "conv-1",
+      hooks: { onStepEnd: ({ context }) => assertCheckpoint(context) },
+    });
+  };
 
   return {
     queue,
-    oc,
     handler,
     recordStepResultsSpy,
   };
@@ -111,20 +101,20 @@ describe("Step-level persistence", () => {
   });
 
   it("schedules debounced persistence for non-tool steps in step mode", async () => {
-    const { handler, queue, oc, recordStepResultsSpy } = createHarness({ mode: "step" });
+    expect.assertions(4);
+    const { handler, queue, recordStepResultsSpy } = createHarness({ mode: "step" });
 
-    await handler(createStepEvent([{ type: "text", text: "hello" }]));
-
-    expect(queue.scheduleSave).toHaveBeenCalledTimes(1);
-    expect(queue.scheduleSave).toHaveBeenCalledWith(expect.anything(), oc);
-    expect(queue.flush).not.toHaveBeenCalled();
-    expect(recordStepResultsSpy).toHaveBeenCalledWith(undefined, oc, {
-      awaitPersistence: false,
+    await handler(createStepEvent([{ type: "text", text: "hello" }]), (oc) => {
+      expect(queue.scheduleSave).toHaveBeenCalledTimes(1);
+      expect(queue.scheduleSave).toHaveBeenCalledWith(expect.anything(), oc);
+      expect(queue.flush).not.toHaveBeenCalled();
+      expect(recordStepResultsSpy).toHaveBeenCalledWith(oc, expect.any(Array), "user-1", "conv-1");
     });
   });
 
   it("flushes immediately when a tool result arrives in step mode", async () => {
-    const { handler, queue, oc, recordStepResultsSpy } = createHarness({ mode: "step" });
+    expect.assertions(4);
+    const { handler, queue, recordStepResultsSpy } = createHarness({ mode: "step" });
 
     await handler(
       createStepEvent([
@@ -135,61 +125,47 @@ describe("Step-level persistence", () => {
           output: { ok: true },
         },
       ]),
+      (oc) => {
+        expect(queue.flush).toHaveBeenCalledTimes(1);
+        expect(queue.flush).toHaveBeenCalledWith(expect.anything(), oc);
+        expect(queue.scheduleSave).not.toHaveBeenCalled();
+        expect(recordStepResultsSpy).toHaveBeenCalledWith(
+          oc,
+          expect.any(Array),
+          "user-1",
+          "conv-1",
+        );
+      },
     );
-
-    expect(queue.flush).toHaveBeenCalledTimes(1);
-    expect(queue.flush).toHaveBeenCalledWith(expect.anything(), oc);
-    expect(queue.scheduleSave).not.toHaveBeenCalled();
-    expect(recordStepResultsSpy).toHaveBeenCalledWith(undefined, oc, {
-      awaitPersistence: true,
-    });
   });
 
   it("keeps finish mode behavior without incremental checkpoints", async () => {
+    expect.assertions(3);
     const { handler, queue, recordStepResultsSpy } = createHarness({ mode: "finish" });
 
-    await handler(createStepEvent([{ type: "text", text: "hello" }]));
-
-    expect(queue.scheduleSave).not.toHaveBeenCalled();
-    expect(queue.flush).not.toHaveBeenCalled();
-    expect(recordStepResultsSpy).not.toHaveBeenCalled();
+    await handler(createStepEvent([{ type: "text", text: "hello" }]), () => {
+      expect(queue.scheduleSave).not.toHaveBeenCalled();
+      expect(queue.flush).not.toHaveBeenCalled();
+      expect(recordStepResultsSpy).not.toHaveBeenCalled();
+    });
   });
 
   it("reuses assistant message id across step checkpoints after intermediate flushes", async () => {
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "step-persistence-agent",
       instructions: "Test",
-      model: "openai/gpt-4o-mini",
+      model: new MockLanguageModelV4({}),
+      conversationPersistence: { mode: "step", debounceMs: 0, flushOnToolResult: true },
     });
 
-    const oc = createOperationContext();
-    const buffer = new ConversationBuffer();
-    const saveMessage = vi.fn().mockResolvedValue(undefined);
-    const memoryManager: MemoryPersistQueueMemoryManager = {
-      saveMessage,
+    const saveMessage = vi
+      .spyOn(agent.getMemoryManager(), "saveMessage")
+      .mockResolvedValue(undefined);
+    vi.spyOn(agent.getMemoryManager(), "saveConversationSteps").mockResolvedValue(undefined);
+    const events: StepResult<ToolSet>[] = [];
+    const handler = async (event: StepResult<ToolSet>) => {
+      events.push(event);
     };
-    const queue = new MemoryPersistQueue(memoryManager, {
-      debounceMs: 0,
-      logger: oc.logger,
-    });
-
-    vi.spyOn(agent as any, "getConversationBuffer").mockReturnValue(buffer);
-    vi.spyOn(agent as any, "getMemoryPersistQueue").mockReturnValue(queue);
-    vi.spyOn(agent as any, "getConversationPersistenceOptionsForContext").mockReturnValue({
-      mode: "step",
-      debounceMs: 0,
-      flushOnToolResult: true,
-    });
-    vi.spyOn(agent as any, "recordStepResults").mockResolvedValue(undefined);
-
-    const handler = (
-      agent as unknown as {
-        createStepHandler: (
-          operationContext: unknown,
-          options?: unknown,
-        ) => (event: StepResult<ToolSet>) => Promise<void>;
-      }
-    ).createStepHandler(oc, undefined);
 
     await handler(
       toStepResult({
@@ -297,6 +273,9 @@ describe("Step-level persistence", () => {
         },
       }),
     );
+
+    mockGeneration(events);
+    await agent.generateText("Calculate", { userId: "user-1", conversationId: "conv-1" });
 
     const persistedAssistantIds = saveMessage.mock.calls
       .map((call) => call[1])

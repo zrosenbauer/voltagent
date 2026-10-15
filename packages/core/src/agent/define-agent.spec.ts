@@ -32,6 +32,58 @@ const textModel = (text = "Hello") =>
   });
 
 describe("defineAgent", () => {
+  it("keeps runtime state private and supports detached methods", async () => {
+    const agent = defineAgent({
+      name: "detached",
+      model: textModel(),
+      instructions: "Be concise",
+      memory: false,
+    });
+    const { generateText, getTools, getModelName } = agent;
+
+    expect(Object.getPrototypeOf(agent)).toBe(Object.prototype);
+    expect(agent).not.toHaveProperty("memoryManager");
+    expect(agent).not.toHaveProperty("createOperationContext");
+    expect(agent).not.toHaveProperty("createToolExecutionFactory");
+    expect(getTools()).toEqual([]);
+    expect(getModelName()).toBe(agent.getModelName());
+    expect((await generateText({ prompt: "Hello" })).text).toBe("Hello");
+  });
+
+  it("isolates tools and configuration between factory instances", async () => {
+    const firstModel = textModel("First response");
+    const secondModel = textModel("Second response");
+    const first = defineAgent({
+      name: "first",
+      model: firstModel,
+      instructions: "First instructions",
+      memory: false,
+    });
+    const second = defineAgent({
+      name: "second",
+      model: secondModel,
+      instructions: "Second instructions",
+      memory: false,
+    });
+    const lookup = defineTool({ inputSchema: z.object({}), execute: () => "found" });
+    first.addTools({ lookup });
+
+    const results = await Promise.all([
+      first.generateText({ prompt: "First request" }),
+      second.generateText({ prompt: "Second request" }),
+    ]);
+
+    expect(first.getTools().map((tool) => tool.name)).toEqual(["lookup"]);
+    expect(second.getTools()).toEqual([]);
+    expect(results.map((result) => result.text)).toEqual(["First response", "Second response"]);
+    expect(firstModel.doGenerateCalls[0].prompt[0]).toMatchObject({
+      content: "First instructions",
+    });
+    expect(secondModel.doGenerateCalls[0].prompt[0]).toMatchObject({
+      content: "Second instructions",
+    });
+  });
+
   it("preserves the existing generation API, defaults, and native request settings", async () => {
     const model = textModel();
     const agent = defineAgent({

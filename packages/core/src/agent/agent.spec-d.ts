@@ -35,12 +35,13 @@ import type { VoltOpsClient } from "../voltops/client";
 import type { DynamicValue, DynamicValueOptions } from "../voltops/types";
 import type { Workspace } from "../workspace";
 import {
-  Agent,
+  type Agent,
   type AgentHooks,
   type GenerateObjectResultWithContext,
   type GenerateTextOptions,
   type StreamObjectResultWithContext,
   type StreamTextResultWithContext,
+  defineAgent,
 } from "./agent";
 import type { SubAgentConfig } from "./subagent/types";
 import type {
@@ -92,7 +93,7 @@ describe("Agent Type System", () => {
 
   describe("Agent Constructor Type Inference", () => {
     it("should accept LanguageModel directly", () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test Agent",
         instructions: "Test instructions",
         model: mockModel,
@@ -102,7 +103,7 @@ describe("Agent Type System", () => {
     });
 
     it("should accept provider/model string models", () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test Agent",
         instructions: "Test instructions",
         model: "openai/gpt-4o-mini",
@@ -113,16 +114,16 @@ describe("Agent Type System", () => {
 
     it("should enforce required fields in AgentOptions", () => {
       // @ts-expect-error - missing required fields
-      new Agent({});
+      defineAgent({});
 
       // @ts-expect-error - missing name
-      new Agent({
+      defineAgent({
         instructions: "Test",
         model: mockModel,
       });
 
       // Valid with minimal required fields
-      new Agent({
+      defineAgent({
         name: "Test",
         instructions: "Test instructions",
         model: mockModel,
@@ -131,21 +132,21 @@ describe("Agent Type System", () => {
 
     it("should require instructions field", () => {
       // Valid with instructions
-      new Agent({
+      defineAgent({
         name: "Test",
         instructions: "Test instructions",
         model: mockModel,
       });
 
       // @ts-expect-error - missing instructions
-      new Agent({
+      defineAgent({
         name: "Test",
         model: mockModel,
       });
     });
 
     it("should accept optional fields", () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
@@ -167,7 +168,7 @@ describe("Agent Type System", () => {
     });
 
     it("should accept retriever option", () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
@@ -178,7 +179,7 @@ describe("Agent Type System", () => {
     });
 
     it("should accept voice option", () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
@@ -189,7 +190,7 @@ describe("Agent Type System", () => {
     });
 
     it("should accept historyManager option", () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
@@ -199,7 +200,7 @@ describe("Agent Type System", () => {
     });
 
     it("should accept memory as false", () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
@@ -210,7 +211,7 @@ describe("Agent Type System", () => {
     });
 
     it("should accept toolkits array", () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
@@ -228,7 +229,7 @@ describe("Agent Type System", () => {
         execute: async () => ({ result: "success" }),
       });
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
@@ -256,7 +257,7 @@ describe("Agent Type System", () => {
         },
       });
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Weather",
         instructions: "Test",
         model: mockModel,
@@ -269,7 +270,7 @@ describe("Agent Type System", () => {
     });
 
     it("should accept AI SDK ToolSet tools", () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
@@ -326,7 +327,7 @@ describe("Agent Type System", () => {
         },
       });
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Weather",
         instructions: "Test",
         model: mockModel,
@@ -364,7 +365,7 @@ describe("Agent Type System", () => {
         },
       );
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Support",
         instructions: "Test",
         model: mockModel,
@@ -403,7 +404,7 @@ describe("Agent Type System", () => {
 
       expectTypeOf(weather).toEqualTypeOf<typeof externalWeatherTool>();
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Weather",
         instructions: "Test",
         model: mockModel,
@@ -419,7 +420,7 @@ describe("Agent Type System", () => {
   describe("Dynamic Value Types", () => {
     it("should handle model as DynamicValue", () => {
       // Static model
-      const staticAgent = new Agent({
+      const staticAgent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
@@ -432,7 +433,7 @@ describe("Agent Type System", () => {
         return mockModel;
       };
 
-      const dynamicAgent = new Agent({
+      const dynamicAgent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: dynamicModelFn,
@@ -441,7 +442,7 @@ describe("Agent Type System", () => {
       const dynamicStringModelFn: DynamicValue<AgentModelReference> = async () =>
         "openai/gpt-4o-mini";
 
-      const dynamicStringAgent = new Agent({
+      const dynamicStringAgent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: dynamicStringModelFn,
@@ -568,7 +569,7 @@ describe("Agent Type System", () => {
 
   describe("Method Return Type Tests", () => {
     it("should infer generateText return type", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
@@ -583,7 +584,7 @@ describe("Agent Type System", () => {
     });
 
     it("should infer generateText structured output type with Output.object", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
@@ -608,7 +609,7 @@ describe("Agent Type System", () => {
     });
 
     it("should infer object-style generateText structured output type", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
@@ -636,7 +637,7 @@ describe("Agent Type System", () => {
     });
 
     it("preserves native generate result fields and output/context inference", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Generate Types",
         instructions: "List cities",
         model: mockModel,
@@ -665,7 +666,7 @@ describe("Agent Type System", () => {
     });
 
     it("should accept native toolApproval options", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
@@ -693,7 +694,7 @@ describe("Agent Type System", () => {
     });
 
     it("should infer streamText return type", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
@@ -707,7 +708,7 @@ describe("Agent Type System", () => {
     });
 
     it("should infer object-style streamText return type", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
@@ -732,7 +733,7 @@ describe("Agent Type System", () => {
     });
 
     it("preserves native stream result fields and output/context inference", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Stream Types",
         instructions: "List cities",
         model: mockModel,
@@ -758,7 +759,7 @@ describe("Agent Type System", () => {
     });
 
     it("should accept native toolApproval options for streamText", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
@@ -775,7 +776,7 @@ describe("Agent Type System", () => {
     });
 
     it("should accept AI SDK v7 generateText passthrough options", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
@@ -844,7 +845,7 @@ describe("Agent Type System", () => {
     });
 
     it("should infer toolsContext from raw AI SDK tool contextSchema", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
@@ -923,7 +924,7 @@ describe("Agent Type System", () => {
         },
       });
 
-      const constructorToolsAgent = new Agent({
+      const constructorToolsAgent = defineAgent({
         name: "Constructor Tools Test",
         instructions: "Test",
         model: mockModel,
@@ -995,7 +996,7 @@ describe("Agent Type System", () => {
     });
 
     it("should accept AI SDK v7 streamText-only passthrough options", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
@@ -1025,7 +1026,7 @@ describe("Agent Type System", () => {
     });
 
     it("should infer generateObject return type with schema", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
@@ -1045,7 +1046,7 @@ describe("Agent Type System", () => {
     });
 
     it("should infer streamObject return type with schema", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
@@ -1508,7 +1509,7 @@ describe("Agent Type System", () => {
 
   describe("Complex Type Scenarios", () => {
     it("should handle AI SDK model integration", () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "AI SDK Agent",
         instructions: "Test",
         model: mockModel,
@@ -1520,7 +1521,7 @@ describe("Agent Type System", () => {
     });
 
     it("should handle nested schema type inference", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
@@ -1558,7 +1559,7 @@ describe("Agent Type System", () => {
     });
 
     it("should handle agent with all features", () => {
-      const fullyConfiguredAgent = new Agent({
+      const fullyConfiguredAgent = defineAgent({
         name: "Full Agent",
         instructions: async (options: DynamicValueOptions) => {
           expectTypeOf(options.context).toMatchTypeOf<Map<string | symbol, unknown>>();
@@ -1590,7 +1591,7 @@ describe("Agent Type System", () => {
     it("should handle SubAgentConfig union types", () => {
       // SubAgent as direct Agent instance
       const subAgentDirect: SubAgentConfig = {
-        agent: new Agent({
+        agent: defineAgent({
           name: "Sub",
           instructions: "Sub instructions",
           model: mockModel,
@@ -1600,7 +1601,7 @@ describe("Agent Type System", () => {
 
       // SubAgent as config object
       const subAgentConfig: SubAgentConfig = {
-        agent: new Agent({
+        agent: defineAgent({
           name: "Sub2",
           instructions: "Sub2 instructions",
           model: mockModel,
@@ -1628,7 +1629,7 @@ describe("Agent Type System", () => {
 
   describe("Type Safety Guards", () => {
     it("should enforce correct schema return types", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
@@ -1655,7 +1656,7 @@ describe("Agent Type System", () => {
       } as const;
 
       // @ts-expect-error - must have instructions
-      new Agent(invalidOptions);
+      defineAgent(invalidOptions);
     });
 
     it("should handle optional fields in types correctly", () => {
@@ -1682,13 +1683,13 @@ describe("Agent Type System", () => {
   describe("Negative Type Tests", () => {
     it("should reject invalid configurations", () => {
       // @ts-expect-error - model is required
-      new Agent({ name: "Test", instructions: "Test" });
+      defineAgent({ name: "Test", instructions: "Test" });
 
       // @ts-expect-error - name is required
-      new Agent({ instructions: "Test", model: mockModel });
+      defineAgent({ instructions: "Test", model: mockModel });
 
       // @ts-expect-error - instructions is required
-      new Agent({ name: "Test", model: mockModel });
+      defineAgent({ name: "Test", model: mockModel });
 
       // Note: Some fields accept 'any' type so invalid values won't cause type errors
       // This is by design for flexibility in the framework
@@ -1726,7 +1727,7 @@ describe("Agent Type System", () => {
 
   describe("Edge Case Type Tests", () => {
     it("should handle empty arrays correctly", () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
@@ -1735,26 +1736,26 @@ describe("Agent Type System", () => {
         toolkits: [], // empty toolkits
       });
 
-      expectTypeOf(agent).toEqualTypeOf<Agent>();
+      expectTypeOf(agent).toMatchTypeOf<Agent>();
     });
 
     it("should handle memory: false vs undefined", () => {
-      const agentNoMemory = new Agent({
+      const agentNoMemory = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
         memory: false, // explicitly disabled
       });
 
-      const agentDefaultMemory = new Agent({
+      const agentDefaultMemory = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
         // memory: undefined - uses default
       });
 
-      expectTypeOf(agentNoMemory).toEqualTypeOf<Agent>();
-      expectTypeOf(agentDefaultMemory).toEqualTypeOf<Agent>();
+      expectTypeOf(agentNoMemory).toMatchTypeOf<Agent>();
+      expectTypeOf(agentDefaultMemory).toMatchTypeOf<Agent>();
     });
 
     it("should handle complex nested schemas", async () => {
@@ -1775,7 +1776,7 @@ describe("Agent Type System", () => {
         }),
       });
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
@@ -1796,7 +1797,7 @@ describe("Agent Type System", () => {
         z.object({ type: z.literal("image"), url: z.string() }),
       ]);
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
@@ -1815,7 +1816,7 @@ describe("Agent Type System", () => {
 
   describe("AI SDK Integration Pattern Tests", () => {
     it("should match AI SDK generateText patterns", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
@@ -1831,7 +1832,7 @@ describe("Agent Type System", () => {
     });
 
     it("should match AI SDK streamText patterns", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
@@ -1862,14 +1863,14 @@ describe("Agent Type System", () => {
         },
       });
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
         tools: [tool],
       });
 
-      expectTypeOf(agent).toEqualTypeOf<Agent>();
+      expectTypeOf(agent).toMatchTypeOf<Agent>();
     });
 
     it("should work with complex tool schemas", () => {
@@ -1895,7 +1896,7 @@ describe("Agent Type System", () => {
         }),
       });
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
@@ -1931,7 +1932,7 @@ describe("Agent Type System", () => {
       });
 
       const toolsFn = async () => [complexTool];
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
@@ -1954,7 +1955,7 @@ describe("Agent Type System", () => {
         },
       });
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
@@ -1965,19 +1966,19 @@ describe("Agent Type System", () => {
     });
 
     it("should handle subagent hierarchies", () => {
-      const subAgent1 = new Agent({
+      const subAgent1 = defineAgent({
         name: "SubAgent1",
         instructions: "First subagent",
         model: mockModel,
       });
 
-      const subAgent2 = new Agent({
+      const subAgent2 = defineAgent({
         name: "SubAgent2",
         instructions: "Second subagent",
         model: mockModel,
       });
 
-      const mainAgent = new Agent({
+      const mainAgent = defineAgent({
         name: "MainAgent",
         instructions: "Main agent",
         model: mockModel,
@@ -1992,7 +1993,7 @@ describe("Agent Type System", () => {
     });
 
     it("should handle memory with different storage backends", () => {
-      const memoryWithStorage = new Agent({
+      const memoryWithStorage = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
@@ -2016,7 +2017,7 @@ describe("Agent Type System", () => {
         tools: [tool as Tool<any, any>],
       };
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
@@ -2038,7 +2039,7 @@ describe("Agent Type System", () => {
         },
       });
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,
@@ -2049,7 +2050,7 @@ describe("Agent Type System", () => {
     });
 
     it("should handle dynamic values for all fields", () => {
-      const dynamicAgent = new Agent({
+      const dynamicAgent = defineAgent({
         name: "Test",
         instructions: async () => "Dynamic instructions",
         model: async () => mockModel,
@@ -2062,7 +2063,7 @@ describe("Agent Type System", () => {
     it("should properly type VoltOpsClient integration", () => {
       const mockVoltOps = {} as VoltOpsClient;
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "Test",
         instructions: "Test",
         model: mockModel,

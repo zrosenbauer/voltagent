@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { Agent } from "../agent/agent";
+import { type Agent, defineAgent } from "../agent/agent";
 import { createMockLanguageModel } from "../agent/test-utils";
 import { AgentRegistry } from "../registries/agent-registry";
 import { Workspace } from "./index";
@@ -15,7 +15,7 @@ describe("Workspace global defaults", () => {
     const workspace = new Workspace({ id: "global-workspace" });
     registry.setGlobalWorkspace(workspace);
 
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "test-agent",
       instructions: "test",
       model: createMockLanguageModel(),
@@ -28,7 +28,7 @@ describe("Workspace global defaults", () => {
     const workspace = new Workspace({ id: "global-workspace" });
     registry.setGlobalWorkspace(workspace);
 
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "test-agent",
       instructions: "test",
       model: createMockLanguageModel(),

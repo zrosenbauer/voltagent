@@ -1,5 +1,6 @@
-export { PlanAgent } from "./plan-agent";
+export { definePlanAgent } from "./plan-agent";
 export type {
+  PlanAgent,
   PlanAgentOptions,
   PlanAgentSubagentDefinition,
   PlanAgentExtension,

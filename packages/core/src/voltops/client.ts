@@ -1073,7 +1073,7 @@ export class VoltOpsClient implements IVoltOpsClient {
    2. Configure VoltOpsClient:
    
    // Option A: Agent-specific (highest priority)
-   const agent = new Agent({
+    const agent = defineAgent({
      voltOpsClient: new VoltOpsClient({
        baseUrl: 'https://api.voltops.dev',
        publicKey: 'your-public-key',

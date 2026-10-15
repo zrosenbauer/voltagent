@@ -89,7 +89,7 @@ export type SubAgentConfig<TAgent extends Agent = Agent> =
  *
  * @example
  * // Direct Agent instance (uses streamText by default)
- * const supervisorAgent = new Agent({
+ * const supervisorAgent = defineAgent({
  *   name: "Supervisor",
  *   instructions: "...",
  *   model: myModel,

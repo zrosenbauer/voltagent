@@ -2,7 +2,7 @@ import { Output, isStepCount, streamText, tool } from "ai";
 import { MockLanguageModelV4 } from "ai/test";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { Agent } from "./agent";
+import { type Agent, defineAgent } from "./agent";
 import { createInputGuardrail, createOutputGuardrail } from "./guardrail";
 import { AgentTraceContext } from "./open-telemetry/trace-context";
 
@@ -74,7 +74,11 @@ const redact = () =>
 describe("AI SDK stream result contract", () => {
   it("delegates native aggregate fields and consumes lazily through result promises", async () => {
     const onEnd = vi.fn();
-    const agent = new Agent({ name: "native-fields", model: modelForText("hello"), memory: false });
+    const agent = defineAgent({
+      name: "native-fields",
+      model: modelForText("hello"),
+      memory: false,
+    });
     const result = await agent.streamText({
       prompt: "hi",
       onEnd,
@@ -121,7 +125,7 @@ describe("AI SDK stream result contract", () => {
     "supports readers, piping, replay and concurrent consumers (guardrails=%s)",
     async (guarded) => {
       const onEnd = vi.fn();
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "readable",
         model: modelForText("secret"),
         memory: false,
@@ -162,7 +166,7 @@ describe("AI SDK stream result contract", () => {
   );
 
   it("returns typed structured output and native array element streams", async () => {
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "arrays",
       model: modelForText('{"elements":[{"name":"one"},{"name":"two"}]}'),
       memory: false,
@@ -192,7 +196,7 @@ describe("AI SDK stream result contract", () => {
         ),
       }),
     });
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "tools",
       model,
       memory: false,
@@ -213,7 +217,7 @@ describe("AI SDK stream result contract", () => {
     const ready = new Promise<void>((resolve) => {
       release = resolve;
     });
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "guarded-array",
       model: modelForText('{"elements":[{"name":"secret"}]}'),
       memory: false,
@@ -249,7 +253,7 @@ describe("AI SDK stream result contract", () => {
   });
 
   it("does not restore original text when all text was filtered", async () => {
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "empty",
       model: modelForText("secret"),
       memory: false,
@@ -269,7 +273,7 @@ describe("AI SDK stream result contract", () => {
 
   it("rejects structured parsing after redaction invalidates the schema, without retrying", async () => {
     const model = modelForText('{"name":"secret"}');
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "invalidated",
       model,
       memory: false,
@@ -285,7 +289,7 @@ describe("AI SDK stream result contract", () => {
   });
 
   it("blocks new aggregate and structured accessors on a parallel input rejection", async () => {
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "input-block",
       model: modelForText('{"elements":["secret"]}'),
       memory: false,
@@ -314,7 +318,7 @@ describe("AI SDK stream result contract", () => {
     async (kind) => {
       const onEnd = vi.fn();
       const onFinish = vi.fn();
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "ui-callback",
         model: modelForText("secret"),
         memory: false,
@@ -342,7 +346,7 @@ describe("AI SDK stream result contract", () => {
 
   it("supports UI response callbacks and the legacy onFinish alias with guardrails", async () => {
     const onFinish = vi.fn();
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "ui-response",
       model: modelForText("secret"),
       memory: false,
@@ -369,7 +373,7 @@ describe("AI SDK stream result contract", () => {
         ),
       }),
     });
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "guarded-steps",
       model,
       memory: false,
@@ -387,7 +391,7 @@ describe("AI SDK stream result contract", () => {
   });
 
   it("reports guardrail stream failures through consumeStream's error callback", async () => {
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "blocked-stream",
       model: modelForText("secret"),
       memory: false,
@@ -418,7 +422,7 @@ describe("AI SDK stream result contract", () => {
     });
     const onError = vi.fn(() => ({ retry: true as const }));
     const terminalError = vi.fn();
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "terminal",
       model,
       memory: false,
@@ -447,7 +451,7 @@ describe("AI SDK stream result contract", () => {
         ),
       }),
     });
-    const agent = new Agent({ name: "legacy-retry", model, memory: false, maxRetries: 0 });
+    const agent = defineAgent({ name: "legacy-retry", model, memory: false, maxRetries: 0 });
     const result = await agent.streamObject("hi", z.object({ name: z.string() }), {
       streamRetries: 0,
       onError: () => ({ retry: true as const }),
@@ -508,7 +512,7 @@ describe("AI SDK stream result contract", () => {
       const onError = vi.fn(() => ({ retry: true as const }));
       const hookError = vi.fn();
       const onEnd = vi.fn();
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "sdk-stream-retry",
         model,
         maxRetries: 0,

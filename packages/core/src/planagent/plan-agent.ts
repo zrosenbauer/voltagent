@@ -3,7 +3,7 @@ import type { Logger } from "@voltagent/internal";
 import { safeStringify } from "@voltagent/internal/utils";
 import type { StepResult, ToolSet, UIMessage } from "ai";
 import { z } from "zod";
-import { Agent } from "../agent/agent";
+import { type Agent, defineAgent } from "../agent/agent";
 import { FORCED_TOOL_CHOICE_CONTEXT_KEY } from "../agent/context-keys";
 import type { AgentHooks } from "../agent/hooks";
 import { SubAgentManager } from "../agent/subagent";
@@ -115,6 +115,14 @@ export type PlanAgentSubagentDefinition =
 
 const isSubAgentConfigDefinition = (value: unknown): value is PlanAgentSubagentConfigDefinition =>
   Boolean(value && typeof value === "object" && "method" in value && "agent" in value);
+
+const isDefinedAgent = (value: unknown): value is Agent =>
+  value !== null &&
+  typeof value === "object" &&
+  "generateText" in value &&
+  typeof value.generateText === "function" &&
+  "getFullState" in value &&
+  typeof value.getFullState === "function";
 
 export type TaskToolOptions = {
   systemPrompt?: string | null;
@@ -668,7 +676,7 @@ function normalizeSubagentDefinitions(options: {
   const rawDefinitions = options.definitions as unknown[];
 
   for (const definition of rawDefinitions) {
-    if (definition instanceof Agent) {
+    if (isDefinedAgent(definition)) {
       normalized.push({
         name: definition.name,
         description: getAgentDescription(definition),
@@ -693,7 +701,7 @@ function normalizeSubagentDefinitions(options: {
     const toolkits = custom.toolkits ?? defaultToolkits;
     const model = (custom.model as AgentOptions["model"] | undefined) ?? defaultModel;
 
-    const agent = new Agent({
+    const agent = defineAgent({
       ...(custom as Record<string, unknown>),
       name: custom.name,
       model,
@@ -931,244 +939,244 @@ function createTaskExtension(options: {
   };
 }
 
-export class PlanAgent extends Agent {
-  constructor(options: PlanAgentOptions) {
-    if (!options.model) {
-      throw new Error("PlanAgent requires a model to be provided");
+export type PlanAgent = Agent;
+
+/** Defines a planning agent by composing extensions around an agent factory. */
+export function definePlanAgent(options: PlanAgentOptions): PlanAgent {
+  if (!options.model) {
+    throw new Error("PlanAgent requires a model to be provided");
+  }
+
+  const {
+    systemPrompt,
+    tools = [],
+    toolkits = [],
+    subagents = [],
+    generalPurposeAgent = true,
+    planning = {},
+    summarization = {},
+    filesystem = {},
+    task,
+    extensions = [],
+    toolResultEviction,
+    hooks,
+    name,
+    ...agentOptions
+  } = options;
+
+  const planningEnabled = planning !== false;
+  const filesystemBackend =
+    filesystem === false
+      ? null
+      : filesystem.backend ||
+        ((context: FilesystemBackendContext) =>
+          new InMemoryFilesystemBackend(context.state.files || {}));
+
+  const baseSystemPrompt = buildBaseSystemPrompt(
+    typeof systemPrompt === "string" ? systemPrompt : undefined,
+  );
+  const taskOptions = task === false ? undefined : task;
+  const taskSystemPrompt =
+    taskOptions?.systemPrompt === undefined ? TASK_SYSTEM_PROMPT : taskOptions?.systemPrompt || "";
+
+  const builtinExtensions: PlanAgentExtension[] = [
+    createStateExtension(),
+    createPlanningExtension({ planning }),
+    createFilesystemExtension({ filesystem, backend: filesystemBackend }),
+    createTaskExtension({ task, systemPrompt: taskSystemPrompt }),
+  ];
+
+  const allExtensions = [...builtinExtensions, ...extensions];
+  const agentRef: { current?: Agent } = {};
+  const extensionContext: PlanAgentExtensionContext = {
+    agentRef: () => agentRef.current,
+    options,
+    planningEnabled,
+  };
+  const extensionResults = allExtensions
+    .map((extension) => extension.apply(extensionContext))
+    .filter((result): result is PlanAgentExtensionResult => Boolean(result));
+
+  const extensionPrompts = extensionResults
+    .map((result) => result.systemPrompt)
+    .filter((prompt): prompt is string => Boolean(prompt && prompt.trim().length > 0));
+
+  const finalSystemPrompt = appendExtensionPrompts(baseSystemPrompt, extensionPrompts);
+  const instructions: InstructionsDynamicValue =
+    typeof systemPrompt === "function"
+      ? async (dynamicOptions) =>
+          mergeSystemPromptWithExtensions(await systemPrompt(dynamicOptions), extensionPrompts)
+      : finalSystemPrompt;
+
+  const extensionHooks = extensionResults.flatMap((result) => (result.hooks ? [result.hooks] : []));
+  const composedHooks = composeAgentHooks({
+    onStart: [...extensionHooks.map((hook) => hook.onStart), hooks?.onStart],
+    onEnd: [...extensionHooks.map((hook) => hook.onEnd), hooks?.onEnd],
+    onHandoff: [...extensionHooks.map((hook) => hook.onHandoff), hooks?.onHandoff],
+    onHandoffComplete: [
+      ...extensionHooks.map((hook) => hook.onHandoffComplete),
+      hooks?.onHandoffComplete,
+    ],
+    onPrepareMessages: [
+      ...extensionHooks.map((hook) => hook.onPrepareMessages),
+      hooks?.onPrepareMessages,
+    ],
+    onPrepareModelMessages: [
+      ...extensionHooks.map((hook) => hook.onPrepareModelMessages),
+      hooks?.onPrepareModelMessages,
+    ],
+    onToolStart: [hooks?.onToolStart, ...extensionHooks.map((hook) => hook.onToolStart)],
+    onToolEnd: [hooks?.onToolEnd, ...extensionHooks.map((hook) => hook.onToolEnd)],
+    onStepEnd: [hooks?.onStepEnd, ...extensionHooks.map((hook) => hook.onStepEnd)],
+    onError: [...extensionHooks.map((hook) => hook.onError), hooks?.onError],
+  });
+
+  const sanitizedAgentOptions = { ...(agentOptions as AgentOptions) };
+  (sanitizedAgentOptions as Record<string, unknown>).workspace = undefined;
+  (sanitizedAgentOptions as Record<string, unknown>).workspaceToolkits = undefined;
+
+  const agent = defineAgent({
+    ...sanitizedAgentOptions,
+    name: name || "plan-agent",
+    instructions,
+    summarization,
+    tools: [],
+    toolkits: [],
+    hooks: composedHooks,
+  });
+  agentRef.current = agent;
+
+  const extensionTools = extensionResults.flatMap((result) => result.tools ?? []);
+  const extensionSubagents = extensionResults.flatMap((result) => result.subagents ?? []);
+  const extensionToolkits: Toolkit[] = [];
+  const extensionToolkitFactories: Array<(agent: Agent) => Toolkit[]> = [];
+
+  for (const result of extensionResults) {
+    const toolkitsForExtension = result.toolkits;
+    if (!toolkitsForExtension) {
+      continue;
     }
 
-    const {
-      systemPrompt,
-      tools = [],
-      toolkits = [],
-      subagents = [],
-      generalPurposeAgent = true,
-      planning = {},
-      summarization = {},
-      filesystem = {},
-      task,
-      extensions = [],
-      toolResultEviction,
-      hooks,
-      name,
-      ...agentOptions
-    } = options;
-
-    const planningEnabled = planning !== false;
-    const filesystemBackend =
-      filesystem === false
-        ? null
-        : filesystem.backend ||
-          ((context: FilesystemBackendContext) =>
-            new InMemoryFilesystemBackend(context.state.files || {}));
-
-    const baseSystemPrompt = buildBaseSystemPrompt(
-      typeof systemPrompt === "string" ? systemPrompt : undefined,
-    );
-    const taskOptions = task === false ? undefined : task;
-    const taskSystemPrompt =
-      taskOptions?.systemPrompt === undefined
-        ? TASK_SYSTEM_PROMPT
-        : taskOptions?.systemPrompt || "";
-
-    const builtinExtensions: PlanAgentExtension[] = [
-      createStateExtension(),
-      createPlanningExtension({ planning }),
-      createFilesystemExtension({ filesystem, backend: filesystemBackend }),
-      createTaskExtension({ task, systemPrompt: taskSystemPrompt }),
-    ];
-
-    const allExtensions = [...builtinExtensions, ...extensions];
-    const extensionContext: PlanAgentExtensionContext = {
-      agentRef: () => this,
-      options,
-      planningEnabled,
-    };
-    const extensionResults = allExtensions
-      .map((extension) => extension.apply(extensionContext))
-      .filter((result): result is PlanAgentExtensionResult => Boolean(result));
-
-    const extensionPrompts = extensionResults
-      .map((result) => result.systemPrompt)
-      .filter((prompt): prompt is string => Boolean(prompt && prompt.trim().length > 0));
-
-    const finalSystemPrompt = appendExtensionPrompts(baseSystemPrompt, extensionPrompts);
-    const instructions: InstructionsDynamicValue =
-      typeof systemPrompt === "function"
-        ? async (dynamicOptions) =>
-            mergeSystemPromptWithExtensions(await systemPrompt(dynamicOptions), extensionPrompts)
-        : finalSystemPrompt;
-
-    const extensionHooks = extensionResults.flatMap((result) =>
-      result.hooks ? [result.hooks] : [],
-    );
-    const composedHooks = composeAgentHooks({
-      onStart: [...extensionHooks.map((hook) => hook.onStart), hooks?.onStart],
-      onEnd: [...extensionHooks.map((hook) => hook.onEnd), hooks?.onEnd],
-      onHandoff: [...extensionHooks.map((hook) => hook.onHandoff), hooks?.onHandoff],
-      onHandoffComplete: [
-        ...extensionHooks.map((hook) => hook.onHandoffComplete),
-        hooks?.onHandoffComplete,
-      ],
-      onPrepareMessages: [
-        ...extensionHooks.map((hook) => hook.onPrepareMessages),
-        hooks?.onPrepareMessages,
-      ],
-      onPrepareModelMessages: [
-        ...extensionHooks.map((hook) => hook.onPrepareModelMessages),
-        hooks?.onPrepareModelMessages,
-      ],
-      onToolStart: [hooks?.onToolStart, ...extensionHooks.map((hook) => hook.onToolStart)],
-      onToolEnd: [hooks?.onToolEnd, ...extensionHooks.map((hook) => hook.onToolEnd)],
-      onStepEnd: [hooks?.onStepEnd, ...extensionHooks.map((hook) => hook.onStepEnd)],
-      onError: [...extensionHooks.map((hook) => hook.onError), hooks?.onError],
-    });
-
-    const sanitizedAgentOptions = { ...(agentOptions as AgentOptions) };
-    (sanitizedAgentOptions as Record<string, unknown>).workspace = undefined;
-    (sanitizedAgentOptions as Record<string, unknown>).workspaceToolkits = undefined;
-
-    super({
-      ...sanitizedAgentOptions,
-      name: name || "plan-agent",
-      instructions,
-      summarization,
-      tools: [],
-      toolkits: [],
-      hooks: composedHooks,
-    });
-
-    const extensionTools = extensionResults.flatMap((result) => result.tools ?? []);
-    const extensionSubagents = extensionResults.flatMap((result) => result.subagents ?? []);
-    const extensionToolkits: Toolkit[] = [];
-    const extensionToolkitFactories: Array<(agent: Agent) => Toolkit[]> = [];
-
-    for (const result of extensionResults) {
-      const toolkitsForExtension = result.toolkits;
-      if (!toolkitsForExtension) {
-        continue;
-      }
-
-      if (typeof toolkitsForExtension === "function") {
-        extensionToolkitFactories.push(toolkitsForExtension);
-      } else {
-        extensionToolkits.push(...toolkitsForExtension);
-      }
-    }
-
-    const resolvedExtensionToolkits = [
-      ...extensionToolkits,
-      ...extensionToolkitFactories.flatMap((factory) => factory(this)),
-    ];
-
-    const combinedToolkits = [...resolvedExtensionToolkits, ...toolkits].filter(Boolean);
-    const combinedTools = [...extensionTools, ...tools];
-
-    const configuredEvictionLimit =
-      toolResultEviction?.tokenLimit ?? (filesystem ? filesystem.toolTokenLimitBeforeEvict : null);
-    const evictionEnabled =
-      toolResultEviction?.enabled ??
-      (filesystem !== false && configuredEvictionLimit !== null && configuredEvictionLimit !== 0);
-    const evictionTokenLimit = configuredEvictionLimit ?? 20000;
-
-    const excludeToolNames = [
-      WRITE_TODOS_TOOL_NAME,
-      "ls",
-      "read_file",
-      "write_file",
-      "edit_file",
-      "glob",
-      "grep",
-      "task",
-    ];
-
-    const wrapTool =
-      evictionEnabled && filesystemBackend
-        ? createToolResultEvictor({
-            agent: this,
-            backend: filesystemBackend,
-            tokenLimit: evictionTokenLimit,
-            excludeToolNames,
-          })
-        : (tool: Tool<any, any>) => tool;
-
-    const wrappedToolkits = combinedToolkits.map((toolkit) => wrapToolkitTools(toolkit, wrapTool));
-
-    const wrappedTools = combinedTools.map((tool) =>
-      isUserDefinedTool(tool) ? wrapTool(tool) : tool,
-    );
-
-    const subagentToolkits: Toolkit[] = combinedToolkits.map((toolkit) =>
-      wrapToolkitTools(toolkit, wrapTool),
-    );
-
-    const normalizedSubagents = normalizeSubagentDefinitions({
-      definitions: [...subagents, ...extensionSubagents],
-      defaultModel: options.model,
-      defaultTools: wrappedTools,
-      defaultToolkits: subagentToolkits,
-      defaultMemory: options.memory,
-      defaultLogger: options.logger,
-      defaultToolRouting: options.toolRouting,
-    });
-
-    if (generalPurposeAgent) {
-      const alreadyExists = normalizedSubagents.some(
-        (subagent) => subagent.name === "general-purpose",
-      );
-      if (!alreadyExists) {
-        const generalPurposeSubagent = new Agent({
-          name: "general-purpose",
-          purpose: DEFAULT_GENERAL_PURPOSE_DESCRIPTION,
-          model: options.model,
-          instructions: DEFAULT_SUBAGENT_PROMPT,
-          tools: wrappedTools,
-          toolkits: subagentToolkits,
-          toolRouting: options.toolRouting,
-          memory: options.memory,
-          logger: options.logger,
-        });
-
-        normalizedSubagents.unshift({
-          name: generalPurposeSubagent.name,
-          description: DEFAULT_GENERAL_PURPOSE_DESCRIPTION,
-          config: generalPurposeSubagent,
-        });
-      }
-    }
-
-    const postSubagentToolkits = extensionResults.flatMap((result) => {
-      if (!result.afterSubagents) {
-        return [];
-      }
-
-      const built = result.afterSubagents({
-        agent: this,
-        subagents: normalizedSubagents,
-      });
-
-      if (!built) {
-        return [];
-      }
-
-      return Array.isArray(built) ? built : [built];
-    });
-
-    const wrappedPostSubagentToolkits = postSubagentToolkits.map((toolkit) =>
-      wrapToolkitTools(toolkit, wrapTool),
-    );
-
-    const finalToolkits =
-      wrappedPostSubagentToolkits.length > 0
-        ? [...wrappedToolkits, ...wrappedPostSubagentToolkits]
-        : wrappedToolkits;
-
-    if (finalToolkits.length > 0) {
-      this.addTools(finalToolkits);
-    }
-
-    if (wrappedTools.length > 0) {
-      this.addTools(wrappedTools);
+    if (typeof toolkitsForExtension === "function") {
+      extensionToolkitFactories.push(toolkitsForExtension);
+    } else {
+      extensionToolkits.push(...toolkitsForExtension);
     }
   }
+
+  const resolvedExtensionToolkits = [
+    ...extensionToolkits,
+    ...extensionToolkitFactories.flatMap((factory) => factory(agent)),
+  ];
+
+  const combinedToolkits = [...resolvedExtensionToolkits, ...toolkits].filter(Boolean);
+  const combinedTools = [...extensionTools, ...tools];
+
+  const configuredEvictionLimit =
+    toolResultEviction?.tokenLimit ?? (filesystem ? filesystem.toolTokenLimitBeforeEvict : null);
+  const evictionEnabled =
+    toolResultEviction?.enabled ??
+    (filesystem !== false && configuredEvictionLimit !== null && configuredEvictionLimit !== 0);
+  const evictionTokenLimit = configuredEvictionLimit ?? 20000;
+
+  const excludeToolNames = [
+    WRITE_TODOS_TOOL_NAME,
+    "ls",
+    "read_file",
+    "write_file",
+    "edit_file",
+    "glob",
+    "grep",
+    "task",
+  ];
+
+  const wrapTool =
+    evictionEnabled && filesystemBackend
+      ? createToolResultEvictor({
+          agent,
+          backend: filesystemBackend,
+          tokenLimit: evictionTokenLimit,
+          excludeToolNames,
+        })
+      : (tool: Tool<any, any>) => tool;
+
+  const wrappedToolkits = combinedToolkits.map((toolkit) => wrapToolkitTools(toolkit, wrapTool));
+
+  const wrappedTools = combinedTools.map((tool) =>
+    isUserDefinedTool(tool) ? wrapTool(tool) : tool,
+  );
+
+  const subagentToolkits: Toolkit[] = combinedToolkits.map((toolkit) =>
+    wrapToolkitTools(toolkit, wrapTool),
+  );
+
+  const normalizedSubagents = normalizeSubagentDefinitions({
+    definitions: [...subagents, ...extensionSubagents],
+    defaultModel: options.model,
+    defaultTools: wrappedTools,
+    defaultToolkits: subagentToolkits,
+    defaultMemory: options.memory,
+    defaultLogger: options.logger,
+    defaultToolRouting: options.toolRouting,
+  });
+
+  if (generalPurposeAgent) {
+    const alreadyExists = normalizedSubagents.some(
+      (subagent) => subagent.name === "general-purpose",
+    );
+    if (!alreadyExists) {
+      const generalPurposeSubagent = defineAgent({
+        name: "general-purpose",
+        purpose: DEFAULT_GENERAL_PURPOSE_DESCRIPTION,
+        model: options.model,
+        instructions: DEFAULT_SUBAGENT_PROMPT,
+        tools: wrappedTools,
+        toolkits: subagentToolkits,
+        toolRouting: options.toolRouting,
+        memory: options.memory,
+        logger: options.logger,
+      });
+
+      normalizedSubagents.unshift({
+        name: generalPurposeSubagent.name,
+        description: DEFAULT_GENERAL_PURPOSE_DESCRIPTION,
+        config: generalPurposeSubagent,
+      });
+    }
+  }
+
+  const postSubagentToolkits = extensionResults.flatMap((result) => {
+    if (!result.afterSubagents) {
+      return [];
+    }
+
+    const built = result.afterSubagents({
+      agent,
+      subagents: normalizedSubagents,
+    });
+
+    if (!built) {
+      return [];
+    }
+
+    return Array.isArray(built) ? built : [built];
+  });
+
+  const wrappedPostSubagentToolkits = postSubagentToolkits.map((toolkit) =>
+    wrapToolkitTools(toolkit, wrapTool),
+  );
+
+  const finalToolkits =
+    wrappedPostSubagentToolkits.length > 0
+      ? [...wrappedToolkits, ...wrappedPostSubagentToolkits]
+      : wrappedToolkits;
+
+  if (finalToolkits.length > 0) {
+    agent.addTools(finalToolkits);
+  }
+
+  if (wrappedTools.length > 0) {
+    agent.addTools(wrappedTools);
+  }
+  return agent;
 }

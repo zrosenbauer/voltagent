@@ -3,6 +3,27 @@
 "@voltagent/scorers": patch
 ---
 
-Use `defineAgent`, `defineTool`, and `defineWorkflow` as the canonical authoring factories, and `voltagent(options)` to bootstrap the application. Replace `new Agent(...)`, VoltAgent's `tool(...)`, `createWorkflow(...)`, and `new VoltAgent(...)` with these factories. `Agent` and `VoltAgent` are now type-only exports; their runtime classes are internal. The default export is the `voltagent` factory. The old `tool` and `createWorkflow` exports are removed.
+Replace constructor-based authoring with factories. `Agent`, `PlanAgent`, and `VoltAgent` are type-only exports. Agents own their state in closures, support detached methods, and compose without class inheritance.
 
-The factories use the existing configuration and execution contracts, including tool/context inference, memory, hooks, guardrails, observability, and workflow registration. Legacy `createTool` returns a structural parameters-style tool object. Update built-in scorers to construct agents with `defineAgent`.
+```ts
+import { defineAgent, defineTool, voltagent } from "@voltagent/core";
+import { z } from "zod";
+
+const greet = defineTool({
+  description: "Greet someone",
+  inputSchema: z.object({ name: z.string() }),
+  execute: ({ name }) => `Hello, ${name}`,
+});
+
+const assistant = defineAgent({
+  name: "assistant",
+  instructions: "Help the user",
+  model: "openai/gpt-4o-mini",
+  tools: { greet },
+});
+
+const app = voltagent({ agents: { assistant } });
+const result = await assistant.generateText({ prompt: "Greet Zac" });
+```
+
+Use `definePlanAgent(options)` for planning agents and `defineWorkflow(options, ...steps)` for workflows. The old `tool` and `createWorkflow` exports are removed. The default export is `voltagent`. Built-in scorers use `defineAgent`.

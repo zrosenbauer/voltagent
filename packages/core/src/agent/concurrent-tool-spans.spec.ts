@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { NodeVoltAgentObservability } from "../observability";
 import { createTool } from "../tool";
-import { Agent } from "./agent";
+import { type Agent, defineAgent } from "./agent";
 import { SubAgentManager } from "./subagent";
 
 // Mock the AI SDK functions
@@ -61,7 +61,7 @@ describe("Agent Concurrent Tool Spans", () => {
       },
     });
 
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "test-agent",
       instructions: "test instructions",
       model: mockModel as any,
@@ -109,7 +109,7 @@ describe("Agent Concurrent Tool Spans", () => {
 
   it("should provide unique parent spans to subagents running in parallel via delegate_task", async () => {
     // 1. Setup SubAgentManager
-    const subAgent = new Agent({
+    const subAgent = defineAgent({
       name: "sub",
       instructions: "sub",
       model: mockModel as any,
@@ -123,7 +123,7 @@ describe("Agent Concurrent Tool Spans", () => {
 
     // 2. Create delegate_task tool
     const delegateTool = manager.createDelegateTool({
-      sourceAgent: new Agent({
+      sourceAgent: defineAgent({
         name: "parent",
         instructions: "parent",
         model: mockModel as any,

@@ -31,7 +31,7 @@ export abstract class BaseRetriever {
    * const { tool } = new SimpleRetriever();
    *
    * // And use it directly in an agent
-   * const agent = new Agent({
+   * const agent = defineAgent({
    *   name: "RAG Agent",
    *   model: "gpt-4",
    *   provider,

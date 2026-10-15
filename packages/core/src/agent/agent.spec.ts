@@ -16,12 +16,15 @@ import { AgentRegistry } from "../registries/agent-registry";
 import { ModelProviderRegistry } from "../registries/model-provider-registry";
 import { type Tool, defineTool as aiSdkTool, createTool, enhanceTool } from "../tool";
 import { Workspace } from "../workspace";
-import { Agent, renameProviderOptions } from "./agent";
+import { type Agent, defineAgent, renameProviderOptions } from "./agent";
 import { SPECULATIVE_INPUT_GUARDRAIL_CONTEXT_KEY } from "./context-keys";
 import { ConversationBuffer } from "./conversation-buffer";
 import { ToolDeniedError } from "./errors";
 import { createHooks } from "./hooks";
+import type { AgentHooks } from "./hooks";
+import { SubAgentManager } from "./subagent";
 import { convertArrayToReadableStream } from "./test-utils";
+import type { OperationContext } from "./types";
 
 // Mock the AI SDK functions while preserving core converters
 vi.mock("ai", async () => {
@@ -97,7 +100,7 @@ describe("Agent", () => {
 
   describe("Initialization", () => {
     it("should create agent with required fields", () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test instructions",
         model: mockModel as any,
@@ -111,7 +114,7 @@ describe("Agent", () => {
 
     it("should use provided id when specified", () => {
       const customId = "custom-agent-id";
-      const agent = new Agent({
+      const agent = defineAgent({
         id: customId,
         name: "TestAgent",
         instructions: "Test instructions",
@@ -122,7 +125,7 @@ describe("Agent", () => {
     });
 
     it("should initialize with default values", () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test instructions",
         model: mockModel as any,
@@ -134,7 +137,7 @@ describe("Agent", () => {
     });
 
     it("should accept custom temperature and maxOutputTokens", () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test instructions",
         model: mockModel as any,
@@ -188,6 +191,36 @@ describe("Agent", () => {
       ...((callArgs?.messages || []).filter((message) => message.role === "system") || []),
     ];
   };
+
+  const captureRequest = async (
+    agent: Agent,
+    input = "user input",
+    options?: Parameters<Agent["generateText"]>[1],
+    onRequest?: (request: Parameters<typeof ai.generateText>[0]) => Promise<void>,
+  ) => {
+    let request: Parameters<typeof ai.generateText>[0] | undefined;
+    vi.mocked(ai.generateText).mockImplementation(async (args) => {
+      request = args;
+      await onRequest?.(args);
+      return {
+        text: "Response",
+        finishReason: "stop",
+        usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
+      } as Awaited<ReturnType<typeof ai.generateText>>;
+    });
+    await agent.generateText(input, options);
+    if (!request) throw new Error("The agent did not call the model");
+    return request;
+  };
+
+  const captureInstructions = async (
+    agent: Agent,
+    input = "user input",
+    options?: Parameters<Agent["generateText"]>[1],
+  ) =>
+    getInstructionMessages(await captureRequest(agent, input, options))
+      .map(toText)
+      .join("\n\n");
 
   const getSystemTexts = (callArgs?: { instructions?: unknown; messages?: ModelMessage[] }) =>
     getInstructionMessages(callArgs).map(toText);
@@ -243,7 +276,7 @@ Use pandas and summarize findings.`.split("\n"),
 
     it("auto-injects workspace skills prompt by default", async () => {
       const workspace = createWorkspaceWithSkill();
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Use skills when relevant.",
         model: mockModel as any,
@@ -267,7 +300,7 @@ Use pandas and summarize findings.`.split("\n"),
         messages: (messages || []).filter((message) => message.role !== "system"),
       }));
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Use skills when relevant.",
         model: mockModel as any,
@@ -290,7 +323,7 @@ Use pandas and summarize findings.`.split("\n"),
       const workspace = createWorkspaceWithSkill();
       const onPrepareMessages = vi.fn(({ messages }) => ({ messages }));
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Use skills when relevant.",
         model: mockModel as any,
@@ -314,7 +347,7 @@ Use pandas and summarize findings.`.split("\n"),
       const workspace = createWorkspaceWithSkill();
       const onPrepareMessages = vi.fn(({ messages }) => ({ messages }));
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Use skills when relevant.",
         model: mockModel as any,
@@ -338,7 +371,7 @@ Use pandas and summarize findings.`.split("\n"),
 
   describe("Text Generation", () => {
     it("should generate text from string input", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "You are a helpful assistant",
         model: mockModel as any,
@@ -388,7 +421,7 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("should preserve structured output on generateText results", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "StructuredTextAgent",
         instructions: "Return structured data",
         model: mockModel as any,
@@ -461,7 +494,7 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("should preserve positional generateText options for AI SDK calls", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "PositionalTextAgent",
         instructions: "You are a helpful assistant",
         model: mockModel as any,
@@ -551,7 +584,7 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("should normalize object-style generateText requests", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "ObjectStyleTextAgent",
         instructions: "You are a helpful assistant",
         model: mockModel as any,
@@ -638,7 +671,7 @@ Use pandas and summarize findings.`.split("\n"),
     it("should normalize voltagent namespaced runtime options for generateText", async () => {
       let startContext: any;
       let capturedHeaders: Record<string, string> | undefined;
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "NamespacedRuntimeTextAgent",
         contextSchema: z.object({ requestId: z.string() }),
         instructions: async ({ headers }) => {
@@ -731,7 +764,7 @@ Use pandas and summarize findings.`.split("\n"),
         return mockModel as any;
       });
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "You are a helpful assistant",
         model: "mock/test-model",
@@ -776,7 +809,7 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("should generate text from UIMessage array", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "You are a helpful assistant",
         model: mockModel as any,
@@ -824,7 +857,7 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("should pass context to generation", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "You are a helpful assistant",
         model: mockModel as any,
@@ -872,7 +905,7 @@ Use pandas and summarize findings.`.split("\n"),
 
     it("records provider steps on the conversation context", async () => {
       let capturedSteps: any[] | undefined;
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "You are a helpful assistant",
         model: mockModel as any,
@@ -969,7 +1002,7 @@ Use pandas and summarize findings.`.split("\n"),
 
     it("should sanitize messages before invoking onPrepareMessages hook", async () => {
       const onPrepareMessagesSpy = vi.fn(({ messages }) => ({ messages }));
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "You are a helpful assistant",
         model: mockModel as any,
@@ -1036,7 +1069,7 @@ Use pandas and summarize findings.`.split("\n"),
 
     it("should retain provider options from system instructions", async () => {
       const cacheControl = { type: "ephemeral", ttl: "5m" };
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: {
           type: "chat",
@@ -1107,7 +1140,7 @@ Use pandas and summarize findings.`.split("\n"),
         }),
       );
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "You are a helpful assistant",
         model: mockModel as any,
@@ -1178,7 +1211,7 @@ Use pandas and summarize findings.`.split("\n"),
         execute: async ({ value }) => ({ echoed: value }),
       });
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "StructuredOutputAgent",
         instructions: "Use tools and return structured output",
         model: mockModel as any,
@@ -1317,7 +1350,7 @@ Use pandas and summarize findings.`.split("\n"),
 
   describe("Stream Text", () => {
     it("should stream text response", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "You are a helpful assistant",
         model: mockModel as any,
@@ -1381,7 +1414,7 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("should preserve positional streamText options for AI SDK calls", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "PositionalStreamAgent",
         instructions: "You are a helpful assistant",
         model: mockModel as any,
@@ -1479,7 +1512,7 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("should normalize object-style streamText requests", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "ObjectStyleStreamAgent",
         instructions: "You are a helpful assistant",
         model: mockModel as any,
@@ -1563,7 +1596,7 @@ Use pandas and summarize findings.`.split("\n"),
 
     it("should normalize voltagent namespaced runtime options for positional streamText", async () => {
       let startContext: any;
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "NamespacedRuntimeStreamAgent",
         instructions: "You are a helpful assistant",
         model: mockModel as any,
@@ -1643,7 +1676,7 @@ Use pandas and summarize findings.`.split("\n"),
       const experimentalDownload = vi.fn(async (downloads: Array<{ url: URL }>) =>
         downloads.map(() => null),
       );
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "AISDKOptionsAgent",
         instructions: "You are a helpful assistant",
         model: mockModel as any,
@@ -1765,7 +1798,7 @@ Use pandas and summarize findings.`.split("\n"),
       const onChunk = vi.fn();
       const onAbort = vi.fn();
       const userOnError = vi.fn();
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "AISDKStreamOptionsAgent",
         instructions: "You are a helpful assistant",
         model: mockModel as any,
@@ -1844,7 +1877,7 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("should use bailed delegate_task output as streamText final text", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "SupervisorAgent",
         instructions: "Delegate when useful",
         model: mockModel as any,
@@ -1921,7 +1954,7 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("does not eagerly materialize lazy stream result promises", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "You are a helpful assistant",
         model: mockModel as any,
@@ -2000,7 +2033,7 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("pre-creates streaming message ids and forwards them to UI streams", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "You are a helpful assistant",
         model: mockModel as any,
@@ -2079,7 +2112,7 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("keeps aggregate total usage for finish events when provider is anthropic", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "You are a helpful assistant",
         model: mockModel as any,
@@ -2151,7 +2184,7 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("keeps fullStream intact after probe for ReadableStream-based providers", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "You are a helpful assistant",
         model: mockModel as any,
@@ -2206,7 +2239,7 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("does not lock getter-based teeing fullStream after probe", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "You are a helpful assistant",
         model: mockModel as any,
@@ -2298,7 +2331,7 @@ Use pandas and summarize findings.`.split("\n"),
 
   describe("Tool Management", () => {
     it("should add tools", () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -2320,7 +2353,7 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("should add AI SDK ToolSet tools", () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -2350,7 +2383,7 @@ Use pandas and summarize findings.`.split("\n"),
         execute: async ({ input }) => `Processed: ${input}`,
       });
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -2365,7 +2398,7 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("should handle duplicate tools", () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -2387,7 +2420,7 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("should expose AI SDK ToolSet tools from getTools", () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -2429,7 +2462,7 @@ Use pandas and summarize findings.`.split("\n"),
         tags: ["external"],
       });
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -2448,9 +2481,26 @@ Use pandas and summarize findings.`.split("\n"),
   });
 
   describe("Tool Execution", () => {
+    const executeTool = async (agent: Agent, tool: Tool, onStart?: AgentHooks["onStart"]) => {
+      agent.addTools([tool]);
+      let output: unknown;
+      vi.mocked(ai.generateText).mockImplementationOnce(async (options) => {
+        const execute = options.tools?.[tool.name]?.execute;
+        if (!execute) throw new Error(`Missing executable tool: ${tool.name}`);
+        output = await execute({}, { toolCallId: "test-call", messages: [] });
+        return {
+          text: "Tool completed",
+          finishReason: "stop",
+          usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
+        } as Awaited<ReturnType<typeof ai.generateText>>;
+      });
+      await agent.generateText("Execute the tool", { hooks: { onStart } });
+      return output;
+    };
+
     it("serializes tool errors and forwards them to hooks", async () => {
       const onToolEnd = vi.fn();
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -2466,14 +2516,7 @@ Use pandas and summarize findings.`.split("\n"),
         },
       });
 
-      const operationContext = (agent as any).createOperationContext("input");
-      const executeFactory = (agent as any).createToolExecutionFactory(
-        operationContext,
-        agent.hooks,
-      );
-
-      const execute = executeFactory(failingTool);
-      const result = await execute({});
+      const result = await executeTool(agent, failingTool);
 
       expect(result).toMatchObject({
         error: true,
@@ -2493,14 +2536,12 @@ Use pandas and summarize findings.`.split("\n"),
           }),
         }),
       );
-
-      operationContext.traceContext.end("completed");
     });
 
     it("calls onToolError when a tool throws", async () => {
       const onToolError = vi.fn();
       const onToolEnd = vi.fn();
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -2516,14 +2557,7 @@ Use pandas and summarize findings.`.split("\n"),
         },
       });
 
-      const operationContext = (agent as any).createOperationContext("input");
-      const executeFactory = (agent as any).createToolExecutionFactory(
-        operationContext,
-        agent.hooks,
-      );
-
-      const execute = executeFactory(failingTool);
-      await execute({});
+      await executeTool(agent, failingTool);
 
       expect(onToolError).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -2546,8 +2580,6 @@ Use pandas and summarize findings.`.split("\n"),
           }),
         }),
       );
-
-      operationContext.traceContext.end("completed");
     });
 
     it("allows onToolError to override serialized error output", async () => {
@@ -2558,7 +2590,7 @@ Use pandas and summarize findings.`.split("\n"),
           status: 429,
         },
       });
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -2576,14 +2608,7 @@ Use pandas and summarize findings.`.split("\n"),
         },
       });
 
-      const operationContext = (agent as any).createOperationContext("input");
-      const executeFactory = (agent as any).createToolExecutionFactory(
-        operationContext,
-        agent.hooks,
-      );
-
-      const execute = executeFactory(failingTool);
-      const result = await execute({});
+      const result = await executeTool(agent, failingTool);
 
       expect(result).toEqual({
         error: true,
@@ -2591,12 +2616,10 @@ Use pandas and summarize findings.`.split("\n"),
         status: 429,
       });
       expect(onToolError).toHaveBeenCalledTimes(1);
-
-      operationContext.traceContext.end("completed");
     });
 
     it("sanitizes circular error payloads from tools", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -2616,14 +2639,7 @@ Use pandas and summarize findings.`.split("\n"),
         },
       });
 
-      const operationContext = (agent as any).createOperationContext("input");
-      const executeFactory = (agent as any).createToolExecutionFactory(
-        operationContext,
-        agent.hooks,
-      );
-
-      const execute = executeFactory(failingTool);
-      const result = await execute({});
+      const result = await executeTool(agent, failingTool);
 
       expect(result).toMatchObject({
         error: true,
@@ -2631,14 +2647,12 @@ Use pandas and summarize findings.`.split("\n"),
         message: "Circular failure",
         toolName: "circular-tool",
       });
-      expect(typeof result.config).toBe("string");
-
-      operationContext.traceContext.end("completed");
+      expect(result).toHaveProperty("config", expect.any(String));
     });
 
     it("allows onToolEnd to override tool output", async () => {
       const onToolEnd = vi.fn().mockResolvedValue({ output: "trimmed" });
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -2652,14 +2666,7 @@ Use pandas and summarize findings.`.split("\n"),
         execute: async () => "original",
       });
 
-      const operationContext = (agent as any).createOperationContext("input");
-      const executeFactory = (agent as any).createToolExecutionFactory(
-        operationContext,
-        agent.hooks,
-      );
-
-      const execute = executeFactory(tool);
-      const result = await execute({});
+      const result = await executeTool(agent, tool);
 
       expect(result).toBe("trimmed");
       expect(onToolEnd).toHaveBeenCalledWith(
@@ -2669,8 +2676,6 @@ Use pandas and summarize findings.`.split("\n"),
           error: undefined,
         }),
       );
-
-      operationContext.traceContext.end("completed");
     });
 
     it("waits for parallel input guardrails before executing server-side tools", async () => {
@@ -2679,7 +2684,7 @@ Use pandas and summarize findings.`.split("\n"),
         releaseGuardrail = () => resolve({ status: "passed" });
       });
       const toolExecute = vi.fn(async () => "tool output");
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -2691,31 +2696,25 @@ Use pandas and summarize findings.`.split("\n"),
         execute: toolExecute,
       });
 
-      const operationContext = (agent as any).createOperationContext("input");
-      operationContext.systemContext.set(SPECULATIVE_INPUT_GUARDRAIL_CONTEXT_KEY, {
-        wait: vi.fn(() => guardrailWait),
-        hasPassed: vi.fn(() => false),
+      const wait = vi.fn(() => guardrailWait);
+      const resultPromise = executeTool(agent, tool, ({ context }) => {
+        context.systemContext.set(SPECULATIVE_INPUT_GUARDRAIL_CONTEXT_KEY, {
+          wait,
+          hasPassed: () => false,
+        });
       });
-      const executeFactory = (agent as any).createToolExecutionFactory(
-        operationContext,
-        agent.hooks,
-      );
-
-      const resultPromise = executeFactory(tool)({});
-      await Promise.resolve();
+      await vi.waitFor(() => expect(wait).toHaveBeenCalled());
 
       expect(toolExecute).not.toHaveBeenCalled();
       releaseGuardrail();
 
       await expect(resultPromise).resolves.toBe("tool output");
       expect(toolExecute).toHaveBeenCalledTimes(1);
-
-      operationContext.traceContext.end("completed");
     });
 
     it("does not execute server-side tools when a parallel input guardrail blocks", async () => {
       const toolExecute = vi.fn(async () => "tool output");
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -2728,21 +2727,16 @@ Use pandas and summarize findings.`.split("\n"),
       });
       const guardrailError = new Error("Input blocked by policy.");
 
-      const operationContext = (agent as any).createOperationContext("input");
-      operationContext.systemContext.set(SPECULATIVE_INPUT_GUARDRAIL_CONTEXT_KEY, {
-        wait: vi.fn(async () => ({
-          status: "blocked",
-          error: guardrailError,
-          message: guardrailError.message,
-        })),
-        hasPassed: vi.fn(() => false),
+      const result = await executeTool(agent, tool, ({ context }) => {
+        context.systemContext.set(SPECULATIVE_INPUT_GUARDRAIL_CONTEXT_KEY, {
+          wait: async () => ({
+            status: "blocked",
+            error: guardrailError,
+            message: guardrailError.message,
+          }),
+          hasPassed: () => false,
+        });
       });
-      const executeFactory = (agent as any).createToolExecutionFactory(
-        operationContext,
-        agent.hooks,
-      );
-
-      const result = await executeFactory(tool)({});
 
       expect(toolExecute).not.toHaveBeenCalled();
       expect(result).toMatchObject({
@@ -2750,15 +2744,13 @@ Use pandas and summarize findings.`.split("\n"),
         message: "Input blocked by policy.",
         toolName: "blocked-tool",
       });
-
-      operationContext.traceContext.end("completed");
     });
 
     it("supports tool-level hooks for start and end", async () => {
       const toolOnStart = vi.fn();
       const toolOnEnd = vi.fn().mockResolvedValue({ output: "tool-hook" });
       const onToolEnd = vi.fn().mockResolvedValue({ output: "agent-hook" });
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -2776,14 +2768,7 @@ Use pandas and summarize findings.`.split("\n"),
         },
       });
 
-      const operationContext = (agent as any).createOperationContext("input");
-      const executeFactory = (agent as any).createToolExecutionFactory(
-        operationContext,
-        agent.hooks,
-      );
-
-      const execute = executeFactory(tool);
-      const result = await execute({});
+      const result = await executeTool(agent, tool);
 
       expect(result).toBe("agent-hook");
       expect(toolOnStart).toHaveBeenCalledWith(
@@ -2805,8 +2790,6 @@ Use pandas and summarize findings.`.split("\n"),
           error: undefined,
         }),
       );
-
-      operationContext.traceContext.end("completed");
     });
 
     it("passes workspace context to tool calls for filesystem and sandbox access", async () => {
@@ -2854,7 +2837,7 @@ Use pandas and summarize findings.`.split("\n"),
         },
       });
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -2862,14 +2845,7 @@ Use pandas and summarize findings.`.split("\n"),
         tools: [tool],
       });
 
-      const operationContext = (agent as any).createOperationContext("input");
-      const executeFactory = (agent as any).createToolExecutionFactory(
-        operationContext,
-        agent.hooks,
-      );
-
-      const execute = executeFactory(tool);
-      const result = await execute({});
+      const result = await executeTool(agent, tool);
 
       expect(result).toBe("workspace-content|sandbox-content");
       expect(sandboxExecute).toHaveBeenCalledWith(
@@ -2877,18 +2853,16 @@ Use pandas and summarize findings.`.split("\n"),
           command: "cat",
           args: ["/docs/report.txt"],
           operationContext: expect.objectContaining({
-            operationId: operationContext.operationId,
+            operationId: expect.any(String),
           }),
         }),
       );
-
-      operationContext.traceContext.end("completed");
     });
   });
 
   describe("Agent as Tool (toTool)", () => {
     it("should convert agent to tool with default parameters", () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "WriterAgent",
         id: "writer",
         purpose: "Writes blog posts",
@@ -2905,7 +2879,7 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("should convert agent to tool with custom options", () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "EditorAgent",
         id: "editor",
         instructions: "You are a skilled editor",
@@ -2929,7 +2903,7 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("should execute agent when tool is called", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "WriterAgent",
         id: "writer",
         instructions: "You are a writer",
@@ -2978,7 +2952,7 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("should pass context through when executing agent tool", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         id: "test",
         instructions: "Test agent",
@@ -3018,7 +2992,7 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("should work in supervisor pattern with multiple agent tools", () => {
-      const writerAgent = new Agent({
+      const writerAgent = defineAgent({
         name: "Writer",
         id: "writer",
         purpose: "Writes content",
@@ -3026,7 +3000,7 @@ Use pandas and summarize findings.`.split("\n"),
         model: mockModel as any,
       });
 
-      const editorAgent = new Agent({
+      const editorAgent = defineAgent({
         name: "Editor",
         id: "editor",
         purpose: "Edits content",
@@ -3034,7 +3008,7 @@ Use pandas and summarize findings.`.split("\n"),
         model: mockModel as any,
       });
 
-      const supervisorAgent = new Agent({
+      const supervisorAgent = defineAgent({
         name: "Supervisor",
         id: "supervisor",
         instructions: "Coordinate writer and editor",
@@ -3050,6 +3024,23 @@ Use pandas and summarize findings.`.split("\n"),
   });
 
   describe("Memory Integration", () => {
+    const saveConversationWithTitle = async (
+      agent: Agent,
+      context: { traceContext: Record<string, unknown> },
+    ) => {
+      await agent.getMemoryManager().saveMessage(
+        {
+          ...context,
+          input: "Plan a weekend trip to Rome.",
+          traceContext: { ...context.traceContext, endChildSpan: vi.fn() },
+        } as unknown as OperationContext,
+        { id: "title-input", role: "user", parts: [{ type: "text", text: "Plan a trip" }] },
+        "title-user",
+        "title-conversation",
+      );
+      return (await agent.getMemory()?.getConversation("title-conversation"))?.title;
+    };
+
     const persistedUsage = {
       promptTokens: 10,
       completionTokens: 5,
@@ -3085,7 +3076,7 @@ Use pandas and summarize findings.`.split("\n"),
         storage: new InMemoryStorageAdapter(),
         generateTitle: true,
       });
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -3147,12 +3138,7 @@ Use pandas and summarize findings.`.split("\n"),
         steps: [],
       } as any);
 
-      const titleGenerator = (agent as any).createConversationTitleGenerator(memory);
-      const title = await titleGenerator({
-        input: "Plan a weekend trip to Rome.",
-        context,
-        defaultTitle: "Conversation",
-      });
+      const title = await saveConversationWithTitle(agent, context);
 
       expect(title).toBe("Rome Weekend Plan");
       const generateTextCall = vi.mocked(ai.generateText).mock.calls[0][0] as Record<
@@ -3161,7 +3147,9 @@ Use pandas and summarize findings.`.split("\n"),
       >;
       expect(generateTextCall.temperature).toBe(0);
       expect(generateTextCall.maxOutputTokens).toBe(32);
-      const createChildSpanCall = context.traceContext.createChildSpan.mock.calls[0][2] as {
+      const createChildSpanCall = context.traceContext.createChildSpan.mock.calls.find(
+        ([name]) => name === "llm:generateTitle",
+      )?.[2] as {
         attributes: Record<string, unknown>;
       };
       expect(createChildSpanCall.attributes["llm.temperature"]).toBe(0);
@@ -3179,7 +3167,7 @@ Use pandas and summarize findings.`.split("\n"),
         storage: new InMemoryStorageAdapter(),
         generateTitle: { enabled: true, temperature: null },
       });
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -3235,12 +3223,7 @@ Use pandas and summarize findings.`.split("\n"),
         steps: [],
       } as any);
 
-      const titleGenerator = (agent as any).createConversationTitleGenerator(memory);
-      const title = await titleGenerator({
-        input: "Plan a weekend trip to Rome.",
-        context,
-        defaultTitle: "Conversation",
-      });
+      const title = await saveConversationWithTitle(agent, context);
 
       expect(title).toBe("Rome Weekend Plan");
       const generateTextCall = vi.mocked(ai.generateText).mock.calls[0][0] as Record<
@@ -3248,7 +3231,9 @@ Use pandas and summarize findings.`.split("\n"),
         unknown
       >;
       expect(generateTextCall).not.toHaveProperty("temperature");
-      const createChildSpanCall = context.traceContext.createChildSpan.mock.calls[0][2] as {
+      const createChildSpanCall = context.traceContext.createChildSpan.mock.calls.find(
+        ([name]) => name === "llm:generateTitle",
+      )?.[2] as {
         attributes: Record<string, unknown>;
       };
       expect(createChildSpanCall.attributes).not.toHaveProperty("llm.temperature");
@@ -3259,7 +3244,7 @@ Use pandas and summarize findings.`.split("\n"),
         storage: new InMemoryStorageAdapter(),
         generateTitle: true,
       });
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -3316,14 +3301,9 @@ Use pandas and summarize findings.`.split("\n"),
         steps: [],
       } as any);
 
-      const titleGenerator = (agent as any).createConversationTitleGenerator(memory);
-      const title = await titleGenerator({
-        input: "Plan a weekend trip to Rome.",
-        context,
-        defaultTitle: "Conversation",
-      });
+      const title = await saveConversationWithTitle(agent, context);
 
-      expect(title).toBeNull();
+      expect(title).toBe("Conversation");
       expect(context.logger.warn).toHaveBeenCalledWith(
         "[Memory] Conversation title generation returned an empty title",
         expect.objectContaining({
@@ -3338,7 +3318,7 @@ Use pandas and summarize findings.`.split("\n"),
         storage: new InMemoryStorageAdapter(),
         generateTitle: true,
       });
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -3375,14 +3355,9 @@ Use pandas and summarize findings.`.split("\n"),
 
       vi.mocked(ai.generateText).mockRejectedValue(new Error("Unsupported temperature"));
 
-      const titleGenerator = (agent as any).createConversationTitleGenerator(memory);
-      const title = await titleGenerator({
-        input: "Plan a weekend trip to Rome.",
-        context,
-        defaultTitle: "Conversation",
-      });
+      const title = await saveConversationWithTitle(agent, context);
 
-      expect(title).toBeNull();
+      expect(title).toBe("Conversation");
       expect(context.logger.warn).toHaveBeenCalledWith(
         "[Memory] Failed to generate conversation title",
         expect.not.objectContaining({
@@ -3408,7 +3383,7 @@ Use pandas and summarize findings.`.split("\n"),
       const memory = new Memory({
         storage: new InMemoryStorageAdapter(),
       });
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -3419,7 +3394,7 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("should work without memory when disabled", () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -3435,7 +3410,7 @@ Use pandas and summarize findings.`.split("\n"),
         storage: new InMemoryStorageAdapter(),
       });
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -3489,7 +3464,7 @@ Use pandas and summarize findings.`.split("\n"),
         storage: new InMemoryStorageAdapter(),
       });
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -3548,7 +3523,7 @@ Use pandas and summarize findings.`.split("\n"),
         storage: new InMemoryStorageAdapter(),
       });
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -3652,7 +3627,7 @@ Use pandas and summarize findings.`.split("\n"),
       const getMessagesSpy = vi.spyOn(memory, "getMessages");
       const saveMessageWithContextSpy = vi.spyOn(memory, "saveMessageWithContext");
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -3723,7 +3698,7 @@ Use pandas and summarize findings.`.split("\n"),
         threadId,
       );
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -3769,7 +3744,7 @@ Use pandas and summarize findings.`.split("\n"),
       const memory = new Memory({
         storage: new InMemoryStorageAdapter(),
       });
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -3813,7 +3788,7 @@ Use pandas and summarize findings.`.split("\n"),
       });
       const getMessagesSpy = vi.spyOn(memory, "getMessages");
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -3873,7 +3848,7 @@ Use pandas and summarize findings.`.split("\n"),
       });
       const getMessagesSpy = vi.spyOn(memory, "getMessages");
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -3918,14 +3893,16 @@ Use pandas and summarize findings.`.split("\n"),
       expect(matchingCall).toBeDefined();
     });
 
-    it("should store resolved memory envelope on operation context", () => {
-      const agent = new Agent({
+    it("should store resolved memory envelope on operation context", async () => {
+      const onStart = vi.fn();
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
+        hooks: { onStart },
       });
 
-      const operationContext = (agent as any).createOperationContext("input", {
+      await captureRequest(agent, "input", {
         userId: "legacy-user",
         conversationId: "legacy-conv",
         contextLimit: 99,
@@ -3958,6 +3935,7 @@ Use pandas and summarize findings.`.split("\n"),
         },
       });
 
+      const operationContext = onStart.mock.calls[0][0].context;
       expect(operationContext.userId).toBe("memory-user");
       expect(operationContext.conversationId).toBe("memory-conv");
       expect(operationContext.resolvedMemory).toMatchObject({
@@ -3980,14 +3958,16 @@ Use pandas and summarize findings.`.split("\n"),
       });
     });
 
-    it("should fallback to parent operation context resolved memory when call overrides are missing", () => {
-      const agent = new Agent({
+    it("should fallback to parent operation context resolved memory when call overrides are missing", async () => {
+      const onStart = vi.fn();
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
+        hooks: { onStart },
       });
 
-      const parentOperationContext = (agent as any).createOperationContext("parent-input", {
+      await captureRequest(agent, "parent-input", {
         memory: {
           userId: "memory-user",
           conversationId: "memory-conv",
@@ -4008,9 +3988,11 @@ Use pandas and summarize findings.`.split("\n"),
         },
       });
 
-      const resolvedFromParent = (agent as any).resolveMemoryRuntimeOptions({
+      const parentOperationContext = onStart.mock.calls[0][0].context;
+      await captureRequest(agent, "child-input", {
         parentOperationContext,
       });
+      const resolvedFromParent = onStart.mock.calls[1][0].context.resolvedMemory;
 
       expect(resolvedFromParent).toMatchObject({
         userId: "memory-user",
@@ -4054,7 +4036,7 @@ Use pandas and summarize findings.`.split("\n"),
       });
       registry.setGlobalAgentMemory(globalMemory);
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "DefaultMemoryAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -4070,7 +4052,7 @@ Use pandas and summarize findings.`.split("\n"),
       });
       registry.setGlobalMemory(globalMemory);
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "FallbackMemoryAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -4086,7 +4068,7 @@ Use pandas and summarize findings.`.split("\n"),
       });
       registry.setGlobalAgentMemory(globalMemory);
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "StatelessAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -4100,7 +4082,7 @@ Use pandas and summarize findings.`.split("\n"),
   describe("Hook System", () => {
     it("should call onStart hook with proper context", async () => {
       const onStart = vi.fn();
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -4152,7 +4134,7 @@ Use pandas and summarize findings.`.split("\n"),
 
     it("should call onError hook with error details", async () => {
       const onError = vi.fn();
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -4180,7 +4162,7 @@ Use pandas and summarize findings.`.split("\n"),
 
     it("should call onEnd hook with context and result", async () => {
       const onEnd = vi.fn();
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -4229,7 +4211,7 @@ Use pandas and summarize findings.`.split("\n"),
 
     it("should expose AI SDK final-step usage and aggregate totalUsage in onEnd", async () => {
       const onEnd = vi.fn();
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -4301,7 +4283,7 @@ Use pandas and summarize findings.`.split("\n"),
 
     it("should call onStepEnd for multi-step generation", async () => {
       const onStepEndSpy = vi.fn();
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -4346,13 +4328,13 @@ Use pandas and summarize findings.`.split("\n"),
 
   describe("SubAgent Management", () => {
     it("should add subagents", () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "MainAgent",
         instructions: "Main",
         model: mockModel as any,
       });
 
-      const subAgent = new Agent({
+      const subAgent = defineAgent({
         name: "SubAgent",
         instructions: "Sub",
         model: mockModel as any,
@@ -4365,13 +4347,13 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("should remove subagents", () => {
-      const subAgent = new Agent({
+      const subAgent = defineAgent({
         name: "SubAgent",
         instructions: "Sub",
         model: mockModel as any,
       });
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "MainAgent",
         instructions: "Main",
         model: mockModel as any,
@@ -4456,7 +4438,7 @@ Use pandas and summarize findings.`.split("\n"),
     };
 
     it("should generate object with schema", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Generate structured data",
         model: mockModel as any,
@@ -4513,7 +4495,7 @@ Use pandas and summarize findings.`.split("\n"),
 
     it("should normalize voltagent namespaced runtime options for generateObject", async () => {
       let startContext: any;
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "NamespacedRuntimeObjectAgent",
         instructions: "Generate structured data",
         model: mockModel as any,
@@ -4581,7 +4563,7 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("should expose the streamObject public stream contract", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Stream structured data",
         model: mockModel as any,
@@ -4637,7 +4619,7 @@ Use pandas and summarize findings.`.split("\n"),
         },
       }));
       const userOnFinish = vi.fn();
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Stream structured data",
         model: mockModel as any,
@@ -4704,7 +4686,7 @@ Use pandas and summarize findings.`.split("\n"),
       });
 
       const onEnd = vi.fn();
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Use tools when needed",
         model: mockModel as any,
@@ -4757,7 +4739,7 @@ Use pandas and summarize findings.`.split("\n"),
         return { pass: true };
       };
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "MiddlewareAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -4803,7 +4785,7 @@ Use pandas and summarize findings.`.split("\n"),
         return { pass: true };
       };
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "MiddlewareAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -4856,7 +4838,7 @@ Use pandas and summarize findings.`.split("\n"),
         return `${output}-ok`;
       };
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "MiddlewareRetryAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -4899,7 +4881,7 @@ Use pandas and summarize findings.`.split("\n"),
     // Retry/fallback contracts use real SDK loops in model-retry.spec.ts.
     // Mocking generateText itself cannot exercise the provider-call boundary.
     it("should handle model errors gracefully", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -4913,7 +4895,7 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("should handle invalid input", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -4925,7 +4907,7 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("should handle timeout with abort signal", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -4955,7 +4937,7 @@ Use pandas and summarize findings.`.split("\n"),
     it("should support dynamic instructions", async () => {
       const dynamicInstructions = vi.fn().mockResolvedValue("Dynamic instructions");
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: dynamicInstructions,
         model: mockModel as any,
@@ -5001,7 +4983,7 @@ Use pandas and summarize findings.`.split("\n"),
         retrieve: vi.fn().mockResolvedValue([{ text: "Relevant document", score: 0.9 }]),
       };
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Use context",
         model: mockModel as any,
@@ -5037,7 +5019,7 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("should get full state", () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -5077,7 +5059,7 @@ Use pandas and summarize findings.`.split("\n"),
         },
       ]);
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Base instructions",
         model: mockModel as any,
@@ -5130,7 +5112,7 @@ Use pandas and summarize findings.`.split("\n"),
         execute: mockExecute,
       });
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Use tools when needed",
         model: mockModel as any,
@@ -5198,7 +5180,7 @@ Use pandas and summarize findings.`.split("\n"),
         tools: [addTool, multiplyTool] as any,
       };
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Math assistant",
         model: mockModel as any,
@@ -5225,7 +5207,7 @@ Use pandas and summarize findings.`.split("\n"),
         tools: [tool1] as any,
       };
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -5240,24 +5222,6 @@ Use pandas and summarize findings.`.split("\n"),
   });
 
   describe("prepareTools", () => {
-    type TestAgentInternals = {
-      createOperationContext(input: string): unknown;
-      prepareTools(
-        adHocTools: unknown[],
-        oc: unknown,
-        maxSteps: number,
-        options?: unknown,
-      ): Promise<
-        Record<
-          string,
-          {
-            description?: string;
-            execute: (args: unknown, options?: unknown) => unknown;
-          }
-        >
-      >;
-    };
-
     it("should merge static and runtime tools with runtime overrides", async () => {
       const staticOnlyTool = createTool({
         name: "static-only",
@@ -5272,7 +5236,7 @@ Use pandas and summarize findings.`.split("\n"),
         execute: vi.fn().mockResolvedValue("static-shared"),
       });
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -5292,13 +5256,10 @@ Use pandas and summarize findings.`.split("\n"),
         execute: vi.fn().mockResolvedValue("runtime-override"),
       });
 
-      const operationContext = (agent as any).createOperationContext("input message");
-      const prepared = await (agent as any).prepareTools(
-        [runtimeOnlyTool, runtimeOverrideTool],
-        operationContext,
-        3,
-        {},
-      );
+      const { tools: prepared } = await captureRequest(agent, "input message", {
+        tools: [runtimeOnlyTool, runtimeOverrideTool],
+        maxSteps: 3,
+      });
 
       expect(Object.keys(prepared).sort()).toEqual(["runtime-only", "shared-tool", "static-only"]);
       expect(prepared["shared-tool"].description).toBe("Runtime override tool");
@@ -5315,7 +5276,7 @@ Use pandas and summarize findings.`.split("\n"),
       const agentOnToolStart = vi.fn();
       const agentOnToolEnd = vi.fn();
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -5340,68 +5301,74 @@ Use pandas and summarize findings.`.split("\n"),
         },
       });
 
-      const operationContext = (agent as any).createOperationContext("input message");
-      const createChildSpanSpy = vi.spyOn(operationContext.traceContext, "createChildSpan");
-      const prepared = await (agent as any).prepareTools([], operationContext, 3, {});
-
-      expect(prepared.get_weather.description).toBe("Get weather");
-      expect(prepared.get_weather.inputSchema).toBe(inputSchema);
-      expect(prepared.get_weather.metadata?.voltagent).toMatchObject({
-        name: "Weather Lookup",
-        purpose: "Fetch weather observations",
-        tags: ["weather", "external-api"],
-      });
-
-      await expect(
-        prepared.get_weather.execute(
-          { location: "SF" },
-          {
-            toolCallId: "call-1",
-            messages: [],
-            abortSignal: new AbortController().signal,
-            context: undefined,
-          },
-        ),
-      ).resolves.toEqual({ location: "SF", temp: 72 });
-
-      expect(execute).toHaveBeenCalledWith(
-        { location: "SF" },
-        expect.objectContaining({ toolCallId: "call-1" }),
+      const onStart = vi.fn(({ context }: { context: OperationContext }) =>
+        vi.spyOn(context.traceContext, "createChildSpan"),
       );
-      const toolSpanCall = createChildSpanSpy.mock.calls.find(
-        ([spanName]) => spanName === "tool.execution:get_weather",
-      );
-      expect(toolSpanCall?.[2]).toMatchObject({
-        label: "get_weather",
-        attributes: expect.objectContaining({
-          "tool.name": "get_weather",
-          "tool.display_name": "Weather Lookup",
-          "tool.purpose": "Fetch weather observations",
-          "tool.description": "Get weather",
-        }),
-      });
-      expect(toolOnStart).toHaveBeenCalledWith(
-        expect.objectContaining({
-          args: { location: "SF" },
-          tool: expect.objectContaining({
-            name: "get_weather",
+      await captureRequest(
+        agent,
+        "input message",
+        { maxSteps: 3, hooks: { onStart } },
+        async ({ tools: prepared }) => {
+          expect(prepared.get_weather.description).toBe("Get weather");
+          expect(prepared.get_weather.inputSchema).toBe(inputSchema);
+          expect(prepared.get_weather.metadata?.voltagent).toMatchObject({
+            name: "Weather Lookup",
+            purpose: "Fetch weather observations",
             tags: ["weather", "external-api"],
-          }),
-        }),
-      );
-      expect(agentOnToolStart).toHaveBeenCalledWith(
-        expect.objectContaining({
-          agent,
-          args: { location: "SF" },
-          tool: expect.objectContaining({ name: "get_weather" }),
-        }),
-      );
-      expect(agentOnToolEnd).toHaveBeenCalledWith(
-        expect.objectContaining({
-          agent,
-          output: { location: "SF", temp: 72 },
-          tool: expect.objectContaining({ name: "get_weather" }),
-        }),
+          });
+
+          await expect(
+            prepared.get_weather.execute(
+              { location: "SF" },
+              {
+                toolCallId: "call-1",
+                messages: [],
+                abortSignal: new AbortController().signal,
+                context: undefined,
+              },
+            ),
+          ).resolves.toEqual({ location: "SF", temp: 72 });
+
+          expect(execute).toHaveBeenCalledWith(
+            { location: "SF" },
+            expect.objectContaining({ toolCallId: "call-1" }),
+          );
+          const toolSpanCall = onStart.mock.results[0].value.mock.calls.find(
+            ([spanName]) => spanName === "tool.execution:get_weather",
+          );
+          expect(toolSpanCall?.[2]).toMatchObject({
+            label: "get_weather",
+            attributes: expect.objectContaining({
+              "tool.name": "get_weather",
+              "tool.display_name": "Weather Lookup",
+              "tool.purpose": "Fetch weather observations",
+              "tool.description": "Get weather",
+            }),
+          });
+          expect(toolOnStart).toHaveBeenCalledWith(
+            expect.objectContaining({
+              args: { location: "SF" },
+              tool: expect.objectContaining({
+                name: "get_weather",
+                tags: ["weather", "external-api"],
+              }),
+            }),
+          );
+          expect(agentOnToolStart).toHaveBeenCalledWith(
+            expect.objectContaining({
+              agent,
+              args: { location: "SF" },
+              tool: expect.objectContaining({ name: "get_weather" }),
+            }),
+          );
+          expect(agentOnToolEnd).toHaveBeenCalledWith(
+            expect.objectContaining({
+              agent,
+              output: { location: "SF", temp: 72 },
+              tool: expect.objectContaining({ name: "get_weather" }),
+            }),
+          );
+        },
       );
     });
 
@@ -5429,7 +5396,7 @@ Use pandas and summarize findings.`.split("\n"),
         execute: async () => "normal",
       });
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -5437,16 +5404,14 @@ Use pandas and summarize findings.`.split("\n"),
         tools: [callTool, searchTools, normalTool],
       });
 
-      const testAgent = agent as unknown as TestAgentInternals;
-      const operationContext = testAgent.createOperationContext("input message");
-      const prepared = await testAgent.prepareTools([], operationContext, 3, {});
-
-      await expect(prepared.callTool.execute({ toolName: "normalTool" })).resolves.toBe(
-        "called:normalTool",
-      );
-      await expect(prepared.searchTools.execute({ query: "normalTool" })).resolves.toBe(
-        "searched:normalTool",
-      );
+      await captureRequest(agent, "input message", { maxSteps: 3 }, async ({ tools: prepared }) => {
+        await expect(prepared.callTool.execute({ toolName: "normalTool" })).resolves.toBe(
+          "called:normalTool",
+        );
+        await expect(prepared.searchTools.execute({ query: "normalTool" })).resolves.toBe(
+          "searched:normalTool",
+        );
+      });
 
       const poolNames = agent.getFullState().toolRouting?.pool?.map((tool) => tool.name) ?? [];
       expect(poolNames).toEqual(expect.arrayContaining(["callTool", "searchTools", "normalTool"]));
@@ -5470,7 +5435,7 @@ Use pandas and summarize findings.`.split("\n"),
         execute: async ({ query }) => `searched:${query}`,
       });
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -5478,17 +5443,21 @@ Use pandas and summarize findings.`.split("\n"),
         tools: [callTool, searchTools],
       });
 
-      const testAgent = agent as unknown as TestAgentInternals;
-      const operationContext = testAgent.createOperationContext("input message");
-      const prepared = await testAgent.prepareTools([], operationContext, 3, {
-        toolRouting: false,
-      });
-
-      await expect(prepared.callTool.execute({ toolName: "searchTools" })).resolves.toBe(
-        "called:searchTools",
-      );
-      await expect(prepared.searchTools.execute({ query: "callTool" })).resolves.toBe(
-        "searched:callTool",
+      await captureRequest(
+        agent,
+        "input message",
+        {
+          maxSteps: 3,
+          toolRouting: false,
+        },
+        async ({ tools: prepared }) => {
+          await expect(prepared.callTool.execute({ toolName: "searchTools" })).resolves.toBe(
+            "called:searchTools",
+          );
+          await expect(prepared.searchTools.execute({ query: "callTool" })).resolves.toBe(
+            "searched:callTool",
+          );
+        },
       );
     });
 
@@ -5503,7 +5472,7 @@ Use pandas and summarize findings.`.split("\n"),
         execute,
       });
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -5513,97 +5482,85 @@ Use pandas and summarize findings.`.split("\n"),
         tools: [sensitiveTool],
       });
 
-      const testAgent = agent as unknown as TestAgentInternals;
-      const operationContext = testAgent.createOperationContext("input message");
-      const prepared = await testAgent.prepareTools([], operationContext, 3, {
-        toolApproval: {
-          sensitiveTool: "user-approval",
-        },
-      });
-
-      await expect(
-        prepared.callTool.execute({
-          name: "sensitiveTool",
-          args: {
-            query: "secret",
+      await captureRequest(
+        agent,
+        "input message",
+        {
+          maxSteps: 3,
+          toolApproval: {
+            sensitiveTool: "user-approval",
           },
-        }),
-      ).resolves.toMatchObject({
-        error: true,
-        name: "sensitiveTool",
-        code: "TOOL_APPROVAL_REQUIRED",
-        message: "Tool sensitiveTool requires user approval.",
-      });
-      expect(execute).not.toHaveBeenCalled();
+        },
+        async ({ tools: prepared }) => {
+          await expect(
+            prepared.callTool.execute({
+              name: "sensitiveTool",
+              args: {
+                query: "secret",
+              },
+            }),
+          ).resolves.toMatchObject({
+            error: true,
+            name: "sensitiveTool",
+            code: "TOOL_APPROVAL_REQUIRED",
+            message: "Tool sensitiveTool requires user approval.",
+          });
+          expect(execute).not.toHaveBeenCalled();
+        },
+      );
     });
 
     it("should add delegate tool when subagents are present", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
       });
 
-      const delegateTool = createTool({
-        name: "delegate-tool",
-        description: "Delegate tool",
-        parameters: z.object({}),
-        execute: vi.fn(),
+      agent.addSubAgent(
+        defineAgent({
+          name: "child",
+          instructions: "Help the supervisor",
+          model: mockModel as any,
+        }),
+      );
+      const mockCreateDelegateTool = vi.spyOn(SubAgentManager.prototype, "createDelegateTool");
+      const { tools: prepared } = await captureRequest(agent, "input message", {
+        conversationId: "conv-1",
+        userId: "user-1",
+        maxSteps: 7,
       });
 
-      const mockHasSubAgents = vi.fn().mockReturnValue(true);
-      const mockCreateDelegateTool = vi.fn().mockReturnValue(delegateTool);
-      (agent as any).subAgentManager = {
-        hasSubAgents: mockHasSubAgents,
-        createDelegateTool: mockCreateDelegateTool,
-      };
-
-      const factorySpy = vi.spyOn(agent as any, "createToolExecutionFactory");
-
-      const operationContext = (agent as any).createOperationContext("input message");
-      const options = { conversationId: "conv-1", userId: "user-1" } as any;
-      const prepared = await (agent as any).prepareTools([], operationContext, 7, options);
-
-      expect(mockHasSubAgents).toHaveBeenCalledTimes(1);
       expect(mockCreateDelegateTool).toHaveBeenCalledWith(
         expect.objectContaining({
           sourceAgent: agent,
-          currentHistoryEntryId: operationContext.operationId,
-          operationContext,
+          currentHistoryEntryId: expect.any(String),
+          operationContext: expect.objectContaining({ userId: "user-1", conversationId: "conv-1" }),
           maxSteps: 7,
           conversationId: "conv-1",
           userId: "user-1",
         }),
       );
-      expect(prepared["delegate-tool"]).toBeDefined();
-      expect(typeof prepared["delegate-tool"].execute).toBe("function");
-      expect(factorySpy).toHaveBeenCalledWith(operationContext, expect.any(Object));
-
-      factorySpy.mockRestore();
+      expect(prepared.delegate_task).toBeDefined();
+      expect(typeof prepared.delegate_task.execute).toBe("function");
+      mockCreateDelegateTool.mockRestore();
     });
 
     it("should resolve delegate tool identity from memory envelope", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
       });
 
-      const delegateTool = createTool({
-        name: "delegate-tool",
-        description: "Delegate tool",
-        parameters: z.object({}),
-        execute: vi.fn(),
-      });
-
-      const mockHasSubAgents = vi.fn().mockReturnValue(true);
-      const mockCreateDelegateTool = vi.fn().mockReturnValue(delegateTool);
-      (agent as any).subAgentManager = {
-        hasSubAgents: mockHasSubAgents,
-        createDelegateTool: mockCreateDelegateTool,
-      };
-
-      const operationContext = (agent as any).createOperationContext("input message");
+      agent.addSubAgent(
+        defineAgent({
+          name: "child",
+          instructions: "Help the supervisor",
+          model: mockModel as any,
+        }),
+      );
+      const mockCreateDelegateTool = vi.spyOn(SubAgentManager.prototype, "createDelegateTool");
       const options = {
         conversationId: "legacy-conv",
         userId: "legacy-user",
@@ -5612,7 +5569,7 @@ Use pandas and summarize findings.`.split("\n"),
           userId: "memory-user",
         },
       } as any;
-      await (agent as any).prepareTools([], operationContext, 7, options);
+      await captureRequest(agent, "input message", { ...options, maxSteps: 7 });
 
       expect(mockCreateDelegateTool).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -5620,35 +5577,27 @@ Use pandas and summarize findings.`.split("\n"),
           userId: "memory-user",
         }),
       );
+      mockCreateDelegateTool.mockRestore();
     });
 
     it("should include working memory tools produced at runtime", async () => {
-      const agent = new Agent({
+      const memory = new Memory({
+        storage: new InMemoryStorageAdapter(),
+        workingMemory: { enabled: true },
+      });
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
+        memory,
       });
 
-      const workingMemoryTool = createTool({
-        name: "get_working_memory",
-        description: "Working memory accessor",
-        parameters: z.object({}),
-        execute: vi.fn(),
+      const { tools: prepared } = await captureRequest(agent, "input message", {
+        memory: { userId: "user-2", conversationId: "conv-2" },
+        maxSteps: 4,
       });
-
-      const workingMemorySpy = vi
-        .spyOn(agent as any, "createWorkingMemoryTools")
-        .mockReturnValue([workingMemoryTool]);
-
-      const operationContext = (agent as any).createOperationContext("input message");
-      const options = { conversationId: "conv-2" } as any;
-      const prepared = await (agent as any).prepareTools([], operationContext, 4, options);
-
-      expect(workingMemorySpy).toHaveBeenCalledWith(options, operationContext);
       expect(prepared.get_working_memory).toBeDefined();
       expect(typeof prepared.get_working_memory.execute).toBe("function");
-
-      workingMemorySpy.mockRestore();
     });
 
     it("should disable working memory write tools when memory options are read-only", async () => {
@@ -5659,7 +5608,7 @@ Use pandas and summarize findings.`.split("\n"),
         },
       });
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -5675,9 +5624,8 @@ Use pandas and summarize findings.`.split("\n"),
           },
         },
       } as any;
-      const operationContext = (agent as any).createOperationContext("input message", options);
-      const runtimeTools = (agent as any).createWorkingMemoryTools(options, operationContext);
-      const toolNames = runtimeTools.map((tool: Tool<any, any>) => tool.name);
+      const { tools } = await captureRequest(agent, "input message", options);
+      const toolNames = Object.keys(tools ?? {});
 
       expect(toolNames).toContain("get_working_memory");
       expect(toolNames).not.toContain("update_working_memory");
@@ -5692,7 +5640,7 @@ Use pandas and summarize findings.`.split("\n"),
         },
       });
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -5719,44 +5667,40 @@ Use pandas and summarize findings.`.split("\n"),
           conversationId: "memory-conv",
         },
       } as any;
-      const operationContext = (agent as any).createOperationContext("input message", options);
-      const runtimeTools = (agent as any).createWorkingMemoryTools(options, operationContext);
-      const getWorkingMemoryTool = runtimeTools.find(
-        (tool: Tool<any, any>) => tool.name === "get_working_memory",
-      );
-      const updateWorkingMemoryTool = runtimeTools.find(
-        (tool: Tool<any, any>) => tool.name === "update_working_memory",
-      );
+      await captureRequest(agent, "input message", options, async ({ tools }) => {
+        const getWorkingMemoryTool = tools?.get_working_memory;
+        const updateWorkingMemoryTool = tools?.update_working_memory;
 
-      await updateWorkingMemoryTool?.execute?.(
-        {
-          content: "Preferred language: Turkish",
-          mode: "replace",
-        },
-        operationContext,
-      );
+        await updateWorkingMemoryTool?.execute?.(
+          {
+            content: "Preferred language: Turkish",
+            mode: "replace",
+          },
+          { toolCallId: "working-memory-update", messages: [] },
+        );
 
-      await expect(
-        memory.getWorkingMemory({
-          userId: "memory-user",
-          conversationId: "memory-conv",
-        }),
-      ).resolves.toBe("Preferred language: Turkish");
-      await expect(
-        memory.getWorkingMemory({
-          userId: "legacy-user",
-          conversationId: "legacy-conv",
-        }),
-      ).resolves.toBeNull();
-      await expect(getWorkingMemoryTool?.execute?.({}, operationContext)).resolves.toBe(
-        "Preferred language: Turkish",
-      );
+        await expect(
+          memory.getWorkingMemory({
+            userId: "memory-user",
+            conversationId: "memory-conv",
+          }),
+        ).resolves.toBe("Preferred language: Turkish");
+        await expect(
+          memory.getWorkingMemory({
+            userId: "legacy-user",
+            conversationId: "legacy-conv",
+          }),
+        ).resolves.toBeNull();
+        await expect(
+          getWorkingMemoryTool?.execute?.({}, { toolCallId: "working-memory-read", messages: [] }),
+        ).resolves.toBe("Preferred language: Turkish");
+      });
     });
   });
 
   describe("Utility Methods", () => {
     it("should get model name", () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -5766,7 +5710,7 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("should get model name from fallback list", () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: [{ model: mockModel as any }, { model: "mock/secondary" }],
@@ -5776,7 +5720,7 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("should unregister agent", () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -5787,7 +5731,7 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("should get manager instances", () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -5799,7 +5743,7 @@ Use pandas and summarize findings.`.split("\n"),
 
     it("should check telemetry configuration", () => {
       // Without VoltOpsClient, should return false
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -5814,7 +5758,7 @@ Use pandas and summarize findings.`.split("\n"),
         createPromptHelper: () => undefined, // Mock method
       };
 
-      const agentWithVoltOps = new Agent({
+      const agentWithVoltOps = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -5832,7 +5776,7 @@ Use pandas and summarize findings.`.split("\n"),
         execute: async ({ data }) => data,
       });
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -5847,7 +5791,7 @@ Use pandas and summarize findings.`.split("\n"),
 
   describe("Edge Cases", () => {
     it("should handle empty messages", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -5879,7 +5823,7 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("should handle very long messages", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -5913,7 +5857,7 @@ Use pandas and summarize findings.`.split("\n"),
     });
 
     it("should handle concurrent calls", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -5974,105 +5918,97 @@ Use pandas and summarize findings.`.split("\n"),
         ],
       };
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Base instructions",
         model: mockModel as any,
         toolkits: [toolkit],
       });
 
-      const operationContext = (agent as any).createOperationContext("test");
-      const enriched = await (agent as any).enrichInstructions(
-        "Base content",
-        null,
-        null,
-        operationContext,
-      );
+      const enriched = await captureInstructions(agent);
 
-      expect(enriched).toContain("Base content");
+      expect(enriched).toContain("Base instructions");
       expect(enriched).toContain("Toolkit specific instructions");
     });
 
     it("should add markdown instruction when markdown is enabled", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Base instructions",
         model: mockModel as any,
         markdown: true,
       });
 
-      const operationContext = (agent as any).createOperationContext("test");
-      const enriched = await (agent as any).enrichInstructions(
-        "Base content",
-        null,
-        null,
-        operationContext,
-      );
+      const enriched = await captureInstructions(agent);
 
-      expect(enriched).toContain("Base content");
+      expect(enriched).toContain("Base instructions");
       expect(enriched).toContain("Use markdown to format your answers");
     });
 
     it("should add retriever context when provided", async () => {
-      const agent = new Agent({
+      const retrieverContext = "This is relevant context from retriever";
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Base instructions",
         model: mockModel as any,
+        retriever: {
+          tool: { name: "test-retriever" },
+          retrieve: vi.fn().mockResolvedValue(retrieverContext),
+        } as any,
       });
 
-      const operationContext = (agent as any).createOperationContext("test");
-      const retrieverContext = "This is relevant context from retriever";
-      const enriched = await (agent as any).enrichInstructions(
-        "Base content",
-        retrieverContext,
-        null,
-        operationContext,
-      );
+      const enriched = await captureInstructions(agent);
 
-      expect(enriched).toContain("Base content");
+      expect(enriched).toContain("Base instructions");
       expect(enriched).toContain("Relevant Context:");
       expect(enriched).toContain(retrieverContext);
     });
 
     it("should add working memory context when provided", async () => {
-      const agent = new Agent({
+      const memory = new Memory({
+        storage: new InMemoryStorageAdapter(),
+        workingMemory: { enabled: true, scope: "user" },
+      });
+      await memory.updateWorkingMemory({
+        userId: "working-memory-user",
+        content: "Working memory: Recent important info",
+      });
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Base instructions",
         model: mockModel as any,
+        memory,
       });
 
-      const operationContext = (agent as any).createOperationContext("test");
-      const workingMemoryContext = "\n\nWorking memory: Recent important info";
-      const enriched = await (agent as any).enrichInstructions(
-        "Base content",
-        null,
-        workingMemoryContext,
-        operationContext,
-      );
+      const enriched = await captureInstructions(agent, "test", {
+        memory: { userId: "working-memory-user" },
+      });
 
-      expect(enriched).toContain("Base content");
+      expect(enriched).toContain("Base instructions");
       expect(enriched).toContain("Working memory: Recent important info");
     });
 
     it("should handle all null contexts gracefully", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Base instructions",
         model: mockModel as any,
       });
 
-      const operationContext = (agent as any).createOperationContext("test");
-      const enriched = await (agent as any).enrichInstructions(
-        "Base content",
-        null,
-        null,
-        operationContext,
-      );
+      const enriched = await captureInstructions(agent);
 
-      expect(enriched).toBe("Base content");
+      expect(enriched).toBe("Base instructions");
     });
 
     it("should combine multiple enrichments correctly", async () => {
+      const memory = new Memory({
+        storage: new InMemoryStorageAdapter(),
+        workingMemory: { enabled: true, scope: "user" },
+      });
+      await memory.updateWorkingMemory({
+        userId: "working-memory-user",
+        content: "Working memory context",
+      });
       const toolkit = {
         name: "test-toolkit",
         addInstructions: true,
@@ -6087,24 +6023,25 @@ Use pandas and summarize findings.`.split("\n"),
         ],
       };
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Base instructions",
         model: mockModel as any,
         toolkits: [toolkit],
         markdown: true,
+        memory,
+        retriever: {
+          tool: { name: "test-retriever" },
+          retrieve: vi.fn().mockResolvedValue("Retriever context"),
+        } as any,
       });
 
-      const operationContext = (agent as any).createOperationContext("test");
-      const enriched = await (agent as any).enrichInstructions(
-        "Base content",
-        "Retriever context",
-        "\n\nWorking memory context",
-        operationContext,
-      );
+      const enriched = await captureInstructions(agent, "test", {
+        memory: { userId: "working-memory-user" },
+      });
 
       // Verify all components are present
-      expect(enriched).toContain("Base content");
+      expect(enriched).toContain("Base instructions");
       expect(enriched).toContain("Toolkit instructions");
       expect(enriched).toContain("Use markdown to format your answers");
       expect(enriched).toContain("Relevant Context:");
@@ -6135,7 +6072,7 @@ Use pandas and summarize findings.`.split("\n"),
         ],
       };
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Base instructions",
         model: mockModel as any,
@@ -6156,89 +6093,62 @@ Use pandas and summarize findings.`.split("\n"),
         ],
       };
 
-      const operationContext = (agent as any).createOperationContext("test");
-      const enriched = await (agent as any).enrichInstructions(
-        "Base content",
-        null,
-        null,
-        operationContext,
-        [runtimeToolkit],
-      );
+      const enriched = await captureInstructions(agent, "test", { tools: [runtimeToolkit] });
 
-      expect(enriched).toContain("Base content");
+      expect(enriched).toContain("Base instructions");
       expect(enriched).toContain("Runtime toolkit instructions");
       expect(enriched).not.toContain("Static toolkit instructions");
     });
 
     it("should add supervisor instructions when sub-agents are present", async () => {
-      const subAgent = new Agent({
+      const subAgent = defineAgent({
         name: "SubAgent",
         instructions: "Sub agent instructions",
         model: mockModel as any,
       });
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "SupervisorAgent",
         instructions: "Supervisor instructions",
         model: mockModel as any,
-        agents: [subAgent],
+        subAgents: [subAgent],
       });
 
-      const operationContext = (agent as any).createOperationContext("test");
-
-      // Mock prepareAgentsMemory to avoid complex setup
-      vi.spyOn(agent as any, "prepareAgentsMemory").mockResolvedValue("Agents memory");
-
-      const enriched = await (agent as any).enrichInstructions(
-        "Base content",
-        null,
-        null,
-        operationContext,
-      );
-
-      // Should contain supervisor-related content
-      expect(enriched).toContain("Base content");
-      // The supervisor message would be added by subAgentManager.generateSupervisorSystemMessage
+      const enriched = await captureInstructions(agent);
+      expect(enriched).toContain("Supervisor instructions");
+      expect(enriched).toContain("SubAgent");
     });
 
     it("should handle empty base content", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
-        instructions: "Base instructions",
+        instructions: "",
         model: mockModel as any,
         markdown: true,
+        retriever: {
+          tool: { name: "test-retriever" },
+          retrieve: vi.fn().mockResolvedValue("Retriever context"),
+        } as any,
       });
 
-      const operationContext = (agent as any).createOperationContext("test");
-      const enriched = await (agent as any).enrichInstructions(
-        "",
-        "Retriever context",
-        null,
-        operationContext,
-      );
+      const enriched = await captureInstructions(agent);
 
       expect(enriched).toContain("Use markdown to format your answers");
       expect(enriched).toContain("Retriever context");
     });
 
     it("should preserve content when no enrichments are needed", async () => {
-      const agent = new Agent({
+      const originalContent = "This is the original untouched content";
+      const agent = defineAgent({
         name: "TestAgent",
-        instructions: "Base instructions",
+        instructions: originalContent,
         model: mockModel as any,
         markdown: false, // No markdown
         toolkits: [], // No toolkits
         // No sub-agents by default
       });
 
-      const operationContext = (agent as any).createOperationContext("test");
-      const originalContent = "This is the original untouched content";
-      const enriched = await (agent as any).enrichInstructions(
-        originalContent,
-        null, // No retriever context
-        null, // No working memory
-        operationContext,
-      );
+      const enriched = await captureInstructions(agent);
 
       expect(enriched).toBe(originalContent);
     });
@@ -6246,7 +6156,7 @@ Use pandas and summarize findings.`.split("\n"),
 
   describe("getSystemMessage integration", () => {
     it("should use enrichInstructions for text prompt type", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: {
           type: "text" as const,
@@ -6256,73 +6166,29 @@ Use pandas and summarize findings.`.split("\n"),
         markdown: true,
       });
 
-      const operationContext = (agent as any).createOperationContext("test");
-
-      // Spy on enrichInstructions to verify it's called
-      const enrichSpy = vi.spyOn(agent as any, "enrichInstructions");
-
-      const systemMessage = await (agent as any).getSystemMessage(
-        "user input",
-        operationContext,
-        {},
-      );
-
-      expect(enrichSpy).toHaveBeenCalledOnce();
-      expect(enrichSpy).toHaveBeenCalledWith(
-        "Text prompt instructions",
-        null,
-        null,
-        operationContext,
-        [],
-      );
-
-      expect(systemMessage).toMatchObject({
-        role: "system",
-      });
-      expect(systemMessage.content).toContain("Text prompt instructions");
-      expect(systemMessage.content).toContain("Use markdown to format your answers");
+      const instructions = await captureInstructions(agent);
+      expect(instructions).toContain("Text prompt instructions");
+      expect(instructions).toContain("Use markdown to format your answers");
     });
 
     it("should use enrichInstructions for default string instructions", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "String instructions",
         model: mockModel as any,
         markdown: true,
       });
 
-      const operationContext = (agent as any).createOperationContext("test");
-
-      // Spy on enrichInstructions to verify it's called
-      const enrichSpy = vi.spyOn(agent as any, "enrichInstructions");
-
-      const systemMessage = await (agent as any).getSystemMessage(
-        "user input",
-        operationContext,
-        {},
-      );
-
-      expect(enrichSpy).toHaveBeenCalledOnce();
-      expect(enrichSpy).toHaveBeenCalledWith(
-        "String instructions",
-        null,
-        null,
-        operationContext,
-        [],
-      );
-
-      expect(systemMessage).toMatchObject({
-        role: "system",
-      });
-      expect(systemMessage.content).toContain("String instructions");
-      expect(systemMessage.content).toContain("Use markdown to format your answers");
+      const instructions = await captureInstructions(agent);
+      expect(instructions).toContain("String instructions");
+      expect(instructions).toContain("Use markdown to format your answers");
     });
 
     it("should produce identical output for text type and string with same content", async () => {
       const instructionContent = "Same instructions for both";
 
       // Agent with text type prompt
-      const textAgent = new Agent({
+      const textAgent = defineAgent({
         name: "TestAgent",
         instructions: {
           type: "text" as const,
@@ -6333,34 +6199,18 @@ Use pandas and summarize findings.`.split("\n"),
       });
 
       // Agent with string instructions
-      const stringAgent = new Agent({
+      const stringAgent = defineAgent({
         name: "TestAgent",
         instructions: instructionContent,
         model: mockModel as any,
         markdown: true,
       });
 
-      const textContext = (textAgent as any).createOperationContext("test");
-      const stringContext = (stringAgent as any).createOperationContext("test");
-
-      const textSystemMessage = await (textAgent as any).getSystemMessage(
-        "user input",
-        textContext,
-        {},
-      );
-
-      const stringSystemMessage = await (stringAgent as any).getSystemMessage(
-        "user input",
-        stringContext,
-        {},
-      );
-
-      // Both should produce identical system messages
-      expect(textSystemMessage.content).toBe(stringSystemMessage.content);
+      expect(await captureInstructions(textAgent)).toBe(await captureInstructions(stringAgent));
     });
 
     it("should handle chat type prompts without using enrichInstructions", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: {
           type: "chat" as const,
@@ -6373,37 +6223,39 @@ Use pandas and summarize findings.`.split("\n"),
         model: mockModel as any,
       });
 
-      const operationContext = (agent as any).createOperationContext("test");
-
-      // Spy on enrichInstructions to verify it's NOT called for chat type
-      const enrichSpy = vi.spyOn(agent as any, "enrichInstructions");
-
-      const systemMessages = await (agent as any).getSystemMessage(
-        "user input",
-        operationContext,
-        {},
+      const request = await captureRequest(agent);
+      expect(getInstructionMessages(request)).toEqual([
+        { role: "system", content: "You are a helpful assistant" },
+      ]);
+      expect(request.messages).toEqual(
+        expect.arrayContaining([
+          {
+            role: "user",
+            content: expect.arrayContaining([
+              expect.objectContaining({ type: "text", text: "Example user message" }),
+            ]),
+          },
+          {
+            role: "assistant",
+            content: expect.arrayContaining([
+              expect.objectContaining({ type: "text", text: "Example response" }),
+            ]),
+          },
+        ]),
       );
-
-      expect(enrichSpy).not.toHaveBeenCalled();
-      expect(Array.isArray(systemMessages)).toBe(true);
-      expect(systemMessages).toHaveLength(3);
-      expect(systemMessages[0].role).toBe("system");
-      expect(systemMessages[0].content).toBe("You are a helpful assistant");
     });
 
     it("should handle dynamic instructions correctly", async () => {
       const dynamicFn = vi.fn().mockResolvedValue("Dynamic content");
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: dynamicFn,
         model: mockModel as any,
         markdown: true,
       });
 
-      const operationContext = (agent as any).createOperationContext("test");
-
-      const systemMessage = await (agent as any).getSystemMessage("user input", operationContext, {
+      const instructions = await captureInstructions(agent, "user input", {
         context: { testData: "test" },
       });
 
@@ -6413,11 +6265,8 @@ Use pandas and summarize findings.`.split("\n"),
       expect(callArg).toHaveProperty("context");
       expect(callArg).toHaveProperty("prompts");
 
-      expect(systemMessage).toMatchObject({
-        role: "system",
-      });
-      expect(systemMessage.content).toContain("Dynamic content");
-      expect(systemMessage.content).toContain("Use markdown to format your answers");
+      expect(instructions).toContain("Dynamic content");
+      expect(instructions).toContain("Use markdown to format your answers");
     });
 
     it("should expose request headers to dynamic model, tools, and instructions", async () => {
@@ -6429,7 +6278,7 @@ Use pandas and summarize findings.`.split("\n"),
       const dynamicModel = vi.fn().mockResolvedValue(mockModel as any);
       const dynamicTools = vi.fn().mockResolvedValue([]);
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: dynamicInstructions,
         model: dynamicModel,
@@ -6473,31 +6322,21 @@ Use pandas and summarize findings.`.split("\n"),
       // Create mock retriever
       const mockRetriever = {
         retrieve: vi.fn().mockResolvedValue("Retrieved context for query"),
+        tool: { name: "test-retriever" },
       };
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Base instructions",
         model: mockModel as any,
         retriever: mockRetriever as any,
       });
 
-      const operationContext = (agent as any).createOperationContext("test query");
-
-      // Mock getRetrieverContext to return specific context
-      vi.spyOn(agent as any, "getRetrieverContext").mockResolvedValue(
-        "Retrieved context for query",
-      );
-
-      const systemMessage = await (agent as any).getSystemMessage(
-        "test query",
-        operationContext,
-        {},
-      );
-
-      expect(systemMessage.content).toContain("Base instructions");
-      expect(systemMessage.content).toContain("Relevant Context:");
-      expect(systemMessage.content).toContain("Retrieved context for query");
+      const instructions = await captureInstructions(agent, "test query");
+      expect(mockRetriever.retrieve).toHaveBeenCalledOnce();
+      expect(instructions).toContain("Base instructions");
+      expect(instructions).toContain("Relevant Context:");
+      expect(instructions).toContain("Retrieved context for query");
     });
 
     it("should include user-scoped working memory when conversationId is not set", async () => {
@@ -6514,30 +6353,21 @@ Use pandas and summarize findings.`.split("\n"),
         content: "Preferred language: Turkish",
       });
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Base instructions",
         model: mockModel as any,
         memory,
       });
 
-      const operationContext = (agent as any).createOperationContext("user input", {
+      const instructions = await captureInstructions(agent, "user input", {
         memory: {
           userId: "user-1",
         },
       });
 
-      const systemMessage = await (agent as any).getSystemMessage("user input", operationContext, {
-        memory: {
-          userId: "user-1",
-        },
-      });
-
-      expect(systemMessage).toMatchObject({
-        role: "system",
-      });
-      expect(systemMessage.content).toContain("<current_context>");
-      expect(systemMessage.content).toContain("Preferred language: Turkish");
+      expect(instructions).toContain("<current_context>");
+      expect(instructions).toContain("Preferred language: Turkish");
     });
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { Agent } from "./agent";
+import { type Agent, defineAgent } from "./agent";
 import { createMockLanguageModel, defaultMockResponse } from "./test-utils";
 
 describe("prepareStep", () => {
@@ -7,7 +7,7 @@ describe("prepareStep", () => {
     const prepareStep = vi.fn(() => ({}));
     const model = createMockLanguageModel();
 
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "test-agent",
       instructions: "test",
       model,
@@ -20,7 +20,7 @@ describe("prepareStep", () => {
   it("should default to undefined when prepareStep is not provided", () => {
     const model = createMockLanguageModel();
 
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "test-agent",
       instructions: "test",
       model,
@@ -38,7 +38,7 @@ describe("prepareStep", () => {
       },
     });
 
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "test-agent",
       instructions: "test",
       model,
@@ -55,7 +55,7 @@ describe("prepareStep", () => {
     const prepareStep = vi.fn(() => ({}));
     const model = createMockLanguageModel();
 
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "test-agent",
       instructions: "test",
       model,
@@ -81,7 +81,7 @@ describe("prepareStep", () => {
       },
     });
 
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "test-agent",
       instructions: "test",
       model,
@@ -102,7 +102,7 @@ describe("prepareStep", () => {
     const callPrepareStep = vi.fn(() => ({}));
     const model = createMockLanguageModel();
 
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "test-agent",
       instructions: "test",
       model,

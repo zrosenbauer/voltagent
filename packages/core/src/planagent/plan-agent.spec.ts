@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createMockLanguageModel } from "../agent/test-utils";
-import { PlanAgent } from "./plan-agent";
+import { type PlanAgent, definePlanAgent } from "./plan-agent";
 
 const expectedTools = [
   "write_todos",
@@ -17,7 +17,7 @@ const basePromptSnippet =
 
 describe("PlanAgent", () => {
   it("registers planning, filesystem, and task tools by default", () => {
-    const agent = new PlanAgent({
+    const agent = definePlanAgent({
       name: "plan-agent-test",
       model: createMockLanguageModel(),
     });
@@ -29,7 +29,7 @@ describe("PlanAgent", () => {
   });
 
   it("omits task tool when disabled and no subagents", () => {
-    const agent = new PlanAgent({
+    const agent = definePlanAgent({
       name: "plan-agent-no-task",
       model: createMockLanguageModel(),
       generalPurposeAgent: false,
@@ -42,7 +42,7 @@ describe("PlanAgent", () => {
 
   it("resolves dynamic systemPrompt with base and extension prompts", async () => {
     const extensionPrompt = "Extra system prompt.";
-    const agent = new PlanAgent({
+    const agent = definePlanAgent({
       name: "plan-agent-dynamic",
       model: createMockLanguageModel(),
       systemPrompt: ({ context }) => `Tenant: ${context.get("tenant")}`,
@@ -79,7 +79,7 @@ describe("PlanAgent", () => {
 
   it("appends base prompt to dynamic chat system messages", async () => {
     const extensionPrompt = "Extra system prompt.";
-    const agent = new PlanAgent({
+    const agent = definePlanAgent({
       name: "plan-agent-dynamic-chat",
       model: createMockLanguageModel(),
       systemPrompt: async () => ({

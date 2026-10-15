@@ -3,7 +3,7 @@ import { Output, tool } from "ai";
 import { MockLanguageModelV4 } from "ai/test";
 import { describe, expectTypeOf, it } from "vitest";
 import { z } from "zod";
-import { Agent, type GenerateTextOptions, type StreamTextOptions } from "./agent";
+import { type GenerateTextOptions, type StreamTextOptions, defineAgent } from "./agent";
 
 const model = new MockLanguageModelV4();
 const messages: ModelMessage[] = [{ role: "user", content: "hello" }];
@@ -27,7 +27,7 @@ type Stream = StreamTextOptions<
 
 describe("native call input types", () => {
   it("accepts model overrides and message prompts without losing inference", async () => {
-    const agent = new Agent({ name: "typed", instructions: "Help", model, tools });
+    const agent = defineAgent({ name: "typed", instructions: "Help", model, tools });
     const result = await agent.generateText({
       model,
       prompt: messages,
@@ -67,7 +67,7 @@ describe("native call input types", () => {
   });
 
   it("rejects stream-only options on generateText", async () => {
-    const agent = new Agent({ name: "methods", instructions: "Help", model });
+    const agent = defineAgent({ name: "methods", instructions: "Help", model });
     // @ts-expect-error - chunk callbacks require streaming
     await agent.generateText({ prompt: "hi", onChunk: () => {} });
     // @ts-expect-error - stream error callbacks require streaming

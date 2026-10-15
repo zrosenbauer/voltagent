@@ -159,6 +159,7 @@ import {
   replayableStream,
 } from "./streaming/stream-result";
 import { coerceStringifiedJsonToolArgs } from "./tool-input-coercion";
+import { extractUserQuery as agentExtractUserQuery } from "./user-query";
 export type { AgentHooks } from "./hooks";
 export type {
   RuntimeMemoryBehaviorOptions,
@@ -186,8 +187,6 @@ import { ConversationBuffer } from "./conversation-buffer";
 import {
   createFeedbackHandle as createFeedbackHandleHelper,
   findFeedbackMessageId as findFeedbackMessageIdHelper,
-  isFeedbackProvided as isFeedbackProvidedHelper,
-  isMessageFeedbackProvided as isMessageFeedbackProvidedHelper,
   markFeedbackProvided as markFeedbackProvidedHelper,
 } from "./feedback";
 import {
@@ -1628,9 +1627,8 @@ function addAgentToolInputToManager(manager: ToolManager, input: AgentToolInput 
 // Agent Implementation
 // ============================================================================
 
-export class Agent<
+export interface Agent<
   AGENT_TOOLS extends ToolSet = ToolSet,
-  // A bare Agent reference erases its schema for registry, server, and workflow boundaries.
   CONTEXT_SCHEMA extends AgentContextSchema = any,
 > {
   readonly id: string;
@@ -1651,192 +1649,137 @@ export class Agent<
   readonly voice?: Voice;
   readonly retriever?: BaseRetriever;
   readonly supervisorConfig?: SupervisorConfig;
-  private readonly context?: Map<string | symbol, unknown>;
+  generateText<
+    OUTPUT extends OutputSpec = ReturnType<typeof Output.text>,
+    TProviderOptions extends ProviderOptions = ProviderOptions,
+    TOOLS extends ToolSet = AGENT_TOOLS,
+    RUNTIME_CONTEXT extends AISDKContext = AISDKContext,
+  >(
+    input: string | UIMessage[] | BaseMessage[],
+    ...options: TextGenerationOptionsArgs<
+      GenerateTextOptions<OUTPUT, TProviderOptions, TOOLS, RUNTIME_CONTEXT, CONTEXT_SCHEMA>
+    >
+  ): Promise<
+    GenerateTextResultWithContext<TOOLS, OUTPUT, RUNTIME_CONTEXT, AgentContext<CONTEXT_SCHEMA>>
+  >;
+  generateText<
+    OUTPUT extends OutputSpec = ReturnType<typeof Output.text>,
+    TProviderOptions extends ProviderOptions = ProviderOptions,
+    TOOLS extends ToolSet = AGENT_TOOLS,
+    RUNTIME_CONTEXT extends AISDKContext = AISDKContext,
+  >(
+    request: GenerateTextRequest<OUTPUT, TProviderOptions, TOOLS, RUNTIME_CONTEXT, CONTEXT_SCHEMA>,
+  ): Promise<
+    GenerateTextResultWithContext<TOOLS, OUTPUT, RUNTIME_CONTEXT, AgentContext<CONTEXT_SCHEMA>>
+  >;
+  streamText<
+    TProviderOptions extends ProviderOptions = ProviderOptions,
+    TOOLS extends ToolSet = AGENT_TOOLS,
+    RUNTIME_CONTEXT extends AISDKContext = AISDKContext,
+    OUTPUT extends OutputSpec = ReturnType<typeof Output.text>,
+  >(
+    input: string | UIMessage[] | BaseMessage[],
+    ...options: TextGenerationOptionsArgs<
+      StreamTextOptions<TProviderOptions, TOOLS, RUNTIME_CONTEXT, OUTPUT, CONTEXT_SCHEMA>
+    >
+  ): Promise<
+    StreamTextResultWithContext<TOOLS, OUTPUT, RUNTIME_CONTEXT, AgentContext<CONTEXT_SCHEMA>>
+  >;
+  streamText<
+    TProviderOptions extends ProviderOptions = ProviderOptions,
+    TOOLS extends ToolSet = AGENT_TOOLS,
+    RUNTIME_CONTEXT extends AISDKContext = AISDKContext,
+    OUTPUT extends OutputSpec = ReturnType<typeof Output.text>,
+  >(
+    request: StreamTextRequest<TProviderOptions, TOOLS, RUNTIME_CONTEXT, OUTPUT, CONTEXT_SCHEMA>,
+  ): Promise<
+    StreamTextResultWithContext<TOOLS, OUTPUT, RUNTIME_CONTEXT, AgentContext<CONTEXT_SCHEMA>>
+  >;
+  generateObject<T extends z.ZodType, TProviderOptions extends ProviderOptions = ProviderOptions>(
+    originalInput: string | UIMessage[] | BaseMessage[],
+    schema: T,
+    ...rawOptions: TextGenerationOptionsArgs<
+      GenerateObjectOptions<TProviderOptions, CONTEXT_SCHEMA>
+    >
+  ): Promise<GenerateObjectResultWithContext<z.infer<T>, AgentContext<CONTEXT_SCHEMA>>>;
+  streamObject<T extends z.ZodType, TProviderOptions extends ProviderOptions = ProviderOptions>(
+    originalInput: string | UIMessage[] | BaseMessage[],
+    schema: T,
+    ...rawOptions: TextGenerationOptionsArgs<StreamObjectOptions<TProviderOptions, CONTEXT_SCHEMA>>
+  ): Promise<StreamObjectResultWithContext<z.infer<T>, AgentContext<CONTEXT_SCHEMA>>>;
+  getModelName(model?: LanguageModel | string): string;
+  getFullState(): AgentFullState;
+  addTools(tools: AgentToolInput): {
+    added: AgentToolInput;
+  };
+  removeTools(toolNames: string[]): { removed: string[] };
+  removeToolkit(toolkitName: string): boolean;
+  addSubAgent(agentConfig: SubAgentConfig): void;
+  removeSubAgent(agentId: string): void;
+  getTools(): Array<Tool<any, any> | ProviderTool | NamedAiSdkTool>;
+  getToolsForApi(): ApiToolInfo[];
+  getSubAgents(): SubAgentConfig[];
+  unregister(): void;
+  isTelemetryConfigured(): boolean;
+  markFeedbackProvided(
+    input: AgentMarkFeedbackProvidedInput,
+  ): Promise<AgentFeedbackMetadata | null>;
+  getMemoryManager(): MemoryManager;
+  getToolManager(): ToolManager;
+  getWorkspace(): Workspace | undefined;
+  getMemory(): Memory | false | undefined;
+  __setDefaultMemory(memory: Memory): void;
+  __setDefaultConversationPersistence(
+    conversationPersistence: AgentConversationPersistenceOptions,
+  ): void;
+  __setDefaultWorkspace(workspace: Workspace): void;
+  __setDefaultToolRouting(toolRouting?: ToolRoutingConfig): void;
+  toTool(options?: {
+    name?: string;
+    description?: string;
+    parametersSchema?: z.ZodObject<any>;
+    context?: AgentContextInput<CONTEXT_SCHEMA>;
+  }): Tool<any, any>;
+}
 
-  private readonly logger: Logger;
-  private readonly memoryManager: MemoryManager;
-  private readonly memory?: Memory | false;
-  private readonly memoryConfigured: boolean;
-  private readonly summarization?: AgentSummarizationOptions | false;
-  private conversationPersistence: ResolvedConversationPersistenceOptions;
-  private readonly messageMetadataPersistence: ResolvedMessageMetadataPersistenceOptions;
-  private conversationPersistenceConfigured: boolean;
-  private workspace?: Workspace;
-  private readonly workspaceConfigured: boolean;
-  private readonly workspaceToolkitOptions: AgentOptions["workspaceToolkits"];
-  private readonly workspaceSkillsPromptOption: AgentOptions["workspaceSkillsPrompt"];
-  private readonly configuredHooks?: AgentHooks;
-  private readonly maxStepsConfigured: boolean;
-  private defaultObservability?: VoltAgentObservability;
-  private readonly toolManager: ToolManager;
-  private readonly toolPoolManager: ToolManager;
-  private readonly subAgentManager: SubAgentManager;
-  private readonly voltOpsClient?: VoltOpsClient;
-  private readonly prompts?: PromptHelper;
-  private readonly evalConfig?: AgentEvalConfig;
-  private readonly feedbackOptions?: AgentFeedbackOptions | boolean;
-  private readonly inputGuardrails: NormalizedInputGuardrail[];
-  private readonly outputGuardrails: NormalizedOutputGuardrail[];
-  private readonly inputMiddlewares: NormalizedInputMiddleware[];
-  private readonly outputMiddlewares: NormalizedOutputMiddleware[];
-  private readonly maxMiddlewareRetries: number;
-  private readonly observabilityAuthWarningState: ObservabilityFlushState = {
+/** Defines an agent with factory-owned state and bound execution methods. */
+export function defineAgent<
+  AGENT_TOOLS extends ToolSet = ToolSet,
+  CONTEXT_SCHEMA extends AgentContextSchema = AgentContextSchema,
+>(typedOptions: AgentOptions<AGENT_TOOLS, CONTEXT_SCHEMA>): Agent<AGENT_TOOLS, CONTEXT_SCHEMA> {
+  let stateHooks: AgentHooks;
+  let stateMaxSteps: number;
+  let stateConversationPersistence: ResolvedConversationPersistenceOptions;
+  let stateWorkspace: Workspace | undefined;
+  let stateDefaultObservability: VoltAgentObservability | undefined;
+  const stateObservabilityAuthWarningState: ObservabilityFlushState = {
     authWarningLogged: false,
   };
-  private toolRouting?: ToolRoutingConfig | false;
-  private toolRoutingConfigured: boolean;
-  private toolRoutingExposedNames: Set<string> = new Set();
-  private toolRoutingPoolExplicit = false;
-  private toolRoutingSearchStrategy?: ToolSearchStrategy;
-
-  private readonly contextSchema?: AgentContextSchema;
-
-  constructor(typedOptions: AgentOptions<AGENT_TOOLS, CONTEXT_SCHEMA>) {
-    // The registry/runtime boundary is schema-erased; public callbacks keep inferred types.
-    const options = typedOptions as unknown as AgentOptions<AGENT_TOOLS>;
-    this.contextSchema = options.contextSchema;
-    this.id = options.id || options.name;
-    this.name = options.name;
-    this.purpose = options.purpose;
-    this.instructions = options.instructions;
-    this.model = options.model;
-    this.dynamicTools = typeof options.tools === "function" ? options.tools : undefined;
-    this.workspaceConfigured = options.workspace !== undefined;
-    this.workspaceToolkitOptions = options.workspaceToolkits;
-    this.workspaceSkillsPromptOption = options.workspaceSkillsPrompt;
-    this.configuredHooks = options.hooks;
-    this.maxStepsConfigured = options.maxSteps !== undefined;
-    const globalWorkspace = AgentRegistry.getInstance().getGlobalWorkspace();
-    const workspaceOption = options.workspace === undefined ? globalWorkspace : options.workspace;
-    this.workspace = resolveWorkspace(workspaceOption);
-    const onPrepareMessages = resolveWorkspaceSkillsPromptHook(this.workspace, options);
-    this.hooks = onPrepareMessages
-      ? { ...(options.hooks || {}), onPrepareMessages }
-      : options.hooks || {};
-    this.temperature = options.temperature;
-    this.maxOutputTokens = options.maxOutputTokens;
-    const defaultMaxSteps = this.workspace ? 100 : 5;
-    this.maxSteps = options.maxSteps ?? defaultMaxSteps;
-    this.maxRetries = options.maxRetries ?? DEFAULT_LLM_MAX_RETRIES;
-    this.stopWhen = options.stopWhen;
-    this.prepareStep = options.prepareStep;
-    this.markdown = options.markdown ?? false;
-    this.inheritParentSpan = options.inheritParentSpan ?? true;
-    this.voice = options.voice;
-    this.retriever = options.retriever;
-    this.supervisorConfig = options.supervisorConfig;
-    this.context = toContextMap(options.context);
-    this.voltOpsClient = options.voltOpsClient;
-    this.evalConfig = options.eval;
-    this.feedbackOptions = options.feedback;
-    this.inputGuardrails = normalizeInputGuardrailList(options.inputGuardrails || []);
-    this.outputGuardrails = normalizeOutputGuardrailList(options.outputGuardrails || []);
-    this.inputMiddlewares = normalizeInputMiddlewareList(options.inputMiddlewares || []);
-    this.outputMiddlewares = normalizeOutputMiddlewareList(options.outputMiddlewares || []);
-    this.maxMiddlewareRetries = options.maxMiddlewareRetries ?? 0;
-    this.toolRoutingConfigured = options.toolRouting !== undefined;
-    this.toolRouting = options.toolRouting ?? AgentRegistry.getInstance().getGlobalToolRouting();
-
-    // Initialize logger - always use LoggerProxy for consistency
-    // If external logger is provided, it will be used by LoggerProxy
-    this.logger = new LoggerProxy(
-      {
-        component: "agent",
-        agentId: this.id,
-        modelName: this.getModelName(),
-      },
-      options.logger,
-    );
-
-    // Allow standalone Agent usage (without VoltAgent wrapper) to initialize
-    // remote observability processors that depend on the global VoltOps client.
-    if (this.voltOpsClient && !AgentRegistry.getInstance().getGlobalVoltOpsClient()) {
-      AgentRegistry.getInstance().setGlobalVoltOpsClient(this.voltOpsClient);
-    }
-
-    // Log agent creation
-    this.logger.debug(`Agent created: ${this.name}`, {
-      event: LogEvents.AGENT_CREATED,
-      agentId: this.id,
-      model: this.getModelName(),
-      hasTools: !!options.tools,
-      hasMemory: options.memory !== false,
-      hasSubAgents: !!(options.subAgents && options.subAgents.length > 0),
-    });
-
-    // Store Memory
-    this.memoryConfigured = options.memory !== undefined;
-    this.memory = options.memory;
-    this.summarization = options.summarization;
-    this.conversationPersistenceConfigured = options.conversationPersistence !== undefined;
-    this.conversationPersistence = this.normalizeConversationPersistenceOptions(
-      options.conversationPersistence,
-    );
-    this.messageMetadataPersistence = this.normalizeMessageMetadataPersistenceOptions(
-      options.messageMetadataPersistence,
-    );
-    // workspace resolved above to set default maxSteps
-
-    // Initialize memory manager
-    const resolvedMemory = this.memoryConfigured
-      ? options.memory
-      : AgentRegistry.getInstance().getGlobalAgentMemory();
-    const titleGenerator = this.createConversationTitleGenerator(
-      resolvedMemory instanceof Memory ? resolvedMemory : undefined,
-    );
-    this.memoryManager = new MemoryManager(
-      this.id,
-      resolvedMemory,
-      {},
-      this.logger,
-      titleGenerator,
-    );
-
-    const workspaceToolkits = buildWorkspaceToolkits(this.workspace, options.workspaceToolkits);
-
-    // Initialize tool manager with static tools
-    const staticTools = typeof options.tools === "function" ? undefined : options.tools;
-    this.toolManager = new ToolManager([], this.logger);
-    addAgentToolInputToManager(this.toolManager, staticTools);
-    if (options.toolkits) {
-      this.toolManager.addItems(options.toolkits);
-    }
-    if (workspaceToolkits.length > 0) {
-      this.toolManager.addItems(workspaceToolkits);
-    }
-    this.toolPoolManager = new ToolManager([], this.logger);
-    this.applyToolRoutingConfig(this.toolRouting);
-
-    // Initialize sub-agent manager
-    this.subAgentManager = new SubAgentManager(
-      this.name,
-      options.subAgents || [],
-      this.supervisorConfig,
-    );
-
-    // Initialize prompts helper with local prompts and VoltOps clients
-    this.prompts = VoltOpsClientClass.createPromptHelperFromSources(this.id, this.voltOpsClient);
-  }
+  let stateToolRouting: ToolRoutingConfig | false | undefined;
+  let stateToolRoutingConfigured: boolean;
+  let stateToolRoutingExposedNames: Set<string> = new Set();
+  let stateToolRoutingPoolExplicit = false;
+  let stateToolRoutingSearchStrategy: ToolSearchStrategy | undefined;
 
   // ============================================================================
   // Public API Methods
   // ============================================================================
 
-  private async validateInvocationContext(
+  async function agentValidateInvocationContext(
     options: AnyBaseGenerationOptions | undefined,
   ): Promise<AnyBaseGenerationOptions | undefined> {
-    if (!this.contextSchema) return options;
+    if (!stateContextSchema) return options;
     const abortSignal = (options?.abortSignal ??
       options?.parentOperationContext?.abortController.signal) as AbortSignal | undefined;
     abortSignal?.throwIfAborted();
 
     // Validate a snapshot first: an invalid call must not partially update a shared map.
-    const merged = this.resolveContext(options, true);
+    const merged = agentResolveContext(options, true);
     let validated: Record<string, unknown>;
     try {
       validated = await validateTypes({
         value: Object.fromEntries(merged),
-        schema: this.contextSchema,
+        schema: stateContextSchema,
       });
       if (
         validated === null ||
@@ -1857,7 +1800,7 @@ export class Agent<
     const context =
       options?.parentOperationContext?.context ??
       toContextMap(options?.context) ??
-      new Map(this.context);
+      new Map(stateContext);
     for (const [key, value] of merged) context.set(key, value);
     for (const key of Reflect.ownKeys(validated)) {
       context.set(key, Reflect.get(validated, key));
@@ -1868,7 +1811,7 @@ export class Agent<
   /**
    * Generate text response
    */
-  async generateText<
+  function agentGenerateText<
     OUTPUT extends OutputSpec = ReturnType<typeof Output.text>,
     TProviderOptions extends ProviderOptions = ProviderOptions,
     TOOLS extends ToolSet = AGENT_TOOLS,
@@ -1881,7 +1824,8 @@ export class Agent<
   ): Promise<
     GenerateTextResultWithContext<TOOLS, OUTPUT, RUNTIME_CONTEXT, AgentContext<CONTEXT_SCHEMA>>
   >;
-  async generateText<
+
+  function agentGenerateText<
     OUTPUT extends OutputSpec = ReturnType<typeof Output.text>,
     TProviderOptions extends ProviderOptions = ProviderOptions,
     TOOLS extends ToolSet = AGENT_TOOLS,
@@ -1891,7 +1835,8 @@ export class Agent<
   ): Promise<
     GenerateTextResultWithContext<TOOLS, OUTPUT, RUNTIME_CONTEXT, AgentContext<CONTEXT_SCHEMA>>
   >;
-  async generateText<
+
+  async function agentGenerateText<
     OUTPUT extends OutputSpec = ReturnType<typeof Output.text>,
     TProviderOptions extends ProviderOptions = ProviderOptions,
     TOOLS extends ToolSet = AGENT_TOOLS,
@@ -1915,42 +1860,42 @@ export class Agent<
     const normalizedArgs = normalizeTextGenerationArgs(inputOrRequest, requestOptions[0]);
     const { input } = normalizedArgs;
     validateGenerationInput(input, normalizedArgs.options);
-    const options = await this.validateInvocationContext(normalizedArgs.options);
+    const options = await agentValidateInvocationContext(normalizedArgs.options);
     const startTime = Date.now();
-    const oc = this.createOperationContext(input, options);
+    const oc = agentCreateOperationContext(input, options);
     const methodLogger = oc.logger;
-    const feedbackOptions = this.resolveFeedbackOptions(options);
-    const feedbackClient = feedbackOptions ? this.getFeedbackClient() : undefined;
+    const feedbackOptions = agentResolveFeedbackOptions(options);
+    const feedbackClient = feedbackOptions ? agentGetFeedbackClient() : undefined;
     const shouldDeferPersist = Boolean(feedbackOptions && feedbackClient);
-    const shouldPersistMemory = this.shouldPersistMemoryForContext(oc);
+    const shouldPersistMemory = agentShouldPersistMemoryForContext(oc);
     let feedbackMetadata: AgentFeedbackMetadata | null = null;
 
     // Wrap entire execution in root span for trace context
     const rootSpan = oc.traceContext.getRootSpan();
     return await oc.traceContext.withSpan(rootSpan, async () => {
-      const guardrailSet = this.resolveGuardrailSets(options);
-      const middlewareSet = this.resolveMiddlewareSets(options);
-      const maxMiddlewareRetries = this.resolveMiddlewareRetries(options);
+      const guardrailSet = agentResolveGuardrailSets(options);
+      const middlewareSet = agentResolveMiddlewareSets(options);
+      const maxMiddlewareRetries = agentResolveMiddlewareRetries(options);
       let middlewareRetryCount = 0;
       const feedbackPromise =
-        feedbackOptions && feedbackClient ? this.createFeedbackMetadata(oc, options) : null;
+        feedbackOptions && feedbackClient ? agentCreateFeedbackMetadata(oc, options) : null;
       let effectiveInput: typeof input = input;
       try {
         while (true) {
           try {
             if (middlewareRetryCount > 0) {
-              this.resetOperationAttemptState(oc);
+              agentResetOperationAttemptState(oc);
             }
 
-            const buffer = this.getConversationBuffer(oc);
-            const persistQueue = this.getMemoryPersistQueue(oc);
+            const buffer = agentGetConversationBuffer(oc);
+            const persistQueue = agentGetMemoryPersistQueue(oc);
 
             effectiveInput = await runInputMiddlewares(
               input,
               oc,
               middlewareSet.input,
               "generateText",
-              this,
+              runtimeAgent,
               middlewareRetryCount,
             );
 
@@ -1959,12 +1904,12 @@ export class Agent<
               oc,
               guardrailSet.input,
               "generateText",
-              this,
+              runtimeAgent,
             );
 
             const { messages, uiMessages, modelName, tools, maxSteps } =
-              await this.prepareExecution(effectiveInput, oc, options);
-            const resolvedMemory = this.resolveMemoryRuntimeOptions(options, oc);
+              await agentPrepareExecution(effectiveInput, oc, options);
+            const resolvedMemory = agentResolveMemoryRuntimeOptions(options, oc);
             const contextLimit = resolvedMemory.contextLimit;
 
             // Add model attributes and all options
@@ -1972,8 +1917,8 @@ export class Agent<
               rootSpan,
               modelName,
               options,
-              this.maxOutputTokens,
-              this.temperature,
+              stateMaxOutputTokens,
+              stateTemperature,
             );
 
             // Add context to span
@@ -1987,13 +1932,13 @@ export class Agent<
             rootSpan.setAttribute("agent.messages.ui", safeStringify(uiMessages));
 
             // Add agent state snapshot for remote observability
-            const agentState = this.getFullState();
+            const agentState = runtimeAgent.getFullState();
             rootSpan.setAttribute("agent.stateSnapshot", safeStringify(agentState));
 
             // Log generation start with only event-specific context
             methodLogger.debug(
               buildAgentLogMessage(
-                this.name,
+                stateName,
                 ActionType.GENERATION_START,
                 `Starting text generation with ${modelName}`,
               ),
@@ -2001,7 +1946,7 @@ export class Agent<
                 event: LogEvents.AGENT_GENERATION_STARTED,
                 operationType: "text",
                 contextLimit,
-                memoryEnabled: !!this.memoryManager.getMemory(),
+                memoryEnabled: !!stateMemoryManager.getMemory(),
                 model: modelName,
                 messageCount: messages?.length || 0,
                 input: effectiveInput,
@@ -2009,12 +1954,12 @@ export class Agent<
             );
 
             // Call hooks
-            await this.getMergedHooks(options).onStart?.({ agent: this, context: oc });
+            await agentGetMergedHooks(options).onStart?.({ agent: runtimeAgent, context: oc });
 
             // Event tracking now handled by OpenTelemetry spans
 
             // Setup abort signal listener
-            this.setupAbortSignalListener(oc);
+            agentSetupAbortSignalListener(oc);
 
             methodLogger.debug("Starting agent llm call");
 
@@ -2036,8 +1981,8 @@ export class Agent<
             } = extractAISDKCallOptions<TProviderOptions, TOOLS, RUNTIME_CONTEXT, OUTPUT>(options);
 
             // Apply agent-level prepareStep as default (per-call overrides)
-            if (this.prepareStep && !aiSDKOptions.prepareStep) {
-              aiSDKOptions.prepareStep = this.prepareStep as AITextCallOptions<
+            if (statePrepareStep && !aiSDKOptions.prepareStep) {
+              aiSDKOptions.prepareStep = statePrepareStep as AITextCallOptions<
                 TOOLS,
                 RUNTIME_CONTEXT,
                 OUTPUT
@@ -2048,8 +1993,8 @@ export class Agent<
               | ToolChoice<TOOLS>
               | undefined;
             applyForcedToolChoice(aiSDKOptions, forcedToolChoice);
-            this.configureNativeToolExecution(aiSDKOptions, oc);
-            this.configureStepModelRetries(aiSDKOptions, oc, "generateText", options);
+            agentConfigureNativeToolExecution(aiSDKOptions, oc);
+            agentConfigureStepModelRetries(aiSDKOptions, oc, "generateText", options);
             const {
               instructions: explicitInstructions,
               system: explicitSystem,
@@ -2061,7 +2006,7 @@ export class Agent<
               aiSDKOptions.allowSystemInMessages,
             );
 
-            const { result, modelName: effectiveModelName } = await this.executeWithModelFallback({
+            const { result, modelName: effectiveModelName } = await agentExecuteWithModelFallback({
               oc,
               operation: "generateText",
               options,
@@ -2075,7 +2020,7 @@ export class Agent<
                 isLastAttempt: _isLastAttempt,
                 isLastModel: _isLastModel,
               }) => {
-                const llmSpan = this.createLLMSpan(oc, {
+                const llmSpan = agentCreateLLMSpan(oc, {
                   operation: "generateText",
                   modelName: resolvedModelName,
                   isStreaming: false,
@@ -2083,8 +2028,8 @@ export class Agent<
                   tools,
                   providerOptions,
                   callOptions: {
-                    temperature: aiSDKOptions?.temperature ?? this.temperature,
-                    maxOutputTokens: aiSDKOptions?.maxOutputTokens ?? this.maxOutputTokens,
+                    temperature: aiSDKOptions?.temperature ?? stateTemperature,
+                    maxOutputTokens: aiSDKOptions?.maxOutputTokens ?? stateMaxOutputTokens,
                     topP: aiSDKOptions?.topP,
                     stop: aiSDKOptions?.stop ?? options?.stop,
                     maxRetries,
@@ -2093,7 +2038,7 @@ export class Agent<
                     modelId,
                   },
                 });
-                const finalizeLLMSpan = this.createLLMSpanFinalizer(llmSpan);
+                const finalizeLLMSpan = agentCreateLLMSpanFinalizer(llmSpan);
 
                 try {
                   const response = await oc.traceContext.withSpan(llmSpan, () =>
@@ -2102,9 +2047,9 @@ export class Agent<
                       ...promptOptions,
                       tools,
                       // Default values
-                      temperature: this.temperature,
-                      maxOutputTokens: this.maxOutputTokens,
-                      stopWhen: options?.stopWhen ?? this.stopWhen ?? isStepCount(maxSteps),
+                      temperature: stateTemperature,
+                      maxOutputTokens: stateMaxOutputTokens,
+                      stopWhen: options?.stopWhen ?? stateStopWhen ?? isStepCount(maxSteps),
                       // User overrides from AI SDK options
                       ...aiSDKCallOptions,
                       maxRetries: 0,
@@ -2115,7 +2060,7 @@ export class Agent<
                       // VoltAgent controlled (these should not be overridden)
                       abortSignal: oc.abortController.signal,
                       onEnd: userOnEnd,
-                      onStepEnd: this.createStepHandler<ToolSet, AISDKContext>(
+                      onStepEnd: agentCreateStepHandler<ToolSet, AISDKContext>(
                         oc,
                         options,
                         userOnStepEnd as
@@ -2129,14 +2074,14 @@ export class Agent<
                     >),
                   );
 
-                  await this.ensureStructuredOutputGenerated({
+                  await agentEnsureStructuredOutputGenerated({
                     result: response,
                     output,
                     tools,
                     maxSteps,
                   });
 
-                  llmSpan.setAttribute("llm.model", this.getEffectiveModelName(oc, resolvedModel));
+                  llmSpan.setAttribute("llm.model", agentGetEffectiveModelName(oc, resolvedModel));
                   const resolvedProviderUsage = response.usage
                     ? await Promise.resolve(response.usage)
                     : undefined;
@@ -2164,8 +2109,8 @@ export class Agent<
               oc.traceContext.getRootSpan(),
               effectiveModelName,
               options,
-              this.maxOutputTokens,
-              this.temperature,
+              stateMaxOutputTokens,
+              stateTemperature,
             );
 
             const providerUsage = result.usage ? await Promise.resolve(result.usage) : undefined;
@@ -2174,22 +2119,22 @@ export class Agent<
               usage: providerUsage,
               totalUsage: (result as { totalUsage?: LanguageModelUsage }).totalUsage,
             });
-            this.recordRootSpanUsageAndProviderCost(
+            agentRecordRootSpanUsageAndProviderCost(
               oc.traceContext,
               usageForFinish,
               (result as { providerMetadata?: unknown }).providerMetadata,
             );
             const { toolCalls: aggregatedToolCalls, toolResults: aggregatedToolResults } =
-              this.collectToolDataFromResult(result);
+              agentCollectToolDataFromResult(result);
 
             const usageInfo = convertUsage(usageForFinish);
-            const persistedAssistantMetadata = this.buildPersistedAssistantMessageMetadata({
+            const persistedAssistantMetadata = agentBuildPersistedAssistantMessageMetadata({
               oc,
               usage: usageInfo,
               finishReason: result.finishReason ?? null,
             });
             const responseMessages = filterResponseMessages(result.response?.messages);
-            this.applyMetadataToLastAssistantMessage({
+            agentApplyMetadataToLastAssistantMessage({
               buffer,
               metadata: persistedAssistantMetadata,
               responseMessages,
@@ -2199,7 +2144,7 @@ export class Agent<
               oc,
               middlewareSet.output as NormalizedOutputMiddleware<string>[],
               "generateText",
-              this,
+              runtimeAgent,
               middlewareRetryCount,
               {
                 usage: usageInfo,
@@ -2208,7 +2153,7 @@ export class Agent<
               },
             );
 
-            void this.recordStepResults(result.steps, oc);
+            void agentRecordStepResults(result.steps, oc);
 
             if (!shouldDeferPersist && shouldPersistMemory) {
               await persistQueue.flush(buffer, oc);
@@ -2219,7 +2164,7 @@ export class Agent<
               operationContext: oc,
               guardrails: guardrailSet.output,
               operation: "generateText",
-              agent: this,
+              agent: runtimeAgent,
               metadata: {
                 usage: usageInfo,
                 finishReason: result.finishReason ?? null,
@@ -2244,9 +2189,9 @@ export class Agent<
                     ),
                   };
 
-            await this.getMergedHooks(options).onEnd?.({
+            await agentGetMergedHooks(options).onEnd?.({
               conversationId: oc.conversationId || "",
-              agent: this,
+              agent: runtimeAgent,
               output: {
                 text: finalText,
                 usage: providerUsage,
@@ -2267,7 +2212,7 @@ export class Agent<
               : "no usage data";
             methodLogger.debug(
               buildAgentLogMessage(
-                this.name,
+                stateName,
                 ActionType.GENERATION_COMPLETE,
                 `Text generation completed (${tokenInfo})`,
               ),
@@ -2292,7 +2237,7 @@ export class Agent<
             // Set output in operation context
             oc.output = finalText;
 
-            this.enqueueEvalScoring({
+            agentEnqueueEvalScoring({
               oc,
               output: finalText,
               operation: "generateText",
@@ -2342,7 +2287,7 @@ export class Agent<
                 defaultConversationId: oc.conversationId,
                 resolveMessageId: () =>
                   findFeedbackMessageIdHelper(buffer.getAllMessages(), metadata),
-                markFeedbackProvided: (input) => this.markFeedbackProvided(input),
+                markFeedbackProvided: (input) => runtimeAgent.markFeedbackProvided(input),
               });
             })();
 
@@ -2361,14 +2306,14 @@ export class Agent<
               RUNTIME_CONTEXT
             >;
           } catch (error) {
-            if (this.shouldRetryMiddleware(error, middlewareRetryCount, maxMiddlewareRetries)) {
+            if (agentShouldRetryMiddleware(error, middlewareRetryCount, maxMiddlewareRetries)) {
               const retryError = error as {
                 middlewareId?: string;
                 metadata?: unknown;
                 message?: string;
               };
-              await this.getMergedHooks(options).onRetry?.({
-                agent: this,
+              await agentGetMergedHooks(options).onRetry?.({
+                agent: runtimeAgent,
                 context: oc,
                 operation: "generateText",
                 source: "middleware",
@@ -2378,7 +2323,7 @@ export class Agent<
                 reason: retryError.message,
                 metadata: retryError.metadata,
               });
-              methodLogger.warn(`[Agent:${this.name}] - Middleware requested retry`, {
+              methodLogger.warn(`[Agent:${stateName}] - Middleware requested retry`, {
                 operation: "generateText",
                 retryCount: middlewareRetryCount,
                 maxMiddlewareRetries,
@@ -2389,7 +2334,7 @@ export class Agent<
                     ? safeStringify(retryError.metadata)
                     : undefined,
               });
-              this.storeMiddlewareRetryFeedback(oc, retryError.message, retryError.metadata);
+              agentStoreMiddlewareRetryFeedback(oc, retryError.message, retryError.metadata);
               middlewareRetryCount += 1;
               continue;
             }
@@ -2437,7 +2382,7 @@ export class Agent<
               operationContext: oc,
               guardrails: guardrailSet.output,
               operation: "generateText",
-              agent: this,
+              agent: runtimeAgent,
               metadata: {
                 usage: usageInfo,
                 finishReason: "bail" as any,
@@ -2450,7 +2395,7 @@ export class Agent<
             const response = {
               id: oc.operationId,
               timestamp: new Date(startTime),
-              modelId: this.getModelName(),
+              modelId: runtimeAgent.getModelName(),
             };
             let finalOutput: unknown;
             try {
@@ -2459,14 +2404,14 @@ export class Agent<
                 { response, usage: providerUsage, finishReason: "stop" },
               );
             } catch (outputError) {
-              await this.flushPendingMessagesOnError(oc).catch(() => {});
-              return this.handleError(outputError as Error, oc, options, startTime);
+              await agentFlushPendingMessagesOnError(oc).catch(() => {});
+              return agentHandleError(outputError as Error, oc, options, startTime);
             }
 
             // Call onEnd hook
-            await this.getMergedHooks(options).onEnd?.({
+            await agentGetMergedHooks(options).onEnd?.({
               conversationId: oc.conversationId || "",
-              agent: this,
+              agent: runtimeAgent,
               output: {
                 text: finalText,
                 usage: providerUsage,
@@ -2480,7 +2425,7 @@ export class Agent<
               context: oc,
             });
 
-            void this.recordStepResults(undefined, oc);
+            void agentRecordStepResults(undefined, oc);
 
             // Return bailed result as successful generation
             return {
@@ -2497,15 +2442,15 @@ export class Agent<
           }
         }
 
-        await this.flushPendingMessagesOnError(oc).catch(() => {});
-        return this.handleError(error as Error, oc, options, startTime);
+        await agentFlushPendingMessagesOnError(oc).catch(() => {});
+        return agentHandleError(error as Error, oc, options, startTime);
       } finally {
         // Ensure all spans are exported before returning (critical for serverless)
         // Uses waitUntil if available to avoid blocking
         await flushObservability(
-          this.getObservability(),
-          oc.logger ?? this.logger,
-          this.observabilityAuthWarningState,
+          agentGetObservability(),
+          oc.logger ?? stateLogger,
+          stateObservabilityAuthWarningState,
           "generateText:finally",
         );
       }
@@ -2515,7 +2460,7 @@ export class Agent<
   /**
    * Stream text response
    */
-  async streamText<
+  function agentStreamText<
     TProviderOptions extends ProviderOptions = ProviderOptions,
     TOOLS extends ToolSet = AGENT_TOOLS,
     RUNTIME_CONTEXT extends AISDKContext = AISDKContext,
@@ -2528,7 +2473,8 @@ export class Agent<
   ): Promise<
     StreamTextResultWithContext<TOOLS, OUTPUT, RUNTIME_CONTEXT, AgentContext<CONTEXT_SCHEMA>>
   >;
-  async streamText<
+
+  function agentStreamText<
     TProviderOptions extends ProviderOptions = ProviderOptions,
     TOOLS extends ToolSet = AGENT_TOOLS,
     RUNTIME_CONTEXT extends AISDKContext = AISDKContext,
@@ -2538,7 +2484,8 @@ export class Agent<
   ): Promise<
     StreamTextResultWithContext<TOOLS, OUTPUT, RUNTIME_CONTEXT, AgentContext<CONTEXT_SCHEMA>>
   >;
-  async streamText<
+
+  async function agentStreamText<
     TProviderOptions extends ProviderOptions = ProviderOptions,
     TOOLS extends ToolSet = AGENT_TOOLS,
     RUNTIME_CONTEXT extends AISDKContext = AISDKContext,
@@ -2556,13 +2503,13 @@ export class Agent<
     const normalizedArgs = normalizeTextGenerationArgs(inputOrRequest, requestOptions[0]);
     const { input } = normalizedArgs;
     validateGenerationInput(input, normalizedArgs.options);
-    const options = await this.validateInvocationContext(normalizedArgs.options);
+    const options = await agentValidateInvocationContext(normalizedArgs.options);
     const startTime = Date.now();
-    const oc = this.createOperationContext(input, options);
-    const feedbackOptions = this.resolveFeedbackOptions(options);
-    const feedbackClient = feedbackOptions ? this.getFeedbackClient() : undefined;
+    const oc = agentCreateOperationContext(input, options);
+    const feedbackOptions = agentResolveFeedbackOptions(options);
+    const feedbackClient = feedbackOptions ? agentGetFeedbackClient() : undefined;
     const shouldDeferPersist = Boolean(feedbackOptions && feedbackClient);
-    const shouldPersistMemory = this.shouldPersistMemoryForContext(oc);
+    const shouldPersistMemory = agentShouldPersistMemoryForContext(oc);
     const feedbackDeferred = feedbackOptions
       ? createDeferred<AgentFeedbackMetadata | null>()
       : null;
@@ -2585,12 +2532,12 @@ export class Agent<
     const rootSpan = oc.traceContext.getRootSpan();
     return await oc.traceContext.withSpan(rootSpan, async () => {
       const methodLogger = oc.logger; // Extract logger with executionId
-      const guardrailSet = this.resolveGuardrailSets(options);
-      const middlewareSet = this.resolveMiddlewareSets(options);
-      const maxMiddlewareRetries = this.resolveMiddlewareRetries(options);
+      const guardrailSet = agentResolveGuardrailSets(options);
+      const middlewareSet = agentResolveMiddlewareSets(options);
+      const maxMiddlewareRetries = agentResolveMiddlewareRetries(options);
       let middlewareRetryCount = 0;
-      const buffer = this.getConversationBuffer(oc);
-      const persistQueue = this.getMemoryPersistQueue(oc);
+      const buffer = agentGetConversationBuffer(oc);
+      const persistQueue = agentGetMemoryPersistQueue(oc);
       const scheduleFeedbackPersist = (metadata: AgentFeedbackMetadata | null) => {
         if (!metadata || feedbackApplied) {
           return;
@@ -2614,7 +2561,7 @@ export class Agent<
         }
       };
       const feedbackPromise =
-        feedbackOptions && feedbackClient ? this.createFeedbackMetadata(oc, options) : null;
+        feedbackOptions && feedbackClient ? agentCreateFeedbackMetadata(oc, options) : null;
       if (feedbackPromise) {
         feedbackPromise
           .then((metadata) => {
@@ -2630,7 +2577,7 @@ export class Agent<
                   defaultConversationId: oc.conversationId,
                   resolveMessageId: () =>
                     findFeedbackMessageIdHelper(buffer.getAllMessages(), metadata),
-                  markFeedbackProvided: (input) => this.markFeedbackProvided(input),
+                  markFeedbackProvided: (input) => runtimeAgent.markFeedbackProvided(input),
                 })
               : null;
             resolveFeedbackDeferred(metadata);
@@ -2652,19 +2599,19 @@ export class Agent<
               oc,
               middlewareSet.input,
               "streamText",
-              this,
+              runtimeAgent,
               middlewareRetryCount,
             );
             break;
           } catch (error) {
-            if (this.shouldRetryMiddleware(error, middlewareRetryCount, maxMiddlewareRetries)) {
+            if (agentShouldRetryMiddleware(error, middlewareRetryCount, maxMiddlewareRetries)) {
               const retryError = error as {
                 middlewareId?: string;
                 metadata?: unknown;
                 message?: string;
               };
-              await this.getMergedHooks(options).onRetry?.({
-                agent: this,
+              await agentGetMergedHooks(options).onRetry?.({
+                agent: runtimeAgent,
                 context: oc,
                 operation: "streamText",
                 source: "middleware",
@@ -2674,7 +2621,7 @@ export class Agent<
                 reason: retryError.message,
                 metadata: retryError.metadata,
               });
-              methodLogger.warn(`[Agent:${this.name}] - Middleware requested retry`, {
+              methodLogger.warn(`[Agent:${stateName}] - Middleware requested retry`, {
                 operation: "streamText",
                 retryCount: middlewareRetryCount,
                 maxMiddlewareRetries,
@@ -2685,7 +2632,7 @@ export class Agent<
                     ? safeStringify(retryError.metadata)
                     : undefined,
               });
-              this.storeMiddlewareRetryFeedback(oc, retryError.message, retryError.metadata);
+              agentStoreMiddlewareRetryFeedback(oc, retryError.message, retryError.metadata);
               middlewareRetryCount += 1;
               continue;
             }
@@ -2705,7 +2652,7 @@ export class Agent<
           oc,
           blockingInputGuardrails,
           "streamText",
-          this,
+          runtimeAgent,
         );
 
         if (parallelInputGuardrails.length > 0) {
@@ -2714,7 +2661,7 @@ export class Agent<
             operationContext: oc,
             guardrails: parallelInputGuardrails,
             operation: "streamText",
-            agent: this,
+            agent: runtimeAgent,
             buffer,
             onBlock: () => {
               feedbackCancelled = true;
@@ -2728,12 +2675,12 @@ export class Agent<
 
         // No need to initialize stream collection anymore - we'll use UIMessageStreamWriter
 
-        const { messages, uiMessages, modelName, tools, maxSteps } = await this.prepareExecution(
+        const { messages, uiMessages, modelName, tools, maxSteps } = await agentPrepareExecution(
           effectiveInput,
           oc,
           options,
         );
-        const resolvedMemory = this.resolveMemoryRuntimeOptions(options, oc);
+        const resolvedMemory = agentResolveMemoryRuntimeOptions(options, oc);
         const contextLimit = resolvedMemory.contextLimit;
 
         // Add model attributes to root span if TraceContext exists
@@ -2745,8 +2692,8 @@ export class Agent<
             rootSpan,
             modelName,
             options,
-            this.maxOutputTokens,
-            this.temperature,
+            stateMaxOutputTokens,
+            stateTemperature,
           );
 
           // Add context to span
@@ -2760,14 +2707,14 @@ export class Agent<
           rootSpan.setAttribute("agent.messages.ui", safeStringify(uiMessages));
 
           // Add agent state snapshot for remote observability
-          const agentState = this.getFullState();
+          const agentState = runtimeAgent.getFullState();
           rootSpan.setAttribute("agent.stateSnapshot", safeStringify(agentState));
         }
 
         // Log stream start
         methodLogger.debug(
           buildAgentLogMessage(
-            this.name,
+            stateName,
             ActionType.STREAM_START,
             `Starting stream generation with ${modelName}`,
           ),
@@ -2775,7 +2722,7 @@ export class Agent<
             event: LogEvents.AGENT_STREAM_STARTED,
             operationType: "stream",
             contextLimit,
-            memoryEnabled: !!this.memoryManager.getMemory(),
+            memoryEnabled: !!stateMemoryManager.getMemory(),
             model: modelName,
             messageCount: messages?.length || 0,
             input: effectiveInput,
@@ -2783,12 +2730,12 @@ export class Agent<
         );
 
         // Call hooks
-        await this.getMergedHooks(options).onStart?.({ agent: this, context: oc });
+        await agentGetMergedHooks(options).onStart?.({ agent: runtimeAgent, context: oc });
 
         // Event tracking now handled by OpenTelemetry spans
 
         // Setup abort signal listener
-        this.setupAbortSignalListener(oc);
+        agentSetupAbortSignalListener(oc);
 
         const {
           aiSDKOptions,
@@ -2800,8 +2747,8 @@ export class Agent<
         } = extractAISDKCallOptions<TProviderOptions, TOOLS, RUNTIME_CONTEXT, OUTPUT>(options);
 
         // Apply agent-level prepareStep as default (per-call overrides)
-        if (this.prepareStep && !aiSDKOptions.prepareStep) {
-          aiSDKOptions.prepareStep = this.prepareStep as AITextCallOptions<
+        if (statePrepareStep && !aiSDKOptions.prepareStep) {
+          aiSDKOptions.prepareStep = statePrepareStep as AITextCallOptions<
             TOOLS,
             RUNTIME_CONTEXT,
             OUTPUT
@@ -2812,8 +2759,8 @@ export class Agent<
           | ToolChoice<TOOLS>
           | undefined;
         applyForcedToolChoice(aiSDKOptions, forcedToolChoice);
-        this.configureNativeToolExecution(aiSDKOptions, oc);
-        this.configureStepModelRetries(aiSDKOptions, oc, "streamText", options);
+        agentConfigureNativeToolExecution(aiSDKOptions, oc);
+        agentConfigureStepModelRetries(aiSDKOptions, oc, "streamText", options);
         const {
           instructions: explicitInstructions,
           system: explicitSystem,
@@ -2825,12 +2772,12 @@ export class Agent<
           aiSDKOptions.allowSystemInMessages,
         );
 
-        const responseMessageId = await this.ensureStreamingResponseMessageId(oc, buffer);
+        const responseMessageId = await agentEnsureStreamingResponseMessageId(oc, buffer);
         const guardrailStreamingEnabled = guardrailSet.output.length > 0;
 
         let guardrailPipeline: GuardrailPipeline | null = null;
         let sanitizedTextPromise: Promise<string> | undefined;
-        const { result, modelName: effectiveModelName } = await this.executeWithModelFallback({
+        const { result, modelName: effectiveModelName } = await agentExecuteWithModelFallback({
           oc,
           operation: "streamText",
           options,
@@ -2845,7 +2792,7 @@ export class Agent<
             const attemptState: { hasOutput: boolean; lastError?: unknown } = {
               hasOutput: false,
             };
-            const llmSpan = this.createLLMSpan(oc, {
+            const llmSpan = agentCreateLLMSpan(oc, {
               operation: "streamText",
               modelName: resolvedModelName,
               isStreaming: true,
@@ -2853,8 +2800,8 @@ export class Agent<
               tools,
               providerOptions,
               callOptions: {
-                temperature: aiSDKOptions?.temperature ?? this.temperature,
-                maxOutputTokens: aiSDKOptions?.maxOutputTokens ?? this.maxOutputTokens,
+                temperature: aiSDKOptions?.temperature ?? stateTemperature,
+                maxOutputTokens: aiSDKOptions?.maxOutputTokens ?? stateMaxOutputTokens,
                 topP: aiSDKOptions?.topP,
                 stop: aiSDKOptions?.stop ?? options?.stop,
                 maxRetries,
@@ -2863,7 +2810,7 @@ export class Agent<
                 modelId,
               },
             });
-            const finalizeLLMSpan = this.createLLMSpanFinalizer(llmSpan);
+            const finalizeLLMSpan = agentCreateLLMSpanFinalizer(llmSpan);
 
             const nativeStreamRetriesEnabled = options?.streamRetries !== undefined;
             const handleTerminalError = async (
@@ -2902,8 +2849,8 @@ export class Agent<
               // Log the error
               methodLogger.error("Stream error occurred", {
                 error: actualError,
-                agentName: this.name,
-                modelName: this.getEffectiveModelName(oc, resolvedModel),
+                agentName: stateName,
+                modelName: agentGetEffectiveModelName(oc, resolvedModel),
                 attempt,
                 maxRetries,
               });
@@ -2911,8 +2858,8 @@ export class Agent<
               finalizeLLMSpan(SpanStatusCode.ERROR, { message: (actualError as Error)?.message });
 
               // Call error hooks if they exist
-              await this.getMergedHooks(options).onError?.({
-                agent: this,
+              await agentGetMergedHooks(options).onError?.({
+                agent: runtimeAgent,
                 error: actualError as Error,
                 context: oc,
               });
@@ -2931,9 +2878,9 @@ export class Agent<
                 }
               } finally {
                 await flushObservability(
-                  this.getObservability(),
-                  oc.logger ?? this.logger,
-                  this.observabilityAuthWarningState,
+                  agentGetObservability(),
+                  oc.logger ?? stateLogger,
+                  stateObservabilityAuthWarningState,
                   "streamText:onError",
                 );
               }
@@ -2943,9 +2890,9 @@ export class Agent<
               ...promptOptions,
               tools,
               // Default values
-              temperature: this.temperature,
-              maxOutputTokens: this.maxOutputTokens,
-              stopWhen: options?.stopWhen ?? this.stopWhen ?? isStepCount(maxSteps),
+              temperature: stateTemperature,
+              maxOutputTokens: stateMaxOutputTokens,
+              stopWhen: options?.stopWhen ?? stateStopWhen ?? isStepCount(maxSteps),
               // User overrides from AI SDK options
               ...aiSDKCallOptions,
               maxRetries: 0,
@@ -2955,7 +2902,7 @@ export class Agent<
               providerOptions,
               // VoltAgent controlled (these should not be overridden)
               abortSignal: oc.abortController.signal,
-              onStepEnd: this.createStepHandler<ToolSet, AISDKContext>(
+              onStepEnd: agentCreateStepHandler<ToolSet, AISDKContext>(
                 oc,
                 options,
                 userOnStepEnd as GenerationStepEndCallback<ToolSet, AISDKContext> | undefined,
@@ -2970,11 +2917,11 @@ export class Agent<
                 await invokeAISDKCallbackSafely(
                   userOnEnd,
                   finalResult,
-                  oc.logger ?? this.logger,
+                  oc.logger ?? stateLogger,
                   "onEnd",
                 );
 
-                llmSpan.setAttribute("llm.model", this.getEffectiveModelName(oc, resolvedModel));
+                llmSpan.setAttribute("llm.model", agentGetEffectiveModelName(oc, resolvedModel));
                 latestResponseMessages = filterResponseMessages(finalResult.response?.messages);
                 const providerUsage = finalResult.usage
                   ? await Promise.resolve(finalResult.usage)
@@ -2984,7 +2931,7 @@ export class Agent<
                   usage: providerUsage,
                   totalUsage: finalResult.totalUsage,
                 });
-                this.recordRootSpanUsageAndProviderCost(
+                agentRecordRootSpanUsageAndProviderCost(
                   oc.traceContext,
                   usageForFinish,
                   finalResult.providerMetadata,
@@ -3003,12 +2950,12 @@ export class Agent<
                 }
 
                 const usageInfo = convertUsage(usageForFinish);
-                const persistedAssistantMetadata = this.buildPersistedAssistantMessageMetadata({
+                const persistedAssistantMetadata = agentBuildPersistedAssistantMessageMetadata({
                   oc,
                   usage: usageInfo,
                   finishReason: finalResult.finishReason ?? null,
                 });
-                this.applyMetadataToLastAssistantMessage({
+                agentApplyMetadataToLastAssistantMessage({
                   buffer,
                   metadata: persistedAssistantMetadata,
                   responseMessages: latestResponseMessages,
@@ -3043,7 +2990,7 @@ export class Agent<
                       operationContext: oc,
                       guardrails: guardrailSet.output,
                       operation: "streamText",
-                      agent: this,
+                      agent: runtimeAgent,
                       metadata: {
                         usage: usageInfo,
                         finishReason: "bail" as any,
@@ -3061,7 +3008,7 @@ export class Agent<
                     operationContext: oc,
                     guardrails: guardrailSet.output,
                     operation: "streamText",
-                    agent: this,
+                    agent: runtimeAgent,
                     metadata: {
                       usage: usageInfo,
                       finishReason: finalResult.finishReason ?? null,
@@ -3074,7 +3021,7 @@ export class Agent<
 
                 oc.traceContext.setOutput(finalText);
 
-                void this.recordStepResults(finalResult.steps, oc);
+                void agentRecordStepResults(finalResult.steps, oc);
 
                 // Set finish reason - override to "stop" if bailed (not "error")
                 if (bailedResult) {
@@ -3092,9 +3039,9 @@ export class Agent<
                 // Set output in operation context
                 oc.output = finalText;
                 // Call hooks with standardized output (stream finish result)
-                await this.getMergedHooks(options).onEnd?.({
+                await agentGetMergedHooks(options).onEnd?.({
                   conversationId: oc.conversationId || "",
-                  agent: this,
+                  agent: runtimeAgent,
                   output: {
                     text: finalText,
                     usage: providerUsage,
@@ -3112,7 +3059,7 @@ export class Agent<
                 const tokenInfo = usageInfo ? `${usageInfo.totalTokens} tokens` : "no usage data";
                 methodLogger.debug(
                   buildAgentLogMessage(
-                    this.name,
+                    stateName,
                     ActionType.GENERATION_COMPLETE,
                     `Text generation completed (${tokenInfo})`,
                   ),
@@ -3126,7 +3073,7 @@ export class Agent<
                   },
                 );
 
-                this.enqueueEvalScoring({
+                agentEnqueueEvalScoring({
                   oc,
                   output: finalText,
                   operation: "streamText",
@@ -3161,17 +3108,17 @@ export class Agent<
 
                 // Schedule span flush without blocking the response
                 void flushObservability(
-                  this.getObservability(),
-                  oc.logger ?? this.logger,
-                  this.observabilityAuthWarningState,
+                  agentGetObservability(),
+                  oc.logger ?? stateLogger,
+                  stateObservabilityAuthWarningState,
                   "streamText:onFinish",
                 );
               },
             } as unknown as VoltAgentStreamTextCallOptions<ToolSet, AISDKContext, OutputSpec>);
 
             const originalFullStream = streamResult.stream;
-            const probeResult = await this.probeStreamStart(originalFullStream, attemptState);
-            const streamResultForConsumption = this.withProbedFullStream(
+            const probeResult = await agentProbeStreamStart(originalFullStream, attemptState);
+            const streamResultForConsumption = agentWithProbedFullStream(
               streamResult,
               originalFullStream,
               probeResult.stream,
@@ -3181,7 +3128,7 @@ export class Agent<
               probeResult.status === "error" &&
               speculativeInputGuardrail?.getDecision()?.status !== "blocked"
             ) {
-              this.discardStream(streamResultForConsumption.stream);
+              agentDiscardStream(streamResultForConsumption.stream);
               throw probeResult.error;
             }
 
@@ -3194,8 +3141,8 @@ export class Agent<
             oc.traceContext.getRootSpan(),
             effectiveModelName,
             options,
-            this.maxOutputTokens,
-            this.temperature,
+            stateMaxOutputTokens,
+            stateTemperature,
           );
         }
 
@@ -3209,7 +3156,6 @@ export class Agent<
           ? Chunk
           : never;
 
-        const agent = this;
         const applyResponseMessageId = (
           streamOptions?: ToUIMessageStreamOptions,
         ): ToUIMessageStreamOptions | undefined => {
@@ -3290,7 +3236,7 @@ export class Agent<
             normalizeFinishUsageStream(wrapWithAbortHandling(result.stream)),
           );
 
-          if (agent.subAgentManager.hasSubAgents()) {
+          if (stateSubAgentManager.hasSubAgents()) {
             const createMergedFullStream =
               async function* (): AsyncIterable<VoltAgentTextStreamPart> {
                 const { readable, writable } = new TransformStream<VoltAgentTextStreamPart>();
@@ -3357,7 +3303,7 @@ export class Agent<
         const guardrailContext = guardrailStreamingEnabled
           ? {
               guardrails: guardrailSet.output,
-              agent: this,
+              agent: runtimeAgent,
               operationContext: oc,
               operation: "streamText" as AgentEvalOperationType,
             }
@@ -3638,7 +3584,7 @@ export class Agent<
                 onStepFinish: undefined,
               }
             : resolvedStreamOptions;
-          const baseStream = agent.subAgentManager.hasSubAgents()
+          const baseStream = stateSubAgentManager.hasSubAgents()
             ? createMergedUIStream(baseOptions)
             : getGuardrailAwareUIStream(baseOptions);
           const stream = attachFeedbackMetadata(baseStream);
@@ -3762,15 +3708,15 @@ export class Agent<
           RUNTIME_CONTEXT
         >;
       } catch (error) {
-        await this.flushPendingMessagesOnError(oc).catch(() => {});
+        await agentFlushPendingMessagesOnError(oc).catch(() => {});
         // Ensure spans are exported on pre-stream errors
         await flushObservability(
-          this.getObservability(),
-          oc.logger ?? this.logger,
-          this.observabilityAuthWarningState,
+          agentGetObservability(),
+          oc.logger ?? stateLogger,
+          stateObservabilityAuthWarningState,
           "streamText:preStreamError",
         );
-        return this.handleError(error as Error, oc, options, startTime);
+        return agentHandleError(error as Error, oc, options, startTime);
       } finally {
         // No need to flush here for streams - handled in onFinish/onError
       }
@@ -3781,7 +3727,7 @@ export class Agent<
    * Generate structured object
    * @deprecated — Use generateText with an output setting instead.
    */
-  async generateObject<
+  function agentGenerateObject<
     T extends z.ZodType,
     TProviderOptions extends ProviderOptions = ProviderOptions,
   >(
@@ -3791,7 +3737,8 @@ export class Agent<
       GenerateObjectOptions<TProviderOptions, CONTEXT_SCHEMA>
     >
   ): Promise<GenerateObjectResultWithContext<z.infer<T>, AgentContext<CONTEXT_SCHEMA>>>;
-  async generateObject<
+
+  async function agentGenerateObject<
     T extends z.ZodType,
     TProviderOptions extends ProviderOptions = ProviderOptions,
   >(
@@ -3804,24 +3751,24 @@ export class Agent<
     const input = originalInput;
     const normalizedOptions = normalizeVoltAgentRuntimeOptions(rawOptions[0]);
     validateGenerationInput(input, normalizedOptions);
-    const options = await this.validateInvocationContext(normalizedOptions);
+    const options = await agentValidateInvocationContext(normalizedOptions);
     const startTime = Date.now();
-    const oc = this.createOperationContext(input, options);
+    const oc = agentCreateOperationContext(input, options);
     const methodLogger = oc.logger;
 
     // Wrap entire execution in root span for trace context
     const rootSpan = oc.traceContext.getRootSpan();
     return await oc.traceContext.withSpan(rootSpan, async () => {
-      const guardrailSet = this.resolveGuardrailSets(options);
-      const middlewareSet = this.resolveMiddlewareSets(options);
-      const maxMiddlewareRetries = this.resolveMiddlewareRetries(options);
+      const guardrailSet = agentResolveGuardrailSets(options);
+      const middlewareSet = agentResolveMiddlewareSets(options);
+      const maxMiddlewareRetries = agentResolveMiddlewareRetries(options);
       let middlewareRetryCount = 0;
       let effectiveInput: typeof input = input;
       try {
         while (true) {
           try {
             if (middlewareRetryCount > 0) {
-              this.resetOperationAttemptState(oc);
+              agentResetOperationAttemptState(oc);
             }
 
             effectiveInput = await runInputMiddlewares(
@@ -3829,7 +3776,7 @@ export class Agent<
               oc,
               middlewareSet.input,
               "generateObject",
-              this,
+              runtimeAgent,
               middlewareRetryCount,
             );
 
@@ -3838,9 +3785,9 @@ export class Agent<
               oc,
               guardrailSet.input,
               "generateObject",
-              this,
+              runtimeAgent,
             );
-            const { messages, uiMessages, modelName } = await this.prepareExecution(
+            const { messages, uiMessages, modelName } = await agentPrepareExecution(
               effectiveInput,
               oc,
               options,
@@ -3853,8 +3800,8 @@ export class Agent<
               rootSpan,
               modelName,
               options,
-              this.maxOutputTokens,
-              this.temperature,
+              stateMaxOutputTokens,
+              stateTemperature,
             );
 
             // Add context to span
@@ -3868,13 +3815,13 @@ export class Agent<
             rootSpan.setAttribute("agent.messages.ui", safeStringify(uiMessages));
 
             // Add agent state snapshot for remote observability
-            const agentState = this.getFullState();
+            const agentState = runtimeAgent.getFullState();
             rootSpan.setAttribute("agent.stateSnapshot", safeStringify(agentState));
 
             // Log generation start (object)
             methodLogger.debug(
               buildAgentLogMessage(
-                this.name,
+                stateName,
                 ActionType.GENERATION_START,
                 `Starting object generation with ${modelName}`,
               ),
@@ -3889,7 +3836,7 @@ export class Agent<
             );
 
             // Call hooks
-            await this.getMergedHooks(options).onStart?.({ agent: this, context: oc });
+            await agentGetMergedHooks(options).onStart?.({ agent: runtimeAgent, context: oc });
 
             // Event tracking now handled by OpenTelemetry spans
 
@@ -3899,7 +3846,7 @@ export class Agent<
               onEnd: userOnEnd,
               onStepEnd: userOnStepEnd,
             } = extractAISDKCallOptions(options);
-            this.configureStepModelRetries(aiSDKOptions, oc, "generateObject", options);
+            agentConfigureStepModelRetries(aiSDKOptions, oc, "generateObject", options);
             const {
               instructions: explicitInstructions,
               system: explicitSystem,
@@ -3911,7 +3858,7 @@ export class Agent<
               aiSDKOptions.allowSystemInMessages,
             );
 
-            const { result, modelName: effectiveModelName } = await this.executeWithModelFallback({
+            const { result, modelName: effectiveModelName } = await agentExecuteWithModelFallback({
               oc,
               operation: "generateObject",
               options,
@@ -3920,8 +3867,8 @@ export class Agent<
                   model: resolvedModel,
                   ...promptOptions,
                   // Default values
-                  maxOutputTokens: this.maxOutputTokens,
-                  temperature: this.temperature,
+                  maxOutputTokens: stateMaxOutputTokens,
+                  temperature: stateTemperature,
                   // User overrides from AI SDK options
                   ...aiSDKCallOptions,
                   maxRetries: 0,
@@ -3932,10 +3879,10 @@ export class Agent<
                   // VoltAgent controlled
                   abortSignal: oc.abortController.signal,
                   onEnd: userOnEnd,
-                  onStepEnd: this.createStepHandler(oc, options, userOnStepEnd),
+                  onStepEnd: agentCreateStepHandler(oc, options, userOnStepEnd),
                 });
 
-                await this.ensureStructuredOutputGenerated({
+                await agentEnsureStructuredOutputGenerated({
                   result: response,
                   output: objectOutput,
                   tools: {},
@@ -3950,8 +3897,8 @@ export class Agent<
               rootSpan,
               effectiveModelName,
               options,
-              this.maxOutputTokens,
-              this.temperature,
+              stateMaxOutputTokens,
+              stateTemperature,
             );
 
             const providerUsage = result.usage ? await Promise.resolve(result.usage) : undefined;
@@ -3960,7 +3907,7 @@ export class Agent<
               usage: providerUsage,
               totalUsage: (result as { totalUsage?: LanguageModelUsage }).totalUsage,
             });
-            this.recordRootSpanUsageAndProviderCost(
+            agentRecordRootSpanUsageAndProviderCost(
               oc.traceContext,
               usageForFinish,
               (result as { providerMetadata?: unknown }).providerMetadata,
@@ -3972,7 +3919,7 @@ export class Agent<
               oc,
               middlewareSet.output as NormalizedOutputMiddleware<z.infer<T>>[],
               "generateObject",
-              this,
+              runtimeAgent,
               middlewareRetryCount,
               {
                 usage: usageInfo,
@@ -3985,7 +3932,7 @@ export class Agent<
               operationContext: oc,
               guardrails: guardrailSet.output,
               operation: "generateObject",
-              agent: this,
+              agent: runtimeAgent,
               metadata: {
                 usage: usageInfo,
                 finishReason: result.finishReason ?? null,
@@ -3994,9 +3941,9 @@ export class Agent<
             });
 
             // Save the object response to memory
-            if (this.shouldPersistMemoryForContext(oc) && oc.userId && oc.conversationId) {
+            if (agentShouldPersistMemoryForContext(oc) && oc.userId && oc.conversationId) {
               // Create UIMessage from the object response
-              const message: UIMessage = this.applyMetadataToMessage(
+              const message: UIMessage = agentApplyMetadataToMessage(
                 {
                   id: randomUUID(),
                   role: "assistant",
@@ -4007,7 +3954,7 @@ export class Agent<
                     },
                   ],
                 },
-                this.buildPersistedAssistantMessageMetadata({
+                agentBuildPersistedAssistantMessageMetadata({
                   oc,
                   usage: usageInfo,
                   finishReason: result.finishReason ?? null,
@@ -4015,7 +3962,7 @@ export class Agent<
               );
 
               // Save the message to memory
-              await this.memoryManager.saveMessage(oc, message, oc.userId, oc.conversationId);
+              await stateMemoryManager.saveMessage(oc, message, oc.userId, oc.conversationId);
 
               // Add step to history
               const step: StepWithContent = {
@@ -4025,7 +3972,7 @@ export class Agent<
                 role: "assistant",
                 usage: usageInfo,
               };
-              this.addStepToHistory(step, oc);
+              agentAddStepToHistory(step, oc);
             }
 
             // History update removed - using OpenTelemetry only
@@ -4037,7 +3984,7 @@ export class Agent<
             // Set output in operation context
             oc.output = finalObject as unknown as string | object;
 
-            this.enqueueEvalScoring({
+            agentEnqueueEvalScoring({
               oc,
               output: finalObject,
               operation: "generateObject",
@@ -4051,9 +3998,9 @@ export class Agent<
             oc.traceContext.end("completed");
 
             // Call hooks
-            await this.getMergedHooks(options).onEnd?.({
+            await agentGetMergedHooks(options).onEnd?.({
               conversationId: oc.conversationId || "",
-              agent: this,
+              agent: runtimeAgent,
               output: {
                 object: finalObject,
                 usage: providerUsage,
@@ -4074,7 +4021,7 @@ export class Agent<
               : "no usage data";
             methodLogger.debug(
               buildAgentLogMessage(
-                this.name,
+                stateName,
                 ActionType.GENERATION_COMPLETE,
                 `Object generation completed (${tokenInfo})`,
               ),
@@ -4098,14 +4045,14 @@ export class Agent<
 
             return finalResult;
           } catch (error) {
-            if (this.shouldRetryMiddleware(error, middlewareRetryCount, maxMiddlewareRetries)) {
+            if (agentShouldRetryMiddleware(error, middlewareRetryCount, maxMiddlewareRetries)) {
               const retryError = error as {
                 middlewareId?: string;
                 metadata?: unknown;
                 message?: string;
               };
-              await this.getMergedHooks(options).onRetry?.({
-                agent: this,
+              await agentGetMergedHooks(options).onRetry?.({
+                agent: runtimeAgent,
                 context: oc,
                 operation: "generateObject",
                 source: "middleware",
@@ -4115,7 +4062,7 @@ export class Agent<
                 reason: retryError.message,
                 metadata: retryError.metadata,
               });
-              methodLogger.warn(`[Agent:${this.name}] - Middleware requested retry`, {
+              methodLogger.warn(`[Agent:${stateName}] - Middleware requested retry`, {
                 operation: "generateObject",
                 retryCount: middlewareRetryCount,
                 maxMiddlewareRetries,
@@ -4126,7 +4073,7 @@ export class Agent<
                     ? safeStringify(retryError.metadata)
                     : undefined,
               });
-              this.storeMiddlewareRetryFeedback(oc, retryError.message, retryError.metadata);
+              agentStoreMiddlewareRetryFeedback(oc, retryError.message, retryError.metadata);
               middlewareRetryCount += 1;
               continue;
             }
@@ -4134,15 +4081,15 @@ export class Agent<
           }
         }
       } catch (error) {
-        await this.flushPendingMessagesOnError(oc).catch(() => {});
-        return this.handleError(error as Error, oc, options, startTime);
+        await agentFlushPendingMessagesOnError(oc).catch(() => {});
+        return agentHandleError(error as Error, oc, options, startTime);
       } finally {
         // Ensure all spans are exported before returning (critical for serverless)
         // Uses waitUntil if available to avoid blocking
         await flushObservability(
-          this.getObservability(),
-          oc.logger ?? this.logger,
-          this.observabilityAuthWarningState,
+          agentGetObservability(),
+          oc.logger ?? stateLogger,
+          stateObservabilityAuthWarningState,
           "generateObject:finally",
         );
       }
@@ -4153,7 +4100,7 @@ export class Agent<
    * Stream structured object
    * @deprecated — Use streamText with an output setting instead.
    */
-  async streamObject<
+  function agentStreamObject<
     T extends z.ZodType,
     TProviderOptions extends ProviderOptions = ProviderOptions,
   >(
@@ -4161,7 +4108,8 @@ export class Agent<
     schema: T,
     ...rawOptions: TextGenerationOptionsArgs<StreamObjectOptions<TProviderOptions, CONTEXT_SCHEMA>>
   ): Promise<StreamObjectResultWithContext<z.infer<T>, AgentContext<CONTEXT_SCHEMA>>>;
-  async streamObject<
+
+  async function agentStreamObject<
     T extends z.ZodType,
     TProviderOptions extends ProviderOptions = ProviderOptions,
   >(
@@ -4172,17 +4120,17 @@ export class Agent<
     const input = originalInput;
     const normalizedOptions = normalizeVoltAgentRuntimeOptions(rawOptions[0]);
     validateGenerationInput(input, normalizedOptions);
-    const options = await this.validateInvocationContext(normalizedOptions);
+    const options = await agentValidateInvocationContext(normalizedOptions);
     const startTime = Date.now();
-    const oc = this.createOperationContext(input, options);
+    const oc = agentCreateOperationContext(input, options);
 
     // Wrap entire execution in root span for trace context
     const rootSpan = oc.traceContext.getRootSpan();
     return await oc.traceContext.withSpan(rootSpan, async () => {
       const methodLogger = oc.logger; // Extract logger with executionId
-      const guardrailSet = this.resolveGuardrailSets(options);
-      const middlewareSet = this.resolveMiddlewareSets(options);
-      const maxMiddlewareRetries = this.resolveMiddlewareRetries(options);
+      const guardrailSet = agentResolveGuardrailSets(options);
+      const middlewareSet = agentResolveMiddlewareSets(options);
+      const maxMiddlewareRetries = agentResolveMiddlewareRetries(options);
       let middlewareRetryCount = 0;
       let effectiveInput: typeof input = input;
       try {
@@ -4193,19 +4141,19 @@ export class Agent<
               oc,
               middlewareSet.input,
               "streamObject",
-              this,
+              runtimeAgent,
               middlewareRetryCount,
             );
             break;
           } catch (error) {
-            if (this.shouldRetryMiddleware(error, middlewareRetryCount, maxMiddlewareRetries)) {
+            if (agentShouldRetryMiddleware(error, middlewareRetryCount, maxMiddlewareRetries)) {
               const retryError = error as {
                 middlewareId?: string;
                 metadata?: unknown;
                 message?: string;
               };
-              await this.getMergedHooks(options).onRetry?.({
-                agent: this,
+              await agentGetMergedHooks(options).onRetry?.({
+                agent: runtimeAgent,
                 context: oc,
                 operation: "streamObject",
                 source: "middleware",
@@ -4215,7 +4163,7 @@ export class Agent<
                 reason: retryError.message,
                 metadata: retryError.metadata,
               });
-              methodLogger.warn(`[Agent:${this.name}] - Middleware requested retry`, {
+              methodLogger.warn(`[Agent:${stateName}] - Middleware requested retry`, {
                 operation: "streamObject",
                 retryCount: middlewareRetryCount,
                 maxMiddlewareRetries,
@@ -4226,7 +4174,7 @@ export class Agent<
                     ? safeStringify(retryError.metadata)
                     : undefined,
               });
-              this.storeMiddlewareRetryFeedback(oc, retryError.message, retryError.metadata);
+              agentStoreMiddlewareRetryFeedback(oc, retryError.message, retryError.metadata);
               middlewareRetryCount += 1;
               continue;
             }
@@ -4239,10 +4187,10 @@ export class Agent<
           oc,
           guardrailSet.input,
           "streamObject",
-          this,
+          runtimeAgent,
         );
 
-        const { messages, uiMessages, modelName } = await this.prepareExecution(
+        const { messages, uiMessages, modelName } = await agentPrepareExecution(
           effectiveInput,
           oc,
           options,
@@ -4255,8 +4203,8 @@ export class Agent<
           rootSpan,
           modelName,
           options,
-          this.maxOutputTokens,
-          this.temperature,
+          stateMaxOutputTokens,
+          stateTemperature,
         );
 
         // Add context to span
@@ -4270,13 +4218,13 @@ export class Agent<
         rootSpan.setAttribute("agent.messages.ui", safeStringify(uiMessages));
 
         // Add agent state snapshot for remote observability
-        const agentState = this.getFullState();
+        const agentState = runtimeAgent.getFullState();
         rootSpan.setAttribute("agent.stateSnapshot", safeStringify(agentState));
 
         // Log stream object start
         methodLogger.debug(
           buildAgentLogMessage(
-            this.name,
+            stateName,
             ActionType.STREAM_START,
             `Starting object stream generation with ${modelName}`,
           ),
@@ -4291,7 +4239,7 @@ export class Agent<
         );
 
         // Call hooks
-        await this.getMergedHooks(options).onStart?.({ agent: this, context: oc });
+        await agentGetMergedHooks(options).onStart?.({ agent: runtimeAgent, context: oc });
 
         // Event tracking now handled by OpenTelemetry spans
 
@@ -4302,7 +4250,7 @@ export class Agent<
           onStepEnd: userOnStepEnd,
           onError: userOnError,
         } = extractAISDKCallOptions(options);
-        this.configureStepModelRetries(aiSDKOptions, oc, "streamObject", options);
+        agentConfigureStepModelRetries(aiSDKOptions, oc, "streamObject", options);
         const {
           instructions: explicitInstructions,
           system: explicitSystem,
@@ -4318,7 +4266,7 @@ export class Agent<
         let resolveGuardrailObject: ((value: z.infer<T>) => void) | undefined;
         let rejectGuardrailObject: ((reason: unknown) => void) | undefined;
 
-        const { result, modelName: effectiveModelName } = await this.executeWithModelFallback({
+        const { result, modelName: effectiveModelName } = await agentExecuteWithModelFallback({
           oc,
           operation: "streamObject",
           options,
@@ -4348,16 +4296,16 @@ export class Agent<
               // Log the error
               methodLogger.error("Stream object error occurred", {
                 error: actualError,
-                agentName: this.name,
-                modelName: this.getEffectiveModelName(oc, resolvedModel),
+                agentName: stateName,
+                modelName: agentGetEffectiveModelName(oc, resolvedModel),
                 schemaName: schemaName,
                 attempt,
                 maxRetries,
               });
 
               // Call error hooks if they exist
-              await this.getMergedHooks(options).onError?.({
-                agent: this,
+              await agentGetMergedHooks(options).onError?.({
+                agent: runtimeAgent,
                 error: actualError as Error,
                 context: oc,
               });
@@ -4377,9 +4325,9 @@ export class Agent<
                 }
               } finally {
                 await flushObservability(
-                  this.getObservability(),
-                  oc.logger ?? this.logger,
-                  this.observabilityAuthWarningState,
+                  agentGetObservability(),
+                  oc.logger ?? stateLogger,
+                  stateObservabilityAuthWarningState,
                   "streamObject:onError",
                 );
               }
@@ -4389,8 +4337,8 @@ export class Agent<
               ...promptOptions,
               output: objectOutput,
               // Default values
-              maxOutputTokens: this.maxOutputTokens,
-              temperature: this.temperature,
+              maxOutputTokens: stateMaxOutputTokens,
+              temperature: stateTemperature,
               // User overrides from AI SDK options
               ...aiSDKCallOptions,
               maxRetries: 0,
@@ -4398,7 +4346,7 @@ export class Agent<
               providerOptions,
               // VoltAgent controlled
               abortSignal: oc.abortController.signal,
-              onStepEnd: this.createStepHandler(oc, options, userOnStepEnd),
+              onStepEnd: agentCreateStepHandler(oc, options, userOnStepEnd),
               onError: nativeStreamRetriesEnabled ? userOnError : handleTerminalError,
               experimental_transform: nativeStreamRetriesEnabled
                 ? observeTerminalStreamErrors(aiSDKCallOptions.experimental_transform, (error) =>
@@ -4409,7 +4357,7 @@ export class Agent<
                 await invokeAISDKCallbackSafely(
                   userOnEnd,
                   finalResult,
-                  oc.logger ?? this.logger,
+                  oc.logger ?? stateLogger,
                   "onEnd",
                 );
 
@@ -4422,7 +4370,7 @@ export class Agent<
                     usage: providerUsage,
                     totalUsage: (finalResult as { totalUsage?: LanguageModelUsage }).totalUsage,
                   });
-                  this.recordRootSpanUsageAndProviderCost(
+                  agentRecordRootSpanUsageAndProviderCost(
                     oc.traceContext,
                     usageForFinish,
                     finalResult.providerMetadata,
@@ -4435,7 +4383,7 @@ export class Agent<
                       operationContext: oc,
                       guardrails: guardrailSet.output,
                       operation: "streamObject",
-                      agent: this,
+                      agent: runtimeAgent,
                       metadata: {
                         usage: usageInfo,
                         finishReason: finalResult.finishReason ?? null,
@@ -4445,8 +4393,8 @@ export class Agent<
                     resolveGuardrailObject?.(finalObject);
                   }
 
-                  if (this.shouldPersistMemoryForContext(oc) && oc.userId && oc.conversationId) {
-                    const message: UIMessage = this.applyMetadataToMessage(
+                  if (agentShouldPersistMemoryForContext(oc) && oc.userId && oc.conversationId) {
+                    const message: UIMessage = agentApplyMetadataToMessage(
                       {
                         id: randomUUID(),
                         role: "assistant",
@@ -4457,14 +4405,14 @@ export class Agent<
                           },
                         ],
                       },
-                      this.buildPersistedAssistantMessageMetadata({
+                      agentBuildPersistedAssistantMessageMetadata({
                         oc,
                         usage: usageInfo,
                         finishReason: finalResult.finishReason ?? null,
                       }),
                     );
 
-                    await this.memoryManager.saveMessage(oc, message, oc.userId, oc.conversationId);
+                    await stateMemoryManager.saveMessage(oc, message, oc.userId, oc.conversationId);
 
                     const step: StepWithContent = {
                       id: randomUUID(),
@@ -4473,7 +4421,7 @@ export class Agent<
                       role: "assistant",
                       usage: usageInfo,
                     };
-                    this.addStepToHistory(step, oc);
+                    agentAddStepToHistory(step, oc);
                   }
 
                   oc.traceContext.setOutput(finalObject);
@@ -4485,9 +4433,9 @@ export class Agent<
                       ? finalObject
                       : safeStringify(finalObject);
 
-                  await this.getMergedHooks(options).onEnd?.({
+                  await agentGetMergedHooks(options).onEnd?.({
                     conversationId: oc.conversationId || "",
-                    agent: this,
+                    agent: runtimeAgent,
                     output: {
                       object: finalObject,
                       usage: providerUsage,
@@ -4507,7 +4455,7 @@ export class Agent<
                     : "no usage data";
                   methodLogger.debug(
                     buildAgentLogMessage(
-                      this.name,
+                      stateName,
                       ActionType.GENERATION_COMPLETE,
                       `Object generation completed (${tokenInfo})`,
                     ),
@@ -4520,7 +4468,7 @@ export class Agent<
                     },
                   );
 
-                  this.enqueueEvalScoring({
+                  agentEnqueueEvalScoring({
                     oc,
                     output: finalObject,
                     operation: "streamObject",
@@ -4536,9 +4484,9 @@ export class Agent<
                   // Ensure all spans are exported on finish
                   // Uses waitUntil if available to avoid blocking
                   await flushObservability(
-                    this.getObservability(),
-                    oc.logger ?? this.logger,
-                    this.observabilityAuthWarningState,
+                    agentGetObservability(),
+                    oc.logger ?? stateLogger,
+                    stateObservabilityAuthWarningState,
                     "streamObject:onFinish",
                   );
                 } catch (error) {
@@ -4549,15 +4497,15 @@ export class Agent<
             });
 
             const originalFullStream = streamResult.stream;
-            const probeResult = await this.probeStreamStart(originalFullStream, attemptState);
-            const streamResultForConsumption = this.withProbedFullStream(
+            const probeResult = await agentProbeStreamStart(originalFullStream, attemptState);
+            const streamResultForConsumption = agentWithProbedFullStream(
               streamResult,
               originalFullStream,
               probeResult.stream,
             );
 
             if (probeResult.status === "error") {
-              this.discardStream(streamResultForConsumption.stream);
+              agentDiscardStream(streamResultForConsumption.stream);
               throw probeResult.error;
             }
 
@@ -4569,8 +4517,8 @@ export class Agent<
           rootSpan,
           effectiveModelName,
           options,
-          this.maxOutputTokens,
-          this.temperature,
+          stateMaxOutputTokens,
+          stateTemperature,
         );
 
         if (guardrailSet.output.length > 0) {
@@ -4610,15 +4558,15 @@ export class Agent<
 
         return resultWithContext;
       } catch (error) {
-        await this.flushPendingMessagesOnError(oc).catch(() => {});
+        await agentFlushPendingMessagesOnError(oc).catch(() => {});
         // Ensure spans are exported on pre-stream errors
         await flushObservability(
-          this.getObservability(),
-          oc.logger ?? this.logger,
-          this.observabilityAuthWarningState,
+          agentGetObservability(),
+          oc.logger ?? stateLogger,
+          stateObservabilityAuthWarningState,
           "streamObject:preStreamError",
         );
-        return this.handleError(error as Error, oc, options, 0);
+        return agentHandleError(error as Error, oc, options, 0);
       } finally {
         // No need to flush here for streams - handled in onFinish/onError
       }
@@ -4629,7 +4577,7 @@ export class Agent<
   // Private Helper Methods
   // ============================================================================
 
-  private resolveGuardrailSets(options?: {
+  function agentResolveGuardrailSets(options?: {
     inputGuardrails?: InputGuardrail[];
     outputGuardrails?: OutputGuardrail<any>[];
   }): {
@@ -4637,19 +4585,19 @@ export class Agent<
     output: NormalizedOutputGuardrail[];
   } {
     const optionInput = options?.inputGuardrails
-      ? normalizeInputGuardrailList(options.inputGuardrails, this.inputGuardrails.length)
+      ? normalizeInputGuardrailList(options.inputGuardrails, stateInputGuardrails.length)
       : [];
     const optionOutput = options?.outputGuardrails
-      ? normalizeOutputGuardrailList(options.outputGuardrails, this.outputGuardrails.length)
+      ? normalizeOutputGuardrailList(options.outputGuardrails, stateOutputGuardrails.length)
       : [];
 
     return {
-      input: [...this.inputGuardrails, ...optionInput],
-      output: [...this.outputGuardrails, ...optionOutput],
+      input: [...stateInputGuardrails, ...optionInput],
+      output: [...stateOutputGuardrails, ...optionOutput],
     };
   }
 
-  private resolveMiddlewareSets(options?: {
+  function agentResolveMiddlewareSets(options?: {
     inputMiddlewares?: InputMiddleware[];
     outputMiddlewares?: OutputMiddleware<any>[];
   }): {
@@ -4657,30 +4605,30 @@ export class Agent<
     output: NormalizedOutputMiddleware[];
   } {
     const optionInput = options?.inputMiddlewares
-      ? normalizeInputMiddlewareList(options.inputMiddlewares, this.inputMiddlewares.length)
+      ? normalizeInputMiddlewareList(options.inputMiddlewares, stateInputMiddlewares.length)
       : [];
     const optionOutput = options?.outputMiddlewares
-      ? normalizeOutputMiddlewareList(options.outputMiddlewares, this.outputMiddlewares.length)
+      ? normalizeOutputMiddlewareList(options.outputMiddlewares, stateOutputMiddlewares.length)
       : [];
 
     return {
-      input: [...this.inputMiddlewares, ...optionInput],
-      output: [...this.outputMiddlewares, ...optionOutput],
+      input: [...stateInputMiddlewares, ...optionInput],
+      output: [...stateOutputMiddlewares, ...optionOutput],
     };
   }
 
-  private resolveMiddlewareRetries(options?: AnyBaseGenerationOptions): number {
+  function agentResolveMiddlewareRetries(options?: AnyBaseGenerationOptions): number {
     const optionRetries = options?.maxMiddlewareRetries;
     if (typeof optionRetries === "number" && Number.isFinite(optionRetries)) {
       return Math.max(0, optionRetries);
     }
-    if (Number.isFinite(this.maxMiddlewareRetries)) {
-      return Math.max(0, this.maxMiddlewareRetries);
+    if (Number.isFinite(stateMaxMiddlewareRetries)) {
+      return Math.max(0, stateMaxMiddlewareRetries);
     }
     return 0;
   }
 
-  private storeMiddlewareRetryFeedback(
+  function agentStoreMiddlewareRetryFeedback(
     oc: OperationContext,
     reason?: string,
     metadata?: unknown,
@@ -4694,7 +4642,7 @@ export class Agent<
     oc.systemContext.set(MIDDLEWARE_RETRY_FEEDBACK_KEY, feedback);
   }
 
-  private consumeMiddlewareRetryFeedback(oc: OperationContext): string | null {
+  function agentConsumeMiddlewareRetryFeedback(oc: OperationContext): string | null {
     const feedback = oc.systemContext.get(MIDDLEWARE_RETRY_FEEDBACK_KEY);
     if (typeof feedback === "string" && feedback.trim().length > 0) {
       oc.systemContext.delete(MIDDLEWARE_RETRY_FEEDBACK_KEY);
@@ -4703,7 +4651,11 @@ export class Agent<
     return null;
   }
 
-  private shouldRetryMiddleware(error: unknown, retryCount: number, maxRetries: number): boolean {
+  function agentShouldRetryMiddleware(
+    error: unknown,
+    retryCount: number,
+    maxRetries: number,
+  ): boolean {
     if (!isMiddlewareAbortError(error)) {
       return false;
     }
@@ -4713,7 +4665,7 @@ export class Agent<
   /**
    * Common preparation for all execution methods
    */
-  private async prepareExecution(
+  async function agentPrepareExecution(
     input: string | UIMessage[] | BaseMessage[],
     oc: OperationContext,
     options?: AnyBaseGenerationOptions,
@@ -4724,28 +4676,28 @@ export class Agent<
     tools: Record<string, any>;
     maxSteps: number;
   }> {
-    const dynamicToolInput = await this.resolveValue(this.dynamicTools, oc);
+    const dynamicToolInput = await agentResolveValue(stateDynamicTools, oc);
     const dynamicTools = splitAgentToolInput(dynamicToolInput);
     const optionTools = splitAgentToolInput(options?.tools);
     const adHocTools = [...dynamicTools.items, ...optionTools.items];
     const adHocToolSets = [dynamicTools.toolSet, optionTools.toolSet].filter(
       (toolSet): toolSet is ToolSet => Boolean(toolSet),
     );
-    const runtimeToolkits = this.extractToolkits(adHocTools);
+    const runtimeToolkits = agentExtractToolkits(adHocTools);
 
     // Prepare messages (system + memory + input) as UIMessages
-    const buffer = this.getConversationBuffer(oc);
-    const uiMessages = await this.prepareMessages(input, oc, options, buffer, runtimeToolkits);
+    const buffer = agentGetConversationBuffer(oc);
+    const uiMessages = await agentPrepareMessages(input, oc, options, buffer, runtimeToolkits);
 
     // Convert UIMessages to ModelMessages for the LLM
-    const hooks = this.getMergedHooks(options);
+    const hooks = agentGetMergedHooks(options);
     let messages = await convertToModelMessages(uiMessages);
 
     if (hooks.onPrepareModelMessages) {
       const result = await hooks.onPrepareModelMessages({
         modelMessages: messages,
         uiMessages,
-        agent: this,
+        agent: runtimeAgent,
         context: oc,
       });
       if (result?.modelMessages) {
@@ -4756,12 +4708,12 @@ export class Agent<
     messages = stripDanglingOpenAIReasoningFromModelMessages(messages);
 
     // Calculate maxSteps (use provided option or calculate based on subagents)
-    const maxSteps = options?.maxSteps ?? this.calculateMaxSteps();
+    const maxSteps = options?.maxSteps ?? agentCalculateMaxSteps();
 
-    const modelName = this.getModelName(options?.model);
+    const modelName = runtimeAgent.getModelName(options?.model);
 
     // Prepare tools with execution context
-    const tools = await this.prepareTools(adHocTools, oc, maxSteps, options, adHocToolSets);
+    const tools = await agentPrepareTools(adHocTools, oc, maxSteps, options, adHocToolSets);
 
     return {
       messages,
@@ -4772,7 +4724,7 @@ export class Agent<
     };
   }
 
-  private collectToolDataFromResult<TOOLS extends ToolSet, OUTPUT extends OutputSpec>(
+  function agentCollectToolDataFromResult<TOOLS extends ToolSet, OUTPUT extends OutputSpec>(
     result: GenerateTextResult<TOOLS, any, OUTPUT>,
   ): {
     toolCalls: GenerateTextResult<TOOLS, any, OUTPUT>["toolCalls"];
@@ -4789,7 +4741,7 @@ export class Agent<
     };
   }
 
-  private async ensureStructuredOutputGenerated<
+  async function agentEnsureStructuredOutputGenerated<
     TOOLS extends ToolSet,
     OUTPUT extends OutputSpec,
   >(params: {
@@ -4814,7 +4766,7 @@ export class Agent<
         throw error;
       }
 
-      const { toolCalls } = this.collectToolDataFromResult(result);
+      const { toolCalls } = agentCollectToolDataFromResult(result);
       const configuredToolCount = Object.keys(tools ?? {}).length;
       const stepCount = result.steps?.length ?? 0;
       const finishReason = result.finishReason ?? "unknown";
@@ -4864,7 +4816,7 @@ export class Agent<
    */
   // createContext removed; use createOperationContext directly
 
-  private normalizeConversationPersistenceOptions(
+  function agentNormalizeConversationPersistenceOptions(
     options?: AgentConversationPersistenceOptions,
   ): ResolvedConversationPersistenceOptions {
     const mode = options?.mode ?? DEFAULT_CONVERSATION_PERSISTENCE_OPTIONS.mode;
@@ -4883,7 +4835,7 @@ export class Agent<
     };
   }
 
-  private normalizeMessageMetadataPersistenceOptions(
+  function agentNormalizeMessageMetadataPersistenceOptions(
     options?: AgentMessageMetadataPersistenceConfig | AgentMessageMetadataPersistenceOptions,
     defaults: ResolvedMessageMetadataPersistenceOptions = DEFAULT_MESSAGE_METADATA_PERSISTENCE_OPTIONS,
   ): ResolvedMessageMetadataPersistenceOptions {
@@ -4907,24 +4859,24 @@ export class Agent<
     };
   }
 
-  private resolveConversationPersistenceOptions(
+  function agentResolveConversationPersistenceOptions(
     options?: AnyBaseGenerationOptions,
   ): ResolvedConversationPersistenceOptions {
-    const resolvedMemory = this.resolveMemoryRuntimeOptions(options);
+    const resolvedMemory = agentResolveMemoryRuntimeOptions(options);
     if (!resolvedMemory.conversationPersistence) {
-      return { ...this.conversationPersistence };
+      return { ...stateConversationPersistence };
     }
 
     const conversationPersistence = resolvedMemory.conversationPersistence;
-    return this.normalizeConversationPersistenceOptions({
-      mode: conversationPersistence.mode ?? this.conversationPersistence.mode,
-      debounceMs: conversationPersistence.debounceMs ?? this.conversationPersistence.debounceMs,
+    return agentNormalizeConversationPersistenceOptions({
+      mode: conversationPersistence.mode ?? stateConversationPersistence.mode,
+      debounceMs: conversationPersistence.debounceMs ?? stateConversationPersistence.debounceMs,
       flushOnToolResult:
-        conversationPersistence.flushOnToolResult ?? this.conversationPersistence.flushOnToolResult,
+        conversationPersistence.flushOnToolResult ?? stateConversationPersistence.flushOnToolResult,
     });
   }
 
-  private resolveMemoryRuntimeOptions(
+  function agentResolveMemoryRuntimeOptions(
     options?: AnyBaseGenerationOptions,
     operationContext?: OperationContext,
   ): CommonResolvedRuntimeMemoryOptions {
@@ -4968,11 +4920,11 @@ export class Agent<
         parentResolvedMemory?.conversationPersistence,
       messageMetadataPersistence:
         contextResolvedMemory?.messageMetadataPersistence ??
-        this.normalizeMessageMetadataPersistenceOptions(
+        agentNormalizeMessageMetadataPersistenceOptions(
           memoryOptions?.messageMetadataPersistence ??
             options?.messageMetadataPersistence ??
             parentResolvedMemory?.messageMetadataPersistence,
-          this.messageMetadataPersistence,
+          stateMessageMetadataPersistence,
         ),
       readOnly: firstDefined(
         contextResolvedMemory?.readOnly,
@@ -4982,7 +4934,7 @@ export class Agent<
     };
   }
 
-  private getConversationPersistenceOptionsForContext(
+  function agentGetConversationPersistenceOptionsForContext(
     oc: OperationContext,
   ): ResolvedConversationPersistenceOptions {
     const fromContext = oc.systemContext.get(CONVERSATION_PERSISTENCE_OPTIONS_KEY) as
@@ -4993,26 +4945,26 @@ export class Agent<
       return fromContext;
     }
 
-    const resolved = { ...this.conversationPersistence };
+    const resolved = { ...stateConversationPersistence };
     oc.systemContext.set(CONVERSATION_PERSISTENCE_OPTIONS_KEY, resolved);
     return resolved;
   }
 
-  private getMessageMetadataPersistenceOptionsForContext(
+  function agentGetMessageMetadataPersistenceOptionsForContext(
     oc: OperationContext,
   ): ResolvedMessageMetadataPersistenceOptions {
-    return this.normalizeMessageMetadataPersistenceOptions(
+    return agentNormalizeMessageMetadataPersistenceOptions(
       oc.resolvedMemory?.messageMetadataPersistence,
-      this.messageMetadataPersistence,
+      stateMessageMetadataPersistence,
     );
   }
 
-  private buildPersistedAssistantMessageMetadata(params: {
+  function agentBuildPersistedAssistantMessageMetadata(params: {
     oc: OperationContext;
     usage?: UsageInfo;
     finishReason?: string | null;
   }): Record<string, unknown> | undefined {
-    const persistence = this.getMessageMetadataPersistenceOptionsForContext(params.oc);
+    const persistence = agentGetMessageMetadataPersistenceOptionsForContext(params.oc);
     const metadata: Record<string, unknown> = {};
 
     if (persistence.usage && params.usage) {
@@ -5026,7 +4978,7 @@ export class Agent<
     return Object.keys(metadata).length > 0 ? metadata : undefined;
   }
 
-  private applyMetadataToLastAssistantMessage(params: {
+  function agentApplyMetadataToLastAssistantMessage(params: {
     buffer: ConversationBuffer;
     metadata?: Record<string, unknown>;
     responseMessages?: ModelMessage[];
@@ -5053,7 +5005,7 @@ export class Agent<
     return false;
   }
 
-  private applyMetadataToMessage(
+  function agentApplyMetadataToMessage(
     message: UIMessage,
     metadata?: Record<string, unknown>,
   ): UIMessage {
@@ -5070,7 +5022,7 @@ export class Agent<
     };
   }
 
-  private resolveContext(
+  function agentResolveContext(
     options?: AnyBaseGenerationOptions,
     clone = false,
   ): Map<string | symbol, unknown> {
@@ -5088,8 +5040,8 @@ export class Agent<
           if (!context.has(k)) context.set(k, v);
         }
       }
-      if (this.context) {
-        for (const [k, v] of this.context.entries()) {
+      if (stateContext) {
+        for (const [k, v] of stateContext.entries()) {
           if (!context.has(k)) context.set(k, v);
         }
       }
@@ -5097,14 +5049,14 @@ export class Agent<
       // Use the user-provided context instance directly
       context = clone ? new Map(runtimeContext) : runtimeContext;
       // Fill defaults from agent-level context without overriding user values
-      if (this.context) {
-        for (const [k, v] of this.context.entries()) {
+      if (stateContext) {
+        for (const [k, v] of stateContext.entries()) {
           if (!context.has(k)) context.set(k, v);
         }
       }
-    } else if (this.context) {
+    } else if (stateContext) {
       // Fall back to agent-level default context instance
-      context = clone ? new Map(this.context) : this.context;
+      context = clone ? new Map(stateContext) : stateContext;
     } else {
       // No context provided anywhere; create a fresh one
       context = new Map();
@@ -5126,32 +5078,32 @@ export class Agent<
    * Create only the OperationContext (sync)
    * Transitional helper to gradually adopt OperationContext across methods
    */
-  private createOperationContext(
+  function agentCreateOperationContext(
     input: string | UIMessage[] | BaseMessage[],
     options?: AnyBaseGenerationOptions,
   ): OperationContext {
     const operationId = randomUUID();
     const startTimeDate = new Date();
-    const resolvedMemory = this.resolveMemoryRuntimeOptions(options);
+    const resolvedMemory = agentResolveMemoryRuntimeOptions(options);
 
-    const context = options?.[VALIDATED_CONTEXT] ?? this.resolveContext(options);
+    const context = options?.[VALIDATED_CONTEXT] ?? agentResolveContext(options);
 
-    const logger = this.getContextualLogger(options?.parentAgentId).child({
+    const logger = agentGetContextualLogger(options?.parentAgentId).child({
       operationId,
       userId: resolvedMemory.userId,
       conversationId: resolvedMemory.conversationId,
       executionId: operationId,
     });
 
-    const observability = this.getObservability();
-    const traceContext = new AgentTraceContext(observability, this.name, {
-      agentId: this.id,
-      agentName: this.name,
+    const observability = agentGetObservability();
+    const traceContext = new AgentTraceContext(observability, stateName, {
+      agentId: stateId,
+      agentName: stateName,
       userId: resolvedMemory.userId,
       conversationId: resolvedMemory.conversationId,
       operationId,
       parentSpan: options?.parentSpan,
-      inheritParentSpan: options?.inheritParentSpan ?? this.inheritParentSpan,
+      inheritParentSpan: options?.inheritParentSpan ?? stateInheritParentSpan,
       parentAgentId: options?.parentAgentId,
       input,
     });
@@ -5171,22 +5123,22 @@ export class Agent<
       });
     }
 
-    const conversationPersistence = this.resolveConversationPersistenceOptions(options);
+    const conversationPersistence = agentResolveConversationPersistenceOptions(options);
     const systemContext = new Map<string | symbol, unknown>();
     systemContext.set(BUFFER_CONTEXT_KEY, new ConversationBuffer(undefined, logger));
     systemContext.set(CONVERSATION_PERSISTENCE_OPTIONS_KEY, conversationPersistence);
     systemContext.set(
       QUEUE_CONTEXT_KEY,
-      new MemoryPersistQueue(this.memoryManager, {
+      new MemoryPersistQueue(stateMemoryManager, {
         debounceMs: conversationPersistence.debounceMs,
         logger,
       }),
     );
     systemContext.set(AGENT_METADATA_CONTEXT_KEY, {
-      agentId: this.id,
-      agentName: this.name,
+      agentId: stateId,
+      agentName: stateName,
     });
-    systemContext.set(AGENT_REF_CONTEXT_KEY, this);
+    systemContext.set(AGENT_REF_CONTEXT_KEY, runtimeAgent);
 
     const elicitationHandler = options?.elicitation ?? options?.parentOperationContext?.elicitation;
 
@@ -5202,7 +5154,7 @@ export class Agent<
       userId: resolvedMemory.userId,
       conversationId: resolvedMemory.conversationId,
       resolvedMemory: { ...resolvedMemory },
-      workspace: this.workspace,
+      workspace: stateWorkspace,
       parentAgentId: options?.parentAgentId,
       traceContext,
       startTime: startTimeDate,
@@ -5212,12 +5164,12 @@ export class Agent<
     };
   }
 
-  private resetOperationAttemptState(oc: OperationContext): void {
-    const conversationPersistence = this.getConversationPersistenceOptionsForContext(oc);
+  function agentResetOperationAttemptState(oc: OperationContext): void {
+    const conversationPersistence = agentGetConversationPersistenceOptionsForContext(oc);
     oc.systemContext.set(BUFFER_CONTEXT_KEY, new ConversationBuffer(undefined, oc.logger));
     oc.systemContext.set(
       QUEUE_CONTEXT_KEY,
-      new MemoryPersistQueue(this.memoryManager, {
+      new MemoryPersistQueue(stateMemoryManager, {
         debounceMs: conversationPersistence.debounceMs,
         logger: oc.logger,
       }),
@@ -5231,7 +5183,7 @@ export class Agent<
     oc.output = undefined;
   }
 
-  private getConversationBuffer(oc: OperationContext): ConversationBuffer {
+  function agentGetConversationBuffer(oc: OperationContext): ConversationBuffer {
     let buffer = oc.systemContext.get(BUFFER_CONTEXT_KEY) as ConversationBuffer | undefined;
     if (!buffer) {
       buffer = new ConversationBuffer();
@@ -5240,11 +5192,11 @@ export class Agent<
     return buffer;
   }
 
-  private getMemoryPersistQueue(oc: OperationContext): MemoryPersistQueue {
+  function agentGetMemoryPersistQueue(oc: OperationContext): MemoryPersistQueue {
     let queue = oc.systemContext.get(QUEUE_CONTEXT_KEY) as MemoryPersistQueue | undefined;
     if (!queue) {
-      const conversationPersistence = this.getConversationPersistenceOptionsForContext(oc);
-      queue = new MemoryPersistQueue(this.memoryManager, {
+      const conversationPersistence = agentGetConversationPersistenceOptionsForContext(oc);
+      queue = new MemoryPersistQueue(stateMemoryManager, {
         debounceMs: conversationPersistence.debounceMs,
         logger: oc.logger,
       });
@@ -5253,19 +5205,19 @@ export class Agent<
     return queue;
   }
 
-  private isReadOnlyMemoryForContext(oc: OperationContext): boolean {
+  function agentIsReadOnlyMemoryForContext(oc: OperationContext): boolean {
     return oc.resolvedMemory?.readOnly === true;
   }
 
-  private shouldPersistMemoryForContext(oc: OperationContext): boolean {
-    return !this.isReadOnlyMemoryForContext(oc);
+  function agentShouldPersistMemoryForContext(oc: OperationContext): boolean {
+    return !agentIsReadOnlyMemoryForContext(oc);
   }
 
-  private async ensureStreamingResponseMessageId(
+  async function agentEnsureStreamingResponseMessageId(
     oc: OperationContext,
     buffer: ConversationBuffer,
   ): Promise<string | null> {
-    const messageId = this.getOrCreateStepResponseMessageId(oc);
+    const messageId = agentGetOrCreateStepResponseMessageId(oc);
     const placeholder: UIMessage = {
       id: messageId,
       role: "assistant",
@@ -5276,7 +5228,7 @@ export class Agent<
     return messageId;
   }
 
-  private getOrCreateStepResponseMessageId(oc: OperationContext): string {
+  function agentGetOrCreateStepResponseMessageId(oc: OperationContext): string {
     const existing = oc.systemContext.get(STREAM_RESPONSE_MESSAGE_ID_KEY);
     if (typeof existing === "string" && existing.trim().length > 0) {
       return existing;
@@ -5287,7 +5239,7 @@ export class Agent<
     return messageId;
   }
 
-  private getStepResponseMessageFingerprints(oc: OperationContext): Set<string> {
+  function agentGetStepResponseMessageFingerprints(oc: OperationContext): Set<string> {
     const existing = oc.systemContext.get(STEP_RESPONSE_MESSAGE_FINGERPRINTS_KEY);
     if (existing instanceof Set) {
       return existing as Set<string>;
@@ -5298,7 +5250,7 @@ export class Agent<
     return fingerprints;
   }
 
-  private normalizeStepResponseMessages(
+  function agentNormalizeStepResponseMessages(
     oc: OperationContext,
     responseMessages: ModelMessage[] | undefined,
   ): ModelMessage[] | undefined {
@@ -5306,8 +5258,8 @@ export class Agent<
       return undefined;
     }
 
-    const fallbackAssistantMessageId = this.getOrCreateStepResponseMessageId(oc);
-    const fingerprints = this.getStepResponseMessageFingerprints(oc);
+    const fallbackAssistantMessageId = agentGetOrCreateStepResponseMessageId(oc);
+    const fingerprints = agentGetStepResponseMessageFingerprints(oc);
     const normalized: ModelMessage[] = [];
 
     for (const responseMessage of responseMessages) {
@@ -5338,13 +5290,13 @@ export class Agent<
     return normalized.length > 0 ? normalized : undefined;
   }
 
-  private async flushPendingMessagesOnError(oc: OperationContext): Promise<void> {
-    if (!this.shouldPersistMemoryForContext(oc)) {
+  async function agentFlushPendingMessagesOnError(oc: OperationContext): Promise<void> {
+    if (!agentShouldPersistMemoryForContext(oc)) {
       return;
     }
 
-    const buffer = this.getConversationBuffer(oc);
-    const queue = this.getMemoryPersistQueue(oc);
+    const buffer = agentGetConversationBuffer(oc);
+    const queue = agentGetMemoryPersistQueue(oc);
 
     if (!buffer || !queue) {
       return;
@@ -5365,24 +5317,24 @@ export class Agent<
   /**
    * Get contextual logger with parent tracking
    */
-  private getContextualLogger(parentAgentId?: string): Logger {
+  function agentGetContextualLogger(parentAgentId?: string): Logger {
     if (parentAgentId) {
       const parentAgent = AgentRegistry.getInstance().getAgent(parentAgentId);
       if (parentAgent) {
-        return this.logger.child({
+        return stateLogger.child({
           parentAgentId,
           isSubAgent: true,
-          delegationDepth: this.calculateDelegationDepth(parentAgentId),
+          delegationDepth: agentCalculateDelegationDepth(parentAgentId),
         });
       }
     }
-    return this.logger;
+    return stateLogger;
   }
 
   /**
    * Calculate delegation depth
    */
-  private calculateDelegationDepth(parentAgentId: string | undefined): number {
+  function agentCalculateDelegationDepth(parentAgentId: string | undefined): number {
     if (!parentAgentId) return 0;
 
     let depth = 1;
@@ -5405,11 +5357,11 @@ export class Agent<
     return depth;
   }
 
-  private enqueueEvalScoring(args: EnqueueEvalScoringArgs): void {
-    enqueueEvalScoringHelper(this.createEvalHost(), args);
+  function agentEnqueueEvalScoring(args: EnqueueEvalScoringArgs): void {
+    enqueueEvalScoringHelper(agentCreateEvalHost(), args);
   }
 
-  private createLLMSpan(
+  function agentCreateLLMSpan(
     oc: OperationContext,
     params: {
       operation: LLMOperation;
@@ -5428,7 +5380,7 @@ export class Agent<
       tools: params.tools,
     });
     const attributes = {
-      ...this.buildLLMSpanAttributes(spanParams),
+      ...agentBuildLLMSpanAttributes(spanParams),
       ...(promptContextUsageEstimate
         ? promptContextUsageEstimateToAttributes(promptContextUsageEstimate)
         : {}),
@@ -5441,7 +5393,7 @@ export class Agent<
     return span;
   }
 
-  private createLLMSpanFinalizer(span: Span) {
+  function agentCreateLLMSpanFinalizer(span: Span) {
     let ended = false;
     return (
       status: SpanStatusCode,
@@ -5456,10 +5408,10 @@ export class Agent<
         return;
       }
       if (details?.usage) {
-        this.recordLLMUsage(span, details.usage);
+        agentRecordLLMUsage(span, details.usage);
       }
       if (details?.providerMetadata !== undefined) {
-        this.recordProviderCost(span, details.providerMetadata);
+        agentRecordProviderCost(span, details.providerMetadata);
       }
       if (details?.finishReason) {
         span.setAttribute("llm.finish_reason", String(details.finishReason));
@@ -5474,7 +5426,7 @@ export class Agent<
     };
   }
 
-  private buildLLMSpanAttributes(params: {
+  function agentBuildLLMSpanAttributes(params: {
     operation: LLMOperation;
     modelName: string;
     isStreaming: boolean;
@@ -5559,7 +5511,7 @@ export class Agent<
     return attrs;
   }
 
-  private recordLLMUsage(span: Span, usage?: LanguageModelUsage | UsageInfo | null): void {
+  function agentRecordLLMUsage(span: Span, usage?: LanguageModelUsage | UsageInfo | null): void {
     if (!usage) {
       return;
     }
@@ -5591,7 +5543,7 @@ export class Agent<
     }
   }
 
-  private recordProviderCost(span: Span, providerMetadata?: unknown): void {
+  function agentRecordProviderCost(span: Span, providerMetadata?: unknown): void {
     const openRouterUsageCost = extractOpenRouterUsageCost(providerMetadata);
     if (!openRouterUsageCost) {
       return;
@@ -5623,15 +5575,15 @@ export class Agent<
     }
   }
 
-  private createEvalHost(): AgentEvalHost {
+  function agentCreateEvalHost(): AgentEvalHost {
     return {
-      id: this.id,
-      name: this.name,
-      logger: this.logger,
-      evalConfig: this.evalConfig,
-      getObservability: () => this.getObservability(),
+      id: stateId,
+      name: stateName,
+      logger: stateLogger,
+      evalConfig: stateEvalConfig,
+      getObservability: () => agentGetObservability(),
       getVoltOpsClient: () => {
-        const client = this.voltOpsClient || AgentRegistry.getInstance().getGlobalVoltOpsClient();
+        const client = stateVoltOpsClient || AgentRegistry.getInstance().getGlobalVoltOpsClient();
         if (!client || typeof client.hasValidKeys !== "function") {
           return undefined;
         }
@@ -5651,7 +5603,7 @@ export class Agent<
    * This ensures agents can use global observability when available
    * but still work standalone with their own instance
    */
-  private getObservability(): VoltAgentObservability {
+  function agentGetObservability(): VoltAgentObservability {
     const registry = AgentRegistry.getInstance();
 
     // Always check global registry first (it might have been set after agent creation)
@@ -5660,19 +5612,19 @@ export class Agent<
       return globalObservability;
     }
 
-    if (!this.defaultObservability) {
-      this.defaultObservability = createVoltAgentObservability({
-        serviceName: `agent-${this.name}`,
+    if (!stateDefaultObservability) {
+      stateDefaultObservability = createVoltAgentObservability({
+        serviceName: `agent-${stateName}`,
       });
     }
 
-    return this.defaultObservability;
+    return stateDefaultObservability;
   }
 
-  private resolveFeedbackOptions(
+  function agentResolveFeedbackOptions(
     options?: AnyBaseGenerationOptions,
   ): AgentFeedbackOptions | undefined {
-    const raw = options?.feedback ?? this.feedbackOptions;
+    const raw = options?.feedback ?? stateFeedbackOptions;
     if (!raw) {
       return undefined;
     }
@@ -5682,7 +5634,7 @@ export class Agent<
     return raw;
   }
 
-  private getFeedbackTraceId(oc: OperationContext): string | undefined {
+  function agentGetFeedbackTraceId(oc: OperationContext): string | undefined {
     try {
       return oc.traceContext.getRootSpan().spanContext().traceId;
     } catch {
@@ -5690,9 +5642,9 @@ export class Agent<
     }
   }
 
-  private getFeedbackClient(): VoltOpsClient | undefined {
+  function agentGetFeedbackClient(): VoltOpsClient | undefined {
     const voltOpsClient =
-      this.voltOpsClient || AgentRegistry.getInstance().getGlobalVoltOpsClient();
+      stateVoltOpsClient || AgentRegistry.getInstance().getGlobalVoltOpsClient();
     if (!voltOpsClient || typeof voltOpsClient.hasValidKeys !== "function") {
       return undefined;
     }
@@ -5702,21 +5654,21 @@ export class Agent<
     return voltOpsClient;
   }
 
-  private async createFeedbackMetadata(
+  async function agentCreateFeedbackMetadata(
     oc: OperationContext,
     options?: AnyBaseGenerationOptions,
   ): Promise<AgentFeedbackMetadata | null> {
-    const feedbackOptions = this.resolveFeedbackOptions(options);
+    const feedbackOptions = agentResolveFeedbackOptions(options);
     if (!feedbackOptions) {
       return null;
     }
 
-    const voltOpsClient = this.getFeedbackClient();
+    const voltOpsClient = agentGetFeedbackClient();
     if (!voltOpsClient) {
       return null;
     }
 
-    const traceId = this.getFeedbackTraceId(oc);
+    const traceId = agentGetFeedbackTraceId(oc);
     if (!traceId) {
       return null;
     }
@@ -5753,56 +5705,16 @@ export class Agent<
   /**
    * Check if semantic search is supported
    */
-  private hasSemanticSearchSupport(): boolean {
+  function agentHasSemanticSearchSupport(): boolean {
     // Check if MemoryManager has vector support
-    const memory = this.memoryManager.getMemory();
+    const memory = stateMemoryManager.getMemory();
     if (memory) {
       return memory?.hasVectorSupport?.() ?? false;
     }
     return false;
   }
 
-  /**
-   * Extract user query from input for semantic search
-   */
-  private extractUserQuery(input: string | UIMessage[] | BaseMessage[]): string | undefined {
-    if (typeof input === "string") {
-      return input;
-    }
-    if (!Array.isArray(input) || input.length === 0) return undefined;
-
-    const isUI = (msg: any): msg is UIMessage => Array.isArray(msg?.parts);
-
-    const userMessages = (input as any[]).filter((msg) => msg.role === "user");
-    const lastUserMessage: any = userMessages.at(-1);
-
-    if (!lastUserMessage) return undefined;
-
-    if (isUI(lastUserMessage)) {
-      const textParts = lastUserMessage.parts
-        .filter((part: any) => part.type === "text" && typeof part.text === "string")
-        .map((part: any) => part.text.trim())
-        .filter(Boolean);
-      if (textParts.length > 0) return textParts.join(" ");
-      return undefined;
-    }
-
-    // ModelMessage path
-    if (typeof lastUserMessage.content === "string") {
-      const content = (lastUserMessage.content as string).trim();
-      return content.length > 0 ? content : undefined;
-    }
-    if (Array.isArray(lastUserMessage.content)) {
-      const textParts = (lastUserMessage.content as any[])
-        .filter((part: any) => part.type === "text" && typeof part.text === "string")
-        .map((part: any) => part.text.trim())
-        .filter(Boolean);
-      if (textParts.length > 0) return textParts.join(" ");
-    }
-    return undefined;
-  }
-
-  private createConversationTitleGenerator(
+  function agentCreateConversationTitleGenerator(
     memory?: Memory,
   ): ConversationTitleGenerator | undefined {
     const rawConfig = memory?.getTitleGenerationConfig?.();
@@ -5840,7 +5752,7 @@ export class Agent<
 
     return async ({ input, context }) => {
       const inputForQuery = typeof input === "string" || Array.isArray(input) ? input : [input];
-      const query = this.extractUserQuery(inputForQuery as string | UIMessage[] | BaseMessage[]);
+      const query = agentExtractUserQuery(inputForQuery as string | UIMessage[] | BaseMessage[]);
       const trimmed = query?.trim();
       if (!trimmed) {
         return null;
@@ -5852,15 +5764,15 @@ export class Agent<
           : trimmed;
 
       try {
-        const resolvedModel = await this.resolveModel(modelOverride ?? this.model, context);
+        const resolvedModel = await agentResolveModel(modelOverride ?? stateModel, context);
         const messages: Array<{ role: "system" | "user"; content: string }> = [];
         if (systemPrompt.trim()) {
           messages.push({ role: "system", content: systemPrompt });
         }
         messages.push({ role: "user", content: limitedInput });
         const promptOptions = splitInstructionsFromMessages(messages as ModelMessage[]);
-        const modelName = this.getModelName(resolvedModel);
-        const llmSpan = this.createLLMSpan(context, {
+        const modelName = runtimeAgent.getModelName(resolvedModel);
+        const llmSpan = agentCreateLLMSpan(context, {
           operation: "generateTitle",
           modelName,
           isStreaming: false,
@@ -5872,7 +5784,7 @@ export class Agent<
           label: "Generate Conversation Title",
         });
         llmSpan.setAttribute("input", limitedInput);
-        const finalizeLLMSpan = this.createLLMSpanFinalizer(llmSpan);
+        const finalizeLLMSpan = agentCreateLLMSpanFinalizer(llmSpan);
 
         try {
           const result = await context.traceContext.withSpan(llmSpan, () =>
@@ -5934,19 +5846,19 @@ export class Agent<
    * Prepare messages with system prompt and memory
    */
   // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: legacy message preparation pipeline
-  private async prepareMessages(
+  async function agentPrepareMessages(
     input: string | UIMessage[] | BaseMessage[],
     oc: OperationContext,
     options: AnyBaseGenerationOptions | undefined,
     buffer: ConversationBuffer,
     runtimeToolkits: Toolkit[] = [],
   ): Promise<UIMessage[]> {
-    const resolvedInput = await this.validateIncomingUIMessages(input, oc);
+    const resolvedInput = await agentValidateIncomingUIMessages(input, oc);
     const messages: UIMessage[] = [];
-    const resolvedMemory = this.resolveMemoryRuntimeOptions(options, oc);
+    const resolvedMemory = agentResolveMemoryRuntimeOptions(options, oc);
     const canIUseMemory = Boolean(resolvedMemory.userId);
     const shouldPersistMemory = resolvedMemory.readOnly !== true;
-    const speculativeInputGuardrail = this.getSpeculativeInputGuardrail(oc);
+    const speculativeInputGuardrail = agentGetSpeculativeInputGuardrail(oc);
     const shouldPersistInputImmediately =
       shouldPersistMemory && (!speculativeInputGuardrail || speculativeInputGuardrail.hasPassed());
     const memoryContextMessages: UIMessage[] = [];
@@ -5956,10 +5868,10 @@ export class Agent<
       // Check if we should use semantic search
       // Default to true if vector support is available
       const useSemanticSearch =
-        resolvedMemory.semanticMemory?.enabled ?? this.hasSemanticSearchSupport();
+        resolvedMemory.semanticMemory?.enabled ?? agentHasSemanticSearchSupport();
 
       // Extract user query for semantic search if enabled
-      const currentQuery = useSemanticSearch ? this.extractUserQuery(resolvedInput) : undefined;
+      const currentQuery = useSemanticSearch ? agentExtractUserQuery(resolvedInput) : undefined;
 
       // Prepare memory read parameters
       const semanticLimit = resolvedMemory.semanticMemory?.semanticLimit ?? 5;
@@ -5995,7 +5907,7 @@ export class Agent<
           const memoryResult = await traceContext.withSpan(memoryReadSpan, async () => {
             if (isSemanticSearch) {
               // Semantic search
-              const memMessages = await this.memoryManager.getMessages(
+              const memMessages = await stateMemoryManager.getMessages(
                 oc,
                 oc.userId,
                 oc.conversationId,
@@ -6022,7 +5934,7 @@ export class Agent<
                   ? (resolvedInput as UIMessage[])
                   : convertModelMessagesToUIMessages(resolvedInput as BaseMessage[]);
 
-            const result = await this.memoryManager.prepareConversationContext(
+            const result = await stateMemoryManager.prepareConversationContext(
               oc,
               inputForMemory,
               oc.userId,
@@ -6044,7 +5956,7 @@ export class Agent<
               speculativeInputGuardrail &&
               !shouldPersistInputImmediately
             ) {
-              this.queueSaveInputWhenSpeculativeInputGuardrailPasses(
+              agentQueueSaveInputWhenSpeculativeInputGuardrailPasses(
                 speculativeInputGuardrail,
                 oc,
                 inputForMemory,
@@ -6084,9 +5996,9 @@ export class Agent<
                     ? (resolvedInput as UIMessage[])
                     : convertModelMessagesToUIMessages(resolvedInput as BaseMessage[]);
               if (!speculativeInputGuardrail || speculativeInputGuardrail.hasPassed()) {
-                this.memoryManager.queueSaveInput(oc, inputForMemory, oc.userId, oc.conversationId);
+                stateMemoryManager.queueSaveInput(oc, inputForMemory, oc.userId, oc.conversationId);
               } else {
-                this.queueSaveInputWhenSpeculativeInputGuardrailPasses(
+                agentQueueSaveInputWhenSpeculativeInputGuardrailPasses(
                   speculativeInputGuardrail,
                   oc,
                   inputForMemory,
@@ -6106,7 +6018,7 @@ export class Agent<
     }
 
     // Get system message with retriever context and working memory
-    const systemMessage = await this.getSystemMessage(resolvedInput, oc, options, runtimeToolkits);
+    const systemMessage = await agentGetSystemMessage(resolvedInput, oc, options, runtimeToolkits);
     if (systemMessage) {
       const systemMessagesAsUI: UIMessage[] = (() => {
         if (typeof systemMessage === "string") {
@@ -6150,7 +6062,7 @@ export class Agent<
       }
     }
 
-    const middlewareRetryFeedback = this.consumeMiddlewareRetryFeedback(oc);
+    const middlewareRetryFeedback = agentConsumeMiddlewareRetryFeedback(oc);
     if (middlewareRetryFeedback) {
       messages.push({
         id: randomUUID(),
@@ -6199,19 +6111,19 @@ export class Agent<
     const summarizedMessages = await applySummarization({
       messages: sanitizedMessages,
       operationContext: oc,
-      summarization: this.summarization,
-      model: this.model,
-      resolveModel: this.resolveModel.bind(this),
-      agent: this,
+      summarization: stateSummarization,
+      model: stateModel,
+      resolveModel: agentResolveModel.bind(runtimeAgent),
+      agent: runtimeAgent,
     });
 
     // Allow hooks to modify sanitized messages (while exposing the raw set when needed)
-    const hooks = this.getMergedHooks(options);
+    const hooks = agentGetMergedHooks(options);
     if (hooks.onPrepareMessages) {
       const result = await hooks.onPrepareMessages({
         messages: summarizedMessages,
         rawMessages: messages,
-        agent: this,
+        agent: runtimeAgent,
         context: oc,
       });
       const preparedMessages = result?.messages || summarizedMessages;
@@ -6221,7 +6133,7 @@ export class Agent<
     return await validateUIMessages({ messages: summarizedMessages });
   }
 
-  private async validateIncomingUIMessages(
+  async function agentValidateIncomingUIMessages(
     input: string | UIMessage[] | BaseMessage[],
     oc: OperationContext,
   ): Promise<string | UIMessage[] | BaseMessage[]> {
@@ -6242,7 +6154,7 @@ export class Agent<
     }
   }
 
-  private queueSaveInputWhenSpeculativeInputGuardrailPasses(
+  function agentQueueSaveInputWhenSpeculativeInputGuardrailPasses(
     guardrail: SpeculativeInputGuardrailRun,
     oc: OperationContext,
     inputForMemory: string | UIMessage[],
@@ -6253,7 +6165,7 @@ export class Agent<
         if (decision.status !== "passed" || !oc.userId || !oc.conversationId) {
           return;
         }
-        this.memoryManager.queueSaveInput(oc, inputForMemory, oc.userId, oc.conversationId);
+        stateMemoryManager.queueSaveInput(oc, inputForMemory, oc.userId, oc.conversationId);
       })
       .catch((error) => {
         oc.logger?.debug?.("Failed to persist input after speculative guardrail", { error });
@@ -6264,22 +6176,22 @@ export class Agent<
    * Get system message with dynamic instructions and retriever context
    */
   // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: legacy system message assembly
-  private async getSystemMessage(
+  async function agentGetSystemMessage(
     input: string | UIMessage[] | BaseMessage[],
     oc: OperationContext,
     options?: AnyBaseGenerationOptions,
     runtimeToolkits: Toolkit[] = [],
   ): Promise<BaseMessage | BaseMessage[]> {
-    const resolvedMemory = this.resolveMemoryRuntimeOptions(options, oc);
+    const resolvedMemory = agentResolveMemoryRuntimeOptions(options, oc);
     const workingMemoryConversationId = oc.conversationId ?? resolvedMemory.conversationId;
     const workingMemoryUserId = oc.userId ?? resolvedMemory.userId;
 
     // Resolve dynamic instructions
     const promptHelper = VoltOpsClientClass.createPromptHelperWithFallback(
-      this.id,
-      this.name,
-      typeof this.instructions === "function" ? "" : this.instructions,
-      this.voltOpsClient,
+      stateId,
+      stateName,
+      typeof stateInstructions === "function" ? "" : stateInstructions,
+      stateVoltOpsClient,
     );
 
     const dynamicValueOptions: DynamicValueOptions = {
@@ -6288,8 +6200,8 @@ export class Agent<
       prompts: promptHelper,
     };
 
-    const resolvedInstructions = await this.resolveValue(
-      this.instructions,
+    const resolvedInstructions = await agentResolveValue(
+      stateInstructions,
       oc,
       dynamicValueOptions,
     );
@@ -6341,8 +6253,8 @@ export class Agent<
 
     // Get retriever context if available
     let retrieverContext: string | null = null;
-    if (this.retriever && input) {
-      retrieverContext = await this.getRetrieverContext(input, oc);
+    if (stateRetriever && input) {
+      retrieverContext = await agentGetRetrieverContext(input, oc);
     }
 
     // Get working memory instructions if available.
@@ -6355,8 +6267,8 @@ export class Agent<
             ...(workingMemoryUserId ? { userId: workingMemoryUserId } : {}),
           }
         : undefined;
-    if (this.hasWorkingMemorySupport() && workingMemoryLookup) {
-      const memory = this.memoryManager.getMemory();
+    if (agentHasWorkingMemorySupport() && workingMemoryLookup) {
+      const memory = stateMemoryManager.getMemory();
 
       if (memory) {
         // Get full working memory instructions with current data
@@ -6435,7 +6347,7 @@ export class Agent<
 
       if (promptContent.type === "text") {
         const baseContent = promptContent.text || "";
-        const content = await this.enrichInstructions(
+        const content = await agentEnrichInstructions(
           baseContent,
           retrieverContext,
           workingMemoryContext,
@@ -6452,7 +6364,7 @@ export class Agent<
 
     // Default string instructions
     const baseContent = typeof resolvedInstructions === "string" ? resolvedInstructions : "";
-    const content = await this.enrichInstructions(
+    const content = await agentEnrichInstructions(
       baseContent,
       retrieverContext,
       workingMemoryContext,
@@ -6469,7 +6381,7 @@ export class Agent<
   /**
    * Add toolkit instructions
    */
-  private addToolkitInstructions(
+  function agentAddToolkitInstructions(
     baseInstructions: string,
     runtimeToolkits: Toolkit[] = [],
   ): string {
@@ -6479,7 +6391,7 @@ export class Agent<
       addInstructions?: boolean;
     };
 
-    const toolkits: ToolkitInstructionSource[] = this.toolManager.getToolkits().map((toolkit) => ({
+    const toolkits: ToolkitInstructionSource[] = stateToolManager.getToolkits().map((toolkit) => ({
       name: toolkit.name,
       instructions: toolkit.instructions,
       addInstructions: toolkit.addInstructions,
@@ -6521,7 +6433,7 @@ export class Agent<
   /**
    * Enrich instructions with additional context and modifiers
    */
-  private async enrichInstructions(
+  async function agentEnrichInstructions(
     baseContent: string,
     retrieverContext: string | null,
     workingMemoryContext: string | null,
@@ -6531,10 +6443,10 @@ export class Agent<
     let content = baseContent;
 
     // Add toolkit instructions
-    content = this.addToolkitInstructions(content, runtimeToolkits);
+    content = agentAddToolkitInstructions(content, runtimeToolkits);
 
     // Add markdown instruction
-    if (this.markdown) {
+    if (stateMarkdown) {
       content = `${content}\n\nUse markdown to format your answers.`;
     }
 
@@ -6549,19 +6461,19 @@ export class Agent<
     }
 
     // Add supervisor instructions if needed
-    if (this.subAgentManager.hasSubAgents()) {
-      const agentsMemory = await this.prepareAgentsMemory(oc);
-      content = this.subAgentManager.generateSupervisorSystemMessage(
+    if (stateSubAgentManager.hasSubAgents()) {
+      const agentsMemory = await agentPrepareAgentsMemory(oc);
+      content = stateSubAgentManager.generateSupervisorSystemMessage(
         content,
         agentsMemory,
-        this.supervisorConfig,
+        stateSupervisorConfig,
       );
     }
 
     return content;
   }
 
-  private extractToolkits(items: LegacyToolInputItem[]): Toolkit[] {
+  function agentExtractToolkits(items: LegacyToolInputItem[]): Toolkit[] {
     return items.filter(
       (item): item is Toolkit =>
         typeof item === "object" &&
@@ -6574,9 +6486,9 @@ export class Agent<
   /**
    * Prepare agents memory for supervisor
    */
-  private async prepareAgentsMemory(oc: OperationContext): Promise<string> {
+  async function agentPrepareAgentsMemory(oc: OperationContext): Promise<string> {
     try {
-      const subAgents = this.subAgentManager.getSubAgents();
+      const subAgents = stateSubAgentManager.getSubAgents();
       if (subAgents.length === 0) return "";
 
       // Get recent conversation steps
@@ -6588,7 +6500,7 @@ export class Agent<
 
       return formattedMemory || "No previous agent interactions found.";
     } catch (error) {
-      this.logger.warn("Error preparing agents memory", { error });
+      stateLogger.warn("Error preparing agents memory", { error });
       return "Error retrieving agent history.";
     }
   }
@@ -6596,30 +6508,30 @@ export class Agent<
   /**
    * Get retriever context
    */
-  private async getRetrieverContext(
+  async function agentGetRetrieverContext(
     input: string | UIMessage[] | BaseMessage[],
     oc: OperationContext,
   ): Promise<string | null> {
-    if (!this.retriever) return null;
+    if (!stateRetriever) return null;
 
     const startTime = Date.now();
     const retrieverLogger = oc.logger.child({
       operation: "retriever",
-      retrieverId: this.retriever.tool.name,
+      retrieverId: stateRetriever.tool.name,
     });
 
-    retrieverLogger.debug(buildAgentLogMessage(this.name, ActionType.START, "Retrieving context"), {
+    retrieverLogger.debug(buildAgentLogMessage(stateName, ActionType.START, "Retrieving context"), {
       event: LogEvents.RETRIEVER_SEARCH_STARTED,
       input,
     });
 
     // Create OpenTelemetry span for retriever using TraceContext
     const retrieverSpan = oc.traceContext.createChildSpan("retriever.search", "retriever", {
-      label: this.retriever.tool.name || "Retriever",
+      label: stateRetriever.tool.name || "Retriever",
       attributes: {
-        "retriever.name": this.retriever.tool.name || "Retriever",
+        "retriever.name": stateRetriever.tool.name || "Retriever",
         input: typeof input === "string" ? input : safeStringify(input),
-        ...this.getRetrieverObservabilityAttributes(),
+        ...agentGetRetrieverObservabilityAttributes(),
       },
     });
 
@@ -6636,8 +6548,8 @@ export class Agent<
 
       // Execute retriever with the span context
       const retrievedContent = await oc.traceContext.withSpan(retrieverSpan, async () => {
-        if (!this.retriever) return null;
-        return await this.retriever.retrieve(retrieverInput, {
+        if (!stateRetriever) return null;
+        return await stateRetriever.retrieve(retrieverInput, {
           ...oc,
           logger: retrieverLogger,
         });
@@ -6651,7 +6563,7 @@ export class Agent<
 
         retrieverLogger.debug(
           buildAgentLogMessage(
-            this.name,
+            stateName,
             ActionType.COMPLETE,
             `Retrieved ${documentCount} documents`,
           ),
@@ -6669,7 +6581,7 @@ export class Agent<
           output: retrievedContent,
           attributes: {
             "retriever.document_count": documentCount,
-            ...this.getRetrieverObservabilityAttributes(),
+            ...agentGetRetrieverObservabilityAttributes(),
           },
         });
 
@@ -6681,7 +6593,7 @@ export class Agent<
         output: null,
         attributes: {
           "retriever.document_count": 0,
-          ...this.getRetrieverObservabilityAttributes(),
+          ...agentGetRetrieverObservabilityAttributes(),
         },
       });
 
@@ -6695,13 +6607,13 @@ export class Agent<
       oc.traceContext.endChildSpan(retrieverSpan, "error", {
         error: error as Error,
         attributes: {
-          ...this.getRetrieverObservabilityAttributes(),
+          ...agentGetRetrieverObservabilityAttributes(),
         },
       });
 
       retrieverLogger.error(
         buildAgentLogMessage(
-          this.name,
+          stateName,
           ActionType.ERROR,
           `Retriever failed: ${error instanceof Error ? error.message : "Unknown error"}`,
         ),
@@ -6712,13 +6624,13 @@ export class Agent<
         },
       );
 
-      this.logger.warn("Failed to retrieve context", { error, agentId: this.id });
+      stateLogger.warn("Failed to retrieve context", { error, agentId: stateId });
       return null;
     }
   }
 
-  private getRetrieverObservabilityAttributes(): Record<string, unknown> {
-    const candidate = this.retriever as
+  function agentGetRetrieverObservabilityAttributes(): Record<string, unknown> {
+    const candidate = stateRetriever as
       | {
           getObservabilityAttributes?: () => Record<string, unknown>;
         }
@@ -6734,7 +6646,7 @@ export class Agent<
   /**
    * Resolve dynamic value
    */
-  private async resolveValue<T>(
+  async function agentResolveValue<T>(
     value: T | DynamicValue<T>,
     oc: OperationContext,
     options?: DynamicValueOptions,
@@ -6743,11 +6655,11 @@ export class Agent<
       const dynamicValue = value as DynamicValue<T>;
       const resolveOptions: DynamicValueOptions =
         options ||
-        (this.prompts
+        (statePrompts
           ? {
               context: oc.context,
               headers: oc.requestHeaders,
-              prompts: this.prompts,
+              prompts: statePrompts,
             }
           : {
               context: oc.context,
@@ -6761,7 +6673,7 @@ export class Agent<
     return value;
   }
 
-  private getModelCandidates(model: AgentModelValue = this.model): AgentModelConfig[] {
+  function agentGetModelCandidates(model: AgentModelValue = stateModel): AgentModelConfig[] {
     if (Array.isArray(model)) {
       if (model.length === 0) {
         throw createVoltAgentError("Model list is empty", { code: "MODEL_LIST_EMPTY" });
@@ -6778,17 +6690,17 @@ export class Agent<
     return [
       {
         model,
-        maxRetries: this.maxRetries,
+        maxRetries: stateMaxRetries,
         enabled: true,
       },
     ];
   }
 
-  private async resolveModelReference(
+  async function agentResolveModelReference(
     value: AgentModelConfig["model"],
     oc: OperationContext,
   ): Promise<LanguageModel> {
-    const resolved = await this.resolveValue(value, oc);
+    const resolved = await agentResolveValue(value, oc);
     if (typeof resolved === "string") {
       return await ModelProviderRegistry.getInstance().resolveLanguageModel(resolved);
     }
@@ -6798,24 +6710,27 @@ export class Agent<
   /**
    * Resolve agent model value (LanguageModel or provider/model string)
    */
-  private async resolveModel(value: AgentModelValue, oc: OperationContext): Promise<LanguageModel> {
+  async function agentResolveModel(
+    value: AgentModelValue,
+    oc: OperationContext,
+  ): Promise<LanguageModel> {
     if (Array.isArray(value)) {
       const enabledModels = value.filter((entry) => entry.enabled !== false);
       if (enabledModels.length === 0) {
         throw createVoltAgentError("No enabled models configured", { code: "MODEL_LIST_EMPTY" });
       }
-      return await this.resolveModelReference(enabledModels[0].model, oc);
+      return await agentResolveModelReference(enabledModels[0].model, oc);
     }
 
-    return await this.resolveModelReference(value, oc);
+    return await agentResolveModelReference(value, oc);
   }
 
-  private resolveCallMaxRetries(
+  function agentResolveCallMaxRetries(
     candidate: AgentModelConfig,
     options?: AnyBaseGenerationOptions,
   ): number {
     const maxRetries =
-      options?.maxRetries ?? candidate.maxRetries ?? this.maxRetries ?? DEFAULT_LLM_MAX_RETRIES;
+      options?.maxRetries ?? candidate.maxRetries ?? stateMaxRetries ?? DEFAULT_LLM_MAX_RETRIES;
     if (!Number.isInteger(maxRetries) || maxRetries < 0) {
       throw new InvalidArgumentError({
         parameter: "maxRetries",
@@ -6826,7 +6741,7 @@ export class Agent<
     return maxRetries;
   }
 
-  private shouldFallbackOnError(error: unknown): boolean {
+  function agentShouldFallbackOnError(error: unknown): boolean {
     if (isBailError(error)) {
       return false;
     }
@@ -6847,7 +6762,7 @@ export class Agent<
     return true;
   }
 
-  private isRetryableError(error: unknown): boolean {
+  function agentIsRetryableError(error: unknown): boolean {
     const retryable = (error as { isRetryable?: boolean } | undefined)?.isRetryable;
     if (typeof retryable === "boolean") {
       return retryable;
@@ -6855,14 +6770,14 @@ export class Agent<
     return true;
   }
 
-  private getEffectiveModelName(oc: OperationContext, model: LanguageModel): string {
+  function agentGetEffectiveModelName(oc: OperationContext, model: LanguageModel): string {
     return (
       (oc.systemContext.get(EFFECTIVE_MODEL_NAME_CONTEXT_KEY) as string | undefined) ??
-      this.getModelName(model)
+      runtimeAgent.getModelName(model)
     );
   }
 
-  private configureStepModelRetries<
+  function agentConfigureStepModelRetries<
     TOOLS extends ToolSet,
     RUNTIME_CONTEXT extends AISDKContext,
     OUTPUT extends OutputSpec,
@@ -6877,7 +6792,7 @@ export class Agent<
     sdkOptions.prepareStep = async (step) => {
       const settings = await prepareStep(step);
       if (!settings?.model || isRetryingLanguageModel(settings.model)) return settings;
-      const { result: model } = await this.executeWithModelFallback({
+      const { result: model } = await agentExecuteWithModelFallback({
         oc,
         operation,
         options,
@@ -6889,7 +6804,7 @@ export class Agent<
   }
 
   /** Run the SDK loop once; retry only its individual provider calls. */
-  private async executeWithModelFallback<T>({
+  async function agentExecuteWithModelFallback<T>({
     oc,
     operation,
     options,
@@ -6903,13 +6818,13 @@ export class Agent<
     run: (args: ModelAttempt) => Promise<T>;
   }): Promise<{ result: T; modelName: string; modelIndex: number; maxRetries: number }> {
     const state: ModelRetryState = {
-      candidates: (candidates ?? this.getModelCandidates(options?.model)).filter(
+      candidates: (candidates ?? agentGetModelCandidates(options?.model)).filter(
         (entry) => entry.enabled !== false,
       ),
       resolved: new Map(),
       modelIndex: 0,
     };
-    const initial = await this.executeModelAttempts({
+    const initial = await agentExecuteModelAttempts({
       oc,
       operation,
       options,
@@ -6925,7 +6840,7 @@ export class Agent<
         const signal = params.abortSignal
           ? AbortSignal.any([oc.abortController.signal, params.abortSignal])
           : oc.abortController.signal;
-        const attemptResult = await this.executeModelAttempts({
+        const attemptResult = await agentExecuteModelAttempts({
           oc,
           operation,
           options,
@@ -6938,10 +6853,10 @@ export class Agent<
               oc.traceContext.getRootSpan(),
               attempt.modelName,
               options,
-              this.maxOutputTokens,
-              this.temperature,
+              stateMaxOutputTokens,
+              stateTemperature,
             );
-            const span = this.createLLMSpan(oc, {
+            const span = agentCreateLLMSpan(oc, {
               operation,
               modelName: attempt.modelName,
               isStreaming: streaming,
@@ -6951,7 +6866,7 @@ export class Agent<
               label: "Model attempt",
             });
             span.setAttribute("llm.provider_attempt", true);
-            const finalize = this.createLLMSpanFinalizer(span);
+            const finalize = agentCreateLLMSpanFinalizer(span);
             try {
               const response = await oc.traceContext.withSpan(span, () =>
                 invoke(attempt.model as Exclude<LanguageModel, string>),
@@ -7009,13 +6924,13 @@ export class Agent<
     const result = await run({ ...initial.result, model, isLastAttempt: true, isLastModel: true });
     return {
       result,
-      modelName: this.getEffectiveModelName(oc, model),
+      modelName: agentGetEffectiveModelName(oc, model),
       modelIndex: state.modelIndex,
-      maxRetries: this.resolveCallMaxRetries(state.candidates[state.modelIndex], options),
+      maxRetries: agentResolveCallMaxRetries(state.candidates[state.modelIndex], options),
     };
   }
 
-  private async executeModelAttempts<T>({
+  async function agentExecuteModelAttempts<T>({
     oc,
     operation,
     options,
@@ -7035,15 +6950,15 @@ export class Agent<
     modelIndex: number;
     maxRetries: number;
   }> {
-    const logger = oc.logger ?? this.logger;
-    const hooks = this.getMergedHooks(options);
+    const logger = oc.logger ?? stateLogger;
+    const hooks = agentGetMergedHooks(options);
     const candidates = state.candidates;
 
     if (candidates.length === 0) {
       throw createVoltAgentError("No enabled models configured", { code: "MODEL_LIST_EMPTY" });
     }
 
-    logger.debug(`[Agent:${this.name}] - Model fallback candidates`, {
+    logger.debug(`[Agent:${stateName}] - Model fallback candidates`, {
       operation,
       candidates: candidates.map((candidate, index) => ({
         index,
@@ -7071,9 +6986,9 @@ export class Agent<
 
       try {
         resolvedModel =
-          state.resolved.get(index) ?? (await this.resolveModelReference(candidate.model, oc));
+          state.resolved.get(index) ?? (await agentResolveModelReference(candidate.model, oc));
         state.resolved.set(index, resolvedModel);
-        modelName = this.getModelName(resolvedModel);
+        modelName = runtimeAgent.getModelName(resolvedModel);
       } catch (error) {
         lastError = error;
         if (signal.aborted) {
@@ -7085,8 +7000,8 @@ export class Agent<
             : typeof candidate.model === "function"
               ? (candidate.id ?? "dynamic")
               : (candidate.model?.modelId ?? candidate.id ?? "unknown");
-        const modelMaxRetries = this.resolveCallMaxRetries(candidate, options);
-        const resolveSpan = this.createLLMSpan(oc, {
+        const modelMaxRetries = agentResolveCallMaxRetries(candidate, options);
+        const resolveSpan = agentCreateLLMSpan(oc, {
           operation,
           modelName: candidateModelName,
           isStreaming: operation === "streamText" || operation === "streamObject",
@@ -7102,7 +7017,7 @@ export class Agent<
         resolveSpan.recordException(resolveError);
         resolveSpan.setStatus({ code: SpanStatusCode.ERROR, message: resolveError.message });
         resolveSpan.end();
-        if (!this.shouldFallbackOnError(error) || isLastModel) {
+        if (!agentShouldFallbackOnError(error) || isLastModel) {
           throw error;
         }
         const nextCandidate = candidates[index + 1];
@@ -7113,7 +7028,7 @@ export class Agent<
               ? (nextCandidate?.id ?? "dynamic")
               : (nextCandidate?.model?.modelId ?? nextCandidate?.id ?? null);
         await hooks.onFallback?.({
-          agent: this,
+          agent: runtimeAgent,
           context: oc,
           operation,
           stage: "resolve",
@@ -7125,7 +7040,7 @@ export class Agent<
           nextModelIndex: nextCandidate ? index + 1 : undefined,
         });
         signal.throwIfAborted();
-        logger.warn(`[Agent:${this.name}] - Failed to resolve model, falling back`, {
+        logger.warn(`[Agent:${stateName}] - Failed to resolve model, falling back`, {
           error: safeStringify(error),
           modelIndex: index,
           operation,
@@ -7133,7 +7048,7 @@ export class Agent<
         continue;
       }
 
-      const maxRetries = this.resolveCallMaxRetries(candidate, options);
+      const maxRetries = agentResolveCallMaxRetries(candidate, options);
       let attemptIndex = 0;
 
       while (attemptIndex <= maxRetries) {
@@ -7160,13 +7075,13 @@ export class Agent<
           if (signal.aborted) {
             throw error;
           }
-          const fallbackEligible = this.shouldFallbackOnError(error);
-          const retryEligible = fallbackEligible && this.isRetryableError(error);
+          const fallbackEligible = agentShouldFallbackOnError(error);
+          const retryEligible = fallbackEligible && agentIsRetryableError(error);
           const canRetry = retryEligible && !isLastAttempt;
 
           if (canRetry) {
             const retryDelayMs = computeRetryDelayMs(error, attemptIndex);
-            logger.debug(`[Agent:${this.name}] - Model attempt failed, retrying`, {
+            logger.debug(`[Agent:${stateName}] - Model attempt failed, retrying`, {
               operation,
               modelName,
               modelIndex: index,
@@ -7182,7 +7097,7 @@ export class Agent<
             });
 
             await hooks.onRetry?.({
-              agent: this,
+              agent: runtimeAgent,
               context: oc,
               operation,
               source: "llm",
@@ -7204,7 +7119,7 @@ export class Agent<
           }
 
           if (!fallbackEligible || isLastModel) {
-            logger.debug(`[Agent:${this.name}] - Fallback skipped`, {
+            logger.debug(`[Agent:${stateName}] - Fallback skipped`, {
               operation,
               modelName,
               modelIndex: index,
@@ -7226,7 +7141,7 @@ export class Agent<
                 ? (nextCandidate?.id ?? "dynamic")
                 : (nextCandidate?.model?.modelId ?? nextCandidate?.id ?? null);
           await hooks.onFallback?.({
-            agent: this,
+            agent: runtimeAgent,
             context: oc,
             operation,
             stage: "execute",
@@ -7239,7 +7154,7 @@ export class Agent<
             nextModelIndex: nextCandidate ? index + 1 : undefined,
           });
           signal.throwIfAborted();
-          logger.warn(`[Agent:${this.name}] - Model failed, trying fallback`, {
+          logger.warn(`[Agent:${stateName}] - Model failed, trying fallback`, {
             error: safeStringify(error),
             modelName,
             modelIndex: index,
@@ -7255,7 +7170,7 @@ export class Agent<
     throw lastError instanceof Error ? lastError : new Error("Model execution failed");
   }
 
-  private async probeStreamStart<PART extends { type?: string }>(
+  async function agentProbeStreamStart<PART extends { type?: string }>(
     stream: AsyncIterableStream<PART>,
     state: { hasOutput: boolean; lastError?: unknown },
   ): Promise<
@@ -7273,7 +7188,7 @@ export class Agent<
     }
 
     const [probeReadable, passthroughReadable] = readableStream.tee();
-    const passthroughStream = this.toAsyncIterableStream(passthroughReadable);
+    const passthroughStream = agentToAsyncIterableStream(passthroughReadable);
     const reader = probeReadable.getReader();
 
     let sawNonStart = false;
@@ -7326,7 +7241,7 @@ export class Agent<
       : { status: "error", error, stream: passthroughStream };
   }
 
-  private cloneResultWithStream<
+  function agentCloneResultWithStream<
     TResult extends {
       stream: AsyncIterableStream<unknown>;
     },
@@ -7344,7 +7259,7 @@ export class Agent<
     return clone;
   }
 
-  private withProbedFullStream<
+  function agentWithProbedFullStream<
     TResult extends {
       stream: AsyncIterableStream<unknown>;
     },
@@ -7357,26 +7272,26 @@ export class Agent<
       return result;
     }
 
-    if (this.usesGetterBasedTeeingFullStream(result)) {
+    if (agentUsesGetterBasedTeeingFullStream(result)) {
       // AI SDK stream results expose fullStream via a teeing getter.
       // Preserving the original instance keeps that multi-consumer behavior intact.
       return result;
     }
 
-    return this.cloneResultWithStream(result, probedFullStream);
+    return agentCloneResultWithStream(result, probedFullStream);
   }
 
-  private usesGetterBasedTeeingFullStream(result: {
+  function agentUsesGetterBasedTeeingFullStream(result: {
     stream: AsyncIterableStream<unknown>;
   }): boolean {
-    const descriptor = this.findPropertyDescriptor(result, "stream");
+    const descriptor = agentFindPropertyDescriptor(result, "stream");
     return (
       typeof descriptor?.get === "function" &&
       typeof (result as { teeStream?: unknown }).teeStream === "function"
     );
   }
 
-  private findPropertyDescriptor(
+  function agentFindPropertyDescriptor(
     target: object,
     propertyName: string,
   ): PropertyDescriptor | undefined {
@@ -7391,7 +7306,7 @@ export class Agent<
     return undefined;
   }
 
-  private toAsyncIterableStream<T>(stream: ReadableStream<T>): AsyncIterableStream<T> {
+  function agentToAsyncIterableStream<T>(stream: ReadableStream<T>): AsyncIterableStream<T> {
     const asyncStream = stream as AsyncIterableStream<T>;
 
     if (!asyncStream[Symbol.asyncIterator]) {
@@ -7416,24 +7331,24 @@ export class Agent<
     return asyncStream;
   }
 
-  private discardStream(stream: AsyncIterableStream<unknown>): void {
+  function agentDiscardStream(stream: AsyncIterableStream<unknown>): void {
     void consumeStream({ stream, onError: () => {} }).catch(() => {});
   }
 
   /**
    * Prepare tools with execution context
    */
-  private async prepareTools(
+  async function agentPrepareTools(
     adHocTools: LegacyToolInputItem[],
     oc: OperationContext,
     maxSteps: number,
     options?: AnyBaseGenerationOptions,
     adHocToolSets: ToolSet[] = [],
   ): Promise<Record<string, any>> {
-    const resolvedMemory = this.resolveMemoryRuntimeOptions(options, oc);
-    const hooks = this.getMergedHooks(options);
-    const createToolExecuteFunction = this.createToolExecutionFactory(oc, hooks);
-    const createAiSdkToolExecuteFunction = this.createAiSdkToolExecutionFactory(oc, hooks);
+    const resolvedMemory = agentResolveMemoryRuntimeOptions(options, oc);
+    const hooks = agentGetMergedHooks(options);
+    const createToolExecuteFunction = agentCreateToolExecutionFactory(oc, hooks);
+    const createAiSdkToolExecuteFunction = agentCreateAiSdkToolExecutionFactory(oc, hooks);
     if (options?.toolApproval !== undefined) {
       oc.systemContext.set(TOOL_APPROVAL_CONTEXT_KEY, options.toolApproval);
     }
@@ -7450,9 +7365,9 @@ export class Agent<
     const runtimeTools: LegacyToolInputItem[] = [...adHocTools];
 
     // Add delegate tool if we have subagents
-    if (this.subAgentManager.hasSubAgents()) {
-      const delegateTool = this.subAgentManager.createDelegateTool({
-        sourceAgent: this,
+    if (stateSubAgentManager.hasSubAgents()) {
+      const delegateTool = stateSubAgentManager.createDelegateTool({
+        sourceAgent: runtimeAgent,
         currentHistoryEntryId: oc.operationId,
         operationContext: oc,
         maxSteps: maxSteps,
@@ -7462,12 +7377,12 @@ export class Agent<
       runtimeTools.push(delegateTool);
     }
     // Add working memory tools if Memory V2 with working memory is configured
-    const workingMemoryTools = this.createWorkingMemoryTools(options, oc);
+    const workingMemoryTools = agentCreateWorkingMemoryTools(options, oc);
     if (workingMemoryTools.length > 0) {
       runtimeTools.push(...workingMemoryTools);
     }
 
-    const tempManager = new ToolManager(runtimeTools, this.logger);
+    const tempManager = new ToolManager(runtimeTools, stateLogger);
     for (const toolSet of adHocToolSets) {
       tempManager.addToolSet(toolSet);
     }
@@ -7476,7 +7391,7 @@ export class Agent<
       createToolExecuteFunction,
       createAiSdkToolExecuteFunction,
     );
-    const preparedStaticTools = this.toolManager.prepareToolsForExecution(
+    const preparedStaticTools = stateToolManager.prepareToolsForExecution(
       createToolExecuteFunction,
       createAiSdkToolExecuteFunction,
     );
@@ -7486,12 +7401,12 @@ export class Agent<
       return tools;
     };
 
-    const toolRouting = this.resolveToolRouting(options);
+    const toolRouting = agentResolveToolRouting(options);
     oc.systemContext.set(TOOL_ROUTING_CONTEXT_KEY, toolRouting);
     if (toolRouting === false) {
       const conflicts = new Set<string>();
-      for (const tool of [...this.toolManager.getAllTools(), ...tempManager.getAllTools()]) {
-        if (this.isToolRoutingSupportTool(tool)) {
+      for (const tool of [...stateToolManager.getAllTools(), ...tempManager.getAllTools()]) {
+        if (agentIsToolRoutingSupportTool(tool)) {
           conflicts.add(tool.name);
         }
       }
@@ -7512,7 +7427,7 @@ export class Agent<
       return finalizePreparedTools(allPreparedTools);
     }
 
-    const exposedNames = this.getToolRoutingExposedNames(toolRouting);
+    const exposedNames = agentGetToolRoutingExposedNames(toolRouting);
     const filteredStaticTools = Object.fromEntries(
       Object.entries(preparedStaticTools).filter(([name]) => exposedNames.has(name)),
     );
@@ -7523,7 +7438,7 @@ export class Agent<
   /**
    * Validate tool output against optional output schema.
    */
-  private async validateToolOutput(result: any, tool: Tool<any, any>): Promise<any> {
+  async function agentValidateToolOutput(result: any, tool: Tool<any, any>): Promise<any> {
     if (!tool.outputSchema?.safeParse) {
       return result;
     }
@@ -7543,7 +7458,7 @@ export class Agent<
     return parseResult.data;
   }
 
-  private configureNativeToolExecution<
+  function agentConfigureNativeToolExecution<
     TOOLS extends ToolSet,
     RUNTIME_CONTEXT extends AISDKContext,
     OUTPUT extends OutputSpec,
@@ -7593,7 +7508,7 @@ export class Agent<
     };
   }
 
-  private createAiSdkToolExecutionFactory(
+  function agentCreateAiSdkToolExecutionFactory(
     oc: OperationContext,
     hooks: AgentHooks,
   ): (
@@ -7665,7 +7580,7 @@ export class Agent<
           kind: SpanKind.CLIENT,
         });
 
-        oc.systemContext.set("agentId", this.id);
+        oc.systemContext.set("agentId", stateId);
         oc.systemContext.set("historyEntryId", oc.operationId);
         executionOptions.parentToolSpan = toolSpan;
 
@@ -7687,7 +7602,7 @@ export class Agent<
             options: executionOptions,
           });
           await hooks.onToolStart?.({
-            agent: this,
+            agent: runtimeAgent,
             tool: toolInfo,
             context: oc,
             args,
@@ -7741,7 +7656,7 @@ export class Agent<
           }
 
           const agentHookResult = await hooks.onToolEnd?.({
-            agent: this,
+            agent: runtimeAgent,
             tool: toolInfo,
             output,
             error: undefined,
@@ -7791,7 +7706,7 @@ export class Agent<
           });
 
           const onToolErrorResult = await hooks.onToolError?.({
-            agent: this,
+            agent: runtimeAgent,
             tool: toolInfo,
             args,
             error: voltAgentError,
@@ -7805,7 +7720,7 @@ export class Agent<
           }
 
           await hooks.onToolEnd?.({
-            agent: this,
+            agent: runtimeAgent,
             tool: toolInfo,
             output: undefined,
             error: voltAgentError,
@@ -7826,7 +7741,6 @@ export class Agent<
 
         let preparationFailed = false;
         let preparationError: unknown;
-        const agent = this;
         // End hooks can replace the last value. Only that explicit extension (or
         // final-output validation) needs one-value lookahead; tracing alone does not.
         const bufferFinalOutput = Boolean(
@@ -7878,7 +7792,7 @@ export class Agent<
         return {
           async prepare() {
             try {
-              await agent.waitForSpeculativeInputGuardrail(oc);
+              await agentWaitForSpeculativeInputGuardrail(oc);
               await oc.traceContext.withSpan(toolSpan, runToolStartHooks);
             } catch (error) {
               // SDK notification callbacks swallow errors. Save this failure so
@@ -7934,7 +7848,7 @@ export class Agent<
     };
   }
 
-  private createToolExecutionFactory(
+  function agentCreateToolExecutionFactory(
     oc: OperationContext,
     hooks: AgentHooks,
   ): (
@@ -7974,7 +7888,7 @@ export class Agent<
       });
 
       // Push execution metadata into systemContext for tools to consume
-      oc.systemContext.set("agentId", this.id);
+      oc.systemContext.set("agentId", stateId);
       oc.systemContext.set("historyEntryId", oc.operationId);
 
       executionOptions.parentToolSpan = toolSpan;
@@ -7997,7 +7911,7 @@ export class Agent<
           options: executionOptions,
         });
         await hooks.onToolStart?.({
-          agent: this,
+          agent: runtimeAgent,
           tool,
           context: oc,
           args,
@@ -8040,7 +7954,7 @@ export class Agent<
         }
 
         const agentHookResult = await hooks.onToolEnd?.({
-          agent: this,
+          agent: runtimeAgent,
           tool,
           output,
           error: undefined,
@@ -8053,7 +7967,7 @@ export class Agent<
         }
 
         if (overrideProvided) {
-          output = await this.validateToolOutput(output, tool);
+          output = await agentValidateToolOutput(output, tool);
         }
 
         return output;
@@ -8099,7 +8013,7 @@ export class Agent<
         });
 
         const onToolErrorResult = await hooks.onToolError?.({
-          agent: this,
+          agent: runtimeAgent,
           tool,
           args,
           error: voltAgentError,
@@ -8113,7 +8027,7 @@ export class Agent<
         }
 
         await hooks.onToolEnd?.({
-          agent: this,
+          agent: runtimeAgent,
           tool,
           output: undefined,
           error: voltAgentError,
@@ -8136,7 +8050,7 @@ export class Agent<
       if (execute && isAsyncGeneratorFunction(execute)) {
         return async function* (this: Agent): AsyncGenerator<any, void, void> {
           try {
-            await this.waitForSpeculativeInputGuardrail(oc);
+            await agentWaitForSpeculativeInputGuardrail(oc);
             await oc.traceContext.withSpan(toolSpan, async () => {
               await runToolStartHooks();
             });
@@ -8145,7 +8059,7 @@ export class Agent<
 
             if (!isAsyncIterable(result)) {
               const resolved = await result;
-              const validatedResult = await this.validateToolOutput(resolved, tool);
+              const validatedResult = await agentValidateToolOutput(resolved, tool);
               const finalOutput = await oc.traceContext.withSpan(toolSpan, async () => {
                 return await handleToolSuccess(resolved, validatedResult);
               });
@@ -8170,11 +8084,11 @@ export class Agent<
 
               pendingOutput = next.value;
               hasOutput = true;
-              validatedResult = await this.validateToolOutput(pendingOutput, tool);
+              validatedResult = await agentValidateToolOutput(pendingOutput, tool);
             }
 
             if (!hasOutput) {
-              validatedResult = await this.validateToolOutput(pendingOutput, tool);
+              validatedResult = await agentValidateToolOutput(pendingOutput, tool);
             }
 
             const finalOutput = await oc.traceContext.withSpan(toolSpan, async () => {
@@ -8192,12 +8106,12 @@ export class Agent<
           } finally {
             finalizeToolSpan();
           }
-        }.call(this);
+        }.call(runtimeAgent);
       }
 
       return oc.traceContext.withSpan(toolSpan, async () => {
         try {
-          await this.waitForSpeculativeInputGuardrail(oc);
+          await agentWaitForSpeculativeInputGuardrail(oc);
           // Call tool start hook - can throw ToolDeniedError
           await runToolStartHooks();
 
@@ -8215,7 +8129,7 @@ export class Agent<
             result = lastOutput;
           }
 
-          const validatedResult = await this.validateToolOutput(result, tool);
+          const validatedResult = await agentValidateToolOutput(result, tool);
 
           const finalOutput = await handleToolSuccess(result, validatedResult);
 
@@ -8229,18 +8143,18 @@ export class Agent<
     };
   }
 
-  private getToolRoutingSupportToolNames(): Set<string> {
+  function agentGetToolRoutingSupportToolNames(): Set<string> {
     return new Set([TOOL_ROUTING_SEARCH_TOOL_NAME, TOOL_ROUTING_CALL_TOOL_NAME]);
   }
 
-  private isToolRoutingSupportTool(tool: ManagedToolInfo): boolean {
+  function agentIsToolRoutingSupportTool(tool: ManagedToolInfo): boolean {
     if (!tool || typeof tool !== "object") {
       return false;
     }
     return Object.prototype.hasOwnProperty.call(tool, TOOL_ROUTING_INTERNAL_TOOL_SYMBOL);
   }
 
-  private isToolExecutableForRouting(tool: ManagedToolInfo): boolean {
+  function agentIsToolExecutableForRouting(tool: ManagedToolInfo): boolean {
     if (isProviderTool(tool)) {
       const callableFlag = (tool as { callable?: boolean }).callable;
       if (callableFlag === false) {
@@ -8260,7 +8174,9 @@ export class Agent<
     return typeof (tool as Tool<any, any>).execute === "function";
   }
 
-  private getToolRoutingFromContext(options?: ToolExecuteOptions): ToolRoutingConfig | undefined {
+  function agentGetToolRoutingFromContext(
+    options?: ToolExecuteOptions,
+  ): ToolRoutingConfig | undefined {
     const contextValue =
       options?.systemContext?.get(TOOL_ROUTING_CONTEXT_KEY) ??
       options?.context?.get(TOOL_ROUTING_CONTEXT_KEY);
@@ -8270,27 +8186,29 @@ export class Agent<
     if (contextValue && typeof contextValue === "object") {
       return contextValue as ToolRoutingConfig;
     }
-    if (this.toolRouting && typeof this.toolRouting === "object") {
-      return this.toolRouting;
+    if (stateToolRouting && typeof stateToolRouting === "object") {
+      return stateToolRouting;
     }
     return undefined;
   }
 
-  private getToolSearchStrategy(toolRouting?: ToolRoutingConfig): ToolSearchStrategy | undefined {
+  function agentGetToolSearchStrategy(
+    toolRouting?: ToolRoutingConfig,
+  ): ToolSearchStrategy | undefined {
     if (!toolRouting?.embedding) {
       return undefined;
     }
-    if (toolRouting === this.toolRouting && this.toolRoutingSearchStrategy) {
-      return this.toolRoutingSearchStrategy;
+    if (toolRouting === stateToolRouting && stateToolRoutingSearchStrategy) {
+      return stateToolRoutingSearchStrategy;
     }
     return createEmbeddingToolSearchStrategy(toolRouting.embedding);
   }
 
-  private buildToolSearchCandidates(): ToolSearchCandidate[] {
-    return this.toolPoolManager
+  function agentBuildToolSearchCandidates(): ToolSearchCandidate[] {
+    return stateToolPoolManager
       .getAllTools()
-      .filter((tool) => !this.isToolRoutingSupportTool(tool))
-      .filter((tool) => this.isToolExecutableForRouting(tool))
+      .filter((tool) => !agentIsToolRoutingSupportTool(tool))
+      .filter((tool) => agentIsToolExecutableForRouting(tool))
       .map((tool) => {
         const tags = "tags" in tool ? (tool as { tags?: string[] }).tags : undefined;
         const parameters = isProviderTool(tool) ? tool.args : (tool as Tool<any, any>).parameters;
@@ -8308,7 +8226,7 @@ export class Agent<
       });
   }
 
-  private rankToolSearchCandidates(
+  function agentRankToolSearchCandidates(
     query: string,
     candidates: ToolSearchCandidate[],
     topK: number,
@@ -8361,7 +8279,7 @@ export class Agent<
     return filtered.slice(0, Math.max(0, topK));
   }
 
-  private async selectToolSearchCandidates(params: {
+  async function agentSelectToolSearchCandidates(params: {
     query: string;
     topK: number;
     candidates: ToolSearchCandidate[];
@@ -8370,10 +8288,10 @@ export class Agent<
     toolRouting?: ToolRoutingConfig;
   }): Promise<ToolSearchSelection[]> {
     const { query, topK, candidates, oc, parentSpan, toolRouting } = params;
-    const strategy = this.getToolSearchStrategy(toolRouting);
+    const strategy = agentGetToolSearchStrategy(toolRouting);
 
     if (!strategy) {
-      return this.rankToolSearchCandidates(query, candidates, topK);
+      return agentRankToolSearchCandidates(query, candidates, topK);
     }
 
     return await strategy.select({
@@ -8381,8 +8299,8 @@ export class Agent<
       tools: candidates,
       topK,
       context: {
-        agentId: this.id,
-        agentName: this.name,
+        agentId: stateId,
+        agentName: stateName,
         operationContext: oc,
         searchToolName: TOOL_ROUTING_SEARCH_TOOL_NAME,
         parentSpan,
@@ -8390,7 +8308,7 @@ export class Agent<
     });
   }
 
-  private toToolSearchResultItem(
+  function agentToToolSearchResultItem(
     candidate: ToolSearchCandidate,
     selection: ToolSearchSelection,
   ): ToolSearchResultItem {
@@ -8413,7 +8331,10 @@ export class Agent<
     };
   }
 
-  private recordSearchedTools(options: ToolExecuteOptions | undefined, toolNames: string[]): void {
+  function agentRecordSearchedTools(
+    options: ToolExecuteOptions | undefined,
+    toolNames: string[],
+  ): void {
     const context = options?.systemContext ?? options?.context;
     if (!context || toolNames.length === 0) {
       return;
@@ -8434,7 +8355,7 @@ export class Agent<
     context.set(TOOL_ROUTING_SEARCHED_TOOLS_CONTEXT_KEY, searched);
   }
 
-  private getSearchedTools(options: ToolExecuteOptions | undefined): Set<string> {
+  function agentGetSearchedTools(options: ToolExecuteOptions | undefined): Set<string> {
     const context = options?.systemContext ?? options?.context;
     if (!context) {
       return new Set();
@@ -8450,7 +8371,7 @@ export class Agent<
     return new Set();
   }
 
-  private createToolRoutingSearchTool(): Tool<any, any> {
+  function agentCreateToolRoutingSearchTool(): Tool<any, any> {
     const tool = createTool({
       name: TOOL_ROUTING_SEARCH_TOOL_NAME,
       description:
@@ -8463,7 +8384,7 @@ export class Agent<
         }
 
         const oc = options as OperationContext;
-        const toolRouting = this.getToolRoutingFromContext(options);
+        const toolRouting = agentGetToolRoutingFromContext(options);
         const embeddingTopK =
           toolRouting?.embedding &&
           typeof toolRouting.embedding === "object" &&
@@ -8475,7 +8396,7 @@ export class Agent<
           1,
           topK ?? toolRouting?.topK ?? embeddingTopK ?? DEFAULT_TOOL_SEARCH_TOP_K,
         );
-        const candidates = this.buildToolSearchCandidates();
+        const candidates = agentBuildToolSearchCandidates();
         // Check both options and systemContext for backward compatibility, prefer options
         const parentToolSpan =
           ((options as any).parentToolSpan as Span | undefined) ||
@@ -8510,7 +8431,7 @@ export class Agent<
         let selections: ToolSearchSelection[] = [];
         try {
           selections = await oc.traceContext.withSpan(selectionSpan, () =>
-            this.selectToolSearchCandidates({
+            agentSelectToolSearchCandidates({
               query,
               topK: effectiveTopK,
               candidates,
@@ -8554,11 +8475,11 @@ export class Agent<
         const tools = selections
           .map((selection) => {
             const candidate = candidateByName.get(selection.name);
-            return candidate ? this.toToolSearchResultItem(candidate, selection) : null;
+            return candidate ? agentToToolSearchResultItem(candidate, selection) : null;
           })
           .filter((item): item is ToolSearchResultItem => Boolean(item));
 
-        this.recordSearchedTools(
+        agentRecordSearchedTools(
           options,
           tools.map((toolItem) => toolItem.name),
         );
@@ -8575,7 +8496,7 @@ export class Agent<
     return tool;
   }
 
-  private createToolRoutingCallTool(): Tool<any, any> {
+  function agentCreateToolRoutingCallTool(): Tool<any, any> {
     const tool = createTool({
       name: TOOL_ROUTING_CALL_TOOL_NAME,
       description:
@@ -8593,17 +8514,17 @@ export class Agent<
         }
 
         const oc = options as OperationContext;
-        const toolRouting = this.getToolRoutingFromContext(options);
+        const toolRouting = agentGetToolRoutingFromContext(options);
         const enforceSearch = toolRouting?.enforceSearchBeforeCall ?? true;
         const rawArgs = args ?? {};
 
-        const target = this.toolPoolManager.getToolByName(name);
-        if (!target || this.isToolRoutingSupportTool(target)) {
+        const target = stateToolPoolManager.getToolByName(name);
+        if (!target || agentIsToolRoutingSupportTool(target)) {
           throw new Error(`Tool not found in pool: ${name}`);
         }
 
         if (enforceSearch) {
-          const searchedTools = this.getSearchedTools(options);
+          const searchedTools = agentGetSearchedTools(options);
           if (!searchedTools.has(name)) {
             throw new Error(
               `Tool "${name}" must be searched via ${TOOL_ROUTING_SEARCH_TOOL_NAME} before calling.`,
@@ -8613,7 +8534,7 @@ export class Agent<
 
         const hooks =
           ((options as { hooks?: AgentHooks }).hooks as AgentHooks | undefined) ??
-          this.getMergedHooks();
+          agentGetMergedHooks();
         const toolCallId = randomUUID();
         const executionOptions: ToolExecuteOptions = {
           ...oc,
@@ -8627,7 +8548,7 @@ export class Agent<
         executionOptions.hooks = hooks;
 
         if (isProviderTool(target)) {
-          return await this.executeProviderToolViaCallTool({
+          return await agentExecuteProviderToolViaCallTool({
             tool: target,
             args: rawArgs,
             oc,
@@ -8674,10 +8595,10 @@ export class Agent<
         }
 
         if (isNamedAiSdkTool(target)) {
-          await this.ensureToolApproval(target as any, parsedArgs, executionOptions, toolCallId);
-          const toolContext = await this.resolveAISDKToolContext(target, executionOptions);
+          await agentEnsureToolApproval(target as any, parsedArgs, executionOptions, toolCallId);
+          const toolContext = await agentResolveAISDKToolContext(target, executionOptions);
 
-          const execute = this.createAiSdkToolExecutionFactory(oc, hooks)(
+          const execute = agentCreateAiSdkToolExecutionFactory(oc, hooks)(
             target.name,
             getRawAiSdkTool(target),
             getVoltAgentToolMetadata(target),
@@ -8691,14 +8612,14 @@ export class Agent<
           });
         }
 
-        await this.ensureToolApproval(
+        await agentEnsureToolApproval(
           target as Tool<any, any>,
           parsedArgs,
           executionOptions,
           toolCallId,
         );
 
-        const execute = this.createToolExecutionFactory(oc, hooks)(target as Tool<any, any>);
+        const execute = agentCreateToolExecutionFactory(oc, hooks)(target as Tool<any, any>);
         return await execute(parsedArgs, {
           toolCallId,
           messages: executionOptions.toolContext?.messages ?? [],
@@ -8712,7 +8633,7 @@ export class Agent<
     return tool;
   }
 
-  private async executeProviderToolViaCallTool(params: {
+  async function agentExecuteProviderToolViaCallTool(params: {
     tool: ProviderTool;
     args: Record<string, unknown>;
     oc: OperationContext;
@@ -8724,7 +8645,7 @@ export class Agent<
       toolName: tool.name,
     });
 
-    await this.ensureToolApproval(
+    await agentEnsureToolApproval(
       tool,
       args,
       executionOptions,
@@ -8736,7 +8657,7 @@ export class Agent<
     };
 
     const argsInstruction = `Use these tool arguments exactly: ${safeStringify(args)}`;
-    const result = await this.runInternalGenerateText({
+    const result = await agentRunInternalGenerateText({
       oc,
       messages: [
         {
@@ -8750,10 +8671,10 @@ export class Agent<
       ],
       tools,
       toolChoice: { type: "tool", toolName: tool.name },
-      temperature: this.temperature ?? 0,
+      temperature: stateTemperature ?? 0,
     });
 
-    const { toolCalls, toolResults } = this.collectToolDataFromResult(result);
+    const { toolCalls, toolResults } = agentCollectToolDataFromResult(result);
     const toolCall = toolCalls.find((call) => call.toolName === tool.name);
     const toolResult = toolResults.find(
       (res) => res.toolName === tool.name && (!toolCall || res.toolCallId === toolCall.toolCallId),
@@ -8771,7 +8692,7 @@ export class Agent<
         );
       }
       await hooks.onToolStart?.({
-        agent: this,
+        agent: runtimeAgent,
         tool: tool as any,
         args: callInput,
         context: oc,
@@ -8806,7 +8727,7 @@ export class Agent<
 
     if (toolError && hookError) {
       const onToolErrorResult = await hooks.onToolError?.({
-        agent: this,
+        agent: runtimeAgent,
         tool: tool as any,
         args,
         error: hookError,
@@ -8821,7 +8742,7 @@ export class Agent<
     }
 
     await hooks.onToolEnd?.({
-      agent: this,
+      agent: runtimeAgent,
       tool: tool as any,
       output: toolError ? undefined : toolResult.output,
       error: hookError,
@@ -8839,7 +8760,7 @@ export class Agent<
     return toolResult.output;
   }
 
-  private getToolApprovalFromContext(
+  function agentGetToolApprovalFromContext(
     options?: ToolExecuteOptions,
   ): ToolApprovalConfiguration<ToolSet, any> | undefined {
     const contextValue =
@@ -8848,31 +8769,33 @@ export class Agent<
     return contextValue as ToolApprovalConfiguration<ToolSet, any> | undefined;
   }
 
-  private getAISDKToolsFromContext(options?: ToolExecuteOptions): ToolSet | undefined {
+  function agentGetAISDKToolsFromContext(options?: ToolExecuteOptions): ToolSet | undefined {
     const contextValue =
       options?.systemContext?.get(AI_SDK_TOOLS_KEY) ?? options?.context?.get(AI_SDK_TOOLS_KEY);
     return contextValue as ToolSet | undefined;
   }
 
-  private getAISDKToolsContextFromContext(options?: ToolExecuteOptions): Record<string, unknown> {
+  function agentGetAISDKToolsContextFromContext(
+    options?: ToolExecuteOptions,
+  ): Record<string, unknown> {
     const contextValue =
       options?.systemContext?.get(AI_SDK_TOOLS_CONTEXT_KEY) ??
       options?.context?.get(AI_SDK_TOOLS_CONTEXT_KEY);
     return (contextValue ?? {}) as Record<string, unknown>;
   }
 
-  private getAISDKRuntimeContextFromContext(options?: ToolExecuteOptions): unknown {
+  function agentGetAISDKRuntimeContextFromContext(options?: ToolExecuteOptions): unknown {
     return (
       options?.systemContext?.get(AI_SDK_RUNTIME_CONTEXT_KEY) ??
       options?.context?.get(AI_SDK_RUNTIME_CONTEXT_KEY)
     );
   }
 
-  private async resolveAISDKToolContext(
+  async function agentResolveAISDKToolContext(
     tool: Tool<any, any> | ProviderTool | NamedAiSdkTool,
     options?: ToolExecuteOptions,
   ): Promise<unknown> {
-    const toolsContext = this.getAISDKToolsContextFromContext(options);
+    const toolsContext = agentGetAISDKToolsContextFromContext(options);
     const context = toolsContext[tool.name];
     const contextSchema = (tool as { contextSchema?: unknown }).contextSchema;
 
@@ -8890,7 +8813,7 @@ export class Agent<
     });
   }
 
-  private normalizeToolApprovalStatus(status: ToolApprovalStatus): {
+  function agentNormalizeToolApprovalStatus(status: ToolApprovalStatus): {
     type: "not-applicable" | "approved" | "denied" | "user-approval";
     reason?: string;
   } {
@@ -8908,7 +8831,7 @@ export class Agent<
     };
   }
 
-  private async resolveToolApprovalStatus(params: {
+  async function agentResolveToolApprovalStatus(params: {
     toolApproval: ToolApprovalConfiguration<ToolSet, any>;
     tool: Tool<any, any> | ProviderTool | NamedAiSdkTool;
     args: Record<string, unknown>;
@@ -8917,9 +8840,9 @@ export class Agent<
   }): Promise<ToolApprovalStatus> {
     const { toolApproval, tool, args, options, toolCallId } = params;
     const messages = (options.toolContext?.messages ?? []) as ModelMessage[];
-    const tools = this.getAISDKToolsFromContext(options);
-    const toolsContext = this.getAISDKToolsContextFromContext(options);
-    const runtimeContext = this.getAISDKRuntimeContextFromContext(options);
+    const tools = agentGetAISDKToolsFromContext(options);
+    const toolsContext = agentGetAISDKToolsContextFromContext(options);
+    const runtimeContext = agentGetAISDKRuntimeContextFromContext(options);
 
     if (typeof toolApproval === "function") {
       return await (toolApproval as any)({
@@ -8942,7 +8865,7 @@ export class Agent<
       return await (approvalForTool as any)(args, {
         toolCallId,
         messages,
-        toolContext: await this.resolveAISDKToolContext(tool, options),
+        toolContext: await agentResolveAISDKToolContext(tool, options),
         runtimeContext,
       });
     }
@@ -8950,9 +8873,9 @@ export class Agent<
     return approvalForTool as ToolApprovalStatus;
   }
 
-  private throwToolApprovalError(
+  function agentThrowToolApprovalError(
     tool: Tool<any, any> | ProviderTool | NamedAiSdkTool,
-    status: ReturnType<Agent["normalizeToolApprovalStatus"]>,
+    status: ReturnType<typeof agentNormalizeToolApprovalStatus>,
   ): never {
     if (status.type === "denied") {
       throw new ToolDeniedError({
@@ -8971,26 +8894,26 @@ export class Agent<
     });
   }
 
-  private async ensureToolApproval(
+  async function agentEnsureToolApproval(
     tool: Tool<any, any> | ProviderTool | NamedAiSdkTool,
     args: Record<string, unknown>,
     options: ToolExecuteOptions,
     toolCallId: string,
   ): Promise<void> {
-    const toolApproval = this.getToolApprovalFromContext(options);
+    const toolApproval = agentGetToolApprovalFromContext(options);
     if (toolApproval !== undefined) {
-      const approvalStatus = await this.resolveToolApprovalStatus({
+      const approvalStatus = await agentResolveToolApprovalStatus({
         toolApproval,
         tool,
         args,
         options,
         toolCallId,
       });
-      const normalizedStatus = this.normalizeToolApprovalStatus(approvalStatus);
+      const normalizedStatus = agentNormalizeToolApprovalStatus(approvalStatus);
       if (normalizedStatus.type === "approved" || normalizedStatus.type === "not-applicable") {
         return;
       }
-      this.throwToolApprovalError(tool, normalizedStatus);
+      agentThrowToolApprovalError(tool, normalizedStatus);
     }
 
     const needsApproval = (tool as { needsApproval?: Tool<any, any>["needsApproval"] })
@@ -9004,7 +8927,7 @@ export class Agent<
         ? await needsApproval(args as any, {
             toolCallId,
             messages: (options.toolContext?.messages ?? []) as ModelMessage[],
-            context: await this.resolveAISDKToolContext(tool, options),
+            context: await agentResolveAISDKToolContext(tool, options),
           })
         : needsApproval;
 
@@ -9018,7 +8941,7 @@ export class Agent<
     }
   }
 
-  private async runInternalGenerateText(params: {
+  async function agentRunInternalGenerateText(params: {
     oc: OperationContext;
     modelValue?: AgentModelValue;
     messages: ModelMessage[];
@@ -9028,10 +8951,10 @@ export class Agent<
     temperature?: number;
   }): Promise<GenerateTextResult<ToolSet, any, OutputSpec>> {
     const { oc, modelValue, messages, tools, output, toolChoice, temperature } = params;
-    const model = await this.resolveModel(modelValue ?? this.model, oc);
-    const modelName = this.getModelName(model);
+    const model = await agentResolveModel(modelValue ?? stateModel, oc);
+    const modelName = runtimeAgent.getModelName(model);
 
-    const llmSpan = this.createLLMSpan(oc, {
+    const llmSpan = agentCreateLLMSpan(oc, {
       operation: "generateText",
       modelName,
       isStreaming: false,
@@ -9041,7 +8964,7 @@ export class Agent<
         temperature,
       },
     });
-    const finalizeLLMSpan = this.createLLMSpanFinalizer(llmSpan);
+    const finalizeLLMSpan = agentCreateLLMSpanFinalizer(llmSpan);
     const promptOptions = splitInstructionsFromMessages(messages);
 
     try {
@@ -9073,7 +8996,9 @@ export class Agent<
     }
   }
 
-  private getSpeculativeInputGuardrail(oc: OperationContext): SpeculativeInputGuardrailRun | null {
+  function agentGetSpeculativeInputGuardrail(
+    oc: OperationContext,
+  ): SpeculativeInputGuardrailRun | null {
     return (
       (oc.systemContext.get(SPECULATIVE_INPUT_GUARDRAIL_CONTEXT_KEY) as
         | SpeculativeInputGuardrailRun
@@ -9081,8 +9006,8 @@ export class Agent<
     );
   }
 
-  private async waitForSpeculativeInputGuardrail(oc: OperationContext): Promise<void> {
-    const guardrail = this.getSpeculativeInputGuardrail(oc);
+  async function agentWaitForSpeculativeInputGuardrail(oc: OperationContext): Promise<void> {
+    const guardrail = agentGetSpeculativeInputGuardrail(oc);
     if (!guardrail) {
       return;
     }
@@ -9096,7 +9021,7 @@ export class Agent<
   /**
    * Create step handler for memory and hooks
    */
-  private createStepHandler<
+  function agentCreateStepHandler<
     TOOLS extends ToolSet = ToolSet,
     RUNTIME_CONTEXT extends AISDKContext = AISDKContext,
   >(
@@ -9104,22 +9029,22 @@ export class Agent<
     options?: AnyBaseGenerationOptions,
     userOnStepEnd?: GenerationStepEndCallback<TOOLS, RUNTIME_CONTEXT>,
   ) {
-    const buffer = this.getConversationBuffer(oc);
-    const shouldPersistMemory = this.shouldPersistMemoryForContext(oc);
-    const persistQueue = shouldPersistMemory ? this.getMemoryPersistQueue(oc) : null;
-    const conversationPersistence = this.getConversationPersistenceOptionsForContext(oc);
+    const buffer = agentGetConversationBuffer(oc);
+    const shouldPersistMemory = agentShouldPersistMemoryForContext(oc);
+    const persistQueue = shouldPersistMemory ? agentGetMemoryPersistQueue(oc) : null;
+    const conversationPersistence = agentGetConversationPersistenceOptionsForContext(oc);
 
     return async (event: StepResult<TOOLS, RUNTIME_CONTEXT>) => {
-      await invokeAISDKCallbackSafely(userOnStepEnd, event, oc.logger ?? this.logger, "onStepEnd");
+      await invokeAISDKCallbackSafely(userOnStepEnd, event, oc.logger ?? stateLogger, "onStepEnd");
 
       const broadEvent = event as unknown as StepResult<ToolSet>;
-      const speculativeInputGuardrail = this.getSpeculativeInputGuardrail(oc);
-      const { shouldFlushForToolCompletion, bailedResult } = this.processStepContent(
+      const speculativeInputGuardrail = agentGetSpeculativeInputGuardrail(oc);
+      const { shouldFlushForToolCompletion, bailedResult } = agentProcessStepContent(
         oc,
         broadEvent,
       );
 
-      const responseMessages = this.normalizeStepResponseMessages(
+      const responseMessages = agentNormalizeStepResponseMessages(
         oc,
         filterResponseMessages(broadEvent.response?.messages),
       );
@@ -9137,7 +9062,7 @@ export class Agent<
         conversationPersistence.mode === "step" &&
         (!speculativeInputGuardrail || speculativeInputGuardrail.hasPassed())
       ) {
-        await this.recordStepResults(undefined, oc, {
+        await agentRecordStepResults(undefined, oc, {
           awaitPersistence: shouldFlushStepPersistence,
         });
       }
@@ -9170,12 +9095,12 @@ export class Agent<
       }
 
       // Call hooks
-      const hooks = this.getMergedHooks(options);
-      await hooks.onStepEnd?.({ agent: this, step: event, context: oc });
+      const hooks = agentGetMergedHooks(options);
+      await hooks.onStepEnd?.({ agent: runtimeAgent, step: event, context: oc });
     };
   }
 
-  private processStepContent(
+  function agentProcessStepContent(
     oc: OperationContext,
     event: StepResult<ToolSet>,
   ): {
@@ -9215,7 +9140,7 @@ export class Agent<
         });
 
         oc.logger.debug(
-          buildAgentLogMessage(this.name, ActionType.TOOL_CALL, `Executing ${part.toolName}`),
+          buildAgentLogMessage(stateName, ActionType.TOOL_CALL, `Executing ${part.toolName}`),
           {
             event: LogEvents.TOOL_EXECUTION_STARTED,
             toolName: part.toolName,
@@ -9238,7 +9163,7 @@ export class Agent<
           ),
         });
 
-        const bailFromToolResult = this.resolveBailedResultFromToolOutput(part.output);
+        const bailFromToolResult = agentResolveBailedResultFromToolOutput(part.output);
         if (bailFromToolResult) {
           oc.logger.info("Subagent bailed during stream - aborting supervisor stream", {
             event: LogEvents.AGENT_STEP_TOOL_RESULT,
@@ -9269,7 +9194,7 @@ export class Agent<
     };
   }
 
-  private resolveBailedResultFromToolOutput(
+  function agentResolveBailedResultFromToolOutput(
     toolOutput: unknown,
   ): { agentName: string; response: string } | undefined {
     if (!Array.isArray(toolOutput)) {
@@ -9287,7 +9212,7 @@ export class Agent<
     };
   }
 
-  private recordStepResults(
+  function agentRecordStepResults(
     steps: ReadonlyArray<StepResult<ToolSet>> | undefined,
     oc: OperationContext,
     options?: { awaitPersistence?: boolean },
@@ -9354,8 +9279,8 @@ export class Agent<
             id: randomUUID(),
             conversationId: oc.conversationId,
             userId: oc.userId,
-            agentId: this.id,
-            agentName: this.name,
+            agentId: stateId,
+            agentName: stateName,
             operationId: oc.operationId,
             stepIndex,
             type: "text",
@@ -9387,8 +9312,8 @@ export class Agent<
               id: toolCall.toolCallId || randomUUID(),
               conversationId: oc.conversationId,
               userId: oc.userId,
-              agentId: this.id,
-              agentName: this.name,
+              agentId: stateId,
+              agentName: stateName,
               operationId: oc.operationId,
               stepIndex,
               type: "tool_call",
@@ -9441,8 +9366,8 @@ export class Agent<
               id: toolResult.toolCallId || randomUUID(),
               conversationId: oc.conversationId,
               userId: oc.userId,
-              agentId: this.id,
-              agentName: this.name,
+              agentId: stateId,
+              agentName: stateName,
               operationId: oc.operationId,
               stepIndex,
               type: "tool_result",
@@ -9462,12 +9387,12 @@ export class Agent<
     });
 
     if (
-      this.shouldPersistMemoryForContext(oc) &&
+      agentShouldPersistMemoryForContext(oc) &&
       stepRecords.length > 0 &&
       oc.userId &&
       oc.conversationId
     ) {
-      const persistStepsPromise = this.memoryManager
+      const persistStepsPromise = stateMemoryManager
         .saveConversationSteps(oc, stepRecords, oc.userId, oc.conversationId)
         .catch((error) => {
           oc.logger.debug("Failed to persist conversation steps", {
@@ -9490,7 +9415,7 @@ export class Agent<
   /**
    * Add step to history - now only tracks in conversation steps
    */
-  private async addStepToHistory(step: StepWithContent, oc: OperationContext): Promise<void> {
+  async function agentAddStepToHistory(step: StepWithContent, oc: OperationContext): Promise<void> {
     // Track in conversation steps
     if (oc.conversationSteps) {
       oc.conversationSteps.push(step);
@@ -9500,41 +9425,41 @@ export class Agent<
   /**
    * Merge agent hooks with options hooks
    */
-  private getMergedHooks(options?: { hooks?: AgentHooks }): AgentHooks {
+  function agentGetMergedHooks(options?: { hooks?: AgentHooks }): AgentHooks {
     if (!options?.hooks) {
-      return this.hooks;
+      return stateHooks;
     }
 
     return {
       onStart: async (...args) => {
         await options.hooks?.onStart?.(...args);
-        await this.hooks.onStart?.(...args);
+        await stateHooks.onStart?.(...args);
       },
       onEnd: async (...args) => {
         await options.hooks?.onEnd?.(...args);
-        await this.hooks.onEnd?.(...args);
+        await stateHooks.onEnd?.(...args);
       },
       onError: async (...args) => {
         await options.hooks?.onError?.(...args);
-        await this.hooks.onError?.(...args);
+        await stateHooks.onError?.(...args);
       },
       onHandoff: async (...args) => {
         await options.hooks?.onHandoff?.(...args);
-        await this.hooks.onHandoff?.(...args);
+        await stateHooks.onHandoff?.(...args);
       },
       onHandoffComplete: async (...args) => {
         await options.hooks?.onHandoffComplete?.(...args);
-        await this.hooks.onHandoffComplete?.(...args);
+        await stateHooks.onHandoffComplete?.(...args);
       },
       onToolStart: async (...args) => {
         await options.hooks?.onToolStart?.(...args);
-        await this.hooks.onToolStart?.(...args);
+        await stateHooks.onToolStart?.(...args);
       },
       onToolEnd:
-        options.hooks.onToolEnd || this.hooks.onToolEnd
+        options.hooks.onToolEnd || stateHooks.onToolEnd
           ? async (...args) => {
               const resOptions = await options.hooks?.onToolEnd?.(...args);
-              const resThis = await this.hooks.onToolEnd?.(...args);
+              const resThis = await stateHooks.onToolEnd?.(...args);
               if (resThis && typeof resThis === "object") {
                 return resThis as OnToolEndHookResult;
               }
@@ -9546,7 +9471,7 @@ export class Agent<
           : undefined,
       onToolError: async (...args) => {
         const resOptions = await options.hooks?.onToolError?.(...args);
-        const resThis = await this.hooks.onToolError?.(...args);
+        const resThis = await stateHooks.onToolError?.(...args);
         if (resThis && typeof resThis === "object") {
           return resThis as OnToolErrorHookResult;
         }
@@ -9557,26 +9482,26 @@ export class Agent<
       },
       onStepEnd: async (...args) => {
         await options.hooks?.onStepEnd?.(...args);
-        await this.hooks.onStepEnd?.(...args);
+        await stateHooks.onStepEnd?.(...args);
       },
       onRetry: async (...args) => {
         await options.hooks?.onRetry?.(...args);
-        await this.hooks.onRetry?.(...args);
+        await stateHooks.onRetry?.(...args);
       },
       onFallback: async (...args) => {
         await options.hooks?.onFallback?.(...args);
-        await this.hooks.onFallback?.(...args);
+        await stateHooks.onFallback?.(...args);
       },
-      onPrepareMessages: options.hooks?.onPrepareMessages || this.hooks.onPrepareMessages,
+      onPrepareMessages: options.hooks?.onPrepareMessages || stateHooks.onPrepareMessages,
       onPrepareModelMessages:
-        options.hooks?.onPrepareModelMessages || this.hooks.onPrepareModelMessages,
+        options.hooks?.onPrepareModelMessages || stateHooks.onPrepareModelMessages,
     };
   }
 
   /**
    * Setup abort signal listener
    */
-  private setupAbortSignalListener(oc: OperationContext): void {
+  function agentSetupAbortSignalListener(oc: OperationContext): void {
     if (!oc.abortController) return;
     if (oc.systemContext.get(ABORT_LISTENER_ATTACHED_KEY)) {
       return;
@@ -9639,10 +9564,10 @@ export class Agent<
         }
 
         // Call onEnd hook with cancellation error
-        const hooks = this.getMergedHooks();
+        const hooks = agentGetMergedHooks();
         await hooks.onEnd?.({
           conversationId: oc.conversationId || "",
-          agent: this,
+          agent: runtimeAgent,
           output: undefined,
           error: oc.cancellationError,
           context: oc,
@@ -9654,7 +9579,7 @@ export class Agent<
   /**
    * Handle errors
    */
-  private async handleError(
+  async function agentHandleError(
     error: Error,
     oc: OperationContext,
     options?: AnyBaseGenerationOptions,
@@ -9681,7 +9606,7 @@ export class Agent<
     const errorDetails = extractGenerationErrorDetails(voltagentError);
 
     if (errorDetails.usage || errorDetails.providerMetadata !== undefined) {
-      this.recordRootSpanUsageAndProviderCost(
+      agentRecordRootSpanUsageAndProviderCost(
         oc.traceContext,
         errorDetails.usage,
         errorDetails.providerMetadata,
@@ -9694,15 +9619,15 @@ export class Agent<
     oc.traceContext.end("error", error);
 
     // Call hooks
-    const hooks = this.getMergedHooks(options);
+    const hooks = agentGetMergedHooks(options);
     await hooks.onEnd?.({
       conversationId: oc.conversationId || "",
-      agent: this,
+      agent: runtimeAgent,
       output: undefined,
       error: voltagentError,
       context: oc,
     });
-    await hooks.onError?.({ agent: this, error: voltagentError, context: oc });
+    await hooks.onError?.({ agent: runtimeAgent, error: voltagentError, context: oc });
 
     // Log error
     oc.logger.error("Generation failed", {
@@ -9725,23 +9650,23 @@ export class Agent<
   /**
    * Calculate max steps based on SubAgents
    */
-  private calculateMaxSteps(): number {
-    return this.subAgentManager.calculateMaxSteps(this.maxSteps);
+  function agentCalculateMaxSteps(): number {
+    return stateSubAgentManager.calculateMaxSteps(stateMaxSteps);
   }
 
   /**
    * Get the model name.
    * Pass a resolved model to return its modelId (useful for dynamic models).
    */
-  public getModelName(model?: LanguageModel | string): string {
+  function agentGetModelName(model?: LanguageModel | string): string {
     if (model) {
       if (typeof model === "string") {
         return model;
       }
       return model.modelId || "unknown";
     }
-    if (Array.isArray(this.model)) {
-      const primary = this.model.find((entry) => entry.enabled !== false) ?? this.model[0];
+    if (Array.isArray(stateModel)) {
+      const primary = stateModel.find((entry) => entry.enabled !== false) ?? stateModel[0];
       if (!primary) {
         return "unknown";
       }
@@ -9754,19 +9679,19 @@ export class Agent<
       }
       return modelValue.modelId || "unknown";
     }
-    if (typeof this.model === "function") {
+    if (typeof stateModel === "function") {
       return "dynamic";
     }
-    if (typeof this.model === "string") {
-      return this.model;
+    if (typeof stateModel === "string") {
+      return stateModel;
     }
-    return this.model.modelId || "unknown";
+    return stateModel.modelId || "unknown";
   }
 
   /**
    * Get full agent state
    */
-  public getFullState(): AgentFullState {
+  function agentGetFullState(): AgentFullState {
     const cloneRecord = (value: unknown): Record<string, unknown> | null => {
       if (!value || typeof value !== "object" || Array.isArray(value)) {
         return null;
@@ -9802,7 +9727,7 @@ export class Agent<
           id: guardrail.id,
           name: guardrail.name,
           direction,
-          node_id: createNodeId(NodeType.GUARDRAIL, `${direction}-${slug || index + 1}`, this.id),
+          node_id: createNodeId(NodeType.GUARDRAIL, `${direction}-${slug || index + 1}`, stateId),
         };
 
         if (guardrail.description) {
@@ -9823,11 +9748,11 @@ export class Agent<
     };
 
     const guardrails = {
-      input: mapGuardrails(this.inputGuardrails, "input"),
-      output: mapGuardrails(this.outputGuardrails, "output"),
+      input: mapGuardrails(stateInputGuardrails, "input"),
+      output: mapGuardrails(stateOutputGuardrails, "output"),
     };
 
-    const scorerEntries = Object.entries(this.evalConfig?.scorers ?? {});
+    const scorerEntries = Object.entries(stateEvalConfig?.scorers ?? {});
     const scorers =
       scorerEntries.length > 0
         ? scorerEntries.map(([key, scorerConfig]) => {
@@ -9846,7 +9771,7 @@ export class Agent<
                 ? definition.name
                 : undefined) ?? scorerId;
             const sampling =
-              scorerConfig.sampling ?? definition?.sampling ?? this.evalConfig?.sampling;
+              scorerConfig.sampling ?? definition?.sampling ?? stateEvalConfig?.sampling;
             const metadata = cloneRecord(definition?.metadata ?? null);
             const params =
               typeof scorerConfig.params === "function" ? null : cloneRecord(scorerConfig.params);
@@ -9858,35 +9783,35 @@ export class Agent<
               sampling,
               metadata,
               params,
-              node_id: createNodeId(NodeType.SCORER, scorerId, this.id),
+              node_id: createNodeId(NodeType.SCORER, scorerId, stateId),
             };
           })
         : [];
 
-    const activeMemory = this.getMemory();
+    const activeMemory = runtimeAgent.getMemory();
     const memoryInstance: Memory | undefined = activeMemory || undefined;
     const toolRoutingConfig =
-      this.toolRouting && typeof this.toolRouting === "object" ? this.toolRouting : undefined;
+      stateToolRouting && typeof stateToolRouting === "object" ? stateToolRouting : undefined;
     const toolRoutingState: AgentToolRoutingState | undefined = toolRoutingConfig
       ? (() => {
-          const searchTool = this.toolManager.getToolByName(TOOL_ROUTING_SEARCH_TOOL_NAME);
-          const callTool = this.toolManager.getToolByName(TOOL_ROUTING_CALL_TOOL_NAME);
+          const searchTool = stateToolManager.getToolByName(TOOL_ROUTING_SEARCH_TOOL_NAME);
+          const callTool = stateToolManager.getToolByName(TOOL_ROUTING_CALL_TOOL_NAME);
           const searchApiTool =
-            searchTool && this.isToolRoutingSupportTool(searchTool)
-              ? new ToolManager([searchTool], this.logger).getToolsForApi()[0]
+            searchTool && agentIsToolRoutingSupportTool(searchTool)
+              ? new ToolManager([searchTool], stateLogger).getToolsForApi()[0]
               : undefined;
           const callApiTool =
-            callTool && this.isToolRoutingSupportTool(callTool)
-              ? new ToolManager([callTool], this.logger).getToolsForApi()[0]
+            callTool && agentIsToolRoutingSupportTool(callTool)
+              ? new ToolManager([callTool], stateLogger).getToolsForApi()[0]
               : undefined;
-          const poolTools = this.toolPoolManager
+          const poolTools = stateToolPoolManager
             .getAllTools()
-            .filter((tool) => !this.isToolRoutingSupportTool(tool));
+            .filter((tool) => !agentIsToolRoutingSupportTool(tool));
           const poolApiTools =
-            poolTools.length > 0 ? new ToolManager(poolTools, this.logger).getToolsForApi() : [];
+            poolTools.length > 0 ? new ToolManager(poolTools, stateLogger).getToolsForApi() : [];
           const exposeApiTools =
             toolRoutingConfig.expose && toolRoutingConfig.expose.length > 0
-              ? new ToolManager(toolRoutingConfig.expose, this.logger).getToolsForApi()
+              ? new ToolManager(toolRoutingConfig.expose, stateLogger).getToolsForApi()
               : [];
 
           return {
@@ -9901,19 +9826,19 @@ export class Agent<
       : undefined;
 
     return {
-      id: this.id,
-      name: this.name,
+      id: stateId,
+      name: stateName,
       instructions:
-        typeof this.instructions === "function" ? "Dynamic instructions" : this.instructions,
+        typeof stateInstructions === "function" ? "Dynamic instructions" : stateInstructions,
       status: "idle",
-      model: this.getModelName(),
-      node_id: createNodeId(NodeType.AGENT, this.id),
+      model: runtimeAgent.getModelName(),
+      node_id: createNodeId(NodeType.AGENT, stateId),
 
       tools: (() => {
         const merged = new Map<string, ManagedToolInfo>();
         for (const tool of [
-          ...this.toolManager.getAllTools(),
-          ...this.toolPoolManager.getAllTools(),
+          ...stateToolManager.getAllTools(),
+          ...stateToolPoolManager.getAllTools(),
         ]) {
           if (!merged.has(tool.name)) {
             merged.set(tool.name, tool);
@@ -9921,19 +9846,19 @@ export class Agent<
         }
         return Array.from(merged.values()).map((tool) => ({
           ...tool,
-          node_id: createNodeId(NodeType.TOOL, tool.name, this.id),
+          node_id: createNodeId(NodeType.TOOL, tool.name, stateId),
         }));
       })(),
       toolRouting: toolRoutingState,
 
-      subAgents: this.subAgentManager.getSubAgentDetails().map((subAgent) => ({
+      subAgents: stateSubAgentManager.getSubAgentDetails().map((subAgent) => ({
         ...subAgent,
         node_id: createNodeId(NodeType.SUBAGENT, subAgent.id),
       })),
 
       memory: {
-        ...this.memoryManager.getMemoryState(),
-        node_id: createNodeId(NodeType.MEMORY, this.id),
+        ...stateMemoryManager.getMemoryState(),
+        node_id: createNodeId(NodeType.MEMORY, stateId),
         // Add vector DB and embedding info if Memory V2 is configured
         vectorDB: memoryInstance?.getVectorAdapter?.()
           ? {
@@ -9941,7 +9866,7 @@ export class Agent<
               adapter: memoryInstance.getVectorAdapter()?.constructor.name || "Unknown",
               dimension: memoryInstance.getEmbeddingAdapter?.()?.getDimensions() || 0,
               status: "idle",
-              node_id: createNodeId(NodeType.VECTOR, this.id),
+              node_id: createNodeId(NodeType.VECTOR, stateId),
             }
           : null,
         embeddingModel: memoryInstance?.getEmbeddingAdapter?.()
@@ -9950,17 +9875,17 @@ export class Agent<
               model: memoryInstance.getEmbeddingAdapter()?.getModelName() || "unknown",
               dimension: memoryInstance.getEmbeddingAdapter()?.getDimensions() || 0,
               status: "idle",
-              node_id: createNodeId(NodeType.EMBEDDING, this.id),
+              node_id: createNodeId(NodeType.EMBEDDING, stateId),
             }
           : null,
       },
 
-      retriever: this.retriever
+      retriever: stateRetriever
         ? {
-            name: this.retriever.tool.name,
-            description: this.retriever.tool.description,
+            name: stateRetriever.tool.name,
+            description: stateRetriever.tool.description,
             status: "idle",
-            node_id: createNodeId(NodeType.RETRIEVER, this.retriever.tool.name, this.id),
+            node_id: createNodeId(NodeType.RETRIEVER, stateRetriever.tool.name, stateId),
           }
         : null,
       scorers,
@@ -9972,12 +9897,12 @@ export class Agent<
   /**
    * Add tools or toolkits to the agent
    */
-  public addTools(tools: AgentToolInput): {
+  function agentAddTools(tools: AgentToolInput): {
     added: AgentToolInput;
   } {
-    addAgentToolInputToManager(this.toolManager, tools);
-    if (this.toolRouting && !this.toolRoutingPoolExplicit) {
-      addAgentToolInputToManager(this.toolPoolManager, tools);
+    addAgentToolInputToManager(stateToolManager, tools);
+    if (stateToolRouting && !stateToolRoutingPoolExplicit) {
+      addAgentToolInputToManager(stateToolPoolManager, tools);
     }
     return { added: tools };
   }
@@ -9987,18 +9912,18 @@ export class Agent<
    * @param toolNames - Array of tool names to remove
    * @returns Object containing successfully removed tool names
    */
-  public removeTools(toolNames: string[]): { removed: string[] } {
+  function agentRemoveTools(toolNames: string[]): { removed: string[] } {
     const removed: string[] = [];
     for (const name of toolNames) {
-      if (this.toolManager.removeTool(name)) {
+      if (stateToolManager.removeTool(name)) {
         removed.push(name);
-        if (this.toolRouting && !this.toolRoutingPoolExplicit) {
-          this.toolPoolManager.removeTool(name);
+        if (stateToolRouting && !stateToolRoutingPoolExplicit) {
+          stateToolPoolManager.removeTool(name);
         }
       }
     }
 
-    this.logger.debug(`Removed ${removed.length} tools`, {
+    stateLogger.debug(`Removed ${removed.length} tools`, {
       removed,
       requested: toolNames,
     });
@@ -10011,16 +9936,16 @@ export class Agent<
    * @param toolkitName - Name of the toolkit to remove
    * @returns true if the toolkit was removed, false if it wasn't found
    */
-  public removeToolkit(toolkitName: string): boolean {
-    const result = this.toolManager.removeToolkit(toolkitName);
-    if (result && this.toolRouting && !this.toolRoutingPoolExplicit) {
-      this.toolPoolManager.removeToolkit(toolkitName);
+  function agentRemoveToolkit(toolkitName: string): boolean {
+    const result = stateToolManager.removeToolkit(toolkitName);
+    if (result && stateToolRouting && !stateToolRoutingPoolExplicit) {
+      stateToolPoolManager.removeToolkit(toolkitName);
     }
 
     if (result) {
-      this.logger.debug(`Removed toolkit: ${toolkitName}`);
+      stateLogger.debug(`Removed toolkit: ${toolkitName}`);
     } else {
-      this.logger.debug(`Toolkit not found: ${toolkitName}`);
+      stateLogger.debug(`Toolkit not found: ${toolkitName}`);
     }
 
     return result;
@@ -10029,17 +9954,17 @@ export class Agent<
   /**
    * Add a sub-agent
    */
-  public addSubAgent(agentConfig: SubAgentConfig): void {
-    this.subAgentManager.addSubAgent(agentConfig);
+  function agentAddSubAgent(agentConfig: SubAgentConfig): void {
+    stateSubAgentManager.addSubAgent(agentConfig);
 
     // Add delegate tool if this is the first sub-agent
-    if (this.subAgentManager.getSubAgents().length === 1) {
-      const delegateTool = this.subAgentManager.createDelegateTool({
-        sourceAgent: this as any,
+    if (stateSubAgentManager.getSubAgents().length === 1) {
+      const delegateTool = stateSubAgentManager.createDelegateTool({
+        sourceAgent: runtimeAgent as any,
       });
-      this.toolManager.addStandaloneTool(delegateTool);
-      if (this.toolRouting && !this.toolRoutingPoolExplicit) {
-        this.toolPoolManager.addStandaloneTool(delegateTool);
+      stateToolManager.addStandaloneTool(delegateTool);
+      if (stateToolRouting && !stateToolRoutingPoolExplicit) {
+        stateToolPoolManager.addStandaloneTool(delegateTool);
       }
     }
   }
@@ -10047,14 +9972,14 @@ export class Agent<
   /**
    * Remove a sub-agent
    */
-  public removeSubAgent(agentId: string): void {
-    this.subAgentManager.removeSubAgent(agentId);
+  function agentRemoveSubAgent(agentId: string): void {
+    stateSubAgentManager.removeSubAgent(agentId);
 
     // Remove delegate tool if no sub-agents left
-    if (this.subAgentManager.getSubAgents().length === 0) {
-      this.toolManager.removeTool("delegate_task");
-      if (this.toolRouting && !this.toolRoutingPoolExplicit) {
-        this.toolPoolManager.removeTool("delegate_task");
+    if (stateSubAgentManager.getSubAgents().length === 0) {
+      stateToolManager.removeTool("delegate_task");
+      if (stateToolRouting && !stateToolRoutingPoolExplicit) {
+        stateToolPoolManager.removeTool("delegate_task");
       }
     }
   }
@@ -10062,16 +9987,16 @@ export class Agent<
   /**
    * Get all tools
    */
-  public getTools(): Array<Tool<any, any> | ProviderTool | NamedAiSdkTool> {
-    return this.toolManager.getAllTools();
+  function agentGetTools(): Array<Tool<any, any> | ProviderTool | NamedAiSdkTool> {
+    return stateToolManager.getAllTools();
   }
 
   /**
    * Get tools for API
    */
-  public getToolsForApi() {
-    const exposed = this.toolManager.getToolsForApi();
-    const pooled = this.toolPoolManager.getToolsForApi();
+  function agentGetToolsForApi() {
+    const exposed = stateToolManager.getToolsForApi();
+    const pooled = stateToolPoolManager.getToolsForApi();
     const merged = new Map<string, ApiToolInfo>();
     for (const tool of [...exposed, ...pooled]) {
       if (!merged.has(tool.name)) {
@@ -10084,14 +10009,14 @@ export class Agent<
   /**
    * Get all sub-agents
    */
-  public getSubAgents(): SubAgentConfig[] {
-    return this.subAgentManager.getSubAgents();
+  function agentGetSubAgents(): SubAgentConfig[] {
+    return stateSubAgentManager.getSubAgents();
   }
 
   /**
    * Unregister this agent
    */
-  public unregister(): void {
+  function agentUnregister(): void {
     // Agent unregistration tracked via OpenTelemetry
   }
 
@@ -10099,9 +10024,9 @@ export class Agent<
    * Check if telemetry is configured
    * Returns true if VoltOpsClient with observability is configured
    */
-  public isTelemetryConfigured(): boolean {
+  function agentIsTelemetryConfigured(): boolean {
     // Check if observability is configured
-    const observability = this.getObservability();
+    const observability = agentGetObservability();
     if (!observability) {
       return false;
     }
@@ -10109,33 +10034,19 @@ export class Agent<
     // Check if VoltOpsClient is available for remote export
     // Priority: Agent's own VoltOpsClient, then global one
     const voltOpsClient =
-      this.voltOpsClient || AgentRegistry.getInstance().getGlobalVoltOpsClient();
+      stateVoltOpsClient || AgentRegistry.getInstance().getGlobalVoltOpsClient();
 
     return voltOpsClient !== undefined;
   }
 
   /**
-   * Check whether feedback has already been provided for a feedback metadata object.
-   */
-  public static isFeedbackProvided(feedback?: AgentFeedbackMetadata | null): boolean {
-    return isFeedbackProvidedHelper(feedback);
-  }
-
-  /**
-   * Check whether a message already has feedback marked as provided.
-   */
-  public static isMessageFeedbackProvided(message?: UIMessage | null): boolean {
-    return isMessageFeedbackProvidedHelper(message);
-  }
-
-  /**
    * Persist a "feedback provided" marker into assistant message metadata.
    */
-  public async markFeedbackProvided(
+  async function agentMarkFeedbackProvided(
     input: AgentMarkFeedbackProvidedInput,
   ): Promise<AgentFeedbackMetadata | null> {
     return await markFeedbackProvidedHelper({
-      memory: this.memoryManager.getMemory(),
+      memory: stateMemoryManager.getMemory(),
       input,
     });
   }
@@ -10143,87 +10054,87 @@ export class Agent<
   /**
    * Get memory manager
    */
-  public getMemoryManager(): MemoryManager {
-    return this.memoryManager;
+  function agentGetMemoryManager(): MemoryManager {
+    return stateMemoryManager;
   }
 
   /**
    * Get tool manager
    */
-  public getToolManager(): ToolManager {
-    return this.toolManager;
+  function agentGetToolManager(): ToolManager {
+    return stateToolManager;
   }
 
   /**
    * Get Workspace instance if configured
    */
-  public getWorkspace(): Workspace | undefined {
-    return this.workspace;
+  function agentGetWorkspace(): Workspace | undefined {
+    return stateWorkspace;
   }
 
   /**
    * Get Memory instance if available
    */
-  public getMemory(): Memory | false | undefined {
-    if (this.memory === false) {
+  function agentGetMemory(): Memory | false | undefined {
+    if (stateMemory === false) {
       return false;
     }
 
-    return this.memory ?? this.memoryManager.getMemory();
+    return stateMemory ?? stateMemoryManager.getMemory();
   }
 
   /**
    * Internal: apply a default Memory instance when none was configured explicitly.
    */
-  public __setDefaultMemory(memory: Memory): void {
-    if (this.memoryConfigured || this.memory === false) {
+  function agent__setDefaultMemory(memory: Memory): void {
+    if (stateMemoryConfigured || stateMemory === false) {
       return;
     }
-    this.memoryManager.setMemory(memory, this.createConversationTitleGenerator(memory));
+    stateMemoryManager.setMemory(memory, agentCreateConversationTitleGenerator(memory));
   }
 
   /**
    * Internal: apply default conversation persistence when none was configured explicitly.
    */
-  public __setDefaultConversationPersistence(
+  function agent__setDefaultConversationPersistence(
     conversationPersistence: AgentConversationPersistenceOptions,
   ): void {
-    if (this.conversationPersistenceConfigured) {
+    if (stateConversationPersistenceConfigured) {
       return;
     }
 
-    this.conversationPersistence =
-      this.normalizeConversationPersistenceOptions(conversationPersistence);
+    stateConversationPersistence =
+      agentNormalizeConversationPersistenceOptions(conversationPersistence);
   }
 
   /**
    * Internal: apply a default Workspace instance when none was configured explicitly.
    */
-  public __setDefaultWorkspace(workspace: Workspace): void {
-    if (this.workspaceConfigured || this.workspace) {
+  function agent__setDefaultWorkspace(workspace: Workspace): void {
+    if (stateWorkspaceConfigured || stateWorkspace) {
       return;
     }
 
-    this.workspace = workspace;
-    if (!this.maxStepsConfigured) {
-      this.maxSteps = 100;
+    stateWorkspace = workspace;
+    if (!stateMaxStepsConfigured) {
+      stateMaxSteps = 100;
     }
 
     const hookOptions = {
-      hooks: this.configuredHooks,
-      workspaceToolkits: this.workspaceToolkitOptions,
-      workspaceSkillsPrompt: this.workspaceSkillsPromptOption,
+      hooks: stateConfiguredHooks,
+      workspaceToolkits: stateWorkspaceToolkitOptions,
+      workspaceSkillsPrompt: stateWorkspaceSkillsPromptOption,
     };
-    const onPrepareMessages = resolveWorkspaceSkillsPromptHook(this.workspace, hookOptions);
-    this.hooks = onPrepareMessages
-      ? { ...(this.configuredHooks || {}), onPrepareMessages }
-      : this.configuredHooks || {};
+    const onPrepareMessages = resolveWorkspaceSkillsPromptHook(stateWorkspace, hookOptions);
+    stateHooks = onPrepareMessages
+      ? { ...(stateConfiguredHooks || {}), onPrepareMessages }
+      : stateConfiguredHooks || {};
 
-    const workspaceToolkits = buildWorkspaceToolkits(this.workspace, this.workspaceToolkitOptions);
+    const workspaceToolkits = buildWorkspaceToolkits(stateWorkspace, stateWorkspaceToolkitOptions);
     if (workspaceToolkits.length > 0) {
-      this.toolManager.addItems(workspaceToolkits);
-      if (this.toolRouting && !this.toolRoutingPoolExplicit) {
-        this.toolPoolManager.addItems(workspaceToolkits);
+      stateToolManager.addItems(workspaceToolkits);
+      if (stateToolRouting && !stateToolRoutingPoolExplicit) {
+        stateToolPoolManager.addItems(workspaceToolkits);
       }
     }
   }
@@ -10231,84 +10142,84 @@ export class Agent<
   /**
    * Internal: apply a default tool routing config when none was configured explicitly.
    */
-  public __setDefaultToolRouting(toolRouting?: ToolRoutingConfig): void {
-    if (this.toolRoutingConfigured) {
+  function agent__setDefaultToolRouting(toolRouting?: ToolRoutingConfig): void {
+    if (stateToolRoutingConfigured) {
       return;
     }
-    this.toolRouting = toolRouting;
-    this.toolRoutingConfigured = true;
-    this.applyToolRoutingConfig(this.toolRouting);
+    stateToolRouting = toolRouting;
+    stateToolRoutingConfigured = true;
+    agentApplyToolRoutingConfig(stateToolRouting);
   }
 
-  private applyToolRoutingConfig(toolRouting?: ToolRoutingConfig | false): void {
+  function agentApplyToolRoutingConfig(toolRouting?: ToolRoutingConfig | false): void {
     if (!toolRouting) {
-      this.toolRoutingPoolExplicit = false;
-      this.toolRoutingSearchStrategy = undefined;
-      this.toolRoutingExposedNames = new Set();
-      this.removeToolRoutingSupportTools();
+      stateToolRoutingPoolExplicit = false;
+      stateToolRoutingSearchStrategy = undefined;
+      stateToolRoutingExposedNames = new Set();
+      agentRemoveToolRoutingSupportTools();
       return;
     }
 
-    this.toolRoutingPoolExplicit = Object.prototype.hasOwnProperty.call(toolRouting, "pool");
-    this.toolRoutingExposedNames = new Set();
+    stateToolRoutingPoolExplicit = Object.prototype.hasOwnProperty.call(toolRouting, "pool");
+    stateToolRoutingExposedNames = new Set();
 
-    this.toolRoutingSearchStrategy = toolRouting.embedding
+    stateToolRoutingSearchStrategy = toolRouting.embedding
       ? createEmbeddingToolSearchStrategy(toolRouting.embedding)
       : undefined;
 
-    const searchTool = this.createToolRoutingSearchTool();
-    const callTool = this.createToolRoutingCallTool();
-    this.upsertToolRoutingSupportTool(searchTool);
-    this.upsertToolRoutingSupportTool(callTool);
-    this.toolRoutingExposedNames.add(searchTool.name);
-    this.toolRoutingExposedNames.add(callTool.name);
+    const searchTool = agentCreateToolRoutingSearchTool();
+    const callTool = agentCreateToolRoutingCallTool();
+    agentUpsertToolRoutingSupportTool(searchTool);
+    agentUpsertToolRoutingSupportTool(callTool);
+    stateToolRoutingExposedNames.add(searchTool.name);
+    stateToolRoutingExposedNames.add(callTool.name);
 
-    this.assertNoToolRoutingNameConflicts(toolRouting.expose, "toolRouting.expose");
-    this.assertNoToolRoutingNameConflicts(toolRouting.pool, "toolRouting.pool");
+    agentAssertNoToolRoutingNameConflicts(toolRouting.expose, "toolRouting.expose");
+    agentAssertNoToolRoutingNameConflicts(toolRouting.pool, "toolRouting.pool");
 
     if (toolRouting.expose && toolRouting.expose.length > 0) {
-      this.toolManager.addItems(toolRouting.expose);
-      const exposedManager = new ToolManager(toolRouting.expose, this.logger);
-      exposedManager.getAllToolNames().forEach((name) => this.toolRoutingExposedNames.add(name));
+      stateToolManager.addItems(toolRouting.expose);
+      const exposedManager = new ToolManager(toolRouting.expose, stateLogger);
+      exposedManager.getAllToolNames().forEach((name) => stateToolRoutingExposedNames.add(name));
     }
     if (toolRouting.pool && toolRouting.pool.length > 0) {
-      this.toolPoolManager.addItems(toolRouting.pool);
-    } else if (!this.toolRoutingPoolExplicit) {
-      const autoPool = this.toolManager
+      stateToolPoolManager.addItems(toolRouting.pool);
+    } else if (!stateToolRoutingPoolExplicit) {
+      const autoPool = stateToolManager
         .getAllTools()
-        .filter((tool) => !this.isToolRoutingSupportTool(tool));
+        .filter((tool) => !agentIsToolRoutingSupportTool(tool));
       if (autoPool.length > 0) {
-        this.toolPoolManager.addItems(autoPool);
+        stateToolPoolManager.addItems(autoPool);
       }
     }
   }
 
-  private removeToolRoutingSupportTools(): void {
-    for (const name of this.getToolRoutingSupportToolNames()) {
-      const existing = this.toolManager.getToolByName(name);
-      if (existing && this.isToolRoutingSupportTool(existing)) {
-        this.toolManager.removeTool(name);
+  function agentRemoveToolRoutingSupportTools(): void {
+    for (const name of agentGetToolRoutingSupportToolNames()) {
+      const existing = stateToolManager.getToolByName(name);
+      if (existing && agentIsToolRoutingSupportTool(existing)) {
+        stateToolManager.removeTool(name);
       }
     }
   }
 
-  private upsertToolRoutingSupportTool(tool: Tool<any, any>): void {
-    const existing = this.toolManager.getToolByName(tool.name);
-    if (existing && !this.isToolRoutingSupportTool(existing)) {
-      this.logger.debug(
+  function agentUpsertToolRoutingSupportTool(tool: Tool<any, any>): void {
+    const existing = stateToolManager.getToolByName(tool.name);
+    if (existing && !agentIsToolRoutingSupportTool(existing)) {
+      stateLogger.debug(
         `Tool routing support tool "${tool.name}" not added because a user-defined tool with the same name exists.`,
       );
       return;
     }
 
-    if (existing && this.isToolRoutingSupportTool(existing)) {
-      this.toolManager.removeTool(tool.name);
+    if (existing && agentIsToolRoutingSupportTool(existing)) {
+      stateToolManager.removeTool(tool.name);
     }
 
-    this.toolManager.addStandaloneTool(tool);
+    stateToolManager.addStandaloneTool(tool);
   }
 
-  private assertNoToolRoutingNameConflicts(
+  function agentAssertNoToolRoutingNameConflicts(
     items: (Tool<any, any> | Toolkit | VercelTool)[] | undefined,
     scope: string,
   ): void {
@@ -10316,8 +10227,8 @@ export class Agent<
       return;
     }
 
-    const reservedNames = this.getToolRoutingSupportToolNames();
-    const manager = new ToolManager(items, this.logger);
+    const reservedNames = agentGetToolRoutingSupportToolNames();
+    const manager = new ToolManager(items, stateLogger);
     const conflicts = manager
       .getAllToolNames()
       .filter((name) => reservedNames.has(name))
@@ -10332,18 +10243,18 @@ export class Agent<
     }
   }
 
-  private resolveToolRouting(
+  function agentResolveToolRouting(
     options?: AnyBaseGenerationOptions,
   ): ToolRoutingConfig | false | undefined {
     if (options?.toolRouting !== undefined) {
       return options.toolRouting;
     }
-    return this.toolRouting;
+    return stateToolRouting;
   }
 
-  private getToolRoutingExposedNames(toolRouting: ToolRoutingConfig): Set<string> {
-    if (toolRouting === this.toolRouting && this.toolRoutingExposedNames.size > 0) {
-      return this.toolRoutingExposedNames;
+  function agentGetToolRoutingExposedNames(toolRouting: ToolRoutingConfig): Set<string> {
+    if (toolRouting === stateToolRouting && stateToolRoutingExposedNames.size > 0) {
+      return stateToolRoutingExposedNames;
     }
 
     const exposedNames = new Set<string>();
@@ -10351,7 +10262,7 @@ export class Agent<
     exposedNames.add(TOOL_ROUTING_CALL_TOOL_NAME);
 
     if (toolRouting.expose && toolRouting.expose.length > 0) {
-      const exposedManager = new ToolManager(toolRouting.expose, this.logger);
+      const exposedManager = new ToolManager(toolRouting.expose, stateLogger);
       exposedManager.getAllToolNames().forEach((name) => exposedNames.add(name));
     }
 
@@ -10372,20 +10283,20 @@ export class Agent<
    *
    * @example
    * ```typescript
-   * const writerAgent = new Agent({
+   * const writerAgent = defineAgent({
    *   id: "writer",
    *   purpose: "Writes blog posts",
    *   // ... other config
    * });
    *
-   * const editorAgent = new Agent({
+   * const editorAgent = defineAgent({
    *   id: "editor",
    *   purpose: "Edits content",
    *   // ... other config
    * });
    *
    * // Supervisor agent that uses both as tools
-   * const supervisorAgent = new Agent({
+   * const supervisorAgent = defineAgent({
    *   id: "supervisor",
    *   instructions: "First call writer, then editor",
    *   tools: [
@@ -10395,16 +10306,16 @@ export class Agent<
    * });
    * ```
    */
-  public toTool(options?: {
+  function agentToTool(options?: {
     name?: string;
     description?: string;
     parametersSchema?: z.ZodObject<any>;
     context?: AgentContextInput<CONTEXT_SCHEMA>;
   }): Tool<any, any> {
     const toolContext = options?.context;
-    const toolName = options?.name || `${this.id}_tool`;
+    const toolName = options?.name || `${stateId}_tool`;
     const toolDescription =
-      options?.description || this.purpose || `Executes the ${this.name} agent to complete a task`;
+      options?.description || statePurpose || `Executes the ${stateName} agent to complete a task`;
 
     const parametersSchema =
       options?.parametersSchema ||
@@ -10456,7 +10367,7 @@ export class Agent<
 
         // Generate response using this agent
         // A tool boundary validates the merged context at runtime, like server/registry calls.
-        const result = await (this as Agent).generateText<
+        const result = await (runtimeAgent as Agent).generateText<
           OutputSpec,
           ProviderOptions,
           ToolSet,
@@ -10480,8 +10391,8 @@ export class Agent<
   /**
    * Check if working memory is supported
    */
-  private hasWorkingMemorySupport(): boolean {
-    const memory = this.memoryManager.getMemory();
+  function agentHasWorkingMemorySupport(): boolean {
+    const memory = stateMemoryManager.getMemory();
     return memory?.hasWorkingMemorySupport?.() ?? false;
   }
 
@@ -10489,7 +10400,10 @@ export class Agent<
    * Set usage information on trace context
    * Maps AI SDK's LanguageModelUsage to trace context format
    */
-  private setTraceContextUsage(traceContext: AgentTraceContext, usage?: LanguageModelUsage): void {
+  function agentSetTraceContextUsage(
+    traceContext: AgentTraceContext,
+    usage?: LanguageModelUsage,
+  ): void {
     if (!usage) return;
 
     const resolvedUsage = convertUsage(usage);
@@ -10504,29 +10418,29 @@ export class Agent<
     });
   }
 
-  private recordRootSpanUsageAndProviderCost(
+  function agentRecordRootSpanUsageAndProviderCost(
     traceContext: AgentTraceContext,
     usage?: LanguageModelUsage,
     providerMetadata?: unknown,
   ): void {
-    this.setTraceContextUsage(traceContext, usage);
-    this.recordProviderCost(traceContext.getRootSpan(), providerMetadata);
+    agentSetTraceContextUsage(traceContext, usage);
+    agentRecordProviderCost(traceContext.getRootSpan(), providerMetadata);
   }
 
   /**
    * Create working memory tools if configured
    */
-  private createWorkingMemoryTools(
+  function agentCreateWorkingMemoryTools(
     options?: AnyBaseGenerationOptions,
     operationContext?: OperationContext,
   ): Tool<any, any>[] {
-    if (!this.hasWorkingMemorySupport()) {
+    if (!agentHasWorkingMemorySupport()) {
       return [];
     }
-    const resolvedMemory = this.resolveMemoryRuntimeOptions(options, operationContext);
+    const resolvedMemory = agentResolveMemoryRuntimeOptions(options, operationContext);
     const isReadOnly = resolvedMemory.readOnly === true;
 
-    const memoryManager = this.memoryManager as unknown as MemoryManager;
+    const memoryManager = stateMemoryManager as unknown as MemoryManager;
     const memory = memoryManager.getMemory();
 
     if (!memory) {
@@ -10630,4 +10544,233 @@ export class Agent<
 
     return tools;
   }
+
+  const runtimeAgent: Agent<AGENT_TOOLS, CONTEXT_SCHEMA> = {
+    get id() {
+      return stateId;
+    },
+    get name() {
+      return stateName;
+    },
+    get purpose() {
+      return statePurpose;
+    },
+    get instructions() {
+      return stateInstructions;
+    },
+    get model() {
+      return stateModel;
+    },
+    get dynamicTools() {
+      return stateDynamicTools;
+    },
+    get hooks() {
+      return stateHooks;
+    },
+    set hooks(value) {
+      stateHooks = value;
+    },
+    get temperature() {
+      return stateTemperature;
+    },
+    get maxOutputTokens() {
+      return stateMaxOutputTokens;
+    },
+    get maxSteps() {
+      return stateMaxSteps;
+    },
+    set maxSteps(value) {
+      stateMaxSteps = value;
+    },
+    get maxRetries() {
+      return stateMaxRetries;
+    },
+    get stopWhen() {
+      return stateStopWhen;
+    },
+    get prepareStep() {
+      return statePrepareStep;
+    },
+    get markdown() {
+      return stateMarkdown;
+    },
+    get inheritParentSpan() {
+      return stateInheritParentSpan;
+    },
+    get voice() {
+      return stateVoice;
+    },
+    get retriever() {
+      return stateRetriever;
+    },
+    get supervisorConfig() {
+      return stateSupervisorConfig;
+    },
+    generateText: agentGenerateText,
+    streamText: agentStreamText,
+    generateObject: agentGenerateObject,
+    streamObject: agentStreamObject,
+    getModelName: agentGetModelName,
+    getFullState: agentGetFullState,
+    addTools: agentAddTools,
+    removeTools: agentRemoveTools,
+    removeToolkit: agentRemoveToolkit,
+    addSubAgent: agentAddSubAgent,
+    removeSubAgent: agentRemoveSubAgent,
+    getTools: agentGetTools,
+    getToolsForApi: agentGetToolsForApi,
+    getSubAgents: agentGetSubAgents,
+    unregister: agentUnregister,
+    isTelemetryConfigured: agentIsTelemetryConfigured,
+    markFeedbackProvided: agentMarkFeedbackProvided,
+    getMemoryManager: agentGetMemoryManager,
+    getToolManager: agentGetToolManager,
+    getWorkspace: agentGetWorkspace,
+    getMemory: agentGetMemory,
+    __setDefaultMemory: agent__setDefaultMemory,
+    __setDefaultConversationPersistence: agent__setDefaultConversationPersistence,
+    __setDefaultWorkspace: agent__setDefaultWorkspace,
+    __setDefaultToolRouting: agent__setDefaultToolRouting,
+    toTool: agentToTool,
+  };
+
+  // The registry/runtime boundary is schema-erased; public callbacks keep inferred types.
+  const options = typedOptions as unknown as AgentOptions<AGENT_TOOLS>;
+  const stateContextSchema: AgentContextSchema | undefined = options.contextSchema;
+  const stateId: string = options.id || options.name;
+  const stateName: string = options.name;
+  const statePurpose: string | undefined = options.purpose;
+  const stateInstructions: InstructionsDynamicValue = options.instructions;
+  const stateModel: AgentModelValue = options.model;
+  const stateDynamicTools: DynamicValue<AgentToolInput<AGENT_TOOLS>> | undefined =
+    typeof options.tools === "function" ? options.tools : undefined;
+  const stateWorkspaceConfigured: boolean = options.workspace !== undefined;
+  const stateWorkspaceToolkitOptions: AgentOptions["workspaceToolkits"] = options.workspaceToolkits;
+  const stateWorkspaceSkillsPromptOption: AgentOptions["workspaceSkillsPrompt"] =
+    options.workspaceSkillsPrompt;
+  const stateConfiguredHooks: AgentHooks | undefined = options.hooks;
+  const stateMaxStepsConfigured: boolean = options.maxSteps !== undefined;
+  const globalWorkspace = AgentRegistry.getInstance().getGlobalWorkspace();
+  const workspaceOption = options.workspace === undefined ? globalWorkspace : options.workspace;
+  stateWorkspace = resolveWorkspace(workspaceOption);
+  const onPrepareMessages = resolveWorkspaceSkillsPromptHook(stateWorkspace, options);
+  stateHooks = onPrepareMessages
+    ? { ...(options.hooks || {}), onPrepareMessages }
+    : options.hooks || {};
+  const stateTemperature: number | undefined = options.temperature;
+  const stateMaxOutputTokens: number | undefined = options.maxOutputTokens;
+  const defaultMaxSteps = stateWorkspace ? 100 : 5;
+  stateMaxSteps = options.maxSteps ?? defaultMaxSteps;
+  const stateMaxRetries: number = options.maxRetries ?? DEFAULT_LLM_MAX_RETRIES;
+  const stateStopWhen: StopWhen | undefined = options.stopWhen;
+  const statePrepareStep: PrepareStep | undefined = options.prepareStep;
+  const stateMarkdown: boolean = options.markdown ?? false;
+  const stateInheritParentSpan: boolean = options.inheritParentSpan ?? true;
+  const stateVoice: Voice | undefined = options.voice;
+  const stateRetriever: BaseRetriever | undefined = options.retriever;
+  const stateSupervisorConfig: SupervisorConfig | undefined = options.supervisorConfig;
+  const stateContext: Map<string | symbol, unknown> | undefined = toContextMap(options.context);
+  const stateVoltOpsClient: VoltOpsClient | undefined = options.voltOpsClient;
+  const stateEvalConfig: AgentEvalConfig | undefined = options.eval;
+  const stateFeedbackOptions: AgentFeedbackOptions | boolean | undefined = options.feedback;
+  const stateInputGuardrails: NormalizedInputGuardrail[] = normalizeInputGuardrailList(
+    options.inputGuardrails || [],
+  );
+  const stateOutputGuardrails: NormalizedOutputGuardrail[] = normalizeOutputGuardrailList(
+    options.outputGuardrails || [],
+  );
+  const stateInputMiddlewares: NormalizedInputMiddleware[] = normalizeInputMiddlewareList(
+    options.inputMiddlewares || [],
+  );
+  const stateOutputMiddlewares: NormalizedOutputMiddleware[] = normalizeOutputMiddlewareList(
+    options.outputMiddlewares || [],
+  );
+  const stateMaxMiddlewareRetries: number = options.maxMiddlewareRetries ?? 0;
+  stateToolRoutingConfigured = options.toolRouting !== undefined;
+  stateToolRouting = options.toolRouting ?? AgentRegistry.getInstance().getGlobalToolRouting();
+
+  // Initialize logger - always use LoggerProxy for consistency
+  // If external logger is provided, it will be used by LoggerProxy
+  const stateLogger: Logger = new LoggerProxy(
+    {
+      component: "agent",
+      agentId: stateId,
+      modelName: runtimeAgent.getModelName(),
+    },
+    options.logger,
+  );
+
+  // Allow standalone Agent usage (without VoltAgent wrapper) to initialize
+  // remote observability processors that depend on the global VoltOps client.
+  if (stateVoltOpsClient && !AgentRegistry.getInstance().getGlobalVoltOpsClient()) {
+    AgentRegistry.getInstance().setGlobalVoltOpsClient(stateVoltOpsClient);
+  }
+
+  // Log agent creation
+  stateLogger.debug(`Agent created: ${stateName}`, {
+    event: LogEvents.AGENT_CREATED,
+    agentId: stateId,
+    model: runtimeAgent.getModelName(),
+    hasTools: !!options.tools,
+    hasMemory: options.memory !== false,
+    hasSubAgents: !!(options.subAgents && options.subAgents.length > 0),
+  });
+
+  // Store Memory
+  const stateMemoryConfigured: boolean = options.memory !== undefined;
+  const stateMemory: Memory | false | undefined = options.memory;
+  const stateSummarization: AgentSummarizationOptions | false | undefined = options.summarization;
+  const stateConversationPersistenceConfigured: boolean =
+    options.conversationPersistence !== undefined;
+  stateConversationPersistence = agentNormalizeConversationPersistenceOptions(
+    options.conversationPersistence,
+  );
+  const stateMessageMetadataPersistence: ResolvedMessageMetadataPersistenceOptions =
+    agentNormalizeMessageMetadataPersistenceOptions(options.messageMetadataPersistence);
+  // workspace resolved above to set default maxSteps
+
+  // Initialize memory manager
+  const resolvedMemory = stateMemoryConfigured
+    ? options.memory
+    : AgentRegistry.getInstance().getGlobalAgentMemory();
+  const titleGenerator = agentCreateConversationTitleGenerator(
+    resolvedMemory instanceof Memory ? resolvedMemory : undefined,
+  );
+  const stateMemoryManager: MemoryManager = new MemoryManager(
+    stateId,
+    resolvedMemory,
+    {},
+    stateLogger,
+    titleGenerator,
+  );
+
+  const workspaceToolkits = buildWorkspaceToolkits(stateWorkspace, options.workspaceToolkits);
+
+  // Initialize tool manager with static tools
+  const staticTools = typeof options.tools === "function" ? undefined : options.tools;
+  const stateToolManager: ToolManager = new ToolManager([], stateLogger);
+  addAgentToolInputToManager(stateToolManager, staticTools);
+  if (options.toolkits) {
+    stateToolManager.addItems(options.toolkits);
+  }
+  if (workspaceToolkits.length > 0) {
+    stateToolManager.addItems(workspaceToolkits);
+  }
+  const stateToolPoolManager: ToolManager = new ToolManager([], stateLogger);
+  agentApplyToolRoutingConfig(stateToolRouting);
+
+  // Initialize sub-agent manager
+  const stateSubAgentManager: SubAgentManager = new SubAgentManager(
+    stateName,
+    options.subAgents || [],
+    stateSupervisorConfig,
+  );
+
+  // Initialize prompts helper with local prompts and VoltOps clients
+  const statePrompts: PromptHelper | undefined = VoltOpsClientClass.createPromptHelperFromSources(
+    stateId,
+    stateVoltOpsClient,
+  );
+
+  return runtimeAgent;
 }

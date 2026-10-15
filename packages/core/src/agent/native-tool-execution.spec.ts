@@ -12,7 +12,7 @@ import {
   convertModelMessagesToUIMessages,
   convertResponseMessagesToUIMessages,
 } from "../utils/message-converter";
-import { Agent } from "./agent";
+import { type Agent, defineAgent } from "./agent";
 import { createInputGuardrail } from "./guardrail";
 
 // Exercise the real SDK execution loop. Only the model provider is mocked.
@@ -53,7 +53,7 @@ const streamModel = () =>
     },
   });
 const makeAgent = (tools: ToolSet, model = generateModel()) =>
-  new Agent({
+  defineAgent({
     name: "native-tool-contract",
     model,
     tools,
@@ -503,7 +503,7 @@ describe("native tool execution contracts", () => {
       outputSchema: z.string().transform((v) => v.trim()),
       execute: async () => " value ",
     });
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "legacy-contract",
       model: generateModel(),
       tools: [task],
@@ -529,7 +529,7 @@ describe("native tool execution contracts", () => {
       execute,
       voltagent: { name: "Tenant lookup", validateOutput: true },
     });
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "routing-contract",
       model: generateModel([call("callTool", safeStringify({ name: "task", args: {} }))]),
       tools: { task },
@@ -575,7 +575,7 @@ describe("native tool execution contracts", () => {
         modelCalled.resolve();
         return original(options);
       };
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "guardrail-contract",
         model,
         tools: { task: tool({ inputSchema: z.object({}), execute }) },
@@ -752,7 +752,7 @@ describe("native tool execution contracts", () => {
 
   it("keeps errors in persisted messages and conversation execution history", async () => {
     const memory = new Memory({ storage: new InMemoryStorageAdapter() });
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "memory-contract",
       model: generateModel(),
       maxRetries: 0,

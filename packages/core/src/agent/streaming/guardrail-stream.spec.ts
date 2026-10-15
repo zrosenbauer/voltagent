@@ -1,6 +1,6 @@
 import { MockLanguageModelV3, simulateReadableStream } from "ai/test";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { Agent } from "../agent";
+import { type Agent, defineAgent } from "../agent";
 import { normalizeOutputGuardrailList } from "../guardrail";
 import type { VoltAgentTextStreamPart } from "../subagent/types";
 import { createTestAgent } from "../test-utils";
@@ -313,7 +313,7 @@ describe("Output guardrail streaming integration", () => {
       outputTokens: { total: 2, text: 2, reasoning: 0 },
     };
 
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "guardrail-ui",
       model: new MockLanguageModelV3({
         doStream: async () => ({
@@ -372,7 +372,7 @@ describe("Output guardrail streaming integration", () => {
   });
 
   it("baseline agent without guardrails resolves text stream", async () => {
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "baseline",
       model: new MockLanguageModelV3({
         doStream: async () => ({

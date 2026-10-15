@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Agent } from "../agent/agent";
+import { type Agent, defineAgent } from "../agent/agent";
 import { LoggerProxy, getGlobalLogger } from "../logger";
 import { AgentRegistry } from "../registries/agent-registry";
 import { VoltOpsClient } from "./client";
@@ -68,6 +68,19 @@ const mockProvider = {
   getModelIdentifier: vi.fn(() => "test-model"),
   toMessage: vi.fn(),
 };
+
+const createModel = () =>
+  new MockLanguageModelV4({
+    doGenerate: {
+      content: [{ type: "text", text: "Response" }],
+      finishReason: { unified: "stop", raw: "stop" },
+      usage: {
+        inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 },
+        outputTokens: { total: 1, text: 1, reasoning: 0 },
+      },
+      warnings: [],
+    },
+  });
 
 /**
  * Create a mock VoltOpsClient for testing
@@ -285,39 +298,15 @@ describe("VoltOpsClient Priority Hierarchy", () => {
       };
 
       // Create agent with dynamic instructions and agent-specific client
-      const dynamicAgent = new Agent({
+      const dynamicAgent = defineAgent({
         name: "DynamicAgent",
         instructions: dynamicInstructions,
-        llm: mockProvider,
-        model: "test-model",
+        model: createModel(),
+        memory: false,
         voltOpsClient: agentVoltOpsClient,
       });
 
-      // Test resolveInstructions (private method, tested through getSystemMessage)
-      // Create proper OperationContext structure
-      const mockRootSpan = { setAttribute: vi.fn() };
-
-      const oc = {
-        operationId: "test-op",
-        userId: "test-user",
-        conversationId: "test-conv",
-        context: new Map(),
-        systemContext: new Map(),
-        isActive: true,
-        logger: mockLoggerInstance as any,
-        traceContext: {
-          getRootSpan: () => mockRootSpan,
-          withSpan: async (_span: any, fn: any) => await fn(),
-          createChildSpan: () => ({}) as any,
-          end: () => {},
-          setOutput: () => {},
-          setInstructions: () => {},
-          endChildSpan: () => {},
-        },
-        startTime: new Date(),
-      };
-
-      const systemMessageResponse = await (dynamicAgent as any).getSystemMessage("test input", oc);
+      const response = await dynamicAgent.generateText("test input");
 
       // Verify createPromptHelperWithFallback was called with agent-specific client
       expect(createPromptHelperSpy).toHaveBeenCalledWith(
@@ -333,8 +322,7 @@ describe("VoltOpsClient Priority Hierarchy", () => {
 
       // Verify global client was not used
       expect(mockGlobalGetPrompt).not.toHaveBeenCalled();
-      // Verify that getSystemMessage returned a response
-      expect(systemMessageResponse).toBeDefined();
+      expect(response.text).toBe("Response");
 
       // Cleanup
       createPromptHelperSpy.mockRestore();
@@ -364,38 +352,15 @@ describe("VoltOpsClient Priority Hierarchy", () => {
       };
 
       // Create agent WITHOUT specific VoltOps client
-      const dynamicAgent = new Agent({
+      const dynamicAgent = defineAgent({
         name: "DynamicAgent",
         instructions: dynamicInstructions,
-        llm: mockProvider,
-        model: "test-model",
+        model: createModel(),
+        memory: false,
         // No voltOpsClient specified - should use global
       });
 
-      // Create proper OperationContext structure
-      const mockRootSpan = { setAttribute: vi.fn() };
-
-      const oc = {
-        operationId: "test-op",
-        userId: "test-user",
-        conversationId: "test-conv",
-        context: new Map(),
-        systemContext: new Map(),
-        isActive: true,
-        logger: mockLoggerInstance as any,
-        traceContext: {
-          getRootSpan: () => mockRootSpan,
-          withSpan: async (_span: any, fn: any) => await fn(),
-          createChildSpan: () => ({}) as any,
-          end: () => {},
-          setOutput: () => {},
-          setInstructions: () => {},
-          endChildSpan: () => {},
-        } as any,
-        startTime: new Date(),
-      } as any;
-
-      const systemMessageResponse = await (dynamicAgent as any).getSystemMessage("test input", oc);
+      const response = await dynamicAgent.generateText("test input");
 
       // Verify createPromptHelperWithFallback was called without agent client
       expect(createPromptHelperSpy).toHaveBeenCalledWith(
@@ -407,8 +372,7 @@ describe("VoltOpsClient Priority Hierarchy", () => {
 
       // Verify global client was used
       expect(mockGlobalGetPrompt).toHaveBeenCalledTimes(1);
-      // Verify that getSystemMessage returned a response
-      expect(systemMessageResponse).toBeDefined();
+      expect(response.text).toBe("Response");
 
       // Cleanup
       createPromptHelperSpy.mockRestore();
@@ -419,7 +383,7 @@ describe("VoltOpsClient Priority Hierarchy", () => {
 
       expect(AgentRegistry.getInstance().getGlobalVoltOpsClient()).toBeUndefined();
 
-      new Agent({
+      defineAgent({
         name: "StandaloneAgent",
         instructions: "Test instructions",
         llm: mockProvider,
@@ -442,7 +406,7 @@ describe("VoltOpsClient Priority Hierarchy", () => {
 
       AgentRegistry.getInstance().setGlobalVoltOpsClient(existingGlobalClient);
 
-      new Agent({
+      defineAgent({
         name: "StandaloneAgentWithOwnClient",
         instructions: "Test instructions",
         llm: mockProvider,
@@ -516,3 +480,4 @@ describe("VoltOpsClient Priority Hierarchy", () => {
     });
   });
 });
+import { MockLanguageModelV4 } from "ai/test";

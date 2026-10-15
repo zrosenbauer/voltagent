@@ -21,7 +21,7 @@ import type { BaseRetriever } from "../../retriever/retriever";
 import { type Tool, type Toolkit, createTool } from "../../tool";
 import type { Voice } from "../../voice";
 import type { VoltOpsClient } from "../../voltops/client";
-import { Agent } from "../agent";
+import { type Agent, defineAgent } from "../agent";
 import type {
   AgentHooks,
   GenerateObjectOptions,
@@ -113,7 +113,7 @@ export function createMockAgent(options: CreateMockAgentOptions = {}): Agent {
     context,
   } = options;
 
-  return new Agent({
+  return defineAgent({
     id,
     name,
     instructions,

@@ -9,7 +9,7 @@ import { vi } from "vitest";
 import { z } from "zod";
 import type { ToolSchema } from "../agent/providers/base/types";
 import { type Tool, createTool } from "../tool";
-import { Agent } from "./agent";
+import { type Agent, defineAgent } from "./agent";
 import type { AgentOptions } from "./types";
 
 /**
@@ -348,7 +348,7 @@ export function createTestAgent(options?: Partial<AgentOptions>): Agent {
     markdown: options?.markdown ?? false,
   };
 
-  return new Agent({
+  return defineAgent({
     ...defaultOptions,
     ...options,
   });

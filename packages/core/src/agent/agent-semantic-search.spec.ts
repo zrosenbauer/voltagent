@@ -2,7 +2,7 @@
  * Unit tests for Agent semantic search functionality
  */
 
-import type { UIMessage } from "ai";
+import { type UIMessage, generateText } from "ai";
 import { MockLanguageModelV3 } from "ai/test";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Memory } from "../memory";
@@ -10,7 +10,8 @@ import type { EmbeddingAdapter } from "../memory/adapters/embedding/types";
 import { InMemoryStorageAdapter } from "../memory/adapters/storage/in-memory";
 import { InMemoryVectorAdapter } from "../memory/adapters/vector/in-memory";
 import { MemoryManager } from "../memory/manager/memory-manager";
-import { Agent } from "./agent";
+import { defineAgent } from "./agent";
+import { extractUserQuery } from "./user-query";
 
 // Mock AI SDK functions
 vi.mock("ai", async () => ({
@@ -46,7 +47,6 @@ class MockEmbeddingAdapter implements EmbeddingAdapter {
 
 describe("Agent Semantic Search", () => {
   let mockModel: MockLanguageModelV3;
-  let _agent: Agent;
   let memoryWithVector: Memory;
   let memoryWithoutVector: Memory;
 
@@ -81,61 +81,55 @@ describe("Agent Semantic Search", () => {
     });
 
     vi.clearAllMocks();
+    vi.mocked(generateText).mockResolvedValue({
+      text: "Test response",
+      finishReason: "stop",
+      usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
+    } as Awaited<ReturnType<typeof generateText>>);
   });
 
   describe("hasSemanticSearchSupport", () => {
     it("should return true when MemoryManager has vector support", () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
         memory: memoryWithVector,
       });
 
-      // Access private method through reflection for testing
-      const hasSupport = (agent as any).hasSemanticSearchSupport();
+      const hasSupport = agent.getMemoryManager().getMemory()?.hasVectorSupport() ?? false;
       expect(hasSupport).toBe(true);
     });
 
     it("should return false when Memory V2 has no vector adapter", () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
         memory: memoryWithoutVector,
       });
 
-      const hasSupport = (agent as any).hasSemanticSearchSupport();
+      const hasSupport = agent.getMemoryManager().getMemory()?.hasVectorSupport() ?? false;
       expect(hasSupport).toBe(false);
     });
 
     it("should return false when no memory is configured", () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
         memory: false,
       });
 
-      const hasSupport = (agent as any).hasSemanticSearchSupport();
+      const hasSupport = agent.getMemoryManager().getMemory()?.hasVectorSupport() ?? false;
       expect(hasSupport).toBe(false);
     });
   });
 
   describe("extractUserQuery", () => {
-    let agent: Agent;
-
-    beforeEach(() => {
-      agent = new Agent({
-        name: "TestAgent",
-        instructions: "Test",
-        model: mockModel as any,
-      });
-    });
-
     it("should return string input directly", () => {
       const input = "What's my favorite fruit?";
-      const query = (agent as any).extractUserQuery(input);
+      const query = extractUserQuery(input);
       expect(query).toBe(input);
     });
 
@@ -163,7 +157,7 @@ describe("Agent Semantic Search", () => {
         },
       ];
 
-      const query = (agent as any).extractUserQuery(messages);
+      const query = extractUserQuery(messages);
       expect(query).toBe("What about cats?");
     });
 
@@ -181,7 +175,7 @@ describe("Agent Semantic Search", () => {
         },
       ];
 
-      const query = (agent as any).extractUserQuery(messages);
+      const query = extractUserQuery(messages);
       expect(query).toBeUndefined();
     });
 
@@ -198,7 +192,7 @@ describe("Agent Semantic Search", () => {
         },
       ];
 
-      const query = (agent as any).extractUserQuery(messages);
+      const query = extractUserQuery(messages);
       expect(query).toBe("Part 1 Part 2 Part 3");
     });
 
@@ -215,7 +209,7 @@ describe("Agent Semantic Search", () => {
         },
       ];
 
-      const query = (agent as any).extractUserQuery(messages);
+      const query = extractUserQuery(messages);
       expect(query).toBe("Text part Another text");
     });
 
@@ -228,14 +222,14 @@ describe("Agent Semantic Search", () => {
         },
       ];
 
-      const query = (agent as any).extractUserQuery(messages);
+      const query = extractUserQuery(messages);
       expect(query).toBeUndefined();
     });
   });
 
   describe("Semantic Memory Default Behavior", () => {
     it("should enable semantic search by default when vector support exists", async () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -243,19 +237,19 @@ describe("Agent Semantic Search", () => {
       });
 
       // The semantic search should be enabled by default (no need to pass semanticMemory option)
-      const hasSupport = (agent as any).hasSemanticSearchSupport();
+      const hasSupport = agent.getMemoryManager().getMemory()?.hasVectorSupport() ?? false;
       expect(hasSupport).toBe(true);
     });
 
     it("should fallback to regular messages when no vector support", () => {
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
         memory: memoryWithoutVector,
       });
 
-      const hasSupport = (agent as any).hasSemanticSearchSupport();
+      const hasSupport = agent.getMemoryManager().getMemory()?.hasVectorSupport() ?? false;
       expect(hasSupport).toBe(false);
     });
   });
@@ -266,7 +260,7 @@ describe("Agent Semantic Search", () => {
       const getMessagesSpy = vi.fn().mockResolvedValue([]);
 
       // Create agent with mocked memory manager
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -274,21 +268,13 @@ describe("Agent Semantic Search", () => {
         maxRetries: 0,
       });
 
-      // Replace the memory manager's getMessages method
-      const memoryManager = (agent as any).memoryManager;
-      if (memoryManager) {
-        memoryManager.getMessages = getMessagesSpy;
-      }
+      vi.spyOn(agent.getMemoryManager(), "getMessages").mockImplementation(getMessagesSpy);
 
-      // Call generateText (this will internally call prepareMessages)
-      try {
-        await agent.generateText("Test query", {
-          userId: "test-user",
-          conversationId: "test-conv",
-        });
-      } catch (_e) {
-        // We expect this to fail since we're mocking, but we want to check the spy
-      }
+      const result = await agent.generateText("Test query", {
+        userId: "test-user",
+        conversationId: "test-conv",
+      });
+      expect(result.text).toBe("Test response");
 
       // Verify getMessages was called with semantic search parameters
       expect(getMessagesSpy).toHaveBeenCalled();
@@ -308,7 +294,7 @@ describe("Agent Semantic Search", () => {
         conversationId: "test-conv",
       });
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -316,23 +302,19 @@ describe("Agent Semantic Search", () => {
         maxRetries: 0,
       });
 
-      const memoryManager = (agent as any).memoryManager;
-      if (memoryManager) {
-        memoryManager.getMessages = getMessagesSpy;
-        memoryManager.prepareConversationContext = prepareConversationContextSpy;
-      }
+      vi.spyOn(agent.getMemoryManager(), "getMessages").mockImplementation(getMessagesSpy);
+      vi.spyOn(agent.getMemoryManager(), "prepareConversationContext").mockImplementation(
+        prepareConversationContextSpy,
+      );
 
-      try {
-        await agent.generateText("Test query", {
-          userId: "test-user",
-          conversationId: "test-conv",
-          semanticMemory: {
-            enabled: false,
-          },
-        });
-      } catch (_e) {
-        // Expected to fail
-      }
+      const result = await agent.generateText("Test query", {
+        userId: "test-user",
+        conversationId: "test-conv",
+        semanticMemory: {
+          enabled: false,
+        },
+      });
+      expect(result.text).toBe("Test response");
 
       // When semantic search is disabled, prepareConversationContext should be called instead
       expect(prepareConversationContextSpy).toHaveBeenCalled();
@@ -343,7 +325,7 @@ describe("Agent Semantic Search", () => {
     it("should pass custom semantic options to memory manager", async () => {
       const getMessagesSpy = vi.fn().mockResolvedValue([]);
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
@@ -351,10 +333,7 @@ describe("Agent Semantic Search", () => {
         maxRetries: 0,
       });
 
-      const memoryManager = (agent as any).memoryManager;
-      if (memoryManager) {
-        memoryManager.getMessages = getMessagesSpy;
-      }
+      vi.spyOn(agent.getMemoryManager(), "getMessages").mockImplementation(getMessagesSpy);
 
       const customOptions = {
         semanticMemory: {
@@ -365,15 +344,12 @@ describe("Agent Semantic Search", () => {
         },
       };
 
-      try {
-        await agent.generateText("Test query", {
-          userId: "test-user",
-          conversationId: "test-conv",
-          ...customOptions,
-        });
-      } catch (_e) {
-        // Expected
-      }
+      const result = await agent.generateText("Test query", {
+        userId: "test-user",
+        conversationId: "test-conv",
+        ...customOptions,
+      });
+      expect(result.text).toBe("Test response");
 
       expect(getMessagesSpy).toHaveBeenCalled();
       const callArgs = getMessagesSpy.mock.calls[0];
@@ -389,24 +365,12 @@ describe("Agent Semantic Search", () => {
 
   describe("Edge Cases", () => {
     it("should handle empty message array", () => {
-      const agent = new Agent({
-        name: "TestAgent",
-        instructions: "Test",
-        model: mockModel as any,
-      });
-
       const messages: UIMessage[] = [];
-      const query = (agent as any).extractUserQuery(messages);
+      const query = extractUserQuery(messages);
       expect(query).toBeUndefined();
     });
 
     it("should handle messages with only tool/system roles", () => {
-      const agent = new Agent({
-        name: "TestAgent",
-        instructions: "Test",
-        model: mockModel as any,
-      });
-
       const messages: UIMessage[] = [
         {
           id: "1",
@@ -420,17 +384,11 @@ describe("Agent Semantic Search", () => {
         },
       ];
 
-      const query = (agent as any).extractUserQuery(messages);
+      const query = extractUserQuery(messages);
       expect(query).toBeUndefined();
     });
 
     it("should handle malformed message parts gracefully", () => {
-      const agent = new Agent({
-        name: "TestAgent",
-        instructions: "Test",
-        model: mockModel as any,
-      });
-
       const messages: UIMessage[] = [
         {
           id: "1",
@@ -443,7 +401,7 @@ describe("Agent Semantic Search", () => {
         },
       ];
 
-      const query = (agent as any).extractUserQuery(messages);
+      const query = extractUserQuery(messages);
       expect(query).toBe("Valid text"); // Should handle nulls/empties gracefully
     });
   });
@@ -454,16 +412,14 @@ describe("Agent Semantic Search", () => {
       const memoryManager = new MemoryManager("test-agent", memoryWithVector, {});
 
       // Mock the memoryManager to be MemoryManager
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
+        memory: memoryManager.getMemory(),
       });
 
-      // Replace the memory manager
-      (agent as any).memoryManager = memoryManager;
-
-      const hasSupport = (agent as any).hasSemanticSearchSupport();
+      const hasSupport = agent.getMemoryManager().getMemory()?.hasVectorSupport() ?? false;
       expect(hasSupport).toBe(true);
     });
   });
@@ -492,17 +448,14 @@ describe("Agent Semantic Search", () => {
           return recentMessages;
         });
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
         memory: memoryWithVector,
       });
 
-      const memoryManager = (agent as any).memoryManager;
-      if (memoryManager) {
-        memoryManager.getMessages = getMessagesSpy;
-      }
+      vi.spyOn(agent.getMemoryManager(), "getMessages").mockImplementation(getMessagesSpy);
 
       // Mock the AI SDK generateText to capture the messages passed
       const generateTextMock = vi.fn().mockResolvedValue({
@@ -544,17 +497,14 @@ describe("Agent Semantic Search", () => {
         .fn()
         .mockResolvedValue([{ role: "user", parts: [{ type: "text", text: "Only recent" }] }]);
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "TestAgent",
         instructions: "Test",
         model: mockModel as any,
         memory: memoryWithVector,
       });
 
-      const memoryManager = (agent as any).memoryManager;
-      if (memoryManager) {
-        memoryManager.getMessages = getMessagesSpy;
-      }
+      vi.spyOn(agent.getMemoryManager(), "getMessages").mockImplementation(getMessagesSpy);
 
       const generateTextMock = vi.fn().mockResolvedValue({
         text: "Response",

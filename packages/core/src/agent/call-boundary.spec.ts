@@ -3,7 +3,7 @@ import type { ModelMessage } from "ai";
 import { MockLanguageModelV4 } from "ai/test";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ModelProviderRegistry } from "../registries/model-provider-registry";
-import { Agent } from "./agent";
+import { type Agent, defineAgent } from "./agent";
 import { AgentTraceContext } from "./open-telemetry/trace-context";
 
 const usage = {
@@ -67,7 +67,7 @@ for (const method of ["generateText", "streamText"] as const) {
       const onRetry = vi.fn();
       const onFallback = vi.fn();
       const spans = vi.spyOn(AgentTraceContext.prototype, "createChildSpan");
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "override",
         model: [{ model: primary }, { model: backup }],
         instructions: "Help",
@@ -105,7 +105,7 @@ for (const method of ["generateText", "streamText"] as const) {
           throw failure();
         },
       });
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "failure",
         model: [{ model: primary }],
         memory: false,
@@ -129,7 +129,7 @@ for (const method of ["generateText", "streamText"] as const) {
       const resolve = vi
         .spyOn(ModelProviderRegistry.getInstance(), "resolveLanguageModel")
         .mockResolvedValue(wrapped);
-      const agent = new Agent({ name: "router", model: model(), memory: false });
+      const agent = defineAgent({ name: "router", model: model(), memory: false });
       const result = await agent[method]({ prompt: "hi", model: "openai/test" });
       expect(await result.text).toBe("done");
       expect(resolve).toHaveBeenCalledWith("openai/test");
@@ -138,7 +138,7 @@ for (const method of ["generateText", "streamText"] as const) {
 
     it("accepts model message prompts and gives instructions precedence over system", async () => {
       const provider = model();
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "prompt",
         instructions: "framework",
         model: provider,
@@ -170,7 +170,7 @@ for (const method of ["generateText", "streamText"] as const) {
     ])("rejects invalid caller input before running hooks or the provider: %j", async (request) => {
       const onStart = vi.fn();
       const provider = model();
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "validation",
         model: provider,
         memory: false,
@@ -184,7 +184,7 @@ for (const method of ["generateText", "streamText"] as const) {
 
     it("preserves explicitly allowed system message order and framework instructions", async () => {
       const provider = model();
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "trusted",
         model: provider,
         instructions: "framework",
@@ -219,7 +219,7 @@ for (const method of ["generateText", "streamText"] as const) {
       const native =
         method === "generateText" ? await generateText(nativeOptions) : streamText(nativeOptions);
       await native.text;
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "parity",
         instructions: "",
         model: agentModel,

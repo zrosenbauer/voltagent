@@ -1,5 +1,5 @@
 import { createPinoLogger } from "@voltagent/logger";
-import { Agent } from "./src/agent/agent";
+import { type Agent, defineAgent } from "./src/agent/agent";
 import { anthropicAI } from "./src/agent/providers/anthropic-ai";
 import { getGlobalLogBuffer } from "./src/logger";
 
@@ -12,7 +12,7 @@ async function testLoggerSync() {
   });
 
   // Create an agent with the custom logger
-  const agent = new Agent({
+  const agent = defineAgent({
     id: "test-agent",
     name: "Test Agent",
     instructions: "Test agent with custom logger",

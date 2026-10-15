@@ -2,7 +2,7 @@ import { Output, tool } from "ai";
 import { MockLanguageModelV4 } from "ai/test";
 import { describe, expectTypeOf, it } from "vitest";
 import { z } from "zod";
-import { Agent } from "./agent";
+import { type Agent, defineAgent } from "./agent";
 import type { AgentContext, TypedContext } from "./context";
 
 const model = new MockLanguageModelV4();
@@ -14,7 +14,7 @@ const schema = z.object({
 
 describe("schema-typed agent context", () => {
   it("infers validated context in existing dynamic values and agent-local hooks", () => {
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "typed",
       contextSchema: schema,
       instructions: ({ context }) => {
@@ -49,7 +49,7 @@ describe("schema-typed agent context", () => {
   });
 
   it("checks schema input in defaults and both call forms while preserving result inference", async () => {
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "inputs",
       model,
       instructions: "Help",
@@ -79,7 +79,7 @@ describe("schema-typed agent context", () => {
       // @ts-expect-error - schema literals are checked in the namespaced form
       voltagent: { context: { language: "de" } },
     });
-    new Agent({
+    defineAgent({
       name: "invalid",
       model,
       instructions: "Help",
@@ -95,7 +95,7 @@ describe("schema-typed agent context", () => {
   });
 
   it("retains native tool inference and required toolsContext", async () => {
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "tools",
       model,
       instructions: "Help",
@@ -119,7 +119,7 @@ describe("schema-typed agent context", () => {
   });
 
   it("returns typed context in streaming and legacy structured methods", async () => {
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "results",
       model,
       instructions: "Help",
@@ -144,7 +144,7 @@ describe("schema-typed agent context", () => {
   });
 
   it("preserves unschematized Map behavior", async () => {
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "plain",
       model,
       instructions: ({ context }) => {
@@ -157,21 +157,21 @@ describe("schema-typed agent context", () => {
   });
 
   it("removes the unreleased callOptions and prepareCall API", () => {
-    new Agent({
+    defineAgent({
       name: "removed",
       model,
       instructions: "Help",
       // @ts-expect-error - use contextSchema
       callOptionsSchema: schema,
     });
-    new Agent({
+    defineAgent({
       name: "removed",
       model,
       instructions: "Help",
       // @ts-expect-error - use existing dynamic configuration functions
       prepareCall: () => ({ instructions: "Help" }),
     });
-    const agent = new Agent({ name: "plain", model, instructions: "Help" });
+    const agent = defineAgent({ name: "plain", model, instructions: "Help" });
     agent.generateText("hi", {
       voltagent: {
         // @ts-expect-error - context is the only VoltAgent application data channel

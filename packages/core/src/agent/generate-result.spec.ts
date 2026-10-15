@@ -2,7 +2,7 @@ import { NoOutputGeneratedError, Output, generateText, isStepCount, tool } from 
 import { MockLanguageModelV4 } from "ai/test";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { Agent } from "./agent";
+import { type Agent, defineAgent } from "./agent";
 import { createOutputGuardrail } from "./guardrail";
 import { createOutputMiddleware } from "./middleware";
 import { AgentTraceContext } from "./open-telemetry/trace-context";
@@ -45,7 +45,7 @@ describe("AI SDK generate result contract", () => {
     const runtimeContext = { requestId: "request-1" };
     const native = await generateText({ model, prompt: "hi", runtimeContext });
     const onEnd = vi.fn();
-    const agent = new Agent({ name: "native-fields", model, memory: false });
+    const agent = defineAgent({ name: "native-fields", model, memory: false });
     const result = await agent.generateText({ prompt: "hi", runtimeContext, onEnd });
 
     for (const key of [
@@ -112,7 +112,7 @@ describe("AI SDK generate result contract", () => {
     async ({ text, output, expected }) => {
       const onEnd = vi.fn();
       const hookOnEnd = vi.fn();
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "guarded-output",
         model: new MockLanguageModelV4({ doGenerate: responseForText(text) }),
         memory: false,
@@ -137,7 +137,7 @@ describe("AI SDK generate result contract", () => {
   it("parses only after both middleware and guardrails have modified the text", async () => {
     const output = Output.object({ schema: z.object({ answer: z.string() }) });
     const parse = vi.spyOn(output, "parseCompleteOutput");
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "transformed-output",
       model: new MockLanguageModelV4({ doGenerate: responseForText('{"answer":"original"}') }),
       memory: false,
@@ -158,7 +158,7 @@ describe("AI SDK generate result contract", () => {
   });
 
   it("preserves empty middleware replacements in text and output", async () => {
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "empty-output",
       model: new MockLanguageModelV4({ doGenerate: responseForText("secret") }),
       memory: false,
@@ -174,7 +174,7 @@ describe("AI SDK generate result contract", () => {
       schema: z.object({ answer: z.string().transform((s) => s.length) }),
     });
     const parse = vi.spyOn(output, "parseCompleteOutput");
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "unchanged-output",
       model: new MockLanguageModelV4({ doGenerate: responseForText('{"answer":"hello"}') }),
       memory: false,
@@ -210,7 +210,7 @@ describe("AI SDK generate result contract", () => {
       const onRetry = vi.fn();
       const onFallback = vi.fn();
       const end = vi.spyOn(AgentTraceContext.prototype, "end");
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "invalid-output",
         model: [
           { model: new MockLanguageModelV4({ doGenerate }) },
@@ -245,7 +245,7 @@ describe("AI SDK generate result contract", () => {
   );
 
   it("retains the native missing-output getter when the loop ends on a tool step", async () => {
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "tool-only",
       model: new MockLanguageModelV4({
         doGenerate: {
@@ -280,7 +280,7 @@ describe("AI SDK generate result contract", () => {
               finishReason: { unified: "tool-calls", raw: "tool_calls" },
             },
     });
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "custom-output",
       model,
       memory: false,
@@ -359,7 +359,7 @@ describe("AI SDK generate result contract", () => {
 
 function bailingAgent(text: string, onError = vi.fn()) {
   const execute = vi.fn(() => [{ agentName: "child", response: text, bailed: true }]);
-  const agent = new Agent({
+  const agent = defineAgent({
     name: "bailed-output",
     model: new MockLanguageModelV4({
       doGenerate: ({ abortSignal }) => {

@@ -5,7 +5,7 @@ import { z } from "zod";
 import { NodeVoltAgentObservability, WebSocketEventEmitter } from "../observability";
 import { SpanKind, SpanStatusCode } from "../observability/types";
 import { createTool } from "../tool";
-import { Agent } from "./agent";
+import { type Agent, defineAgent } from "./agent";
 import { createOutputGuardrail } from "./guardrail";
 
 const makeFinishReason = (
@@ -83,7 +83,7 @@ describe("Agent with Observability", () => {
       });
 
       // Create agent with observability
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "test-agent",
         purpose: "Testing observability",
         instructions: "You are a test agent",
@@ -132,7 +132,7 @@ describe("Agent with Observability", () => {
       });
 
       // Create agent with a tool
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "agent-with-tools",
         purpose: "Testing tool observability",
         instructions: "You are a test agent with tools",
@@ -168,7 +168,7 @@ describe("Agent with Observability", () => {
         providerMetadata: makeOpenRouterProviderMetadata(),
       });
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "cost-agent",
         purpose: "Testing provider cost observability",
         instructions: "You are a cost test agent",
@@ -228,7 +228,7 @@ describe("Agent with Observability", () => {
         providerDetails: undefined,
       });
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "usage-agent",
         purpose: "Testing llm usage emission",
         instructions: "You are a usage test agent",
@@ -284,7 +284,7 @@ describe("Agent with Observability", () => {
         }),
       });
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "cost-agent-postprocess-error",
         purpose: "Testing provider cost observability on post-processing failures",
         instructions: "You are a cost test agent",
@@ -343,7 +343,7 @@ describe("Agent with Observability", () => {
         providerMetadata: makeOpenRouterProviderMetadata(),
       });
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "cost-agent-structured-output-error",
         purpose: "Testing provider cost observability on structured output failures",
         instructions: "You are a cost test agent",
@@ -403,7 +403,7 @@ describe("Agent with Observability", () => {
       };
 
       // Create agent that will fail
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "failing-agent",
         purpose: "Testing error handling",
         instructions: "You are a test agent",
@@ -453,7 +453,7 @@ describe("Agent with Observability", () => {
         }),
       });
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "streaming-agent",
         purpose: "Testing streaming observability",
         instructions: "You are a streaming test agent",
@@ -497,7 +497,7 @@ describe("Agent with Observability", () => {
         providerDetails: undefined,
       });
 
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "object-agent",
         purpose: "Testing object generation observability",
         instructions: "You generate structured data",
@@ -540,7 +540,7 @@ describe("Agent with Observability", () => {
       });
 
       // Create agent
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "context-agent",
         purpose: "Testing context propagation",
         instructions: "You maintain context",
@@ -605,7 +605,7 @@ describe("Agent with Observability", () => {
       });
 
       // Create agent with memory enabled
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "memory-agent",
         purpose: "Testing memory observability",
         instructions: "You use memory",

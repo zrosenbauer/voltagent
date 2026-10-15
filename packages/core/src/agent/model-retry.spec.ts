@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { Memory } from "../memory";
 import { InMemoryStorageAdapter } from "../memory/adapters/storage/in-memory";
-import { Agent } from "./agent";
+import { type Agent, defineAgent } from "./agent";
 
 const usage = {
   inputTokens: { total: 2, noCache: 2, cacheRead: 0, cacheWrite: 0 },
@@ -97,7 +97,7 @@ describe("model-call retry and fallback", () => {
       const onFallback = vi.fn();
       const onStepEnd = vi.fn();
       const memory = new Memory({ storage: new InMemoryStorageAdapter() });
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "retry-contract",
         memory,
         model:
@@ -158,7 +158,7 @@ describe("model-call retry and fallback", () => {
       });
       const execute = vi.fn(() => "order-created");
       const onError = vi.fn();
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "stream-retry-contract",
         model,
         memory: false,
@@ -197,7 +197,7 @@ describe("model-call retry and fallback", () => {
     const onFallback = vi.fn();
     const spans: Array<{ attributes?: Record<string, unknown>; end: ReturnType<typeof vi.spyOn> }> =
       [];
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "sticky-fallback",
       memory: false,
       maxRetries: 2,
@@ -253,7 +253,7 @@ describe("model-call retry and fallback", () => {
   it("preserves resolution fallback hooks", async () => {
     const onFallback = vi.fn();
     const model = new MockLanguageModelV4({ doGenerate: textResponse });
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "resolution-fallback",
       memory: false,
       maxRetries: 0,
@@ -299,7 +299,7 @@ describe("model-call retry and fallback", () => {
       },
     });
     const onRetry = vi.fn();
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "retry-budgets",
       model: [{ model, maxRetries: 0 }],
       maxRetries: 0,
@@ -327,7 +327,7 @@ describe("model-call retry and fallback", () => {
     });
     const secondary = new MockLanguageModelV4({ doGenerate: textResponse });
     const onFallback = vi.fn();
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "abort-retry",
       memory: false,
       maxRetries: 3,
@@ -354,7 +354,7 @@ describe("model-call retry and fallback", () => {
     const secondary = new MockLanguageModelV4({ doGenerate: textResponse });
     const onRetry = vi.fn();
     const onFallback = vi.fn();
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "step-timeout",
       memory: false,
       maxRetries: 3,
@@ -376,7 +376,7 @@ describe("model-call retry and fallback", () => {
       },
     });
     const secondary = new MockLanguageModelV4({ doGenerate: textResponse });
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "abort-resolution",
       memory: false,
       maxRetries: 0,
@@ -421,7 +421,7 @@ describe("model-call retry and fallback", () => {
         }),
       });
       const onFallback = vi.fn();
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "object-recovery",
         memory: false,
         maxRetries: 0,
@@ -457,7 +457,7 @@ describe("model-call retry and fallback", () => {
       }),
     });
     const secondary = new MockLanguageModelV4({ doStream: () => streamResponse() });
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "stream-prelude",
       memory: false,
       maxRetries: 0,
@@ -484,7 +484,7 @@ describe("model-call retry and fallback", () => {
       providerOptions: { custom: { flag: true } },
       toolsContext: { order: { tenant: "updated" } },
     }));
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "step-settings",
       memory: false,
       maxRetries: 0,
@@ -517,7 +517,7 @@ describe("model-call retry and fallback", () => {
     "rejects invalid retry count %s before provider execution",
     async (maxRetries) => {
       const model = new MockLanguageModelV4({ doGenerate: textResponse });
-      const agent = new Agent({ name: "invalid-retries", model, memory: false });
+      const agent = defineAgent({ name: "invalid-retries", model, memory: false });
       await expect(agent.generateText({ ...request, maxRetries })).rejects.toThrow(
         "maxRetries must be a non-negative integer",
       );
@@ -531,7 +531,7 @@ describe("model-call retry and fallback", () => {
     const execute = vi.fn(() => "order-created");
     const onRetry = vi.fn();
     const onFallback = vi.fn();
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "no-output-replay",
       memory: false,
       maxRetries: 1,
@@ -563,7 +563,7 @@ describe("model-call retry and fallback", () => {
       },
     });
     const prepareStep = vi.fn(() => ({ model: selected }));
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "step-override",
       model: primary,
       memory: false,
@@ -589,7 +589,7 @@ describe("model-call retry and fallback", () => {
     });
     const execute = vi.fn(() => "order-created");
     const onFallback = vi.fn();
-    const agent = new Agent({
+    const agent = defineAgent({
       name: "stream-fallback",
       memory: false,
       maxRetries: 0,
@@ -637,7 +637,7 @@ describe("model-call retry and fallback", () => {
       const onRetry = vi.fn();
       const onFallback = vi.fn();
       const onError = vi.fn();
-      const agent = new Agent({
+      const agent = defineAgent({
         name: "committed-stream",
         memory: false,
         maxRetries: 1,
